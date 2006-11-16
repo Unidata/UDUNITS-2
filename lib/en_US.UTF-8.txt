@@ -1,0 +1,5 @@
+MB_CUR_MAX = 1
+mblen(NULL, 1) = 0
+mblen("\xe2\x81\xb4", 3) = 1
+kg·m³
+kgÂ·mâ´Â³

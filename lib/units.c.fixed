@@ -1,0 +1,5370 @@
+/*
+ * Unit creation and manipulation routines for the udunits(3) library.
+ *
+ * The following data-structures exist in this module:
+ *	BasicUnit	Like an ISO "base unit" but also for dimensionless
+ *			units (e.g., "radian").
+ *	ProductUnit	A unit that, when it is created, contains all the
+ *			BasicUnit-s that exist at the time, each raised
+ *			to an integral power (that can be zero).
+ *	GalileanUnit	A unit whose value is related to another unit by a 
+ *			Galilean transformation (y = ax + b).  Examples include
+ *			"yard" and "degrees Fahrenheit".
+ *	LogUnit		A unit that is related to another unit by a logarithmic
+ *			transformation (y = a*log(x)).  The "Bel" is an example.
+ *	TimestampUnit	A wrong-headed unit that shouldn't exist but does for
+ *			backward compatibility.  It was intended to provide 
+ *			similar functionality as the GalileanUnit, but for time
+ *			units (e.g., "seconds since the epoch").  Unfortunately,
+ *			people try to use it for more than it is capable (e.g.,
+ *			days since some time on an imaginary world with only 360
+ *			days per year).
+ *	utUnit		A data-structure that encapsulates ProductUnit, 
+ *			GalileanUnit, LogUnit, and TimestampUnit.
+ *
+ * This module is thread-compatible but not thread-safe: multi-thread access to
+ * this module must be externally synchronized.
+ *
+ * $Id: units.c.fixed,v 1.1 2006/11/16 20:21:06 steve Exp $
+ */
+
+/*LINTLIBRARY*/
+
+#ifndef	_XOPEN_SOURCE
+#   define _XOPEN_SOURCE 500
+#endif
+
+#include <assert.h>
+#include <ctype.h>
+#include <float.h>
+#include <inttypes.h>
+#include <limits.h>
+#include <math.h>
+#include <search.h>
+#include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <strings.h>
+
+#include "units.h"		/* this module's API */
+#include "converter.h"
+
+typedef enum {
+    PRODUCT_EQUAL = 0,		/* The units are equal -- ignoring dimensionless
+				 * basic units */
+    PRODUCT_INVERSE,		/* The units are reciprocals of each other */
+    PRODUCT_UNCONVERTIBLE,	/* The units have incompatible dimensionality */
+    PRODUCT_UNKNOWN		/* The relationship is unknown */
+} ProductRelationship;
+
+typedef struct {
+    int			(*compare)(const void*, const void*);
+    void*		tree;
+} IdToUnitMap;
+
+typedef struct {
+    void*		ascii;
+    void*		latin1;
+    void*		utf8;
+} UnitToIdMap;
+
+typedef struct {
+    int			(*compare)(const void*, const void*);
+    void*		tree;
+} PrefixToValueMap;
+
+typedef struct BasicUnit	BasicUnit;
+typedef struct ProductUnit	ProductUnit;
+
+struct utSystem {
+    PrefixToValueMap	nameToValueMap;
+    PrefixToValueMap	symbolToValueMap;
+    IdToUnitMap		nameToUnitMap;
+    IdToUnitMap		symbolToUnitMap;
+    UnitToIdMap		unitToNameMap;
+    UnitToIdMap		unitToSymbolMap;
+    utUnit*		one;		/* the dimensionless-unit one */
+    BasicUnit**		basicUnits;
+    int			basicCount;
+    int			size;
+};
+
+typedef struct {
+    const char*	id;
+    utUnit*	unit;
+} UnitSearchNode;
+
+typedef struct {
+    char*	id;
+    size_t	len;
+    double	value;
+} Prefix;
+
+typedef struct {
+    int		character;
+    size_t	position;
+    double	value;
+    void*	nextTree;
+} PrefixSearchNode;
+
+typedef struct {
+    ProductUnit*	(*getProduct)(utUnit*);
+    utUnit*		(*clone)(utUnit*);
+    int			(*toString)(const utUnit*, char*, size_t, int, int);
+    void		(*free)(utUnit*);
+    /*
+     * The following comparison function must only be called if the units are
+     * the same type.
+     */
+    int			(*compare)(const utUnit*, const utUnit*);
+    utUnit*		(*multiply)(utUnit*, utUnit*);
+    utUnit*		(*raise)(utUnit*, const int power);
+    int			(*initConverterToProduct)(utUnit*);
+    int			(*initConverterFromProduct)(utUnit*);
+} UnitOps;
+
+typedef enum {
+    BASIC,
+    PRODUCT,
+    GALILEAN,
+    LOG,
+    TIMESTAMP,
+} UnitType;
+
+#undef	ABS
+#define	ABS(a)		((a) < 0 ? -(a) : (a))
+#undef	MIN
+#define	MIN(a,b)	((a) < (b) ? (a) : (b))
+#undef	MAX
+#define	MAX(a,b)	((a) > (b) ? (a) : (b))
+
+#define GET_PRODUCT(unit) \
+			((unit)->common.ops->getProduct(unit))
+#define CLONE(unit)	((unit)->common.ops->clone(unit))
+#define TO_STRING(unit, buf, max, succinct, basic) \
+			((unit)->common.ops->toString(unit, buf, max, \
+			    succinct, basic))
+#define MULTIPLY(unit1, unit2) \
+			((unit1)->common.ops->multiply(unit1, unit2))
+#define RAISE(unit, power) \
+			((unit)->common.ops->raise(unit, power))
+#define FREE(unit)	((unit)->common.ops->free(unit))
+#define COMPARE(unit1, unit2) \
+			((unit1)->common.ops->compare(unit1, unit2))
+#define ENSURE_CONVERTER_TO_PRODUCT(unit) \
+			((unit)->common.toProduct != NULL || \
+			(unit)->common.ops->initConverterToProduct(unit) == 0)
+#define ENSURE_CONVERTER_FROM_PRODUCT(unit) \
+			((unit)->common.fromProduct != NULL || \
+			(unit)->common.ops->initConverterFromProduct(unit) == 0)
+
+typedef struct {
+    utSystem*		system;
+    const UnitOps*	ops;
+    int			inSystem;
+    UnitType		type;
+    cvConverter*	toProduct;
+    cvConverter*	fromProduct;
+} Common;
+
+struct BasicUnit {
+    Common		common;
+    ProductUnit*	productUnit;		/* equivalent ProductUnit */
+    char*		name;			/* in ASCII */
+    int			isDimensionless;
+};
+
+struct ProductUnit {
+    Common		common;
+    short*		indexes;
+    short*		powers;
+    int			count;
+};
+
+typedef struct {
+    Common		common;
+    utUnit*		unit;
+    double		scale;
+    double		offset;
+} GalileanUnit;
+
+typedef struct {
+    Common		common;
+    utUnit*		unit;
+    double		origin;
+} TimestampUnit;
+
+typedef struct {
+    Common		common;
+    utUnit*		reference;
+    double		logE;
+} LogUnit;
+
+union utUnit {
+    Common		common;
+    BasicUnit		basic;
+    ProductUnit		product;
+    GalileanUnit	galilean;
+    TimestampUnit	timestamp;
+    LogUnit		log;
+};
+
+#define IS_BASIC(unit)		((unit)->common.type == BASIC)
+#define IS_PRODUCT(unit)	((unit)->common.type == PRODUCT)
+#define IS_GALILEAN(unit)	((unit)->common.type == GALILEAN)
+#define IS_LOG(unit)		((unit)->common.type == LOG)
+#define IS_TIMESTAMP(unit)	((unit)->common.type == TIMESTAMP)
+
+static UnitSearchNode*	utimFindAsciiByUnit(
+    UnitToIdMap* const		map,
+    const utUnit* const		unit);
+static UnitSearchNode*	utimFindLatin1ByUnit(
+    UnitToIdMap* const		map,
+    const utUnit* const		unit);
+static UnitSearchNode*	utimFindUtf8ByUnit(
+    UnitToIdMap* const		map,
+    const utUnit* const		unit);
+static int		basicToString(
+    const utUnit* const		unit,
+    char* const			buf,
+    const size_t		max,
+    const int			succinct,
+    const int			basic);
+static utUnit*		productMultiply(
+    utUnit* const		unit1,
+    utUnit* const		unit2);
+static utUnit*		productRaise(
+    utUnit* const		unit,
+    const int			power);
+static int		productInitConverterToProduct(
+    utUnit* const		unit);
+static int		productInitConverterFromProduct(
+    utUnit* const		unit);
+static void		productFree(
+    utUnit* const		unit);
+static int		asciiEncodeProduct(
+    const utUnit* const		unit,
+    char* const			buf,
+    const size_t		max,
+    const int			succinct);
+static BasicUnit*		basicNew(
+    const utSystem* const	system,
+    const char* const		name,
+    const int			isDimensionless,
+    ProductUnit* const		productUnit);
+static ProductUnit*	productNew(
+    utSystem* const		system,
+    const short* const		indexes,
+    const short* const		powers,
+    const int			count);
+static utUnit*		galileanNew(
+    double			scale,
+    utUnit*			unit,
+    double			offset);
+static utUnit*		timestampNewOrigin(
+    utUnit*			unit,
+    const double		origin);
+static utUnit*		timestampNew(
+    utUnit*			unit,
+    const int			year,
+    const int			month,
+    const int			day,
+    const int			hour,
+    const int			minute,
+    const double		second);
+static utUnit*		logNew(
+    const double		logE,
+    utUnit* const		reference);
+static int		toString(
+    utUnit* const		unit,
+    char* const			buf,
+    const size_t		max,
+    const int			concise,
+    const int			basic);
+
+static utStatus		status = UT_SUCCESS;
+static utUnit*		secondUnit = NULL;
+static long		juldayOrigin = 0;
+/*
+ * The following must reference the same encoding:
+ */
+static utEncoding	encodingType = UT_ASCII;
+static int		(*encodeProduct)(const utUnit*, char*, size_t, int) =
+    asciiEncodeProduct;
+static UnitSearchNode*	(*usnFindByUnit)(UnitToIdMap*, const utUnit*) =
+    utimFindAsciiByUnit;
+
+
+/*
+ * Adjust a given encoding according to a string.  Because ASCII is a subset of
+ * ISO Latin-1 and because a UTF-8 encoded string must follow certain rules, it
+ * possible for strings to be mis-encoded and for an encoding to be too 
+ * restrictive or over generous.  If the encoding is ASCII and the given string
+ * contains a character with the high-order bit set, then the encoding will be
+ * set to ISO Latin-1.  If the encoding is ISO Latin-1 but the string doesn't
+ * contain a character with the high-order bit set, then the encoding will be
+ * set to ASCII.  If the encoding is UTF-8 but the string doesn't follow the
+ * UTF-8 rules, then the function will error-return.
+ *
+ * Arguments:
+ *	encoding	Pointer to the presumptive encoding.  Might be modified
+ *			on return to reflect the actual, most restrictive,
+ *			encoding of "string".
+ *	string		The string to be checked.
+ * Returns:
+ *	0		Success.  "*encoding" might be modified.
+ *	-1		Failure.  "string" doesn't conform to "encoding".
+ */
+static int
+adjustEncoding(
+    utEncoding* const	encoding,
+    const char* 	string)
+{
+    int		status = 0;		/* success */
+
+    if (*encoding == UT_ASCII) {
+	while (*string && ((*string++ & 0x80U) == 0))
+	    /*EMPTY*/;
+
+	if (*string)
+	    *encoding = UT_ISO_LATIN_1;
+    }
+    else if (*encoding == UT_ISO_LATIN_1) {
+	while (*string && ((*string++ & 0x80U) == 0))
+	    /*EMPTY*/;
+
+	if (*string == 0)
+	    *encoding = UT_ASCII;
+    }
+    else if (*encoding == UT_UTF_8) {
+	for (; *string; string++) {
+	    if (*string & 0x80U) {
+		if ((*string & 0xE0U) == 0xC0U) {
+		    if ((*++string & 0xC0U) != 0x80U)
+			break;
+		}
+		else if ((*string & 0xF0U) == 0xE0U) {
+		    if ((*++string & 0xC0U) != 0x80U)
+			break;
+		    if ((*++string & 0xC0U) != 0x80U)
+			break;
+		}
+		else if ((*string & 0xF8U) == 0xF0U) {
+		    if ((*++string & 0xC0U) != 0x80U)
+			break;
+		    if ((*++string & 0xC0U) != 0x80U)
+			break;
+		    if ((*++string & 0xC0U) != 0x80U)
+			break;
+		}
+	    }
+	}
+
+	if (*string)
+	    status = -1;
+    }
+
+    return status;
+}
+
+
+/*
+ * Selects a unit-to-id map corresponding to a given encoding.
+ *
+ * Arguments:
+ *	map		The unit-to-id map.
+ *	encoding	The encoding.
+ * Returns:
+ *	Pointer to the unit-to-id map in "map" that corresponds to "encoding".
+ */
+static void**
+selectMap(
+    UnitToIdMap* const	unitToIdMap,
+    const utEncoding	encoding)
+{
+    return
+	encoding == UT_ASCII
+	    ? &unitToIdMap->ascii
+	    : encoding == UT_LATIN_1
+		? &unitToIdMap->latin1
+		: &unitToIdMap->utf8;
+}
+
+
+static int
+asciiEncodeProduct(
+    const utUnit* const	unit,
+    char* const		buf,
+    const size_t	max,
+    const int		succinct)
+{
+    int			nchar = snprintf(buf, max, "%s", "");
+
+    if (nchar >= 0) {
+	utSystem* const			system = unit->common.system;
+	const ProductUnit* const	productUnit = &unit->product;
+	const short*			indexes = productUnit->indexes;
+	const short*			powers = productUnit->powers;
+	int				i;
+
+	for (i = 0; i < productUnit->count; i++) {
+	    if (powers[i] != 0) {
+		int	n;
+
+		/*
+		 * Append separator if appropriate.
+		 */
+		if (nchar > 0) {
+		    n = snprintf(buf+nchar, max-nchar, "%s", ".");
+
+		    if (n < 0) {
+			nchar = n;
+			break;
+		    }
+
+		    nchar += n;
+		}
+
+		/*
+		 * Append unit identifier.
+		 */
+		n = basicToString((utUnit*)system->basicUnits[i], buf+nchar,
+			max-nchar, succinct, 0);
+
+		if (n < 0) {
+		    nchar = n;
+		    break;
+		}
+
+		nchar += n;
+
+		/*
+		 * Append exponent if appropriate.
+		 */
+		if (powers[i] != 1) {
+		    n = succinct
+			? snprintf(buf+nchar, max-nchar, "%d", powers[i])
+			: snprintf(buf+nchar, max-nchar, "^%d", powers[i]);
+
+		    if (n < 0) {
+			nchar = n;
+			break;
+		    }
+
+		    nchar += n;
+		}
+	    }				/* "powers[i] != 0" */
+	}				/* loop over "powers" elements */
+    }					/* "buf" initialized */
+
+    return nchar;
+}
+
+
+static const short*	globalPowers = NULL;
+
+
+static int
+compareExponents(
+    const void*	i,
+    const void*	j)
+{
+    return globalPowers[*(const int*)j] - globalPowers[*(const int*)i];
+}
+
+
+static int*
+getBasicOrder(
+    const ProductUnit* const	productUnit,
+    int* const			positiveCount,
+    int* const			negativeCount)
+{
+    static int	maxCount = 0;
+    static int*	order = NULL;
+    int		currCount = productUnit->count;
+
+    if (currCount > maxCount) {
+	int*	newOrder = malloc(sizeof(int)*currCount);
+
+	free(order);
+	order = newOrder;
+	maxCount = 
+	    order == NULL
+		? 0
+		: currCount;
+    }
+
+    if (order != NULL) {
+	const short* const	powers = productUnit->powers;
+	int			nNeg = 0;
+	int			nPos = 0;
+	int			n = 0;
+	int			i;
+
+	for (i = 0; i < currCount; i++) {
+	    if (powers[i] < 0) {
+		++nNeg;
+		order[n++] = i;
+	    }
+	    else if (powers[i] > 0) {
+		++nPos;
+		order[n++] = i;
+	    }
+	}
+
+	*negativeCount = nNeg;
+	*positiveCount = nPos;
+	globalPowers = powers;
+
+	qsort(order, n, sizeof(int), compareExponents);
+    }
+
+    return order;
+}
+
+
+static int
+latin1EncodeBasic(
+    utSystem* const	system,
+    char* const		buf,
+    size_t		max,
+    BasicUnit**		basicUnits,
+    const short* const	powers,
+    const int* const	order,
+    const int		count,
+    int			succinct)
+{
+    int	needSeparator = 0;
+    int	nchar = 0;
+    int	i;
+
+    for (i = 0; i < count; i++) {
+	int	n;
+	int	j = order[i];
+	int	power = ABS(powers[j]);
+
+	if (power != 0) {
+	    if (needSeparator) {
+		n = snprintf(buf+nchar, max-nchar, "·");	/* 0xb7 */
+
+		if (n < 0) {
+		    nchar = n;
+		    break;
+		}
+
+		nchar += n;
+	    }
+
+	    /*
+	     * Append unit identifier.
+	     */
+	    n = basicToString((utUnit*)basicUnits[j], buf+nchar, max-nchar,
+		    succinct, 0);
+
+	    if (n < 0) {
+		nchar = n;
+		break;
+	    }
+
+	    nchar += n;
+	    needSeparator = 1;
+
+	    /*
+	     * Append exponent if appropriate.
+	     */
+	    if (power != 1) {
+		n = snprintf(buf+nchar, max-nchar,
+		    power == 2 ? "²" : "³");	/* 0xb2 0xb3 */
+
+		if (n < 0) {
+		    nchar = n;
+		    break;
+		}
+
+		nchar += n;
+	    }
+	}		/* exponent not zero */
+    }			/* loop over positive exponents */
+
+    return nchar;
+}
+
+
+static int
+latin1EncodeProduct(
+    const utUnit* const	unit,
+    char* const		buf,
+    const size_t	max,
+    const int		succinct)
+{
+    int				nchar;
+    const ProductUnit* const	productUnit = &unit->product;
+    const short* const		powers = productUnit->powers;
+    const int			count = productUnit->count;
+    int				i;
+
+    for (i = 0; i < count; i++)
+	if (powers[i] < -3 || powers[i] > 3)
+	    break;
+
+    if (i < count) {
+	/*
+	 * At least one exponent can't be represented in ISO 8859-1.  Use
+	 * the ASCII encoding instead.
+	 */
+	nchar = asciiEncodeProduct(unit, buf, max, succinct);
+    }
+    else {
+	int			positiveCount;
+	int			negativeCount;
+	const int* const	order =
+	    getBasicOrder(productUnit, &positiveCount, &negativeCount);
+
+	if (order == NULL) {
+	    nchar = -1;
+	}
+	else {
+	    nchar = snprintf(buf, max, "%s", "");
+
+	    if (nchar >= 0) {
+		int	n;
+
+		if (positiveCount == 0) {
+		    n = snprintf(buf+nchar, max-nchar, "1");
+		    nchar = n < 0 ? n : nchar + n;
+		}
+		else {
+		    n = latin1EncodeBasic(unit->common.system, buf+nchar,
+			max-nchar, unit->common.system->basicUnits, powers,
+			order, positiveCount, succinct);
+		    nchar = n < 0 ? n : nchar + n;
+		}
+
+		if (nchar >= 0 && negativeCount > 0) {
+		    n = snprintf(buf+nchar, max-nchar,
+			negativeCount == 1 ? "/" : "/(");
+		    nchar = n < 0 ? n : nchar + n;
+
+		    if (nchar >= 0) {
+			n = latin1EncodeBasic(unit->common.system, buf+nchar,
+			    max-nchar, unit->common.system->basicUnits, powers,
+			    order+positiveCount, negativeCount, succinct);
+			nchar = n < 0 ? n : nchar + n;
+
+			if (nchar >= 0 && negativeCount > 1) {
+			    n = snprintf(buf+nchar, max-nchar, ")");
+			    nchar = n < 0 ? n : nchar + n;
+			}
+		    }			/* solidus appended */
+		}			/* positive exponents encoded */
+	    }				/* "buf" initialized */
+	}				/* got basic unit order */
+    }					/* using Latin-1 encoding */
+
+    return nchar;
+}
+
+
+static int
+utf8EncodeProduct(
+    const utUnit* const	unit,
+    char* const		buf,
+    const size_t	max,
+    const int		succinct)
+{
+    int			nchar;
+
+    nchar = snprintf(buf, max, "%s", "");
+
+    if (nchar >= 0) {
+	const ProductUnit* const	productUnit = &unit->product;
+	const short* const	powers = productUnit->powers;
+	const int		nBasic = productUnit->count;
+	utSystem* const		system = unit->common.system;
+	int			iBasic;
+
+	for (iBasic = 0; iBasic < nBasic; iBasic++) {
+	    int	power = powers[iBasic];
+
+	    if (power != 0) {
+		/*
+		 * The current basic-unit must be written.
+		 */
+		int	n;
+
+		if (nchar > 0) {
+		    /*
+		     * Append mid-dot separator.
+		     */
+		    n = snprintf(buf+nchar, max-nchar, "\xc2\xb7");
+
+		    if (n < 0) {
+			nchar = n;
+			break;
+		    }
+
+		    nchar += n;
+		}
+
+		/*
+		 * Append unit identifier.
+		 */
+		n = basicToString((utUnit*)system->basicUnits[iBasic],
+		    buf+nchar, max-nchar, succinct, 0);
+
+		if (n < 0) {
+		    nchar = n;
+		    break;
+		}
+
+		nchar += n;
+
+		if (power != 1) {
+		    /*
+		     * Append exponent.
+		     */
+		    static const char*	exponentStrings[10] = {
+			"\xe2\x81\xb0",	/* 0 */
+			"\xc2\xb1",	/* 1 */
+			"\xc2\xb2",	/* 2 */
+			"\xc2\xb3",	/* 3 */
+			"\xe2\x81\xb4",	/* 4 */
+			"\xe2\x81\xb5",	/* 5 */
+			"\xe2\x81\xb6",	/* 6 */
+			"\xe2\x81\xb7",	/* 7 */
+			"\xe2\x81\xb8",	/* 8 */
+			"\xe2\x81\xb9",	/* 9 */
+		    };
+
+		    if (power < 0) {
+			/*
+			 * Append superscript minus sign.
+			 */
+			n = snprintf(buf+nchar, max-nchar, "\xe2\x81\xbb");
+
+			if (n < 0) {
+			    nchar = n;
+			    break;
+			}
+
+			nchar += n;
+			power = -power;
+		    }
+
+		    /*
+		     * Append UTF-8 encoding of exponent magnitude.
+		     */
+		    {
+			int	digit[(int)((sizeof(productUnit->powers[0])*
+				    CHAR_BIT*(M_LOG10E/M_LOG2E)) + 1)];
+			int	idig = 0;
+
+			for (; power > 0; power /= 10)
+			    digit[idig++] = power % 10;
+
+			while (idig-- > 0) {
+			    n = snprintf(buf+nchar, max-nchar,
+				    exponentStrings[digit[idig]]);
+
+			    if (n < 0) {
+				nchar = n;
+				break;
+			    }
+
+			    nchar += n;
+			}
+
+			if (nchar < 0)
+			    break;
+		    }			/* exponent digits block */
+		}			/* must write exponent */
+	    }				/* must write basic unit */
+	}				/* loop over basic unit powers */
+    }					/* "buf" initialized */
+
+    return nchar;
+}
+
+
+/*
+ * The following two functions convert between Julian day number and
+ * Gregorian/Julian dates (Julian dates are used prior to October 15,
+ * 1582; Gregorian dates are used after that).  Julian day number 0 is
+ * midday, January 1, 4713 BCE.  The Gregorian calendar was adopted
+ * midday, October 15, 1582.
+ *
+ * Author: Robert Iles, March 1994
+ *
+ * C Porter: Steve Emmerson, October 1995
+ *
+ * Original: http://www.nag.co.uk:70/nagware/Examples/calendar.f90
+ *
+ * There is no warranty on this code.
+ */
+
+
+/*
+ * Convert a Julian day number to a Gregorian/Julian date.
+ */
+void
+julianDayToGregorianDate(julday, year, month, day)
+    long	julday;		/* Julian day number to convert */
+    int		*year;		/* Gregorian year (out) */
+    int		*month;		/* Gregorian month (1-12) (out) */
+    int		*day;		/* Gregorian day (1-31) (out) */
+{
+    long	ja, jb, jd;
+    int		jc;
+    int		je, iday, imonth, iyear;
+    double	xc;
+
+    if (julday < 2299161)
+	ja = julday;
+    else
+    {
+	int	ia = (int)(((julday - 1867216) - 0.25) / 36524.25);
+
+	ja = julday + 1 + ia - (int)(0.25 * ia);
+    }
+
+    jb = ja + 1524;
+    xc = ((jb - 2439870) - 122.1) / 365.25;
+    jc = (int)(6680.0 + xc);
+    jd = 365 * jc + (int)(0.25 * jc);
+    je = (int)((jb - jd) / 30.6001);
+
+    iday = (int)(jb - jd - (int)(30.6001 * je));
+
+    imonth = je - 1;
+    if (imonth > 12)
+	imonth -= 12;
+
+    iyear = jc - 4715;
+    if (imonth > 2)
+	iyear -= 1;
+    if (iyear <= 0)
+	iyear -= 1;
+
+    *year = iyear;
+    *month = imonth;
+    *day = iday;
+}
+
+
+/*
+ * Convert a Gregorian/Julian date to a Julian day number.
+ *
+ * The Gregorian calendar was adopted midday, October 15, 1582.
+ */
+long
+gregorianDateToJulianDay(year, month, day)
+    int		year;	/* Gregorian year */
+    int		month;	/* Gregorian month (1-12) */
+    int		day;	/* Gregorian day (1-31) */
+{
+    int32_t	igreg = 15 + 31 * (10 + (12 * 1582));
+    int32_t	iy;	/* signed, origin 0 year */
+    int32_t	ja;	/* Julian century */
+    int32_t	jm;	/* Julian month */
+    int32_t	jy;	/* Julian year */
+    long	julday;	/* returned Julian day number */
+
+    /*
+     * Because there is no 0 BC or 0 AD, assume the user wants the start of 
+     * the common era if they specify year 0.
+     */
+    if (year == 0)
+	year = 1;
+
+    iy = year;
+    if (year < 0)
+	iy++;
+    if (month > 2)
+    {
+	jy = iy;
+	jm = month + 1;
+    }
+    else
+    {
+	jy = iy - 1;
+	jm = month + 13;
+    }
+
+    /*
+     *  Note: SLIGHTLY STRANGE CONSTRUCTIONS REQUIRED TO AVOID PROBLEMS WITH
+     *        OPTIMISATION OR GENERAL ERRORS UNDER VMS!
+     */
+    julday = day + (int)(30.6001 * jm);
+    if (jy >= 0)
+    {
+	julday += 365 * jy;
+	julday += 0.25 * jy;
+    }
+    else
+    {
+	double	xi = 365.25 * jy;
+
+	if ((int)xi != xi)
+	    xi -= 1;
+	julday += (int)xi;
+    }
+    julday += 1720995;
+
+    if (day + (31* (month + (12 * iy))) >= igreg)
+    {
+	ja = jy/100;
+	julday -= ja;
+	julday += 2;
+	julday += ja/4;
+    }
+
+    return julday;
+}
+
+
+/*
+ * Encode a time as a double-precision value.
+ */
+static double
+encodeClock(hours, minutes, seconds)
+    int		hours;
+    int		minutes;
+    double	seconds;
+{
+    return (hours*60 + minutes)*60 + seconds;
+}
+
+
+/*
+ * Decompose a value into a set of values accounting for uncertainty.
+ */
+static void
+decompose(value, uncer, nbasis, basis, count)
+    double	value;
+    double	uncer;		/* >= 0 */
+    int		nbasis;
+    double	*basis;		/* all values > 0 */
+    double	*count;
+{
+    int		i;
+
+    for (i = 0; i < nbasis; i++)
+    {
+	double	r = fmod(value, basis[i]);	/* remainder */
+
+	/* Adjust remainder to minimum magnitude. */
+	if (ABS(2*r) > basis[i])
+	    r += r > 0
+		    ? -basis[i]
+		    :  basis[i];
+
+	if (ABS(r) <= uncer)
+	{
+	    /* The value equals a basis multiple within the uncertainty. */
+	    double	half = value < 0 ? -basis[i]/2 : basis[i]/2;
+	    modf((value+half)/basis[i], count+i);
+	    break;
+	}
+
+	value = basis[i] * modf(value/basis[i], count+i);
+    }
+
+    if (i >= nbasis) {
+	count[--i] += value;
+    }
+    else {
+	for (i++; i < nbasis; i++)
+	    count[i] = 0;
+    }
+}
+
+
+/*
+ * Encode a date as a double-precision value.
+ */
+static double
+encodeDate(year, month, day)
+    int		year;
+    int		month;
+    int		day;
+{
+    if (juldayOrigin == 0)
+	juldayOrigin = gregorianDateToJulianDay(2001, 1, 1);
+
+    return 86400.0 *
+	(gregorianDateToJulianDay(year, month, day) - juldayOrigin);
+}
+
+
+/*
+ * Encodes a time as a double-precision value.
+ */
+static double
+encodeTime(
+    const int		year,
+    const int		month,
+    const int		day,
+    const int		hour,
+    const int		minute,
+    const double	second)
+{
+    return encodeDate(year, month, day) + encodeClock(hour, minute, second);
+}
+
+
+/*
+ * Decode a time from a double-precision value.
+ */
+static void
+decodeTime(value, year, month, day, hour, minute, second)
+    double	value;
+    int		*year;
+    int		*month;
+    int		*day;
+    int		*hour;
+    int		*minute;
+    double	*second;
+{
+    int		days;
+    int		hours;
+    int		minutes;
+    double	seconds;
+    double	uncer;		/* uncertainty of input value */
+    typedef union
+    {
+	double	    vec[7];
+	struct
+	{
+	    double	days;
+	    double	hours12;
+	    double	hours;
+	    double	minutes10;
+	    double	minutes;
+	    double	seconds10;
+	    double	seconds;
+	}	    ind;
+    } Basis;
+    Basis	counts;
+    static Basis	basis = {86400, 43200, 3600, 600, 60, 10, 1};
+
+    uncer = ldexp(value < 0 ? -value : value, -DBL_MANT_DIG);
+
+    days = (int)floor(value/basis.ind.days);
+    value -= days * basis.ind.days;		/* make positive excess */
+
+    decompose(value, uncer, (int)(sizeof(basis.vec)/sizeof(basis.vec[0])),
+	   basis.vec, counts.vec);
+
+    days += counts.ind.days;
+    hours = (int)counts.ind.hours12 * 12 + (int)counts.ind.hours;
+    minutes = (int)counts.ind.minutes10 * 10 + (int)counts.ind.minutes;
+    seconds = (int)counts.ind.seconds10 * 10 + counts.ind.seconds;
+
+    if (seconds >= 60) {
+	seconds -= 60;
+	if (++minutes >= 60) {
+	    minutes -= 60;
+	    if (++hours >= 24) {
+		hours -= 24;
+		days++;
+	    }
+	}
+    }
+
+    *second = seconds;
+    *minute = minutes;
+    *hour = hours;
+
+    julianDayToGregorianDate(juldayOrigin + days, year, month, day);
+}
+
+
+/*******************************************************************************
+ * Unit Search Node:
+ ******************************************************************************/
+
+
+/*
+ * Arguments:
+ *	id	The identifier (name or symbol).  May be freed upon return.
+ *	unit	The unit.  Must not be freed upon successful return until the
+ *		returned unit-search-node is no longer needed.
+ * Returns:
+ *	NULL	"id" is NULL.
+ *	NULL	"node" is NULL.
+ *	NULL	Out of memory.
+ *	else	Pointer to the new unit search node.
+ */
+static UnitSearchNode*
+usnNew(
+    const char* const	id,
+    utUnit* const	unit)
+{
+    UnitSearchNode*	node = NULL;
+
+    if (id != NULL && unit != NULL) {
+	node = malloc(sizeof(UnitSearchNode));
+
+	if (node == NULL) {
+	    status = UT_OS;
+	}
+	else {
+	    node->unit = unit;
+	    node->id = strdup(id);
+
+	    if (node->id == NULL) {
+		status = UT_OS;
+		free(node);
+		node = NULL;
+	    }
+	}
+    }
+
+    return node;
+}
+
+
+static void
+usnFree(
+    UnitSearchNode* const	node)
+{
+    if (node != NULL) {
+	free((void*)node->id);
+	free(node);
+    }
+}
+
+
+static int
+usnSensitiveCompare(
+    const void* const	node1,
+    const void* const	node2)
+{
+    return strcmp(((const UnitSearchNode*)node1)->id, 
+	((const UnitSearchNode*)node2)->id);
+}
+
+
+static int
+usnInsensitiveCompare(
+    const void* const	node1,
+    const void* const	node2)
+{
+    return strcasecmp(((const UnitSearchNode*)node1)->id, 
+	((const UnitSearchNode*)node2)->id);
+}
+
+
+static int
+usnUnitCompare(
+    const void* const	node1,
+    const void* const	node2)
+{
+    return utCompare(((const UnitSearchNode*)node1)->unit,
+	((const UnitSearchNode*)node2)->unit);
+}
+
+
+/*
+ * Returns the unit search-node that matches an identifier.  Inserts a new unit
+ * search-node if no matching element is found.  Note that the returned search
+ * node might not be the same as the target search node.
+ *
+ * Arguments:
+ *	root		The binary-search tree.
+ *	targetNode	The target search node.
+ *	compare		The comparison function
+ * Returns:
+ *	NULL		"root" is NULL.
+ *	NULL		"targetNode" is NULL.
+ *	NULL		"compare" is NULL.
+ *	NULL		Insufficient storage space is available.
+ *	else		Pointer to the unit search-node that matches 
+ *			"targetNode" according to "compare".
+ */
+static UnitSearchNode*
+usnSearch(
+    void**			root,
+    const UnitSearchNode* const	targetNode,
+    int				(*compare)(const void*, const void*))
+{
+    UnitSearchNode*	node = NULL;	/* failure */
+
+    if (root != NULL && targetNode != NULL && compare != NULL) {
+	UnitSearchNode**	treeNode = tsearch(targetNode, root, compare);
+
+	if (treeNode != NULL)
+	    node = *treeNode;
+    }
+
+    return node;
+}
+
+
+/*
+ * Returns the unit search-node that matches an identifier.  Unlike usnSearch(),
+ * does not insert a new unit search-node if no matching element is found.
+ *
+ * Arguments:
+ *	map		The binary-search tree.
+ *	targetNode	The target node.
+ *	compare		The comparison function.
+ * Returns:
+ *	NULL		"map" is NULL.
+ *	NULL		"targetNode" is NULL.
+ *	NULL		"compare" is NULL.
+ *	else		Pointer to the unit search-node that matches 
+ *			"targetNode" according to "compare".
+ */
+static UnitSearchNode*
+usnFind(
+    void* const*		map,
+    const UnitSearchNode* const	targetNode,
+    int				(*compare)(const void*, const void*))
+{
+    UnitSearchNode*	node = NULL;	/* failure */
+
+    if (map != NULL && targetNode != NULL) {
+	UnitSearchNode**	mapNode = tfind(targetNode, map, compare);
+
+	if (mapNode != NULL)
+	    node = *mapNode;
+    }
+
+    return node;
+}
+
+
+static void
+usnRemove(
+    void**			map,
+    const UnitSearchNode* const	targetNode,
+    int				(*compare)(const void*, const void*))
+{
+    if (map != NULL && targetNode != NULL && compare != NULL) {
+	UnitSearchNode**	mapNode = tfind(targetNode, map, compare);
+
+	if (mapNode != NULL) {
+	    (void)tdelete(*mapNode, map, compare);
+	    usnFree(*mapNode);
+	}
+    }
+}
+
+
+/*******************************************************************************
+ * Identifier-to-Unit Map:
+ ******************************************************************************/
+
+
+/*
+ * Adds an entry to an identifier-to-unit map.
+ *
+ * Arguments:
+ *	map		The database.
+ *	id		The identifier.  May be freed by client upon return.
+ *	unit		The unit.
+ * Returns:
+ *	UT_INTERNAL	"map" is NULL.
+ *	UT_BADUNIT	"unit" is NULL.
+ *	UT_BADID	"id" is NULL.
+ *	UT_OS		Operating-system error.  See "errno".
+ *	UT_EXISTS	"id" already maps to a different unit.
+ *	UT_SUCCESS	Success.
+ */
+static utStatus
+itumAdd(
+    IdToUnitMap*	map,
+    const char* const	id,
+    utUnit* const	unit)
+{
+    if (map == NULL) {
+	status = UT_INTERNAL;
+    }
+    else if (id == NULL) {
+	status = UT_BADID;
+    }
+    else if (unit == NULL) {
+	status = UT_BADUNIT;
+    }
+    else {
+	UnitSearchNode*	targetNode = usnNew(id, unit);
+
+	if (targetNode == NULL) {
+	    status = UT_OS;
+	}
+	else {
+	    UnitSearchNode*	mapNode = usnSearch(&map->tree, targetNode, 
+		map->compare);
+
+	    if (mapNode == NULL) {
+		status = UT_OS;
+	    }
+	    else if (mapNode->unit != unit) {
+		status = UT_EXISTS;
+	    }
+	    else {
+		status = UT_SUCCESS;
+	    }
+
+	    if (targetNode != mapNode)
+		usnFree(targetNode);
+	}
+    }
+
+    return status;
+}
+
+
+/*
+ * Finds the entry in an identifier-to-unit map that corresponds to an
+ * identifer.
+ *
+ * Arguments:
+ *	map	The identifier-to-unit map.
+ *	id	The identifier to be used as the key in the search.
+ * Returns:
+ *	NULL	Failure.  "status" is set:
+ *		    UT_INTERNAL	"map" is NULL.
+ *		    UT_BADID	"id" is NULL.
+ *		    else	"map" doesn't contain an entry that corresponds
+ *				to "id".
+ *	else	Pointer to the entry corresponding to "id".
+ */
+static UnitSearchNode*
+itumFind(
+    IdToUnitMap*	map,
+    const char* const	id)
+{
+    UnitSearchNode*	mapNode = NULL;	/* failure */
+
+    if (map == NULL) {
+	status = UT_INTERNAL;
+    }
+    else if (id == NULL) {
+	status = UT_BADID;
+    }
+    else {
+	UnitSearchNode	targetNode;
+
+	targetNode.id = id;
+
+	mapNode = usnFind(&map->tree, &targetNode, map->compare);
+    }
+
+    return mapNode;
+}
+
+
+/*******************************************************************************
+ * Unit-to-Identifier Map:
+ ******************************************************************************/
+
+
+/*
+ * Adds an entry to a unit-to-identifier map.
+ *
+ * Arguments:
+ *	map		The unit-to-identifier map.
+ *	unit		The unit.
+ *	id		The identifier.  May be freed by client upon return.
+ *	encoding	The ostensible encoding of "id".
+ * Returns:
+ *	UT_INTERNAL	"map" is NULL.
+ *	UT_INTERNAL	"unit" is NULL.
+ *	UT_BADID	"id" is NULL or inconsistent with "encoding".
+ *	UT_OS		Operating-system error.  See "errno".
+ *	UT_EXISTS	"unit" already maps to a different identifier.
+ *	UT_SUCCESS	Success.
+ */
+static utStatus
+utimAdd(
+    UnitToIdMap* const	map,
+    utUnit* const	unit,
+    const char* const	id,
+    utEncoding		encoding)
+{
+    if (map == NULL) {
+	status = UT_INTERNAL;
+    }
+    else if (unit == NULL) {
+	status = UT_BADUNIT;
+    }
+    else if (id == NULL) {
+	status = UT_BADID;
+    }
+    else if (adjustEncoding(&encoding, id)) {
+	status = UT_BADID;
+    }
+    else {
+	UnitSearchNode*	targetNode = usnNew(id, unit);
+
+	if (targetNode == NULL) {
+	    status = UT_OS;
+	}
+	else {
+	    UnitSearchNode*	mapNode = usnSearch(selectMap(map, encoding),
+		targetNode, usnUnitCompare);
+
+	    if (mapNode == NULL) {
+		status = UT_OS;
+	    }
+	    else if (strcmp(mapNode->id, id) != 0) {
+		status = UT_EXISTS;
+	    }
+	    else {
+		status = UT_SUCCESS;
+	    }
+
+	    if (targetNode != mapNode)
+		usnFree(targetNode);
+	}
+    }
+
+    return status;
+}
+
+
+/*
+ * Removes an entry from a unit-to-identifier map.
+ *
+ * Arguments:
+ *	map		The database.
+ *	unit		The unit.
+ *	id		The identifier.
+ *	encoding	The ostensible encoding of "id".
+ * Returns:
+ *	UT_INTERNAL	"map" is NULL.
+ *	UT_INTERNAL	"unit" is NULL.
+ *	UT_SUCCESS	Success.
+ */
+static utStatus
+utimRemove(
+    UnitToIdMap* const	map,
+    utUnit* const	unit,
+    const char* const	id,
+    utEncoding		encoding)
+{
+    if (map == NULL) {
+	status = UT_INTERNAL;
+    }
+    else if (unit == NULL) {
+	status = UT_INTERNAL;
+    }
+    else if (id == NULL) {
+	status = UT_INTERNAL;
+    }
+    else {
+	static UnitSearchNode	targetNode;
+
+	targetNode.unit = unit;
+
+	usnRemove(selectMap(map, adjustEncoding(&encoding, id)), &targetNode,
+	    usnUnitCompare);
+
+	status = UT_SUCCESS;
+    }
+
+    return status;
+}
+
+
+/*
+ * Unconditionally converts an ISO Latin-1 string into a UTF-8 string.
+ *
+ * Arguments:
+ *	latin1String	Pointer to the ISO Latin-1 string.
+ * Returns:
+ *	NULL		Failure.  See errno.
+ *	else		Pointer to the equivalent UTF-8 string.  Should be freed
+ *			when no longer needed.
+ */
+static char*
+latin1ToUtf8(
+    const char* const	latin1String)
+{
+    int			nchar;
+    const char*		inp;
+    char*		outp;
+    char*		utf8String;
+
+    for (nchar = 0, inp = latin1String; *inp; ++inp, ++nchar)
+	if ((*inp & 0x80U) != 0)
+	    nchar++;
+
+    utf8String = malloc(nchar+1);
+
+    if (utf8String != NULL) {
+	for (inp = latin1String, outp = utf8String; *inp; ++inp, ++outp) {
+	    if ((*inp & 0x80U) == 0) {
+		*outp = *inp;
+	    }
+	    else {
+		*outp++ = (char)(0xC0U | ((unsigned)*inp >> 6));
+		*outp = (char)(0x80U | (*inp & 0x3FU));
+	    }
+	}
+
+	*outp = 0;
+    }
+
+    return utf8String;
+}
+
+
+/*
+ * Finds a unit-search-node with an ASCII identifier corresponding to a unit.
+ *
+ * Arguments:
+ *	map	The unit-to-identifier map.
+ *	unit	The unit to be used as the key in the search.
+ * Returns:
+ *	NULL	The map doesn't contain an entry corresponding to "unit" whose
+ *		identifier is in ASCII.
+ *	else	Pointer to the entry corresponding to "unit" whose identifier is
+ *		in ASCII.
+ */
+static UnitSearchNode*
+utimFindAsciiByUnit(
+    UnitToIdMap* const	map,
+    const utUnit* const	unit)
+{
+    UnitSearchNode	targetNode;
+
+    targetNode.unit = (utUnit*)unit;
+
+    return usnFind(&map->ascii, &targetNode, usnUnitCompare);
+}
+
+
+/*
+ * Finds a unit-search-node with a Latin-1 identifier correcponding to a unit.
+ *
+ * Arguments:
+ *	map	The unit-to-identifier map.
+ *	unit	The unit to be used as the key in the search.
+ * Returns:
+ *	NULL	The map doesn't contain an entry corresponding to "unit" whose
+ *		identifier is in Latin-1.
+ *	else	Pointer to the entry corresponding to "unit" whose identifier is
+ *		in Latin-1 (and might, actually, be in ASCII).
+ */
+static UnitSearchNode*
+utimFindLatin1ByUnit(
+    UnitToIdMap* const	map,
+    const utUnit* const	unit)
+{
+    UnitSearchNode	targetNode;
+    UnitSearchNode*	mapNode = NULL;
+
+    targetNode.unit = (utUnit*)unit;
+
+    mapNode = usnFind(&map->latin1, &targetNode, usnUnitCompare);
+
+    if (mapNode == NULL)
+	mapNode = usnFind(&map->ascii, &targetNode, usnUnitCompare);
+
+    return mapNode;
+}
+
+
+/*
+ * Finds a unit-search-node with a UTF-8 identifier correcponding to a unit.
+ *
+ * Arguments:
+ *	map	The unit-to-identifier map.
+ *	unit	The unit to be used as the key in the search.
+ * Returns:
+ *	NULL	The map doesn't contain an entry corresponding to "unit" whose
+ *		identifier is in UTF-8.
+ *	else	Pointer to the entry corresponding to "unit" whose identifier is
+ *		in UTF-8 (and might, actually, be in ASCII).
+ */
+static UnitSearchNode*
+utimFindUtf8ByUnit(
+    UnitToIdMap* const	map,
+    const utUnit* const	unit)
+{
+    UnitSearchNode	targetNode;
+    UnitSearchNode*	mapNode = NULL;
+
+    targetNode.unit = (utUnit*)unit;
+
+    mapNode = usnFind(&map->utf8, &targetNode, usnUnitCompare);
+
+    if (mapNode == NULL) {
+	mapNode = usnFind(&map->latin1, &targetNode, usnUnitCompare);
+
+	if (mapNode == NULL) {
+	    mapNode = usnFind(&map->ascii, &targetNode, usnUnitCompare);
+	}
+	else {
+	    /*
+	     * Create the UTF-8 version of the Latin-1 identifier and add it to
+	     * the UTF-8 map so that it will be found next time.
+	     */
+	    const char* const	id = latin1ToUtf8(mapNode->id);
+
+	    if (id == NULL) {
+		status = UT_OS;
+		mapNode = NULL;
+	    }
+	    else {
+		targetNode.id = id;
+
+		mapNode = usnSearch(&map->utf8, &targetNode, usnUnitCompare);
+
+		if (mapNode == NULL)
+		    status = UT_OS;
+	    }
+	}
+    }
+
+    return mapNode;
+}
+
+
+/*******************************************************************************
+ * Prefix Search Node:
+ ******************************************************************************/
+
+
+static PrefixSearchNode*
+psnNew(
+    int			character,
+    size_t		position)
+{
+    PrefixSearchNode*	node = malloc(sizeof(PrefixSearchNode));
+
+    if (node == NULL) {
+	status = UT_OS;
+    }
+    else {
+	node->character = character;
+	node->position = position;
+	node->value = 0;
+	node->nextTree = NULL;
+    }
+
+    return node;
+}
+
+
+static void
+psnFree(
+    PrefixSearchNode* const	node)
+{
+    free(node);
+}
+
+
+static int
+psnSensitiveCompare(
+    const void* const	node1,
+    const void* const	node2)
+{
+    int	char1 = ((const PrefixSearchNode*)node1)->character;
+    int	char2 = ((const PrefixSearchNode*)node2)->character;
+
+    return char1 < char2 ? -1 : char1 == char2 ? 0 : 1;
+}
+
+
+static int
+psnInsensitiveCompare(
+    const void* const	node1,
+    const void* const	node2)
+{
+    int	char1 = tolower(((const PrefixSearchNode*)node1)->character);
+    int	char2 = tolower(((const PrefixSearchNode*)node2)->character);
+
+    return char1 < char2 ? -1 : char1 == char2 ? 0 : 1;
+}
+
+
+/*******************************************************************************
+ * Prefix-to-Value Map:
+ ******************************************************************************/
+
+
+/*
+ * Returns the prefix search-node that matches an identifier.  Inserts a
+ * new prefix search-node if no matching element is found.  Note that the
+ * returned node might have a different prefix value if it was previously
+ * inserted.
+ *
+ * Arguments:
+ *	map		Pointer to the prefix-to-value map.
+ *	id		The prefix identifier.  May be freed upon return.
+ *	value		The prefix value.
+ * Returns:
+ *	NULL		"map" is NULL.
+ *	NULL		"id" is NULL or the empty string.
+ *	NULL		"value" is 0.
+ *	NULL		Insufficient storage space is available.
+ *	else		Pointer to the prefix-search-node that matches "id".
+ */
+static const PrefixSearchNode*
+ptvmSearch(
+    PrefixToValueMap*	map,
+    const char* const	id,
+    const double	value)
+{
+    PrefixSearchNode*	node = NULL;	/* failure */
+
+    if (id != NULL && map != NULL && value != 0) {
+	size_t	len = strlen(id);
+
+	if (len > 0) {
+	    size_t			i;
+	    PrefixSearchNode* const*	treeNode = NULL;
+	    void**			tree = &map->tree;
+
+	    for (i = 0; i < len; i++) {
+		PrefixSearchNode* const	newNode = psnNew(id[i], i);
+
+		if (newNode == NULL)
+		    break;
+
+		treeNode = tsearch(newNode, tree, map->compare);
+
+		if (treeNode == NULL)
+		    break;
+
+		tree = &(*treeNode)->nextTree;	/* next binary-search tree */
+
+		if (newNode != *treeNode)
+		    psnFree(newNode);
+	    }
+
+	    if (i >= len) {
+		node = *treeNode;
+
+		if (node->value == 0)
+		    node->value = value;
+	    }
+	}
+    }
+
+    return node;
+}
+
+
+/*******************************************************************************
+ * Miscellaneous functions:
+ ******************************************************************************/
+
+
+static int
+needsParentheses(
+    const char* const	string)
+{
+    return string[0] != 0 && !isalpha(string[0]);
+    /*
+    return strpbrk(string, " \t") != NULL &&
+	(string[0] != '(' || string[strlen(string)-1] != ')');
+    */
+}
+
+
+static void
+assignToSystem(
+    utSystem* const	system,
+    utUnit* const	unit)
+{
+    assert(system == unit->common.system);
+
+    unit->common.inSystem = 1;
+    system->size++;
+}
+
+
+/*******************************************************************************
+ * Parameters common to all types of units:
+ ******************************************************************************/
+
+
+/*
+ * Arguments:
+ *	common	Pointer to unit common-area.
+ *	ops	Pointer to unit-specific function-structure.
+ *	system	Pointer to unit-system.
+ *	type	The type of unit.
+ * Returns:
+ *	-1	Failure.  "status" is set:
+ *		    UT_INTERNAL	"common" is NULL.
+ *		    UT_INTERNAL	"ops" is NULL.
+ *		    UT_INTERNAL	"system" is NULL.
+ *	 0	Success.
+ */
+static int
+commonInit(
+    Common* const		common,
+    const UnitOps* const	ops,
+    const utSystem* const	system,
+    const UnitType		type)
+{
+    int	retval;
+
+    if (system == NULL || common == NULL || ops == NULL) {
+	status = UT_INTERNAL;
+	retval = -1;
+    }
+    else {
+	common->inSystem = 0;
+	common->system = (utSystem*)system;
+	common->ops = ops;
+	common->type = type;
+	common->toProduct = NULL;
+	common->fromProduct = NULL;
+	retval = 0;
+    }
+
+    return retval;
+}
+
+
+/*******************************************************************************
+ * Basic Unit:
+ ******************************************************************************/
+
+
+static ProductUnit*
+basicGetProduct(
+    utUnit* const	unit)
+{
+    return unit->basic.productUnit;
+}
+
+
+/*ARGSUSED*/
+static int
+basicToString(
+    const utUnit* const	unit,
+    char* const		buf,
+    const size_t	max,
+    const int		succinct,
+    const int		basic)
+{
+    int			nchar;
+    UnitSearchNode*	mapNode = NULL;
+
+    if (succinct) {
+	mapNode = usnFindByUnit(&unit->common.system->unitToSymbolMap, unit);
+
+	if (mapNode != NULL)
+	    nchar = snprintf(buf, max, "%s", mapNode->id);
+    }
+
+    if (!succinct || mapNode == NULL)
+	nchar = snprintf(buf, max, "%s", unit->basic.name);
+
+    return nchar;
+}
+
+
+static utUnit*
+basicClone(
+    utUnit* const	unit)
+{
+    return unit;
+}
+
+
+static void
+basicFree(
+    utUnit* const	unit)
+{
+    if (unit != NULL) {
+	if (!unit->common.inSystem) {
+	    productFree((utUnit*)unit->basic.productUnit);
+	    free(unit);
+	}
+    }
+}
+
+
+/*
+ * Returns a new instance of a basic-unit.
+ *
+ * Arguments:
+ *	system		The unit-system in which to create a new basic unit.
+ *	name		The ASCII name for the unit.  May be freed upon return.
+ *	isDimensionless	Whether or not the unit is dimensionless (e.g., 
+ *			"radian").
+ *	productUnit	Pointer to equivalent product-unit or NULL.  If
+ *			non-NULL, then client must not free upon successful
+ *			return.
+ * Returns:
+ *	NULL	Failure.  "status" is set:
+ *		    UT_INTERNAL	"system == NULL"
+ *		    UT_INTERNAL	"name" is NULL
+ *		    UT_INTERNAL	"productUnit" is NULL
+ *		    UT_BADID	"name" is non-ASCII.
+ *		    UT_OS	Operating-system error.  See "errno".
+ *	else	Pointer to newly-allocated basic-unit.
+ */
+static BasicUnit*
+basicNew(
+    const utSystem* const	system,
+    const char* const		name,
+    const int			isDimensionless,
+    ProductUnit* const		productUnit)
+{
+    BasicUnit*	basicUnit = NULL;	/* failure */
+
+    if (system == NULL || name == NULL) {
+	status = UT_INTERNAL;
+    }
+    else {
+	utEncoding	encoding = UT_ASCII;
+
+	if (adjustEncoding(&encoding, name) || encoding != UT_ASCII) {
+	    status = UT_BADID;
+	}
+	else {
+	    basicUnit = malloc(sizeof(BasicUnit));
+
+	    if (basicUnit == NULL) {
+		status = UT_OS;
+	    }
+	    else {
+		int		error = 1;	/* failure */
+
+		basicUnit->productUnit = productUnit;
+		basicUnit->isDimensionless = isDimensionless;
+		basicUnit->name = strdup(name);
+
+		if (basicUnit->name == NULL) {
+		    status = UT_OS;
+		}
+		else {
+		    error = 0;
+		}			/* "basicUnit->name" allocated */
+
+		if (error) {
+		    free(basicUnit);
+		    basicUnit = NULL;
+		}
+	    }				/* "basicUnit" allocated */
+	}				/* ASCII "name" */
+    }					/* valid arguments */
+
+    return basicUnit;
+}
+
+
+static int
+basicCompare(
+    const utUnit* const	unit1,
+    const utUnit* const	unit2)
+{
+    return unit1 < unit2 ? -1 : unit1 == unit2 ? 0 : 1;
+}
+
+
+/*
+ * Multiplies a basic-unit by another unit.
+ *
+ * Arguments:
+ *	unit1	The basic unit.
+ *	unit2	The other unit.
+ * Returns:
+ *	NULL	Failure.  "status" is set:
+ *		    UT_INTERNAL		"unit1" is NULL.
+ *		    UT_INTERNAL		"unit2" is NULL.
+ *		    UT_INTERNAL		"unit1" is not a product-unit.
+ *		    UT_MEANINGLESS	The operation on the given units is
+ *					meaningless.
+ *	else	The resulting unit.
+ */
+static utUnit*
+basicMultiply(
+    utUnit* const	unit1,
+    utUnit* const	unit2)
+{
+    utUnit*		result = NULL;	/* failure */
+
+    if (unit1 == NULL || !IS_BASIC(unit1) || unit2 == NULL) {
+	status = UT_INTERNAL;
+    }
+    else {
+	result = productMultiply((utUnit*)unit1->basic.productUnit, unit2);
+    }					/* valid arguments */
+
+    return result;
+}
+
+
+/*
+ * Returns the result of raising a basic unit to a power.
+ *
+ * Arguments:
+ *	unit	The basic unit.
+ *	power	The power.  Must be greater than -256 and less than 256.
+ * Returns:
+ *	NULL	Failure.  "status" is set:
+ *		    UT_INTERNAL		"unit" is NULL.
+ *		    UT_INTERNAL		"unit" is not a product-unit.
+ *		    UT_INTERNAL		"power" is out-of-range
+ *		    UT_MEANINGLESS	The operation on the given unit is
+ *					meaningless.
+ *	else	The resulting unit.
+ */
+static utUnit*
+basicRaise(
+    utUnit* const	unit,
+    const int		power)
+{
+    utUnit*		result = NULL;	/* failure */
+
+    if (unit == NULL || !IS_BASIC(unit) || power < -255 || power > 255) {
+	status = UT_INTERNAL;
+    }
+    else {
+	result = productRaise((utUnit*)unit->basic.productUnit, power);
+    }					/* valid arguments */
+
+    return result;
+}
+
+
+/*
+ * Initializes the converter of numeric from the given product-unit to the
+ * underlying product-unit (i.e., to itself).
+ *
+ * Arguments:
+ *	unit	The product unit.
+ * Returns:
+ *	-1	Failure.  "status" is set:
+ *		    UT_INTERNAL	"unit" is NULL.
+ *		    UT_INTERNAL	"unit" is not a product-unit.
+ *	 0	Success.
+ */
+static int
+basicInitConverterToProduct(
+    utUnit* const	unit)
+{
+    return productInitConverterToProduct((utUnit*)&unit->basic.productUnit);
+}
+
+
+/*
+ * Initializes the converter of numeric to the given product-unit from the
+ * underlying product-unit (i.e., to itself).
+ *
+ * Arguments:
+ *	unit	The product unit.
+ * Returns:
+ *	-1	Failure.  "status" is set:
+ *		    UT_INTERNAL	"unit" is NULL.
+ *		    UT_INTERNAL	"unit" is not a product-unit.
+ *	 0	Success.
+ */
+static int
+basicInitConverterFromProduct(
+    utUnit* const	unit)
+{
+    return productInitConverterFromProduct((utUnit*)&unit->basic.productUnit);
+}
+
+
+static UnitOps	basicOps = {
+    basicGetProduct,
+    basicClone,
+    basicToString,
+    basicFree,
+    basicCompare,
+    basicMultiply,
+    basicRaise,
+    basicInitConverterToProduct,
+    basicInitConverterFromProduct
+};
+
+
+/*******************************************************************************
+ * Product Unit:
+ ******************************************************************************/
+
+
+static ProductUnit*
+productGetProduct(
+    utUnit* const	unit)
+{
+    return &unit->product;
+}
+
+
+static int
+productToString(
+    const utUnit* const	unit,
+    char* const		buf,
+    const size_t	max,
+    const int		succinct,
+    const int		basic)
+{
+    return encodeProduct(unit, buf, max, succinct);
+}
+
+
+static utUnit*
+productClone(
+    utUnit* const	unit)
+{
+    utUnit*		clone;
+
+    if (unit == NULL) {
+	clone = NULL;
+	status = UT_INTERNAL;
+    }
+    else {
+	clone = 
+	    unit->common.inSystem
+		? unit
+		: (utUnit*)productNew(unit->common.system, unit->product.powers,
+		    unit->product.count);
+    }
+
+    return clone;
+}
+
+
+static int
+productCompare(
+    const utUnit* const	unit1,
+    const utUnit* const	unit2)
+{
+    const ProductUnit* const	product1 = &unit1->product;
+    const ProductUnit* const	product2 = &unit2->product;
+    int				result = product1->count - product2->count;
+
+    if (result == 0) {
+	const short* const	powers1	= product1->powers;
+	const short* const	powers2	= product2->powers;
+	int			i;
+
+	for (i = 0; i < product1->count; ++i) {
+	    result = powers1[i] - powers2[i];
+
+	    if (result != 0)
+		break;
+	}
+    }
+
+    return result;
+}
+
+
+static void
+productFree(
+    utUnit* const	unit)
+{
+    if (unit != NULL) {
+	if (!unit->common.inSystem) {
+	    free(unit->product.powers);
+	    free(unit);
+	}
+    }
+}
+
+
+/*
+ * Multiplies a product-unit by another unit.
+ *
+ * Arguments:
+ *	unit1	The product unit.
+ *	unit2	The other unit.
+ * Returns:
+ *	NULL	Failure.  "status" is set:
+ *		    UT_INTERNAL		"unit1" is NULL.
+ *		    UT_INTERNAL		"unit2" is NULL.
+ *		    UT_INTERNAL		"unit1" is not a product-unit.
+ *		    UT_MEANINGLESS	The operation on the given units is
+ *					meaningless.
+ *	else	The resulting unit.
+ */
+static utUnit*
+productMultiply(
+    utUnit* const	unit1,
+    utUnit* const	unit2)
+{
+    utUnit*		result = NULL;	/* failure */
+
+    if (unit1 == NULL || !IS_PRODUCT(unit1) || unit2 == NULL) {
+	status = UT_INTERNAL;
+    }
+    else {
+	const ProductUnit* const	product1 = &unit1->product;
+
+	if (!IS_PRODUCT(unit2)) {
+	    result = MULTIPLY(unit2, unit1);
+	}
+	else {
+	    const ProductUnit* const	product2 = &unit2->product;
+	    int				count1 = product1->count;
+	    int				count2 = product2->count;
+	    int				count =
+		count1 > count2 ? count1 : count2;
+	    short*			powers = malloc(sizeof(short)*count);
+
+	    if (powers == NULL) {
+		status = UT_OS;
+	    }
+	    else {
+		const short* const	powers1 = product1->powers;
+		const short* const	powers2 = product2->powers;
+		int			i;
+
+		for (i = 0; i < count; i++) {
+		    powers[i] = 0;
+
+		    if (i < count1)
+			powers[i] += powers1[i];
+		    if (i < count2)
+			powers[i] += powers2[i];
+		}
+
+		result =
+		    (utUnit*)productNew(unit1->common.system, powers, count);
+
+		free(powers);
+	    }				/* "powers" allocated */
+	}
+    }					/* valid arguments */
+
+    return result;
+}
+
+
+/*
+ * Returns the result of raising a product unit to a power.
+ *
+ * Arguments:
+ *	unit	The product unit.
+ *	power	The power.  Must be greater than -256 and less than 256.
+ * Returns:
+ *	NULL	Failure.  "status" is set:
+ *		    UT_INTERNAL		"unit" is NULL.
+ *		    UT_INTERNAL		"unit" is not a product-unit.
+ *		    UT_INTERNAL		"power" is out-of-range
+ *		    UT_MEANINGLESS	The operation on the given unit is
+ *					meaningless.
+ *	else	The resulting unit.
+ */
+static utUnit*
+productRaise(
+    utUnit* const	unit,
+    const int		power)
+{
+    utUnit*		result = NULL;	/* failure */
+
+    if (unit == NULL || !IS_PRODUCT(unit) || power < -255 || power > 255) {
+	status = UT_INTERNAL;
+    }
+    else {
+	const ProductUnit* const	product = &unit->product;
+
+	if (power == 0) {
+	    result = unit->common.system->one;
+	}
+	else if (power == 1) {
+	    result = productClone(unit);
+	}
+	else {
+	    int		count = product->count;
+	    short*	newPowers = malloc(sizeof(short)*count);
+
+	    if (newPowers == NULL) {
+		status = UT_OS;
+	    }
+	    else {
+		const short* const	oldPowers = product->powers;
+		int			i;
+
+		for (i = 0; i < count; i++)
+		    newPowers[i] = (short)(oldPowers[i] * power);
+
+		result =
+		    (utUnit*)productNew(unit->common.system, newPowers, count);
+
+		free(newPowers);
+	    }				/* "newPowers" allocated */
+	}				/* non-trivial power */
+    }					/* valid arguments */
+
+    return result;
+}
+
+
+/*
+ * Initializes a converter of numeric values between the given product-unit and
+ * the underlying product-unit (i.e., to itself).
+ *
+ * Arguments:
+ *	converter	Pointer to pointer to the converter to be initialized.
+ * Returns:
+ *	-1	Failure.  "status" is set:
+ *		    UT_INTERNAL	"unit" is NULL.
+ *		    UT_INTERNAL	"unit" is not a product-unit.
+ *	 0	Success.
+ */
+static int
+productInitConverter(
+    cvConverter** const	converter)
+{
+    int		retCode;
+
+    if (converter == NULL) {
+	status = UT_INTERNAL;
+	retCode = -1;
+    }
+    else {
+	*converter = cvGetTrivial();
+	retCode = 0;
+    }
+
+    return retCode;
+}
+
+
+/*
+ * Initializes the converter of numeric values from the given product-unit to
+ * the underlying product-unit (i.e., to itself).
+ *
+ * Arguments:
+ *	unit	The product unit.
+ * Returns:
+ *	-1	Failure.  "status" is set:
+ *		    UT_INTERNAL	"unit" is NULL.
+ *		    UT_INTERNAL	"unit" is not a product-unit.
+ *	 0	Success.
+ */
+static int
+productInitConverterToProduct(
+    utUnit* const	unit)
+{
+    return productInitConverter(&unit->common.toProduct);
+}
+
+
+/*
+ * Initializes the converter of numeric values to the given product-unit from
+ * the underlying product-unit (i.e., to itself).
+ *
+ * Arguments:
+ *	unit	The product unit.
+ * Returns:
+ *	-1	Failure.  "status" is set:
+ *		    UT_INTERNAL	"unit" is NULL.
+ *		    UT_INTERNAL	"unit" is not a product-unit.
+ *	 0	Success.
+ */
+static int
+productInitConverterFromProduct(
+    utUnit* const	unit)
+{
+    return productInitConverter(&unit->common.fromProduct);
+}
+
+
+/*
+ * Returns the relationship between two product-units.  In determining the
+ * relationship, dimensionless basic units are ignored.
+ *
+ * Arguments:
+ *	unit1	The first product unit.
+ *	unit2	The second product unit.
+ * Returns:
+ *	PRODUCT_EQUAL		The units are equal -- ignoring dimensionless
+ *				basic units.
+ *	PRODUCT_INVERSE		The units are reciprocals of each other.
+ *	PRODUCT_UNCONVERTIBLE	The dimensionalities of the units are
+ *				unconvertible.
+ *	PRODUCT_UNKNOWN		An error occurred.  "status" will be:
+ *	    UT_INTERNAL		    "unit1" is NULL.
+ *	    UT_INTERNAL		    "unit2" is NULL.
+ */
+static ProductRelationship
+productRelationship(
+    const ProductUnit* const	unit1,
+    const ProductUnit* const	unit2)
+{
+    ProductRelationship		relationship = PRODUCT_UNKNOWN;
+
+    if (unit1 == NULL || unit2 == NULL) {
+	status = UT_INTERNAL;
+    }
+    else {
+	const short* const	powers1 = unit1->powers;
+	const short* const	powers2 = unit2->powers;
+	const int		count1 = unit1->count;
+	const int		count2 = unit2->count;
+	int			count = count1 < count2 ? count1 : count2;
+	const utSystem* const	system = unit1->common.system;
+	int			i;
+
+	for (i = 0; i < count; i++) {
+	    if (!system->basicUnits[i]->isDimensionless &&
+		    (powers1[i] != 0 || powers2[i] != 0)) {
+		if (powers1[i] == powers2[i]) {
+		    if (relationship == PRODUCT_INVERSE)
+			break;
+
+		    relationship = PRODUCT_EQUAL;
+		}
+		else if (powers1[i] == -powers2[i]) {
+		    if (relationship == PRODUCT_EQUAL)
+			break;
+
+		    relationship = PRODUCT_INVERSE;
+		}
+		else {
+		    break;
+		}
+	    }
+	}
+
+	if (i < count) {
+	    /*
+	     * The loop terminated prematurely.  The dimensionalities are
+	     * unconvertible.
+	     */
+	    relationship = PRODUCT_UNCONVERTIBLE;
+	}
+	else {
+	    /*
+             * The initial, common basic-units that constitute the two
+             * product-units are compatible.  The dimensionfulness of the
+             * remaining basic-units in the product-unit with more basic-units
+             * is now checked.
+	     */
+	    const short*	powers;
+
+	    if (count1 < count2) {
+		powers = powers2;
+		count = count2;
+	    }
+	    else {
+		powers = powers1;
+		count = count1;
+	    }
+
+	    for (; i < count; i++) {
+		if (!system->basicUnits[i]->isDimensionless && powers[i] != 0)
+		    break;
+	    }
+
+	    if (i < count) {
+		/*
+		 * An extra basic unit is dimensionful.
+		 */
+		relationship = PRODUCT_UNCONVERTIBLE;
+	    }
+	    else if (relationship == PRODUCT_UNKNOWN) {
+		/*
+		 * Both units are dimensionless.
+		 */
+		relationship = PRODUCT_EQUAL;
+	    }
+	}			/* initial basic units are convertible */
+    }				/* valid arguments */
+
+    return relationship;
+}
+
+
+static UnitOps	productOps = {
+    productGetProduct,
+    productClone,
+    productToString,
+    productFree,
+    productCompare,
+    productMultiply,
+    productRaise,
+    productInitConverterToProduct,
+    productInitConverterFromProduct
+};
+
+
+/*
+ * Arguments:
+ *	system	The unit-system for the new unit.
+ *	powers	Pointer to array of powers.  Client may free upon return.
+ *	count	The number of elements in "powers".
+ * Returns:
+ *	NULL	Failure.  "status" is set:
+ *		    UT_INTERNAL	"count > 0 && powers == NULL".
+ *		    UT_INTERNAL	"count" < 0
+ *		    UT_INTERNAL	"unit->common.system" is NULL
+ *		    UT_OS	Operating-system error.  See "errno".
+ *	else	The newly-allocated, product-unit.
+ */
+static ProductUnit*
+productNew(
+    utSystem* const	system,
+    const short* const	powers,
+    const int		count)
+{
+    ProductUnit*	productUnit;
+
+    if (system == NULL || (count > 0 && powers == NULL) || count < 0) {
+	status = UT_INTERNAL;
+	productUnit = NULL;
+    }
+    else {
+	int	error = 1;
+
+	productUnit = malloc(sizeof(ProductUnit));
+
+	if (productUnit == NULL) {
+	    status = UT_OS;
+	}
+	else {
+	    if (commonInit(&productUnit->common, &productOps, system, PRODUCT)
+		    == 0) {
+		size_t	nbytes = sizeof(short)*count;
+		short*	newPowers = malloc(nbytes);
+
+		if (count == 0 || newPowers != NULL) {
+		    productUnit->powers = memcpy(newPowers, powers, nbytes);
+		    productUnit->count = count;
+		    error = 0;
+		}
+	    }
+
+	    if (error) {
+		free(productUnit);
+		productUnit = NULL;
+	    }
+	}				/* "productUnit" allocated */
+    }					/* valid arguments */
+
+    return productUnit;
+}
+
+
+/*******************************************************************************
+ * Galilean Unit:
+ ******************************************************************************/
+
+
+static ProductUnit*
+galileanGetProduct(
+    utUnit* const	unit)
+{
+    return GET_PRODUCT(unit->galilean.unit);
+}
+
+
+static int
+galileanToString(
+    const utUnit* const	unit,
+    char* 		buf,
+    size_t		max,
+    const int		succinct,
+    const int		basic)
+{
+    const GalileanUnit* const	galileanUnit = &unit->galilean;
+    int				n;
+    int				nchar = 0;
+
+    if (galileanUnit->scale != 1) {
+	n = snprintf(buf, max, "%.*g ", DBL_DIG, galileanUnit->scale);
+
+	if (n < 0) {
+	    nchar = n;
+	}
+	else {
+	    nchar += n;
+	    buf += n;
+	    max -= n;
+	}
+    }
+
+    if (nchar >= 0) {
+	char	tmp[512];
+
+	n  = toString(galileanUnit->unit, tmp, sizeof(tmp)-1, succinct, basic);
+
+	if (n < 0) {
+	    nchar = n;
+	}
+	else {
+	    tmp[n] = 0;
+	    n = needsParentheses(tmp)
+		    ? snprintf(buf, max, "(%s)", tmp)
+		    : snprintf(buf, max, "%s", tmp);
+
+	    if (n < 0) {
+		nchar = n;
+	    }
+	    else {
+		nchar += n;
+		buf += n;
+		max -= n;
+
+		if (galileanUnit->offset != 0) {
+		    n = succinct
+			? snprintf(buf, max, " @ %.*g", DBL_DIG,
+			    galileanUnit->offset)
+			: snprintf(buf, max, " from %.*g", DBL_DIG,
+			    galileanUnit->offset);
+
+		    if (n < 0) {
+			nchar = n;
+		    }
+		    else {
+			nchar += n;
+			buf += n;
+			max -= n;
+		    }
+		}			/* offset printed if appropriate */
+	    }				/* underlying unit ID printed */
+	}				/* underlying unit ID obtained */
+    }					/* scale printed if appropriate */
+
+    return nchar;
+}
+
+
+static utUnit*
+galileanClone(
+    utUnit* const	unit)
+{
+    utUnit*		clone;
+
+    if (unit == NULL) {
+	clone = NULL;
+	status = UT_INTERNAL;
+    }
+    else {
+	const GalileanUnit* const	galileanUnit = &unit->galilean;
+
+	clone = 
+	    unit->common.inSystem
+		? unit
+		: galileanNew(galileanUnit->scale, galileanUnit->unit,
+		    galileanUnit->offset);
+    }
+
+    return clone;
+}
+
+
+static int
+galileanCompare(
+    const utUnit* const	unit1,
+    const utUnit* const	unit2)
+{
+    const GalileanUnit* const	galilean1 = &unit1->galilean;
+    const GalileanUnit* const	galilean2 = &unit2->galilean;
+    int				result =
+	galilean1->offset < galilean2->offset
+	    ? -1
+	    : galilean1->offset == galilean2->offset
+		? 0
+		: -1;
+
+    if (result == 0) {
+	result =
+	    galilean1->scale < galilean2->scale
+		? -1
+		: galilean1->scale == galilean2->scale
+		    ? 0
+		    : -1;
+
+	if (result == 0)
+	    result = COMPARE(galilean1->unit, galilean2->unit);
+    }
+
+    return result;
+}
+
+
+static void
+galileanFree(
+    utUnit* const	unit)
+{
+    if (unit != NULL) {
+	if (!unit->common.inSystem) {
+	    FREE(unit->galilean.unit);
+	    free((void*)unit);
+	}
+    }
+}
+
+
+/*
+ * Multiplies a Galilean-unit by another unit.  Any offset is ignored.
+ *
+ * Arguments:
+ *	unit1	The Galilean-unit.
+ *	unit2	The other unit.
+ * Returns:
+ *	NULL	Failure.  "status" is set:
+ *		    UT_INTERNAL		"unit1" is NULL.
+ *		    UT_INTERNAL		"unit2" is NULL.
+ *		    UT_INTERNAL		"unit1" is not a Galilean-unit.
+ *		    UT_MEANINGLESS	The operation on the given units is
+ *					meaningless.
+ *	else	The resulting unit.
+ */
+static utUnit*
+galileanMultiply(
+    utUnit* const	unit1,
+    utUnit* const	unit2)
+{
+    utUnit*	result = NULL;	/* failure */
+
+    if (unit1 == NULL || !IS_GALILEAN(unit1) || unit2 == NULL) {
+	status = UT_INTERNAL;
+    }
+    else {
+	const GalileanUnit* const	galilean1 = &unit1->galilean;
+
+	if (IS_PRODUCT(unit2)) {
+	    result = galileanNew(galilean1->scale, 
+		MULTIPLY(galilean1->unit, unit2), 0);
+	}
+	else if (IS_GALILEAN(unit2)) {
+	    const GalileanUnit* const	galilean2 = &unit2->galilean;
+
+	    result = galileanNew(galilean1->scale * galilean2->scale, 
+		MULTIPLY(galilean1->unit, galilean2->unit), 0);
+	}
+	else {
+	    result = MULTIPLY(unit2, unit1);
+	}
+    }					/* valid arguments */
+
+    return result;
+}
+
+
+/*
+ * Returns the result of raising a Galilean-unit to a power.  Any offset is
+ * ignored.
+ *
+ * Arguments:
+ *	unit	The Galilean-unit.
+ *	power	The power.  Must be greater than -256 and less than 256.
+ * Returns:
+ *	NULL	Failure.  "status" is set:
+ *		    UT_INTERNAL		"unit" is NULL.
+ *		    UT_INTERNAL		"unit" is not a Galilean-unit.
+ *		    UT_INTERNAL		"power" is out-of-range.
+ *		    UT_MEANINGLESS	The operation on the given units is
+ *					meaningless.
+ *	else	The resulting unit.
+ */
+static utUnit*
+galileanRaise(
+    utUnit* const	unit,
+    const int		power)
+{
+    utUnit*	result = NULL;	/* failure */
+
+    if (unit == NULL || !IS_GALILEAN(unit) || power < -255 || power > 255) {
+	status = UT_INTERNAL;
+    }
+    else {
+	const GalileanUnit* const	galilean = &unit->galilean;
+
+	if (power == 0) {
+	    result = unit->common.system->one;
+	}
+	else {
+	    result = galileanNew(pow(galilean->scale, power),
+		RAISE(galilean->unit, power), 0);
+	}
+    }					/* valid arguments */
+
+    return result;
+}
+
+
+/*
+ * Initializes the converter of numeric values from the given Galilean unit to
+ * the underlying product-unit.
+ *
+ * Arguments:
+ *	unit	The Galilean unit.
+ * Returns:
+ *	-1	Failure.  "status" is set:
+ *		    UT_INTERNAL		"unit" is NULL.
+ *		    UT_INTERNAL		"unit" is not a Galilean-unit.
+ *		    UT_OS		Operating-system fault.  See "errno".
+ *	0	Success.
+ */
+static int
+galileaninitConverterToProduct(
+    utUnit* const	unit)
+{
+    int			retCode = -1;	/* failure */
+
+    if (unit == NULL || !IS_GALILEAN(unit)) {
+	status = UT_INTERNAL;
+    }
+    else {
+	cvConverter* const	toUnderlying = cvGetGalilean(
+	    unit->galilean.scale, unit->galilean.offset * unit->galilean.scale);
+
+	if (toUnderlying == NULL) {
+	    status = UT_OS;
+	}
+	else {
+	    if (ENSURE_CONVERTER_TO_PRODUCT(unit->galilean.unit)) {
+		assert(unit->common.toProduct == NULL);
+
+		unit->common.toProduct = cvCombine(
+		    toUnderlying, unit->galilean.unit->common.toProduct);
+
+		if (unit->common.toProduct == NULL) {
+		    status = UT_OS;
+		}
+		else {
+		    retCode = 0;
+		}
+	    }
+
+	    cvFree(toUnderlying);
+	}				/* "toUnderlying" allocated */
+    }					/* valid arguments */
+
+    return retCode;
+}
+
+
+/*
+ * Initializes the converter of numeric values to the given Galilean unit from
+ * the underlying product-unit.
+ *
+ * Arguments:
+ *	unit	The Galilean unit.
+ * Returns:
+ *	-1	Failure.  "status" is set:
+ *		    UT_INTERNAL		"unit" is NULL.
+ *		    UT_INTERNAL		"unit" is not a Galilean-unit.
+ *		    UT_OS		Operating-system fault.  See "errno".
+ *	0	Success.
+ */
+static int
+galileaninitConverterFromProduct(
+    utUnit* const	unit)
+{
+    int		retCode = -1;		/* failure */
+
+    if (unit == NULL || !IS_GALILEAN(unit)) {
+	status = UT_INTERNAL;
+    }
+    else {
+	cvConverter* const	fromUnderlying = cvGetGalilean(
+	    1.0/unit->galilean.scale, -unit->galilean.offset);
+
+	if (fromUnderlying == NULL) {
+	    status = UT_OS;
+	}
+	else {
+	    if (ENSURE_CONVERTER_FROM_PRODUCT(unit->galilean.unit)) {
+		assert(unit->common.fromProduct == NULL);
+
+		unit->common.fromProduct = cvCombine(
+		    unit->galilean.unit->common.fromProduct, fromUnderlying);
+
+		if (unit->common.fromProduct == NULL) {
+		    status = UT_OS;
+		}
+		else {
+		    retCode = 0;
+		}
+	    }
+
+	    cvFree(fromUnderlying);
+	}				/* "fromUnderlying" allocated */
+    }					/* valid arguments */
+
+    return retCode;
+}
+
+
+static UnitOps	galileanOps = {
+    galileanGetProduct,
+    galileanClone,
+    galileanToString,
+    galileanFree,
+    galileanCompare,
+    galileanMultiply,
+    galileanRaise,
+    galileaninitConverterToProduct,
+    galileaninitConverterFromProduct
+};
+
+
+/*
+ * Returns a new unit instance.  The returned instance is not necessarily a
+ * Galilean unit.
+ *
+ * Arguments:
+ *	scale	The scale-factor for the new unit.
+ *	unit	The underlying unit.  May be freed upon return.
+ *	offset	The offset for the new unit.
+ * Returns:
+ *	NULL	Failure.  "status" is set:
+ *		    UT_INTERNAL	"scale == 0"
+ *		    UT_INTERNAL	"unit" is NULL
+ *		    UT_OS	Operating-system error.  See "errno".
+ *	else	The newly-allocated, galilean-unit.
+ */
+static utUnit*
+galileanNew(
+    double	scale,
+    utUnit*	unit,
+    double	offset)
+{
+    utUnit*	newUnit = NULL;	/* failure */
+
+    if (scale == 0 || unit == NULL) {
+	status = UT_INTERNAL;
+    }
+    else {
+	if (IS_GALILEAN(unit)) {
+	    scale *= unit->galilean.scale;
+	    offset += (unit->galilean.scale * unit->galilean.offset) / scale;
+	    unit = unit->galilean.unit;
+	}
+
+	if (scale == 1 && offset == 0) {
+	    newUnit = CLONE(unit);
+	}
+	else {
+	    GalileanUnit*	galileanUnit = malloc(sizeof(GalileanUnit));
+
+	    if (galileanUnit == NULL) {
+		status = UT_OS;
+	    }
+	    else {
+		int	error = 1;
+
+		if (commonInit(&galileanUnit->common, &galileanOps,
+			unit->common.system, GALILEAN) == 0) {
+		    galileanUnit->scale = scale;
+		    galileanUnit->offset = offset;
+		    galileanUnit->unit = CLONE(unit);
+		    error = 0;
+		}
+
+		if (error) {
+		    free(galileanUnit);
+		    galileanUnit = NULL;
+		}
+	    }				/* "galileanUnit" allocated */
+
+	    newUnit = (utUnit*)galileanUnit;
+	}				/* Galilean unit necessary */
+    }					/* valid arguments */
+
+    return newUnit;
+}
+
+
+/*******************************************************************************
+ * Timestamp Unit:
+ ******************************************************************************/
+
+
+static ProductUnit*
+timestampGetProduct(
+    utUnit* const	unit)
+{
+    return GET_PRODUCT(unit->timestamp.unit);
+}
+
+
+static int
+timestampToString(
+    const utUnit* const	unit,
+    char* 		buf,
+    size_t		max,
+    const int		succinct,
+    const int		basic)
+{
+    const TimestampUnit* const	timestampUnit = &unit->timestamp;
+    int				n;
+    int				nchar = 0;
+    char			tmp[512];
+
+    n = toString(timestampUnit->unit, tmp, sizeof(tmp)-1, succinct, basic);
+
+    if (n < 0) {
+	nchar = n;
+    }
+    else {
+	nchar += n;
+	tmp[n] = 0;
+	n = needsParentheses(tmp)
+		? snprintf(buf, max, "(%s)", tmp)
+		: snprintf(buf, max, "%s", tmp);
+
+	if (n < 0) {
+	    nchar = n;
+	}
+	else {
+	    int		year, month, day, hour, minute;
+	    double	second;
+
+	    nchar += n;
+	    buf += n;
+	    max -= n;
+
+	    decodeTime(timestampUnit->origin, &year, &month, &day, &hour,
+		&minute, &second);
+
+	    n = succinct
+		? snprintf(buf, max, " @ %d%02d%02dT%02d%02d",
+		    year, month, day, hour, minute)
+		: snprintf(buf, max, " since %d-%02d-%02d %02d:%02d",
+		    year, month, day, hour, minute);
+
+	    if (n < 0) {
+		nchar = n;
+	    }
+	    else {
+		int         ndigsec;        /* precision of "second" in
+					     * number of digits */
+
+		nchar += n;
+		buf += n;
+		max -= n;
+		ndigsec     = DBL_DIG -
+		    (int)ceil(log10(ABS(timestampUnit->origin /
+					     encodeClock(0, 0, 1.0))));
+		ndigsec     = MIN(ndigsec, DBL_DIG);
+
+		if (ndigsec > 0) {
+		    int	precision = MAX(0, ndigsec-2);
+
+		    n = succinct
+			? snprintf(buf, max, "%0*.*f", precision+3, precision,
+			    second)
+			: snprintf(buf, max, ":%0*.*f", precision+3, precision,
+			    second);
+
+		    if (n < 0) {
+			nchar = n;
+		    }
+		    else {
+			nchar += n;
+			buf += n;
+			max -= n;
+		    }
+		}			/* sufficient precision for seconds */
+
+		if (nchar >= 0) {
+		    n = snprintf(buf, max, " UTC");
+
+		    if (n < 0) {
+			nchar = n;
+		    }
+		    else {
+			nchar += n;
+			buf += n;
+			max -= n;
+		    }
+		}			/* printed " UTC" */
+	    }				/* printed " since YYYY-MM-DD hh:mm" */
+	}				/* printed underlying unit definition */
+    }					/* got underlying unit definition */
+
+    return nchar;
+}
+
+
+static utUnit*
+timestampClone(
+    utUnit* const	unit)
+{
+    utUnit*		clone;
+
+    if (unit == NULL) {
+	clone = NULL;
+	status = UT_INTERNAL;
+    }
+    else {
+	clone = 
+	    unit->common.inSystem
+		? unit
+		: timestampNewOrigin(
+		    unit->timestamp.unit, unit->timestamp.origin);
+    }
+
+    return clone;
+}
+
+
+static int
+timestampCompare(
+    const utUnit* const	unit1,
+    const utUnit* const	unit2)
+{
+    const TimestampUnit* const	timestamp1 = &unit1->timestamp;
+    const TimestampUnit* const	timestamp2 = &unit2->timestamp;
+    int				result =
+	timestamp1->origin < timestamp2->origin
+	    ? -1
+	    : timestamp1->origin == timestamp2->origin
+		? 0
+		: -1;
+
+    if (result == 0)
+	result = COMPARE(timestamp1->unit, timestamp2->unit);
+
+    return result;
+}
+
+
+static void
+timestampFree(
+    utUnit* const	unit)
+{
+    if (unit != NULL) {
+	if (!unit->common.inSystem) {
+	    FREE(unit->timestamp.unit);
+	    free((void*)unit);
+	}
+    }
+}
+
+
+/*
+ * Multiplies a timestamp-unit by another unit.  The origin is ignored.
+ *
+ * Arguments:
+ *	unit1	The timestamp-unit.
+ *	unit2	The other unit.
+ * Returns:
+ *	NULL	Failure.  "status" is set:
+ *		    UT_INTERNAL		"unit1" is NULL.
+ *		    UT_INTERNAL		"unit2" is NULL.
+ *		    UT_INTERNAL		"unit1" is not a timestamp-unit.
+ *		    UT_MEANINGLESS	The operation on the given units is
+ *					meaningless.
+ *	else	The resulting unit.
+ */
+static utUnit*
+timestampMultiply(
+    utUnit* const	unit1,
+    utUnit* const	unit2)
+{
+    utUnit*	result = NULL;	/* failure */
+
+    if (unit1 == NULL || !IS_TIMESTAMP(unit1) || unit2 == NULL) {
+	status = UT_INTERNAL;
+    }
+    else {
+	result = MULTIPLY(unit1->timestamp.unit, unit2);
+    }					/* valid arguments */
+
+    return result;
+}
+
+
+/*
+ * Returns the result of raising a Timestamp-unit to a power.  The origin is
+ * ignored.
+ *
+ * Arguments:
+ *	unit	The Timestamp-unit.
+ *	power	The power.  Must be greater than -256 and less than 256.
+ * Returns:
+ *	NULL	Failure.  "status" is set:
+ *		    UT_INTERNAL		"unit" is NULL.
+ *		    UT_INTERNAL		"unit" is not a Timestamp-unit.
+ *		    UT_INTERNAL		"power" is out-of-range.
+ *		    UT_MEANINGLESS	The operation on the given units is
+ *					meaningless.
+ *	else	The resulting unit.
+ */
+static utUnit*
+timestampRaise(
+    utUnit* const	unit,
+    const int		power)
+{
+    utUnit*	result = NULL;	/* failure */
+
+    if (unit == NULL || !IS_TIMESTAMP(unit) || power < -255 || power > 255) {
+	status = UT_INTERNAL;
+    }
+    else {
+	result = RAISE(unit->timestamp.unit, power);
+    }					/* valid arguments */
+
+    return result;
+}
+
+
+/*
+ * Initializes the converter of numeric values from the given Timestamp unit to
+ * the underlying product-unit.
+ *
+ * Arguments:
+ *	unit	The Timestamp unit.
+ * Returns:
+ *	-1	Failure.  "status" is set:
+ *		    UT_INTERNAL		"unit" is NULL.
+ *		    UT_INTERNAL		"unit" is not a Timestamp-unit.
+ *		    UT_OS		Operating-system fault.  See "errno".
+ *	0	Success.
+ */
+static int
+timestampinitConverterToProduct(
+    utUnit* const	unit)
+{
+    int			retCode = -1;	/* failure */
+
+    if (unit == NULL || !IS_TIMESTAMP(unit)) {
+	status = UT_INTERNAL;
+    }
+    else {
+	cvConverter* const	toUnderlying =
+	    cvGetGalilean(1.0, unit->timestamp.origin);
+
+	if (toUnderlying == NULL) {
+	    status = UT_OS;
+	}
+	else {
+	    if (ENSURE_CONVERTER_TO_PRODUCT(unit->timestamp.unit)) {
+		assert(unit->common.toProduct == NULL);
+
+		unit->common.toProduct = cvCombine(
+		    toUnderlying, unit->timestamp.unit->common.toProduct);
+
+		if (unit->common.toProduct == NULL) {
+		    status = UT_OS;
+		}
+		else {
+		    retCode = 0;
+		}
+	    }
+
+	    cvFree(toUnderlying);
+	}				/* "toUnderlying" allocated */
+    }					/* valid arguments */
+
+    return retCode;
+}
+
+
+/*
+ * Initializes the converter of numeric values to the given Timestamp unit from
+ * the underlying product-unit.
+ *
+ * Arguments:
+ *	unit	The Timestamp unit.
+ * Returns:
+ *	-1	Failure.  "status" is set:
+ *		    UT_INTERNAL		"unit" is NULL.
+ *		    UT_INTERNAL		"unit" is not a Timestamp-unit.
+ *		    UT_OS		Operating-system fault.  See "errno".
+ *	0	Success.
+ */
+static int
+timestampinitConverterFromProduct(
+    utUnit* const	unit)
+{
+    int		retCode = -1;		/* failure */
+
+    if (unit == NULL || !IS_TIMESTAMP(unit)) {
+	status = UT_INTERNAL;
+    }
+    else {
+	cvConverter* const	fromUnderlying =
+	    cvGetGalilean(1.0, -unit->timestamp.origin);
+
+	if (fromUnderlying == NULL) {
+	    status = UT_OS;
+	}
+	else {
+	    if (ENSURE_CONVERTER_FROM_PRODUCT(unit->timestamp.unit)) {
+		assert(unit->common.fromProduct == NULL);
+
+		unit->common.fromProduct = cvCombine(
+		    unit->timestamp.unit->common.fromProduct, fromUnderlying);
+
+		if (unit->common.fromProduct == NULL) {
+		    status = UT_OS;
+		}
+		else {
+		    retCode = 0;
+		}
+	    }
+
+	    cvFree(fromUnderlying);
+	}				/* "fromUnderlying" allocated */
+    }					/* valid arguments */
+
+    return retCode;
+}
+
+
+static UnitOps	timestampOps = {
+    timestampGetProduct,
+    timestampClone,
+    timestampToString,
+    timestampFree,
+    timestampCompare,
+    timestampMultiply,
+    timestampRaise,
+    timestampinitConverterToProduct,
+    timestampinitConverterFromProduct
+};
+
+
+/*
+ * Returns a new unit instance.
+ *
+ * Arguments:
+ *	unit	The underlying unit.  May be freed upon return.
+ *	origin	The timestamp origin.
+ * Returns:
+ *	NULL	Failure.  "status" is set:
+ *		    UT_INTERNAL		"unit" is NULL
+ *		    UT_OS		Operating-system error.  See "errno".
+ *		    UT_MEANINGLESS	Creation of a timestamp unit base on
+ *					"unit" is not meaningful.
+ *		    UT_NOSECOND		The associated unit-system doesn't
+ *					contain a unit named "second".
+ *	else	The newly-allocated, timestamp-unit.
+ */
+static utUnit*
+timestampNewOrigin(
+    utUnit*		unit,
+    const double	origin)
+{
+    utUnit*	newUnit = NULL;	/* failure */
+
+    if (unit == NULL) {
+	status = UT_INTERNAL;
+    }
+    if (IS_TIMESTAMP(unit)) {
+	status = UT_MEANINGLESS;
+    }
+    else {
+	if (secondUnit == NULL) {
+	    secondUnit = utGetUnitByName(unit->common.system, "second");
+
+	    if (secondUnit == NULL && status == UT_NOUNIT)
+		status = UT_NOSECOND;
+	}
+	if (secondUnit != NULL) {
+	    if (utAreConvertible(secondUnit, unit)) {
+		TimestampUnit*	timestampUnit = malloc(sizeof(TimestampUnit));
+
+		if (timestampUnit == NULL) {
+		    status = UT_OS;
+		}
+		else {
+		    if (commonInit(&timestampUnit->common, &timestampOps,
+			    unit->common.system, TIMESTAMP) == 0) {
+			timestampUnit->origin = origin;
+			timestampUnit->unit = CLONE(unit);
+		    }
+		    else {
+			free(timestampUnit);
+			timestampUnit = NULL;
+		    }
+		}			/* "timestampUnit" allocated */
+
+		newUnit = (utUnit*)timestampUnit;
+	    }				/* "unit" is time unit */
+	}				/* "secondUnit != NULL" */
+    }					/* valid arguments */
+
+    return newUnit;
+}
+
+
+/*
+ * Returns a new unit instance.
+ *
+ * Arguments:
+ *	unit	The underlying unit.  May be freed upon return.
+ *	year	The year of the origin.
+ *	month	The month of the origin.
+ *	day	The day of the origin.
+ *	hour	The hour of the origin.
+ *	minute	The minute of the origin.
+ *	second	The second of the origin.
+ * Returns:
+ *	NULL	Failure.  "status" is set:
+ *		    UT_INTERNAL		"unit" is NULL
+ *		    UT_OS		Operating-system error.  See "errno".
+ *		    UT_MEANINGLESS	Creation of a timestamp unit base on
+ *					"unit" is not meaningful.
+ *		    UT_NOSECOND		The associated unit-system doesn't
+ *					contain a unit named "second".
+ *	else	The newly-allocated, timestamp-unit.
+ */
+static utUnit*
+timestampNew(
+    utUnit*	unit,
+    const int	year,
+    const int	month,
+    const int	day,
+    const int	hour,
+    const int	minute,
+    double	second)
+{
+    return timestampNewOrigin(
+	unit, encodeTime(year, month, day, hour, minute, second));
+}
+
+
+/*******************************************************************************
+ * Logarithmic Unit:
+ ******************************************************************************/
+
+
+static ProductUnit*
+logGetProduct(
+    utUnit* const	unit)
+{
+    return GET_PRODUCT(unit->log.reference);
+}
+
+
+static int
+logToString(
+    const utUnit* const	unit,
+    char* const		buf,
+    const size_t	max,
+    const int		succinct,
+    const int		basic)
+{
+    char		tmp[512];
+    const LogUnit*	logUnit = &unit->log;
+    int			nchar;
+    int			n = 
+	toString(logUnit->reference, tmp, sizeof(tmp), succinct, basic);
+
+    if (n < 0) {
+	nchar = n;
+    }
+    else {
+	tmp[n] = 0;
+
+	if (n > 0 && isalpha(tmp[0])) {
+	    if (logUnit->logE == 1) {
+		nchar = snprintf(buf, max, "ln(re 1 %s)", tmp);
+	    }
+	    else if (logUnit->logE == M_LOG2E) {
+		nchar = snprintf(buf, max, "lb(re 1 %s)", tmp);
+	    }
+	    else if (logUnit->logE == M_LOG10E) {
+		nchar = snprintf(buf, max, "lg(re 1 %s)", tmp);
+	    }
+	    else {
+		nchar = snprintf(buf, max, "%.*g ln(re 1 %s)", DBL_DIG,
+		    logUnit->logE, tmp);
+	    }
+	}
+	else {
+	    if (logUnit->logE == 1) {
+		nchar = snprintf(buf, max, "ln(re %s)", tmp);
+	    }
+	    else if (logUnit->logE == M_LOG2E) {
+		nchar = snprintf(buf, max, "lb(re %s)", tmp);
+	    }
+	    else if (logUnit->logE == M_LOG10E) {
+		nchar = snprintf(buf, max, "lg(re %s)", tmp);
+	    }
+	    else {
+		nchar = snprintf(buf, max, "%.*g ln(re %s)", DBL_DIG,
+		    logUnit->logE, tmp);
+	    }
+	}
+    }
+
+    return nchar;
+}
+
+
+static utUnit*
+logClone(
+    utUnit* const	unit)
+{
+    utUnit*		clone;
+
+    if (unit == NULL) {
+	clone = NULL;
+	status = UT_INTERNAL;
+    }
+    else {
+	clone =
+	    unit->common.inSystem
+		? unit
+		: logNew(unit->log.logE, unit->log.reference);
+    }
+
+    return clone;
+}
+
+
+static int
+logCompare(
+    const utUnit* const	unit1,
+    const utUnit* const	unit2)
+{
+    const LogUnit* const	u1 = &unit1->log;
+    const LogUnit* const	u2 = &unit2->log;
+    int				result =
+	utCompare(u1->reference, u2->reference);
+
+    if (result == 0)
+	result =
+	    u1->logE < u2->logE
+		? -1
+		: u1->logE == u2->logE
+		    ? 0
+		    : 1;
+
+    return result;
+}
+
+
+static void
+logFree(
+    utUnit* const	unit)
+{
+    if (unit != NULL) {
+	if (!unit->common.inSystem) {
+	    FREE(unit->log.reference);
+	    free((void*)unit);
+	}
+    }
+}
+
+
+/*
+ * Multiplies a logarithmic-unit by another unit.
+ *
+ * Arguments:
+ *	unit1	The logarithmic-unit.
+ *	unit2	The other unit.
+ * Returns:
+ *	NULL	Failure.  "status" is set:
+ *		    UT_INTERNAL		"unit1" is NULL.
+ *		    UT_INTERNAL		"unit2" is NULL.
+ *		    UT_INTERNAL		"unit1" is not a logarithmic-unit.
+ *		    UT_MEANINGLESS	The operation on the given units is
+ *					meaningless.
+ *	else	The resulting unit.
+ */
+static utUnit*
+logMultiply(
+    utUnit* const	unit1,
+    utUnit* const	unit2)
+{
+    utUnit*	result;
+
+    if (unit1 == NULL || unit2 == NULL || !IS_LOG(unit1)) {
+	result = NULL;
+	status = UT_INTERNAL;
+    }
+    else {
+	/*
+	 * Because a logarithmic unit is dimensionless, the result is simply
+	 * a scaling of the other unit.
+	 */
+	result = galileanNew(1.0/unit1->log.logE, unit2, 0.0);
+    }
+
+    return result;
+}
+
+
+/*
+ * Returns the result of raising a logarithmic-unit to a power.
+ *
+ * Arguments:
+ *	unit	The logarithmic-unit.
+ *	power	The power.  Must be greater than -256 and less than 256.
+ * Returns:
+ *	NULL	Failure.  "status" is set:
+ *		    UT_INTERNAL		"unit" is NULL.
+ *		    UT_INTERNAL		"unit" is not a logarithmic-unit.
+ *		    UT_INTERNAL		"power" is out-of-range.
+ *		    UT_MEANINGLESS	The operation on the given units is
+ *					meaningless.
+ *	else	The resulting unit.
+ */
+static utUnit*
+logRaise(
+    utUnit* const	unit,
+    const int		power)
+{
+    utUnit*	result;
+
+    if (unit == NULL || !IS_LOG(unit) || power < -255 || power > 255) {
+	result = NULL;
+	status = UT_INTERNAL;
+    }
+    else {
+	if (power == 0) {
+	    result = unit->common.system->one;
+	}
+	else {
+	    /*
+	     * Because a logarithmic unit is dimensionless, the result is simply
+	     * a scaling of the dimensionless-unit one.
+	     */
+	    result = galileanNew(pow(unit->log.logE, -power),
+		unit->common.system->one, 0.0);
+	}
+    }
+
+    return result;
+}
+
+
+/*
+ * Initializes the converter of numeric values from the given logarithmic unit
+ * to the underlying product-unit.
+ *
+ * Arguments:
+ *	unit	The logarithmic unit.
+ * Returns:
+ *	-1	Failure.  "status" is set:
+ *		    UT_INTERNAL		"unit" is NULL.
+ *		    UT_INTERNAL		"unit" is not a logarithmic-unit.
+ *		    UT_OS		Operating-system fault.  See "errno".
+ *	0	Success.
+ */
+static int
+loginitConverterToProduct(
+    utUnit* const	unit)
+{
+    int			retCode = -1;		/* failure */
+
+    if (unit == NULL || !IS_LOG(unit)) {
+	status = UT_INTERNAL;
+    }
+    else {
+	cvConverter* const	toUnderlying = cvGetExp(unit->log.logE);
+
+	if (toUnderlying == NULL) {
+	    status = UT_OS;
+	}
+	else {
+	    if (ENSURE_CONVERTER_TO_PRODUCT(unit->log.reference)) {
+		assert(unit->common.toProduct == NULL);
+
+		unit->common.toProduct = cvCombine(
+		    toUnderlying, unit->log.reference->common.toProduct);
+
+		if (unit->common.toProduct == NULL) {
+		    status = UT_OS;
+		}
+		else {
+		    retCode = 0;
+		}
+	    }
+
+	    cvFree(toUnderlying);
+	}				/* "toUnderlying" allocated */
+    }					/* valid arguments */
+
+    return retCode;
+}
+
+
+/*
+ * Initializes the converter of numeric values to the given logarithmic unit
+ * from the underlying product-unit.
+ *
+ * Arguments:
+ *	unit	The logarithmic unit.
+ * Returns:
+ *	-1	Failure.  "status" is set:
+ *		    UT_INTERNAL		"unit" is NULL.
+ *		    UT_INTERNAL		"unit" is not a logarithmic-unit.
+ *		    UT_OS		Operating-system fault.  See "errno".
+ *	0	Success.
+ */
+static int
+loginitConverterFromProduct(
+    utUnit* const	unit)
+{
+    int		retCode = -1;		/* failure */
+
+    if (unit == NULL || !IS_LOG(unit)) {
+	status = UT_INTERNAL;
+    }
+    else {
+	cvConverter* const	fromUnderlying = cvGetLog(unit->log.logE);
+
+	if (fromUnderlying == NULL) {
+	    status = UT_OS;
+	}
+	else {
+	    if (ENSURE_CONVERTER_FROM_PRODUCT(unit->log.reference)) {
+		assert(unit->common.fromProduct == NULL);
+
+		unit->common.fromProduct = cvCombine(
+		    unit->log.reference->common.fromProduct, fromUnderlying);
+
+		if (unit->common.fromProduct == NULL) {
+		    status = UT_OS;
+		}
+		else {
+		    retCode = 0;
+		}
+	    }
+
+	    cvFree(fromUnderlying);
+	}				/* "fromUnderlying" allocated */
+    }					/* valid arguments */
+
+    return retCode;
+}
+
+
+static UnitOps	logOps = {
+    logGetProduct,
+    logClone,
+    logToString,
+    logFree,
+    logCompare,
+    logMultiply,
+    logRaise,
+    loginitConverterToProduct,
+    loginitConverterFromProduct
+};
+
+
+/*
+ * Arguments:
+ *	logE		The logarithm of "e" in the logarithmic base.
+ *	reference	The reference value.
+ * Returns:
+ *	NULL	Failure.  "utGetStatus()" will be:
+ *		    UT_INTERNAL	"logE" <= 0.
+ *		    UT_INTERNAL	"reference" is NULL.
+ *		    UT_INTERNAL	"unit->common.system" is NULL.
+ *		    UT_OS	Operating-system error.  See "errno".
+ *	else	The newly-allocated, logarithmic-unit.
+ */
+static utUnit*
+logNew(
+    const double	logE,
+    utUnit* const	reference)
+{
+    LogUnit*	logUnit;
+
+    if (logE <= 0 || reference == NULL) {
+	status = UT_INTERNAL;
+	logUnit = NULL;
+    }
+    else {
+	logUnit = malloc(sizeof(LogUnit));
+
+	if (logUnit == NULL) {
+	    status = UT_OS;
+	}
+	else {
+	    if (commonInit(&logUnit->common, &logOps, reference->common.system,
+		    LOG) != 0) {
+		free(logUnit);
+	    }
+	    else {
+		logUnit->reference = CLONE(reference);
+
+		if (logUnit->reference != NULL) {
+		    logUnit->logE = logE;
+		}
+		else {
+		    free(logUnit);
+		    logUnit = NULL;
+		}
+	    }
+	}
+    }
+
+    return (utUnit*)logUnit;
+}
+
+
+/*******************************************************************************
+ * Public API:
+ ******************************************************************************/
+
+
+/*
+ * Returns the status of the last operation by this module.
+ *
+ * Returns one of:
+ *	UT_SUCCESS		Success
+ *	UT_BADSYSTEM		The unit-system pointer is NULL
+ *	UT_BADID		A name or symbol is invalid
+ *	UT_BADVALUE		A value is invalid
+ *	UT_EXISTS		The unit or mapping already exists
+ *	UT_BADUNIT		A unit pointer is NULL
+ *	UT_NOUNIT		No such unit exists
+ *	UT_MEANINGLESS		The requested operation on the given unit(s)
+ *				is meaningless
+ *	UT_NOSECOND		The relevant unit-system doesn't contain a unit
+ *				named "second".
+ *	UT_OS			Operating system error
+ *	UT_NOSYMBOL		The unit-system doesn't contain a necessary
+ *				symbol.
+ *	UT_INTERNAL		Internal error (this should not occur)
+ */
+utStatus
+utGetStatus()
+{
+    return status;
+}
+
+
+/*
+ * Returns a new unit system.
+ *
+ * Returns:
+ *	NULL	Failure.  "utGetStatus()" will be:
+ *		    UT_OS	Operating-system error.  See "errno".
+ *	else	Pointer to a new unit system.
+ */
+utSystem*
+utNewSystem()
+{
+    utSystem*	system = malloc(sizeof(utSystem));
+
+    status = UT_SUCCESS;
+
+    if (system == NULL) {
+	status = UT_OS;
+    }
+    else {
+	status = UT_SUCCESS;
+	system->nameToUnitMap.tree = NULL;
+	system->nameToUnitMap.compare = usnInsensitiveCompare;
+	system->symbolToUnitMap.tree = NULL;
+	system->symbolToUnitMap.compare = usnSensitiveCompare;
+	system->nameToValueMap.tree = NULL;
+	system->nameToValueMap.compare = psnInsensitiveCompare;
+	system->symbolToValueMap.tree = NULL;
+	system->symbolToValueMap.compare = psnSensitiveCompare;
+	system->unitToNameMap.ascii = NULL;
+	system->unitToNameMap.latin1 = NULL;
+	system->unitToNameMap.utf8 = NULL;
+	system->unitToSymbolMap.ascii = NULL;
+	system->unitToSymbolMap.latin1 = NULL;
+	system->unitToSymbolMap.utf8 = NULL;
+	system->basicUnits = NULL;
+	system->basicCount = 0;
+	system->size = 0;
+
+	if ((system->one = (utUnit*)productNew(system, NULL, 0)) != NULL)
+	    assignToSystem(system, system->one);
+
+	if (status != UT_SUCCESS)
+	    free(system);
+    }
+
+    return system;
+}
+
+
+/*
+ * Returns the dimensionless-unit one of a unit-system.
+ *
+ * Arguments:
+ *	system	Pointer to the unit-system for which the dimensionless-unit one
+ *		will be returned.
+ * Returns:
+ *	NULL	Failure.  "utgetStatus()" will be:
+ *		    UT_BADSYSTEM	"system" is NULL.
+ *	else	Pointer to the dimensionless-unit one associated with "system".
+ */
+utUnit*
+utGetDimensionlessUnitOne(
+    utSystem* const	system)
+{
+    utUnit*	one;
+
+    status = UT_SUCCESS;
+
+    if (system == NULL) {
+	one = NULL;
+	status = UT_BADSYSTEM;
+    }
+    else {
+	one = system->one;
+	status = UT_SUCCESS;
+    }
+
+    return one;
+}
+
+
+/*
+ * Returns the unit-system to which a unit belongs.
+ *
+ * Arguments:
+ *	unit	Pointer to the unit in question.
+ * Returns:
+ *	NULL	Failure.  "utGetStatus()" will be
+ *		    UT_BADUNIT	"unit" is NULL.
+ *	else	Pointer to the unit-system to which "unit" belongs.
+ */
+utSystem*
+utGetSystem(
+    const utUnit* const	unit)
+{
+    utSystem*	system;
+
+    status = UT_SUCCESS;
+
+    if (unit == NULL) {
+	system = NULL;
+	status = UT_BADUNIT;
+    }
+    else {
+	status = UT_SUCCESS;
+	system = unit->common.system;
+    }
+
+    return system;
+}
+
+
+/*
+ * Indicates if two units belong to the same unit-system.
+ *
+ * Arguments:
+ *	unit1	Pointer to a unit.
+ *	unit2	Pointer to another unit.
+ * Returns:
+ *	0	Failure or the units belong to different unit-systems.
+ *		"utGetStatus()" will be
+ *	    	    UT_BADUNIT	"unit1" or "unit2" is NULL.
+ *	    	    UT_SUCCESS	The units belong to different unit-systems.
+ *	else	The units belong to the same unit-system.
+ */
+int
+utSameSystem(
+    const utUnit* const	unit1,
+    const utUnit* const	unit2)
+{
+    int	sameSystem;
+
+    if (unit1 == NULL || unit2 == NULL) {
+	status = UT_BADUNIT;
+    }
+    else {
+	status = UT_SUCCESS;
+	sameSystem = unit1->common.system == unit2->common.system;
+    }
+
+    return sameSystem;
+}
+
+
+/*
+ * Removes a mapping from an identifier.
+ *
+ * Arguments:
+ *	map		The database.
+ *	id		The identifier.
+ *	ignoreCase	Whether or not to ignore case when comparing 
+ *			identifiers.
+ * Returns:
+ *	UT_INTERNAL	"map" is NULL.
+ *	UT_INTERNAL	"id" is NULL.
+ *	UT_SUCCESS	Success.
+ */
+static utStatus
+unmapId(
+    void** const	map,
+    const char* const	id,
+    int			ignoreCase)
+{
+    if (map == NULL) {
+	status = UT_INTERNAL;
+    }
+    else if (id == NULL) {
+	status = UT_INTERNAL;
+    }
+    else {
+	static UnitSearchNode	targetNode;
+
+	targetNode.id = id;
+
+	usnRemove(map, &targetNode, 
+	    ignoreCase ? usnInsensitiveCompare : usnSensitiveCompare);
+
+	status = UT_SUCCESS;
+    }
+
+    return status;
+}
+
+
+/*
+ * Adds to a unit-system a mapping from a name to a unit.
+ *
+ * Arguments:
+ *	name	Pointer to the name.  May be freed upon return.
+ *	unit	Pointer to the unit.
+ * Returns:
+ *	UT_BADID	"name" is NULL.
+ *	UT_BADUNIT	"unit" is NULL.
+ *	UT_OS		Operating-system error.  See "errno".
+ *	UT_EXISTS	"name" already maps to a different unit.
+ *	UT_SUCCESS	Success.
+ */
+utStatus
+utMapNameToUnit(
+    const char* const	name,
+    utUnit* const	unit)
+{
+    return
+	unit == NULL
+	    ? UT_BADUNIT
+	    : itumAdd(&unit->common.system->nameToUnitMap, name, unit);
+}
+
+
+/*
+ * Adds to a unit-system a mapping from a symbol to a unit.
+ *
+ * Arguments:
+ *	system	Pointer to the unit-system.
+ *	symbol	Pointer to the symbol.  May be freed upon return.
+ *	unit	Pointer to the unit.
+ * Returns:
+ *	UT_BADID	"symbol" is NULL.
+ *	UT_BADUNIT	"unit" is NULL.
+ *	UT_OS		Operating-system error.  See "errno".
+ *	UT_EXISTS	"symbol" already maps to a different unit.
+ *	UT_SUCCESS	Success.
+ */
+utStatus
+utMapSymbolToUnit(
+    const char* const	symbol,
+    utUnit* const	unit)
+{
+    return
+	unit == NULL
+	    ? UT_BADUNIT
+	    : itumAdd(&unit->common.system->symbolToUnitMap, symbol, unit);
+}
+
+
+/*
+ * Adds to a unit-system a mapping from a unit to a name.
+ *
+ * Arguments:
+ *	unit		Pointer to the unit.
+ *	name		Pointer to the name.  May be freed upon return.
+ *	encoding	The encoding of "name".
+ * Returns:
+ *	UT_BADUNIT	"unit" is NULL.
+ *	UT_BADID	"name" is NULL or not in the specified encoding.
+ *	UT_OS		Operating-system error.  See "errno".
+ *	UT_EXISTS	"unit" already maps to a name.
+ *	UT_SUCCESS	Success.
+ */
+utStatus
+utMapUnitToName(
+    utUnit* const	unit,
+    const char* const	name,
+    utEncoding		encoding)
+{
+    if (unit == NULL) {
+	status = UT_BADUNIT;
+    }
+    else {
+	status = utimAdd(&unit->common.system->unitToNameMap, unit, name,
+	    encoding);
+    }
+
+    return status;
+}
+
+
+/*
+ * Adds to a unit-system a mapping from a unit to a symbol.
+ *
+ * Arguments:
+ *	unit		Pointer to the unit.
+ *	symbol		Pointer to the symbol.  May be freed upon return.
+ *	encoding	The encoding of "symbol".
+ * Returns:
+ *	UT_BADUNIT	"unit" is NULL.
+ *	UT_BADID	"symbol" is NULL.
+ *	UT_OS		Operating-system error.  See "errno".
+ *	UT_EXISTS	"unit" already maps to a symbol.
+ *	UT_SUCCESS	Success.
+ */
+utStatus
+utMapUnitToSymbol(
+    utUnit* const	unit,
+    const char* const	symbol,
+    utEncoding		encoding)
+{
+    if (unit == NULL) {
+	status = UT_BADUNIT;
+    }
+    else {
+	status = utimAdd(&unit->common.system->unitToSymbolMap, unit, symbol,
+	    encoding);
+    }
+
+    return status;
+}
+
+
+/*
+ * Adds a basic-unit to a unit-system.  Calls assignToSystem() on the
+ * unit if successful.
+ *
+ * Arguments:
+ *	system		Pointer to the unit-system to which to add the new
+ *			base-unit.
+ *	basicUnit	Pointer to the basic-unit to be added.
+ *	name		Pointer to the name of "unit".
+ *	encoding	The encoding of "name".
+ * Returns:
+ *	UT_BADUNIT	"basicUnit" is NULL.
+ *	UT_BADID	"name" is NULL, empty, or inconsistent with "encoding".
+ *	UT_OS		Operating-system error.  See "errno".
+ *	UT_EXISTS	A unit with the same name already exists.
+ *	UT_SUCCESS	Success.
+ */
+static utStatus
+addBasicUnit2(
+    BasicUnit* const	basicUnit,
+    const char* const	name,
+    utEncoding		encoding)
+{
+    utStatus		status;
+
+    if (name == NULL) {
+	status = UT_BADID;
+    }
+    else if (basicUnit == NULL) {
+	status = UT_BADUNIT;
+    }
+    else {
+	utSystem* const	system = basicUnit->common.system;
+
+	status =
+	    utimAdd(&system->unitToNameMap, (utUnit*)basicUnit, name, encoding);
+
+	if (status == UT_SUCCESS) {
+	    ProductUnit*	productUnit = basicUnit->productUnit;
+
+	    status = utimAdd(&system->unitToNameMap, (utUnit*)productUnit, name,
+		encoding);
+
+	    if (status == UT_SUCCESS) {
+		status =
+		    itumAdd(&system->nameToUnitMap, name, (utUnit*)basicUnit);
+
+		if (status == UT_SUCCESS) {
+		    assignToSystem(system, (utUnit*)basicUnit);
+		    assignToSystem(system, (utUnit*)productUnit);
+		}			/* "name" -> "basicUnit" added */
+		else {
+		    utimRemove(&system->unitToNameMap, (utUnit*)productUnit,
+			name, encoding);
+		}
+	    }				/* "productUnit" -> "name" added */
+
+	    if (status != UT_SUCCESS)
+		utimRemove(&system->unitToNameMap, (utUnit*)basicUnit, name,
+		    encoding);
+	}				/* "basicUnit" -> "name" added */
+    }					/* valid arguments */
+
+    return status;
+}
+
+
+/*
+ * Adds a basic-unit to a unit-system.
+ *
+ * Arguments:
+ *	system		The unit-system to which to add the new basic-unit.
+ *	name		The ASCII name of the unit.
+ *	isDimensionless	Whether or not the basic-unit is dimensionless (e.g.,
+ *			a radian).
+ * Returns:
+ *	NULL	Failure.  "utGetStatus()" will be
+ *		    UT_BADSYSTEM	"system" is NULL.
+ *		    UT_BADID		"name" is NULL or non-ASCII.
+ *		    UT_OS		Operating-system error.  See "errno".
+ *		    UT_EXISTS		A unit with the same name already
+ *					exists.
+ *	else	Pointer to the new base-unit.
+ */
+static BasicUnit*
+addBasicUnit(
+    utSystem* const	system,
+    const char* const	name,
+    const int		isDimensionless)
+{
+    BasicUnit*	basicUnit = NULL;	/* failure */
+
+    status = UT_SUCCESS;
+
+    if (system == NULL) {
+	status = UT_BADSYSTEM;
+    }
+    else if (name == NULL) {
+	status = UT_BADID;
+    }
+    else {
+	int	oldBasicCount = system->basicCount;
+	int	newBasicCount = oldBasicCount + 1;
+	size_t	nbytes = sizeof(short) * newBasicCount;
+	short*	powers = malloc(nbytes);
+
+	if (powers == NULL) {
+	    status = UT_OS;
+	}
+	else {
+	    ProductUnit*	productUnit;
+
+	    (void)memset(powers, 0, nbytes);
+
+	    powers[oldBasicCount] = 1;
+	    productUnit = productNew(system, powers, newBasicCount);
+
+	    if (productUnit != NULL) {
+		BasicUnit* const	basicUnit =
+		    basicNew(system, name, isDimensionless, productUnit);
+
+		if (basicUnit == NULL) {
+		    productFree((utUnit*)productUnit);
+		}
+		else {
+		    BasicUnit**	newBasicUnits =
+			malloc(sizeof(BasicUnit*)*newBasicCount);
+
+		    if (newBasicUnits == NULL) {
+			status = UT_OS;
+		    }
+		    else {
+			status = addBasicUnit2(basicUnit, name, UT_ASCII);
+
+			if (status == UT_SUCCESS) {
+			    if (system->basicUnits != NULL) {
+				(void)memcpy(newBasicUnits, system->basicUnits,
+				    sizeof(BasicUnit*)*oldBasicCount);
+				free(system->basicUnits);
+			    }
+
+			    newBasicUnits[oldBasicCount] = basicUnit;
+			    system->basicUnits = newBasicUnits;
+			    system->basicCount = newBasicCount;
+			}		/* "basicUnit" added to "system" */
+
+			if (status != UT_SUCCESS)
+			    free(newBasicUnits);
+		    }			/* "newBasicUnits" allocated */
+
+		    if (status != UT_SUCCESS)
+			basicFree((utUnit*)basicUnit);
+		}			/* "basicUnit" allocated */
+
+		if (status != UT_SUCCESS) {
+		    /*
+		     * "productUnit" is not freed because that was the 
+		     * responsibility of "basicFree()".
+		     */
+		    productUnit = NULL;
+		}
+	    }				/* "productUnit" allocated */
+
+	    free(powers);
+	}				/* "powers" allocated */
+    }					/* valid arguments */
+
+    return basicUnit;
+}
+
+
+/*
+ * Adds a base-unit to a unit-system.
+ *
+ * Arguments:
+ *	system	Pointer to the unit-system to which to add the new base-unit.
+ *	name	Pointer to the ASCII name of the unit.
+ * Returns:
+ *	NULL	Failure.  "utGetStatus()" will be
+ *		    UT_BADSYSTEM	"system" is NULL.
+ *		    UT_BADID		"name" is NULL or empty.
+ *		    UT_OS		Operating-system error.  See "errno".
+ *		    UT_EXISTS		A unit with the same name already
+ *					exists.
+ *	else	Pointer to the new base-unit.
+ */
+utUnit*
+utAddBaseUnit(
+    utSystem* const	system,
+    const char* const	name)
+{
+    return (utUnit*)addBasicUnit(system, name, 0);
+}
+
+
+/*
+ * Adds a dimensionless-unit to a unit-system.  In the SI system of units,
+ * the derived-unit radian is a dimensionless-unit.
+ *
+ * Arguments:
+ *	system	Pointer to the unit-system to which to add the new
+ *		dimensionless-unit.
+ *	name	Pointer to the ASCII name of the unit.
+ * Returns:
+ *	NULL	Failure.  "utGetStatus()" will be
+ *		    UT_BADSYSTEM	"system" is NULL.
+ *		    UT_BADID		"name" is NULL.
+ *		    UT_OS		Operating-system error.  See "errno".
+ *		    UT_EXISTS		A unit with the same name already
+ *					exists.
+ *	else	Pointer to the new dimensionless-unit.
+ */
+utUnit*
+utAddDimensionlessUnit(
+    utSystem* const	system,
+    const char* const	name)
+{
+    return (utUnit*)addBasicUnit(system, name, 1);
+}
+
+
+/*
+ * Returns the total number of units that have been added to a unit-system.
+ *
+ * Arguments:
+ *	system	Pointer to the unit-system in question.
+ * Returns:
+ *	-1	"system" is NULL.  "utGetStatus()" will be UT_BADSYSTEM.
+ *	else	The total number of units that have been added to "system".
+ */
+int
+utSize(
+    const utSystem* const	system)
+{
+    int	size;
+
+    if (system == NULL) {
+	size = -1;
+	status = UT_BADSYSTEM;
+    }
+    else {
+	size = system->size;
+	status = UT_SUCCESS;
+    }
+
+    return size;
+}
+
+
+/*
+ * Returns the unit in a unit-system that has a given name.  Name comparisons
+ * are case-insensitive.
+ *
+ * Arguments:
+ *	system	Pointer to the unit-system.
+ *	name	Pointer to the name of the unit to be returned.
+ * Returns:
+ *	NULL	Failure.  "utGetStatus()" will be
+ *		    UT_BADSYSTEM	"system" is NULL.
+ *		    UT_BADID		"name" is NULL.
+ *		    UT_NOUNIT		"system" contains no mapping from "name"
+ *					to a unit.
+ *	else	Pointer to the unit in the unit-system with the given name.
+ */
+utUnit*
+utGetUnitByName(
+    utSystem* const	system,
+    const char* const	name)
+{
+    utUnit*	result = NULL;		/* failure */
+
+    status = UT_SUCCESS;
+
+    if (system == NULL) {
+	status = UT_BADSYSTEM;
+    }
+    else {
+	if (name == NULL) {
+	    status = UT_BADID;
+	}
+	else {
+	    UnitSearchNode*	mapNode =
+		itumFind(&system->nameToUnitMap, name);
+
+	    if (mapNode == NULL) {
+		status = UT_NOUNIT;
+	    }
+	    else {
+		result = mapNode->unit;
+		status = UT_SUCCESS;
+	    }
+	}
+    }
+
+    return result;
+}
+
+
+/*
+ * Returns the unit in a unit-system that has a given symbol.  Symbol 
+ * comparisons are case-sensitive.
+ *
+ * Arguments:
+ *	system	Pointer to the unit-system.
+ *	symbol	Pointer to the symbol associated with the unit to be returned.
+ * Returns:
+ *	NULL	Failure.  "utGetStatus()" will be
+ *		    UT_BADSYSTEM	"system" is NULL.
+ *		    UT_BADID		"symbol" is NULL.
+ *		    UT_NOUNIT		"system" contains no mapping from
+ *					"symbol" to a unit.
+ *	else	Pointer to the unit in the unit-system with the given name.
+ */
+utUnit*
+utGetUnitBySymbol(
+    utSystem* const	system,
+    const char* const	symbol)
+{
+    utUnit*	result = NULL;	/* failure */
+
+    status = UT_SUCCESS;
+
+    if (system == NULL) {
+	status = UT_BADSYSTEM;
+    }
+    else {
+	if (symbol == NULL) {
+	    status = UT_BADID;
+	}
+	else {
+	    UnitSearchNode*	mapNode =
+		itumFind(&system->symbolToUnitMap, symbol);
+
+	    if (mapNode == NULL) {
+		status = UT_NOUNIT;
+	    }
+	    else {
+		result = mapNode->unit;
+		status = UT_SUCCESS;
+	    }
+	}
+    }
+
+    return result;
+}
+
+
+/*
+ * Adds a name-prefix to a unit-system.
+ *
+ * Arguments:
+ *	system		Pointer to the unit-system.
+ *	name		Pointer to the name-prefix (e.g., "mega").  May be freed
+ *			upon return.
+ *	value		The value of the prefix (e.g., 1e6).
+ * Returns:
+ *	UT_SUCCESS	Success.
+ *	UT_BADSYSTEM	"system" is NULL.
+ *	UT_BADNAME	"name" is NULL.
+ *	UT_BADVALUE	"value" is 0.
+ *	UT_EXISTS	"name" already maps to a different value.
+ */
+utStatus
+utAddNamePrefix(
+    utSystem* const	system,
+    const char* const	name,
+    const double	value)
+{
+    status = UT_SUCCESS;
+
+    if (system == NULL) {
+	status = UT_BADSYSTEM;
+    }
+    else {
+	if (name == NULL || strlen(name) == 0) {
+	    status = UT_BADID;
+	}
+	else if (value == 0) {
+	    status = UT_BADVALUE;
+	}
+	else {
+	    const PrefixSearchNode*	node =
+		ptvmSearch(&system->nameToValueMap, name, value);
+
+	    status = 
+		node == NULL
+		    ? UT_OS
+		    : (node->value == value)
+			? UT_SUCCESS
+			: UT_EXISTS;
+	}
+    }
+
+    return status;
+}
+
+
+/*
+ * Adds a symbol-prefix to a unit-system.
+ *
+ * Arguments:
+ *	system		Pointer to the unit-system.
+ *	symbol		Pointer to the symbol-prefix (e.g., "M").  May be freed
+ *			upon return.
+ *	value		The value of the prefix (e.g., 1e6).
+ * Returns:
+ *	UT_SUCCESS	Success.
+ *	UT_BADSYSTEM	"system" is NULL.
+ *	UT_BADID	"symbol" is NULL or empty.
+ *	UT_BADVALUE	"value" is 0.
+ *	UT_EXISTS	"symbol" already maps to a different value.
+ */
+utStatus
+utAddSymbolPrefix(
+    utSystem* const	system,
+    const char* const	symbol,
+    const double	value)
+{
+    status = UT_SUCCESS;
+
+    if (system == NULL) {
+	status = UT_BADSYSTEM;
+    }
+    else {
+	if (symbol == NULL || strlen(symbol) == 0) {
+	    status = UT_BADID;
+	}
+	else if (value == 0) {
+	    status = UT_BADVALUE;
+	}
+	else {
+	    const PrefixSearchNode*	node =
+		ptvmSearch(&system->symbolToValueMap, symbol, value);
+
+	    status = 
+		node == NULL
+		    ? UT_OS
+		    : (node->value == value)
+			? UT_SUCCESS
+			: UT_EXISTS;
+	}
+    }
+
+    return status;
+}
+
+
+/*
+ * Compares two units that belong to the same unit-system (see
+ * "utSameSystem()").  Returns a value less than, equal to, or greater than zero
+ * as the first unit is considered less than, equal to, or greater than the
+ * second unit, respectively.
+ *
+ * Arguments:
+ *	unit1	Pointer to a unit.
+ *	unit2	Pointer to another unit in the same unit-system as "unit1".
+ * Returns:
+ *	<0	The first unit is less than the second unit.
+ *	 0	The first and seconds units are equal or cannot be compared.
+ *		"utGetStatus()" will be:
+ *	    	    UT_SUCCESS		The first and seconds units are equal.
+ *	    	    UT_NOTSAMESYSTEM	A comparison is impossible because the
+ *					units belong to different unit-systems.
+ *	>0	The first unit is greater than the second unit.
+ */
+int
+utCompare(
+    const utUnit* const	unit1,
+    const utUnit* const	unit2)
+{
+    int			cmp = 0;
+
+    status = UT_SUCCESS;
+
+    if (unit1 == NULL || unit2 == NULL) {
+	status = UT_BADUNIT;
+    }
+    else if (unit1->common.system != unit2->common.system) {
+	status = UT_NOTSAMESYSTEM;
+    }
+    else {
+	const UnitOps* const	ops1 = unit1->common.ops;
+	const UnitOps* const	ops2 = unit2->common.ops;
+
+	/*
+	 * NB: The unit-specific comparison function is called if and only
+	 * if the units are the same type.
+	 */
+	cmp = 
+	    ops1 < ops2
+		? -1
+		: ops1 == ops2
+		    ? ops1->compare(unit1, unit2)
+		    : 1;
+    }
+
+    return cmp;
+}
+
+
+/*
+ * Returns a unit equivalent to another unit scaled by a numeric factor,
+ * e.g.,
+ *	const utUnit*	meter = ...
+ *	const utUnit*	kilometer = utScale(1000, meter);
+ *
+ * Arguments:
+ *	factor	The numeric scale factor.
+ *	unit	Pointer to the unit to be scaled.
+ * Returns:
+ *	NULL	Failure.  "utGetStatus()" will be
+ *		    UT_BADVALUE		"factor" is 0.
+ *		    UT_BADUNIT		"unit" is NULL.
+ *		    UT_OS		Operating-system error.  See "errno".
+ *	else	Pointer to scaled-unit.
+ */
+utUnit*
+utScale(
+    const double	factor,
+    utUnit* const	unit)
+{
+    utUnit*		result = NULL;	/* failure */
+
+    status = UT_SUCCESS;
+
+    if (unit == NULL) {
+	status = UT_BADUNIT;
+    }
+    else {
+	if (factor == 0) {
+	    status = UT_BADVALUE;
+	}
+	else {
+	    result = factor == 1
+		? CLONE(unit)
+		: galileanNew(factor, unit, 0.0);
+	}
+    }
+
+    return result;
+}
+
+
+/*
+ * Returns a unit equivalent to another unit offset by a numeric amount,
+ * e.g.,
+ *	const utUnit*	kelvin = ...
+ *	const utUnit*	celsius = utOffset(kelvin, 273.15);
+ *
+ * Arguments:
+ *	unit	Pointer to the unit to be offset.
+ *	offset	The numeric offset.
+ * Returns:
+ *	NULL	Failure.  "utGetStatus()" will be
+ *		    UT_BADUNIT	"unit" is NULL.
+ *		    UT_OS	Operating-system error.  See "errno".
+ *	else	Pointer to offset-unit.
+ */
+utUnit*
+utOffset(
+    utUnit* const	unit,
+    const double	offset)
+{
+    utUnit*		result = NULL;	/* failure */
+
+    status = UT_SUCCESS;
+
+    if (unit == NULL) {
+	status = UT_BADUNIT;
+    }
+    else {
+	result = offset == 0
+	    ? CLONE(unit)
+	    : galileanNew(1.0, unit, offset);
+    }
+
+    return result;
+}
+
+
+/*
+ * Returns a unit equivalent to another unit relative to a particular time.
+ * e.g.,
+ *	const utUnit*	second = ...
+ *	const utUnit*	secondsSinceTheEpoch =
+ *	    utGetTimestampUnit(second, 1970, 1, 1, 0, 0, 0.0);
+ *
+ * Arguments:
+ *	unit	Pointer to the time-unit to be made relative to a time-origin.
+ *	year	The year of the origin.
+ *	month	The month of the origin.
+ *	day	The day of the origin.
+ *	hour	The hour of the origin.
+ *	minute	The minute of the origin.
+ *	second	The second of the origin.
+ * Returns:
+ *	NULL	Failure.  "utGetStatus()" will be
+ *		    UT_BADUNIT		"unit" is NULL.
+ *		    UT_OS		Operating-system error.  See "errno".
+ *		    UT_MEANINGLESS	Creation of a timestamp unit based on
+ *					"unit" is not meaningful.
+ *		    UT_NOSECOND		The associated unit-system doesn't
+ *					contain a unit named "second".
+ *	else	Pointer to the timestamp-unit.
+ */
+utUnit*
+utGetTimestampUnit(
+    utUnit* const	unit,
+    const int		year,
+    const int		month,
+    const int		day,
+    const int		hour,
+    const int		minute,
+    const double	second)
+{
+    utUnit*		result = NULL;	/* failure */
+
+    status = UT_SUCCESS;
+
+    if (unit == NULL) {
+	status = UT_BADUNIT;
+    }
+    else {
+	result = timestampNew(unit, year, month, day, hour, minute, second);
+    }
+
+    return result;
+}
+
+
+/*
+ * Returns the result of multiplying one unit by another unit.
+ *
+ * Arguments:
+ *	unit1	Pointer to a unit.
+ *	unit2	Pointer to another unit.
+ * Returns:
+ *	NULL	Failure.  "utGetStatus()" will be:
+ *		    UT_BADUNIT		"unit1" or "unit2" is NULL.
+ *		    UT_NOTSAMESYSTEM	"unit1" and "unit2" belong to
+ *					different unit-systems.
+ *		    UT_OS		Operating-system error. See "errno".
+ *	else	Pointer to unit corresponding to the product.
+ */
+utUnit*
+utMultiply(
+    utUnit* const	unit1,
+    utUnit* const	unit2)
+{
+    utUnit*	result = NULL;	/* failure */
+
+    status = UT_SUCCESS;
+
+    if (unit1 == NULL || unit2 == NULL) {
+	status = UT_BADUNIT;
+    }
+    else if (unit1->common.system != unit2->common.system) {
+	status = UT_NOTSAMESYSTEM;
+    }
+    else {
+	result = MULTIPLY(unit1, unit2);
+    }
+
+    return result;
+}
+
+
+/*
+ * Returns the inverse (i.e., reciprocal) of a unit.  This convenience function
+ * is equal to "utRaise(unit, -1)".
+ *
+ * Arguments:
+ *	unit	Pointer to the unit.
+ * Returns:
+ *	NULL	Failure.  "utGetStatus()" will be:
+ *		    UT_BADUNIT	"unit" is NULL.
+ *		    UT_OS	Operating-system error. See "errno".
+ *	else	Pointer to unit corresponding to the inverse.
+ */
+utUnit*
+utInvert(
+    utUnit* const	unit)
+{
+    return utRaise(unit, -1);
+}
+
+
+/*
+ * Returns the result of dividing one unit by another unit.  This convenience
+ * function is equivalent to the following code:
+ *     {
+ *         utUnit* inverse = utInvert(denom);
+ *         utMultiply(numer, inverse);
+ *         utFree(inverse);
+ *     }
+ *
+ * Arguments:
+ *	numer	Pointer to the numerator (top, dividend) unit.
+ *	denom	Pointer to the denominator (bottom, divisor) unit.
+ * Returns:
+ *	NULL	Failure.  "utGetStatus()" will be:
+ *		    UT_BADUNIT		"numer" or "denom" is NULL.
+ *		    UT_NOTSAMESYSTEM	"unit1" and "unit2" belong to
+ *					different unit-systems.
+ *		    UT_OS		Operating-system error. See "errno".
+ *	else	Pointer to unit corresponding to the product.
+ */
+utUnit*
+utDivide(
+    utUnit* const	numer,
+    utUnit* const	denom)
+{
+    utUnit*	result = NULL;		/* failure */
+
+    status = UT_SUCCESS;
+
+    if (numer == NULL || denom == NULL) {
+	status = UT_BADUNIT;
+    }
+    else if (numer->common.system != denom->common.system) {
+	status = UT_NOTSAMESYSTEM;
+    }
+    else {
+	utUnit*	inverse = RAISE(denom, -1);
+
+	if (inverse != NULL) {
+	    result = MULTIPLY(numer, inverse);
+
+	    utFree(inverse);
+	}
+    }
+
+    return result;
+}
+
+
+/*
+ * Returns the result of raising a unit to a power.
+ *
+ * Arguments:
+ *	unit	Pointer to the unit.
+ *	power	The power by which to raise "unit".  Must be greater than or 
+ *		equal to -255 and less than or equal to 255.
+ * Returns:
+ *	NULL	Failure.  "utGetStatus()" will be:
+ *		    UT_BADUNIT	"unit" is NULL.
+ *		    UT_BADVALUE	"power" is invalid.
+ *		    UT_OS	Operating-system error. See "errno".
+ *	else	Pointer to unit corresponding to "unit" raised to "power".
+ */
+utUnit*
+utRaise(
+    utUnit* const	unit,
+    const int		power)
+{
+    utUnit*		result = NULL;	/* failure */
+
+    status = UT_SUCCESS;
+
+    if (unit == NULL) {
+	status = UT_BADUNIT;
+    }
+    else if (power < -255 || power > 255) {
+	status = UT_BADVALUE;
+    }
+    else {
+	result = 
+	    power == 0
+		? unit->common.system->one
+		: power == 1
+		    ? CLONE(unit)
+		    : RAISE(unit, power);
+    }
+
+    return result;
+}
+
+
+/*
+ * Returns the logarithmic unit corresponding to a logarithmic base and a
+ * reference level.  For example, the following creates a decibel unit with a
+ * one milliwatt reference level:
+ *
+ *     #include <math.h>		// for M_LOG10E
+ *     ...
+ *     const utUnit* watt = ...;
+ *     const utUnit* milliWatt = utScale(0.001, watt);
+ *
+ *     if (milliWatt != NULL) {
+ *         const utUnit* bel_1_mW = utLog(M_LOG10E, milliWatt);
+ *
+ *         if (bel_1_mW != NULL) {
+ *             const utUnit* decibel_1_mW = utScale(0.1, bel_1_mW);
+ *
+ *             if (decibel_1_mW != NULL) {
+ *                 ...
+ *                 utFree(decibel_1_mW);
+ *             }			// "decibel_1_mW" allocated
+ *
+ *             utFree(bel_1_mW);
+ *         }				// "bel_1_mW" allocated
+ *
+ *         utFree(milliWatt);
+ *     }				// "milliWatt" allocated
+ *
+ * Arguments:
+ *	logE		The logarithm of "e" in the logarithmic base.  Must
+ *			be positive.
+ *	reference	Pointer to the reference value as a unit.
+ * Returns:
+ *	NULL	Failure.  "utGetStatus()" will be:
+ *		    UT_BADVALUE	"logE" is invalid.
+ *		    UT_BADUNIT	"reference" is NULL.
+ *		    UT_OS	Operating-system error. See "errno".
+ *	else	Pointer to corresponding logarithmic unit.
+ */
+utUnit*
+utLog(
+    const double	logE,
+    utUnit* const	reference)
+{
+    utUnit*		result = NULL;	/* failure */
+
+    status = UT_SUCCESS;
+
+    if (logE <= 0) {
+	status = UT_BADVALUE;
+    }
+    else if (reference == NULL) {
+	status = UT_BADUNIT;
+    }
+    else {
+	result = logNew(logE, reference);
+    }
+
+    return result;
+}
+
+
+/*
+ * Returns a string representation of a unit.
+ *
+ * Arguments:
+ *	unit		Pointer to the unit to have its string representation
+ *			returned.
+ *	buf		Pointer to buffer into which to write the string.
+ *	max		Size of the buffer.
+ *	concise		Whether or not the representation of "unit" should be
+ *			as short as possible.  For example:
+ *			    concise == 0:
+ *				watt
+ *				kilogram meter^2 per second^3
+ *				seconds_since_the_epoch
+ *				second since 1970-01-01 00:00:00.000 UTC
+ *			    concise != 0:
+ *				W
+ *				kg.m2.s-3
+ *				s @ 19700101T000000.000 UTC
+ *      basic           Whether or not the representation of "unit" should be
+ *                      in terms of basic units.  If false, then expansions of
+ *                      "unit" are terminated whenever a symbol is found.  For
+ *                      example:
+ *			    basic == 0:
+ *				W
+ *				watt
+ *				seconds_since_the_epoch
+ *			    basic != 0:
+ *				kg.m2.s-3
+ *				kilogram meter^2 per second^3
+ *				second since 1970-01-01 00:00:00.000 UTC
+ * Returns:
+ *	-1	Failure.  "utGetStatus()" will be
+ *		    UT_BADSYSTEM	"unit" is NULL.
+ *	else	Number of characters written to "buf", excluding any
+ *		terminating NUL.
+ */
+static int
+toString(
+    utUnit* const	unit,
+    char* const		buf,
+    const size_t	max,
+    const int		concise,
+    const int		basic)
+{
+    UnitSearchNode*	mapNode = NULL;
+
+    if (!basic) {
+	mapNode = 
+	    concise
+		? usnFindByUnit(&unit->common.system->unitToSymbolMap, unit)
+		: usnFindByUnit(&unit->common.system->unitToNameMap, unit);
+    }
+
+    return
+	mapNode == NULL
+	    ? TO_STRING(unit, buf, max, concise, basic)
+	    : snprintf(buf, max, "%s", mapNode->id);
+}
+
+
+/*
+ * Sets the encoding of binary unit objects into strings.
+ *
+ * Arguments:
+ *	encoding	The type of encoding to use.
+ */
+void
+utSetEncoding(
+    const utEncoding	encoding)
+{
+    encodingType = encoding;
+
+    if (encoding == UT_ASCII) {
+	encodeProduct = asciiEncodeProduct;
+	usnFindByUnit = utimFindAsciiByUnit;
+    }
+    else if (encoding == UT_ISO_8859_1) {
+	encodeProduct = latin1EncodeProduct;
+	usnFindByUnit = utimFindLatin1ByUnit;
+    }
+    else if (encoding == UT_UTF_8) {
+	encodeProduct = utf8EncodeProduct;
+	usnFindByUnit = utimFindUtf8ByUnit;
+    }
+    else {
+	assert(0);
+    }
+}
+
+
+/*
+ * Returns the encoding of binary unit objects into strings.
+ *
+ * Returns:
+ *	The type of encoding being used.
+ */
+utEncoding
+utGetEncoding(void)
+{
+    return encodingType;
+}
+
+
+/*
+ * Returns a short string representation of a unit.  Short representations use
+ * unit symbols and favor concision.  For example:
+ *	W
+ *	kg.m2.s-3
+ *	s @ 19700101T000000.000 UTC
+ *
+ * Arguments:
+ *	unit		Pointer to the unit to have its string representation
+ *			returned.
+ *	buf		Pointer to buffer into which to write the string.
+ *	max		Size of the buffer.
+ *      basic           Whether or not the representation of "unit" should be
+ *                      in terms of basic units.  If false, then expansions of
+ *                      "unit" are terminated whenever a symbol is found.  For
+ *                      example:
+ *			    basic == 0:
+ *				W
+ *			    basic != 0:
+ *				kg.m2.s-3
+ * Returns:
+ *	-1	Failure.  "utGetStatus()" will be
+ *		    UT_BADSYSTEM	"unit" is NULL.
+ *	else	Number of characters written to "buf", excluding any
+ *		terminating NUL.
+ */
+int
+utToSymbolString(
+    utUnit* const		unit,
+    char* const			buf,
+    const size_t		max,
+    const int			basic)
+{
+    return toString(unit, buf, max, 1, basic);
+}
+
+
+/*
+ * Returns a long string representation of a unit.  Long representations use
+ * unit names and eschew concision. For example:
+ *	watt
+ *	kilogram meter^2 per second^3
+ *	second since 1970-01-01 00:00:00.000 UTC
+ *
+ * Arguments:
+ *	unit		Pointer to the unit to have its string representation
+ *			returned.
+ *	buf		Pointer to buffer into which to write the string.
+ *	max		Size of the buffer.
+ *      basic           Whether or not the representation of "unit" should be
+ *                      in terms of basic units.  If false, then expansions of
+ *                      "unit" are terminated whenever an identifier is found.
+ *                      For example:
+ *			    basic == 0:
+ *				watt
+ *				seconds_since_the_epoch
+ *			    basic != 0:
+ *				kilogram meter^2 per second^3
+ *				second since 1970-01-01 00:00:00.000 UTC
+ * Returns:
+ *	-1	Failure.  "utGetStatus()" will be
+ *		    UT_BADSYSTEM	"unit" is NULL.
+ *	else	Number of characters written to "buf", excluding any
+ *		terminating NUL.
+ */
+int
+utToNameString(
+    utUnit* const		unit,
+    char* const			buf,
+    const size_t		max,
+    const int			basic)
+{
+    return toString(unit, buf, max, 0, basic);
+}
+
+
+/*
+ * Indicates if numeric values in one unit are convertible to numeric values in
+ * another unit via "utGetConverter()".  In making this determination, units
+ * created by "utAddDimensionlessUnit()" are ignored.
+ *
+ * Arguments:
+ *	unit1	Pointer to a unit.
+ *	unit2	Pointer to another unit.
+ * Returns:
+ *	0	Numeric values cannot be converted between the units.  
+ *		"utGetStatus()" will be
+ *	    	    UT_BADUNIT		"unit1" or "unit2" is NULL.
+ *		    UT_NOTSAMESYSTEM	"unit1" and "unit2" belong to different
+ *					unit-sytems.
+ *		    UT_SUCCESS		Conversion between the units is not
+ *					possible (e.g., "unit1" is "meter"
+ *					and "unit2" is "kilogram").
+ *	else	Numeric values can be converted between the units.
+ */
+int
+utAreConvertible(
+    utUnit* const	unit1,
+    utUnit* const	unit2)
+{
+    int			areConvertible = 0;
+
+    if (unit1 == NULL || unit2 == NULL) {
+	status = UT_BADUNIT;
+    }
+    else if (unit1->common.system != unit2->common.system) {
+	status = UT_NOTSAMESYSTEM;
+    }
+    else {
+	status = UT_SUCCESS;
+
+	if (IS_TIMESTAMP(unit1) || IS_TIMESTAMP(unit2)) {
+	    areConvertible = IS_TIMESTAMP(unit1) && IS_TIMESTAMP(unit2);
+	}
+	else {
+	    ProductRelationship	relationship =
+		productRelationship(GET_PRODUCT(unit1), GET_PRODUCT(unit2));
+
+	    areConvertible =
+		relationship == PRODUCT_EQUAL || relationship == PRODUCT_INVERSE;
+	}
+    }
+
+    return areConvertible;
+}
+
+
+/*
+ * Returns a converter of numeric values in one unit to numeric values in
+ * another unit.  The returned converter should be passed to cvFree() when it is
+ * no longer needed.
+ *
+ * Arguments:
+ *	from	Pointer to the unit from which to convert values.
+ *	to	Pointer to the unit to which to convert values.
+ * Returns:
+ *	NULL	Failure.  "utGetStatus()" will be:
+ *		    UT_BADUNIT		"from" or "to" is NULL.
+ *		    UT_NOTSAMESYSTEM	"from" and "to" belong to different
+ *					unit-systems.
+ *		    UT_MEANINGLESS	Conversion between the units is not
+ *					possible.  See "utAreConvertible()".
+ *	else	Pointer to the appropriate converter.
+ */
+cvConverter*
+utGetConverter(
+    utUnit* const	from,
+    utUnit* const	to)
+{
+    cvConverter*	converter = NULL;	/* failure */
+
+    if (from == NULL || to == NULL) {
+	status = UT_BADUNIT;
+    }
+    else if (from->common.system != to->common.system) {
+	status = UT_NOTSAMESYSTEM;
+    }
+    else {
+	status = UT_SUCCESS;
+
+	if (!IS_TIMESTAMP(from) && !IS_TIMESTAMP(to)) {
+	    ProductRelationship	relationship =
+		productRelationship(GET_PRODUCT(from), GET_PRODUCT(to));
+
+	    if (relationship == PRODUCT_UNCONVERTIBLE) {
+		status = UT_MEANINGLESS;
+	    }
+	    else if (ENSURE_CONVERTER_TO_PRODUCT(from) &&
+			ENSURE_CONVERTER_FROM_PRODUCT(to)) {
+		if (relationship == PRODUCT_EQUAL) {
+		    converter = cvCombine(
+			from->common.toProduct, to->common.fromProduct);
+		}
+		else {
+		    /*
+		     * The underlying product-units are reciprocals of each
+		     * other.
+		     */
+		    cvConverter*	invert = cvGetInverse();
+
+		    if (invert != NULL) {
+			cvConverter*	phase1 =
+			    cvCombine(from->common.toProduct, invert);
+
+			if (phase1 != NULL) {
+			    converter =
+				cvCombine(phase1, to->common.fromProduct);
+
+			    cvFree(phase1);
+			}		/* "phase1" allocated */
+
+			cvFree(invert);
+		    }			/* "invert" allocated */
+		}			/* reciprocal product-units */
+
+		if (converter == NULL)
+		    status = UT_OS;
+	    }				/* got necessary product converters */
+	}				/* neither unit is a timestamp */
+	else {
+	    cvConverter*	toSeconds =
+		utGetConverter(from->timestamp.unit, secondUnit);
+
+	    if (toSeconds == NULL) {
+		status = UT_OS;
+	    }
+	    else {
+		cvConverter*	shiftOrigin =
+		    cvGetOffset(from->timestamp.origin - to->timestamp.origin);
+
+		if (shiftOrigin == NULL) {
+		    status = UT_OS;
+		}
+		else {
+		    cvConverter*	toToUnit =
+			cvCombine(toSeconds, shiftOrigin);
+
+		    if (toToUnit == NULL) {
+			status = UT_OS;
+		    }
+		    else {
+			cvConverter*	fromSeconds =
+			    utGetConverter(secondUnit, to->timestamp.unit); 
+
+			if (fromSeconds == NULL) {
+			    status = UT_OS;
+			}
+			else {
+			    converter = cvCombine(toToUnit, fromSeconds);
+
+			    if (converter == NULL)
+				status = UT_OS;
+
+			    cvFree(fromSeconds);
+			}		/* "fromSeconds" allocated */
+
+			cvFree(toToUnit);
+		    }			/* "toToUnit" allocated */
+
+		    cvFree(shiftOrigin);
+		}			/* "shiftOrigin" allocated */
+
+		cvFree(toSeconds);
+	    }				/* "toSeconds" allocated */
+	}				/* units are timestamps */
+    }					/* valid arguments */
+
+    return converter;
+}
+
+
+/*
+ * Frees resources associated with a unit, when appropriate.  This function
+ * should be invoked when a unit is no longer needed.  If the unit has
+ * not be added to a unit-system, then use of the unit upon return from
+ * this function may result in undefined behavior.  A unit is added to
+ * a unit-system by virture of being created by "utAddBaseUnit()" or
+ * "utAddDimensionlessUnit()", or by virture of being an argument in a
+ * successful call to "utMapNameToUnit()" or "utMapSymbolToUnit()".  If the unit
+ * has been added to a unit-system, then this function has no effect.
+ *
+ * Arguments:
+ *	unit	Pointer to the unit to have its resources freed or NULL.
+ */
+void
+utFree(
+    const utUnit* const unit)
+{
+    status = UT_SUCCESS;
+
+    if (unit != NULL && !unit->common.inSystem)
+	FREE((utUnit*)unit);
+}
+
+
+/*
+ * Parses a string representation of a unit and returns the corresponding unit.
+ *
+ * Arguments:
+ *	system	Pointer to the unit-system in which the parsing will occur.
+ *	string	The string to be parsed (e.g., "millimeters").  There should be
+ *		no leading or trailing whitespace in the string.
+ *	nchar	NULL or pointer to storage for the number of characters at the
+ *		beginning of "string" that correspond to the returned unit.
+ * Returns:
+ *	NULL	"string" is NULL.
+ *	NULL	"string" couldn't be parsed into a known unit.
+ *	else	The unit corresponding to the first "*nchar" characters of
+ *		"string".
+ */
+utUnit*
+utParse(
+    utSystem* const	system,
+    const char* const	string,
+    int*		nchar)
+{
+    status = UT_SUCCESS;
+
+    return NULL;
+}

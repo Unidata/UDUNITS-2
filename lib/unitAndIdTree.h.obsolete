@@ -1,0 +1,103 @@
+#ifndef UT_UNIT_SEARCH_NODE_H_INCLUDED
+#define UT_UNIT_SEARCH_NODE_H_INCLUDED
+
+#include "units.h"
+
+
+typedef struct {
+    char*	id;
+    utUnit*	unit;
+} UnitAndId;
+
+
+typedef struct {
+    void*	root;
+    int		(*compare)(const void*, const void*);
+} UnitAndIdTree;
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
+/*
+ * Arguments:
+ *	id	The identifier (name or symbol).  May be freed upon return.
+ *	unit	The unit.  Must not be freed upon successful return until the
+ *		returned unit-search-node is no longer needed.
+ * Returns:
+ *	NULL	"id" is NULL.
+ *	NULL	"node" is NULL.
+ *	NULL	Out of memory.
+ *	else	Pointer to the new unit search node.
+ */
+UnitAndId*
+uaiNew(
+    char* const		id,
+    utUnit* const	unit);
+
+
+void
+uaiFree(
+    UnitAndId* const	node);
+
+
+/*
+ * Returns the unit search-node that matches an identifier.  Inserts a new unit
+ * search-node if no matching element is found.  Note that the returned search
+ * node might not be the same as the target search node.
+ *
+ * Arguments:
+ *	root		The binary-search tree.
+ *	targetNode	The target search node.
+ *	compare		The comparison function
+ * Returns:
+ *	NULL		"root" is NULL.
+ *	NULL		"targetNode" is NULL.
+ *	NULL		"compare" is NULL.
+ *	NULL		Insufficient storage space is available.
+ *	else		Pointer to the unit search-node that matches 
+ *			"targetNode" according to "compare".
+ */
+UnitAndId*
+uaiSearch(
+    void**			root,
+    const UnitAndId* const	targetNode,
+    int				(*compare)(const void*, const void*));
+
+
+/*
+ * Returns the unit search-node that matches an identifier.  Unlike uaiSearch(),
+ * does not insert a new unit search-node if no matching element is found.
+ *
+ * Arguments:
+ *	map		The binary-search tree.
+ *	targetNode	The target node.
+ *	compare		The comparison function.
+ * Returns:
+ *	NULL		"map" is NULL.
+ *	NULL		"targetNode" is NULL.
+ *	NULL		"compare" is NULL.
+ *	else		Pointer to the unit search-node that matches 
+ *			"targetNode" according to "compare".
+ */
+UnitAndId*
+uaiFind(
+    void* const*		map,
+    const UnitAndId* const	targetNode,
+    int				(*compare)(const void*, const void*));
+
+
+void
+uaiRemove(
+    void**			map,
+    const UnitAndId* const	targetNode,
+    int				(*compare)(const void*, const void*));
+
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif
