@@ -7,6 +7,14 @@ AC_CONFIG_SRCDIR([lib/converter.c])
 AM_INIT_AUTOMAKE([foreign subdir-objects])
 AC_CONFIG_HEADER([config.h])
 
+case "$CFLAGS" in
+    *-g*)  YFLAGS="${YFLAGS:+$YFLAGS }-t"
+	    AC_SUBST(YFLAGS)
+	    LFLAGS="${LFLAGS:+$LFLAGS }-d"
+	    AC_SUBST(LFLAGS)
+	    ;;
+esac
+
 # Checks for programs.
 AC_PROG_CXX
 AC_PROG_CC
@@ -16,6 +24,8 @@ AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
 AC_PROG_RANLIB
+AC_PROG_YACC
+AM_PROG_LEX
 
 # Checks for libraries.
 
