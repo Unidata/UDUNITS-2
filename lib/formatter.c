@@ -67,7 +67,7 @@ utf8PrintProduct(
 
 static utVisitor	formatter;
 
-extern utStatus		unitStatus;
+extern enum utStatus	utStatus;
 
 
 /*
@@ -155,10 +155,10 @@ format(
     int	nchar = -1;	/* failure */
 
     if (unit == NULL) {
-	unitStatus = UT_BADUNIT;
+	utStatus = UT_BADUNIT;
     }
     else if (buf == NULL) {
-	unitStatus = UT_BADBUF;
+	utStatus = UT_BADBUF;
     }
     else {
 	FormatPar	formatPar;
@@ -231,7 +231,7 @@ printBasic(
  *	else		Success.  Number of characters formatted, excluding any
  *			trailing NUL.
  */
-static utStatus
+static enum utStatus
 formatBasic(
     const utUnit* const	unit,
     void*		arg)
@@ -711,7 +711,7 @@ latin1PrintProduct(
  *	-1		Failure.  See errno.
  *	else		Success.  Number of bytes printed.
  */
-static utStatus
+static enum utStatus
 formatProduct(
     const utUnit* const		unit,
     const int			count,
@@ -834,7 +834,7 @@ printGalilean(
  *	-1		Failure.  See errno.
  *	else		Success.  Number of bytes printed.
  */
-static utStatus
+static enum utStatus
 formatGalilean(
     const utUnit* const	unit,
     const double	scale,
@@ -978,7 +978,7 @@ printTimestamp(
  *	-1		Failure.  See errno.
  *	else		Success.  Number of bytes printed.
  */
-static utStatus
+static enum utStatus
 formatTimestamp(
     const utUnit* const	unit,
     const utUnit* const	underlyingUnit,
@@ -1093,10 +1093,10 @@ printLogarithmic(
  *	reference	Pointer to the reference-level of "unit".
  *	arg		Pointer to the formatting parameters.
  * Returns:
- *	-1		Failure.  See errno.
- *	else		Success.  Number of bytes printed.
+ *	UT_VISIT_ERROR	Failure.
+ *	UT_SUCCESS	Success.
  */
-static utStatus
+static enum utStatus
 formatLogarithmic(
     const utUnit* const	unit,
     const double	logE,
@@ -1196,11 +1196,11 @@ utFormat(
 
     if (unit == NULL || buf == NULL ||
 	    ((encoding & UT_LATIN1) && (encoding & UT_UTF8))) {
-	unitStatus = UT_BADARG;
+	utStatus = UT_BADARG;
     }
     else {
 	nchar = format(unit, buf, size, useNames, getDefinition, encoding, 0);
-	unitStatus = nchar < 0 ? UT_CANT_FORMAT : UT_SUCCESS;
+	utStatus = nchar < 0 ? UT_CANT_FORMAT : UT_SUCCESS;
     }
 
     return nchar;

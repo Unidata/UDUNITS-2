@@ -1,7 +1,7 @@
 /*
  * Unit-to-identifier map.
  *
- * $Id: unitToIdMap.c,v 1.1 2006/11/16 20:21:06 steve Exp $
+ * $Id: unitToIdMap.c,v 1.2 2006/12/02 22:33:48 steve Exp $
  */
 
 /*LINTLIBRARY*/
@@ -28,7 +28,7 @@ typedef struct {
 static UnitToIdMap	unitToNameMap;
 static UnitToIdMap	unitToSymbolMap;
 
-extern utStatus		unitStatus;
+extern enum utStatus	utStatus;
 
 
 /******************************************************************************
@@ -205,14 +205,14 @@ selectTree(
  *	UT_EXISTS	"unit" already maps to a different identifier.
  *	UT_SUCCESS	Success.
  */
-static utStatus
+static enum utStatus
 utimAdd(
     UnitToIdMap* const	map,
     const utUnit*	unit,
     const char* const	id,
     utEncoding		encoding)
 {
-    utStatus	status;
+    enum utStatus	status;
 
     if (map == NULL) {
 	status = UT_INTERNAL;
@@ -347,7 +347,7 @@ utimFindUtf8ByUnit(
 	    char* const	id = latin1ToUtf8((*treeEntry)->id);
 
 	    if (id == NULL) {
-		unitStatus = UT_OS;
+		utStatus = UT_OS;
 		treeEntry = NULL;
 	    }
 	    else {
@@ -358,7 +358,7 @@ utimFindUtf8ByUnit(
 
 		    if (treeEntry == NULL) {
 			uaiFree(newEntry);
-			unitStatus = UT_OS;
+			utStatus = UT_OS;
 		    }
 		}
 
@@ -378,7 +378,7 @@ utimFindUtf8ByUnit(
  *	unit		Pointer to the unit whose identifier should be returned.
  *	encoding	The desired encoding of the identifier.
  * Returns:
- *	NULL		Failure.  "unitStatus" will be
+ *	NULL		Failure.  "utStatus" will be
  *			    UT_BADUNIT	"unit" was NULL.
  *	else		Pointer to the identifier in the given encoding
  *			associated with "unit".
@@ -392,7 +392,7 @@ getId(
     const char*	id = NULL;		/* failure */
 
     if (unit == NULL) {
-	unitStatus = UT_BADUNIT;
+	utStatus = UT_BADUNIT;
     }
     else {
 	UnitAndId*	mapEntry = 
@@ -428,13 +428,13 @@ getId(
  *	UT_EXISTS	"unit" already maps to a name.
  *	UT_SUCCESS	Success.
  */
-utStatus
+enum utStatus
 utMapUnitToName(
     utUnit* const	unit,
     const char* const	name,
     utEncoding		encoding)
 {
-    return unitStatus = utimAdd(&unitToNameMap, unit, name, encoding);
+    return utStatus = utimAdd(&unitToNameMap, unit, name, encoding);
 }
 
 
@@ -452,13 +452,13 @@ utMapUnitToName(
  *	UT_EXISTS	"unit" already maps to a symbol.
  *	UT_SUCCESS	Success.
  */
-utStatus
+enum utStatus
 utMapUnitToSymbol(
     utUnit*		unit,
     const char* const	symbol,
     utEncoding		encoding)
 {
-    return unitStatus = utimAdd(&unitToSymbolMap, unit, symbol, encoding);
+    return utStatus = utimAdd(&unitToSymbolMap, unit, symbol, encoding);
 }
 
 
@@ -481,7 +481,7 @@ utGetName(
     const utUnit* const	unit,
     const utEncoding	encoding)
 {
-    unitStatus = UT_SUCCESS;
+    utStatus = UT_SUCCESS;
 
     return getId(&unitToNameMap, unit, encoding);
 }
@@ -506,7 +506,7 @@ utGetSymbol(
     const utUnit* const	unit,
     const utEncoding	encoding)
 {
-    unitStatus = UT_SUCCESS;
+    utStatus = UT_SUCCESS;
 
     return getId(&unitToSymbolMap, unit, encoding);
 }

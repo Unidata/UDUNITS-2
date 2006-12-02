@@ -3,7 +3,7 @@
  *
  * This module is thread-compatible but not thread-safe.
  *
- * $Id: systemMap.c,v 1.1 2006/11/16 20:21:06 steve Exp $
+ * $Id: systemMap.c,v 1.2 2006/12/02 22:33:47 steve Exp $
  */
 
 /*LINTLIBRARY*/
@@ -124,6 +124,7 @@ smSearch(
 	Entry**	treeEntry;
 
 	targetEntry->system = system;
+	targetEntry->ptr = NULL;
 	treeEntry = tsearch(targetEntry, &map->tree, compareEntries);
 
 	if (treeEntry == NULL) {

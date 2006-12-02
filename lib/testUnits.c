@@ -9,7 +9,9 @@
 #include <stdio.h>
 #include <CUnit/CUnit.h>
 #include <CUnit/Basic.h>
-#include <units.h>
+
+#include "expat.h"
+#include "units.h"
 
 
 static utSystem*	unitSystem;
@@ -20,6 +22,7 @@ static utUnit*		kelvin;
 static utUnit*		second;
 static utUnit*		minute;
 static utUnit*		kilometer;
+static utUnit*		micron;
 static utUnit*		rankine;
 static utUnit*		celsius;
 static utUnit*		fahrenheit;
@@ -185,6 +188,7 @@ test_utAddSymbolPrefix(void)
     CU_ASSERT_EQUAL(utAddSymbolPrefix(unitSystem, "M", 1e6), UT_SUCCESS);
     CU_ASSERT_EQUAL(utAddSymbolPrefix(unitSystem, "u", 1e-6), UT_SUCCESS);
     CU_ASSERT_EQUAL(utAddSymbolPrefix(unitSystem, "µ", 1e-6), UT_SUCCESS);
+    CU_ASSERT_EQUAL(utAddSymbolPrefix(unitSystem, "k", 1e3), UT_SUCCESS);
 
     CU_ASSERT_EQUAL(utAddSymbolPrefix(unitSystem, "M", 1e5), UT_EXISTS);
     CU_ASSERT_EQUAL(utAddSymbolPrefix(NULL, "foo", 1), UT_BADSYSTEM);
@@ -259,6 +263,12 @@ test_utScale(void)
     buf[nchar] = 0;
     CU_ASSERT_STRING_EQUAL(buf, "1000 meter");
 
+    micron = utScale(1e-6, meter);
+    CU_ASSERT_EQUAL(utGetStatus(), UT_SUCCESS);
+    CU_ASSERT_PTR_NOT_NULL(micron);
+    CU_ASSERT_EQUAL(utGetSystem(meter), utGetSystem(micron));
+    CU_ASSERT_NOT_EQUAL(utCompare(meter, micron), 0);
+
     metre = utScale(1, meter);
     CU_ASSERT_EQUAL(utGetStatus(), UT_SUCCESS);
     CU_ASSERT_PTR_NOT_NULL(metre);
@@ -318,6 +328,8 @@ test_utOffset(void)
     CU_ASSERT_PTR_NOT_NULL(fahrenheit);
     CU_ASSERT_EQUAL(utGetSystem(rankine), utGetSystem(fahrenheit));
     CU_ASSERT_NOT_EQUAL(utCompare(rankine, fahrenheit), 0);
+    CU_ASSERT_EQUAL(utMapNameToUnit("degrees_fahrenheit", fahrenheit),
+	UT_SUCCESS);
 
     nchar = utFormat(celsius, buf, sizeof(buf)-1, asciiSymbolDef);
     CU_ASSERT_TRUE_FATAL(nchar > 0);
@@ -515,6 +527,11 @@ test_utInvert(void)
     hertz = utInvert(second);
     CU_ASSERT_PTR_NOT_NULL(hertz);
     CU_ASSERT_EQUAL(utGetStatus(), UT_SUCCESS);
+
+    CU_ASSERT_EQUAL(utMapUnitToName(hertz, "hertz", UT_ASCII), UT_SUCCESS);
+    CU_ASSERT_EQUAL(utMapNameToUnit("hertz", hertz), UT_SUCCESS);
+    CU_ASSERT_EQUAL(utMapUnitToSymbol(hertz, "Hz", UT_ASCII), UT_SUCCESS);
+    CU_ASSERT_EQUAL(utMapSymbolToUnit("Hz", hertz), UT_SUCCESS);
 
     megahertz = utScale(1e6, utInvert(second));
     CU_ASSERT_PTR_NOT_NULL(megahertz);
@@ -1182,11 +1199,232 @@ test_utSetEncoding(void)
 
 
 static void
+test_utCompare(void)
+{
+    CU_ASSERT_NOT_EQUAL(utCompare(kilogram, meter), 0);
+    CU_ASSERT_NOT_EQUAL(utCompare(meter, radian), 0);
+    CU_ASSERT_NOT_EQUAL(utCompare(radian, kelvin), 0);
+    CU_ASSERT_NOT_EQUAL(utCompare(kelvin, second), 0);
+    CU_ASSERT_NOT_EQUAL(utCompare(second, minute), 0);
+    CU_ASSERT_NOT_EQUAL(utCompare(minute, kilometer), 0);
+    CU_ASSERT_NOT_EQUAL(utCompare(kilometer, rankine), 0);
+    CU_ASSERT_NOT_EQUAL(utCompare(rankine, celsius), 0);
+    CU_ASSERT_NOT_EQUAL(utCompare(celsius, fahrenheit), 0);
+    CU_ASSERT_NOT_EQUAL(utCompare(fahrenheit, watt), 0);
+    CU_ASSERT_NOT_EQUAL(utCompare(watt, cubicMicron), 0);
+    CU_ASSERT_NOT_EQUAL(utCompare(cubicMicron, dBZ), 0);
+    CU_ASSERT_NOT_EQUAL(utCompare(dBZ, secondsSinceTheEpoch), 0);
+    CU_ASSERT_NOT_EQUAL(utCompare(secondsSinceTheEpoch, hertz), 0);
+    CU_ASSERT_NOT_EQUAL(utCompare(hertz, megahertz), 0);
+    CU_ASSERT_NOT_EQUAL(utCompare(megahertz, kilogram), 0);
+}
+
+
+static void
 test_parsing(void)
 {
-    int	nchar;
+    utUnit*	unit;
+    char*	spec;
 
-    CU_ASSERT_PTR_NOT_NULL(utParse(unitSystem, "m", UT_ASCII, &nchar));
+    spec = "m";
+    unit = utParse(unitSystem, spec, UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    CU_ASSERT_EQUAL(utGetParseLength(), strlen(spec));
+    CU_ASSERT_EQUAL(utCompare(unit, meter), 0);
+    utFree(unit);
+
+    spec = "kg.m";
+    unit = utParse(unitSystem, spec, UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    CU_ASSERT_EQUAL(utGetParseLength(), strlen(spec));
+    utFree(unit);
+
+    spec = "kg m";
+    unit = utParse(unitSystem, spec, UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    CU_ASSERT_EQUAL(utGetParseLength(), strlen(spec));
+    utFree(unit);
+
+    spec = "kg.m2.s-3";
+    unit = utParse(unitSystem, spec, UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    CU_ASSERT_EQUAL(utGetParseLength(), strlen(spec));
+    CU_ASSERT_EQUAL(utCompare(unit, watt), 0);
+    utFree(unit);
+
+    spec = "kg.m2/s3";
+    unit = utParse(unitSystem, spec, UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    CU_ASSERT_EQUAL(utGetParseLength(), strlen(spec));
+    CU_ASSERT_EQUAL(utCompare(unit, watt), 0);
+    utFree(unit);
+
+    spec = "s-3.m2.kg";
+    unit = utParse(unitSystem, spec, UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    CU_ASSERT_EQUAL(utGetParseLength(), strlen(spec));
+    CU_ASSERT_EQUAL(utCompare(unit, watt), 0);
+    utFree(unit);
+
+    spec = "(kg.m2/s3)";
+    unit = utParse(unitSystem, spec, UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    CU_ASSERT_EQUAL(utGetParseLength(), strlen(spec));
+    CU_ASSERT_EQUAL(utCompare(unit, watt), 0);
+    utFree(unit);
+
+    spec = "(kg.m2/s3)^1";
+    unit = utParse(unitSystem, spec, UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    CU_ASSERT_EQUAL(utGetParseLength(), strlen(spec));
+    CU_ASSERT_EQUAL(utCompare(unit, watt), 0);
+    utFree(unit);
+
+    spec = "kg.(m/s)^2.s-1";
+    unit = utParse(unitSystem, spec, UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    CU_ASSERT_EQUAL(utGetParseLength(), strlen(spec));
+    CU_ASSERT_EQUAL(utCompare(unit, watt), 0);
+    utFree(unit);
+
+    spec = "1000 m";
+    unit = utParse(unitSystem, spec, UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    CU_ASSERT_EQUAL(utGetParseLength(), strlen(spec));
+    CU_ASSERT_EQUAL(utCompare(unit, kilometer), 0);
+    utFree(unit);
+
+    spec = "(1000)(m)";
+    unit = utParse(unitSystem, spec, UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    CU_ASSERT_EQUAL(utGetParseLength(), strlen(spec));
+    CU_ASSERT_EQUAL(utCompare(unit, kilometer), 0);
+    utFree(unit);
+
+    spec = "(K/1.8) @ 459.67";
+    unit = utParse(unitSystem, spec, UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    CU_ASSERT_EQUAL(utGetParseLength(), strlen(spec));
+    CU_ASSERT_EQUAL(utCompare(unit, fahrenheit), 0);
+    utFree(unit);
+
+    spec = "METER";
+    unit = utParse(unitSystem, spec, UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    CU_ASSERT_EQUAL(utGetParseLength(), strlen(spec));
+    CU_ASSERT_EQUAL(utCompare(unit, meter), 0);
+    utFree(unit);
+
+    spec = "s@19700101T000000 UTC";
+    unit = utParse(unitSystem, spec, UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    CU_ASSERT_EQUAL(utGetParseLength(), strlen(spec));
+    CU_ASSERT_EQUAL(utCompare(unit, secondsSinceTheEpoch), 0);
+    utFree(unit);
+
+    spec = "s @ 19700101T000000";
+    unit = utParse(unitSystem, spec, UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    CU_ASSERT_EQUAL(utGetParseLength(), strlen(spec));
+    CU_ASSERT_EQUAL(utCompare(unit, secondsSinceTheEpoch), 0);
+    utFree(unit);
+
+    spec = "s @ 1970-01-01 00:00:00";
+    unit = utParse(unitSystem, spec, UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    CU_ASSERT_EQUAL(utGetParseLength(), strlen(spec));
+    CU_ASSERT_EQUAL(utCompare(unit, secondsSinceTheEpoch), 0);
+    utFree(unit);
+
+    spec = "kg·m²/s³";
+    unit = utParse(unitSystem, spec, UT_LATIN1);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    CU_ASSERT_EQUAL(utGetParseLength(), strlen(spec));
+    CU_ASSERT_EQUAL(utCompare(unit, watt), 0);
+    utFree(unit);
+
+    spec = "(kg)(m)^2/(s)^3";
+    unit = utParse(unitSystem, spec, UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    CU_ASSERT_EQUAL(utGetParseLength(), strlen(spec));
+    CU_ASSERT_EQUAL(utCompare(unit, watt), 0);
+    utFree(unit);
+
+    spec = "kg\xc2\xb7m\xc2\xb2/s\xc2\xb3";
+    unit = utParse(unitSystem, spec, UT_UTF8);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    CU_ASSERT_EQUAL(utGetParseLength(), strlen(spec));
+    CU_ASSERT_EQUAL(utCompare(unit, watt), 0);
+    utFree(unit);
+
+    spec = "0.1 lg(re (1e-6 m)^3)";
+    unit = utParse(unitSystem, spec, UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    CU_ASSERT_EQUAL(utGetParseLength(), strlen(spec));
+    CU_ASSERT_EQUAL(utCompare(unit, dBZ), 0);
+    utFree(unit);
+
+    spec = utTrim(" (K/1.8) @ 459.67 ", UT_ASCII);
+    unit = utParse(unitSystem, spec, UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    CU_ASSERT_EQUAL(utGetParseLength(), strlen(spec));
+    CU_ASSERT_EQUAL(utCompare(unit, fahrenheit), 0);
+    utFree(unit);
+    free(spec);
+
+    spec = "1";
+    unit = utParse(unitSystem, spec, UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    CU_ASSERT_EQUAL(utGetParseLength(), strlen(spec));
+    CU_ASSERT_EQUAL(utCompare(utGetDimensionlessUnitOne(unitSystem), unit), 0);
+    utFree(unit);
+
+    spec = "3.141592653589793238462643383279";
+    unit = utParse(unitSystem, spec, UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    CU_ASSERT_EQUAL(utGetParseLength(), strlen(spec));
+    utFree(unit);
+
+    spec = "";
+    unit = utParse(unitSystem, spec, UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    CU_ASSERT_EQUAL(utGetParseLength(), strlen(spec));
+    CU_ASSERT_EQUAL(utCompare(utGetDimensionlessUnitOne(unitSystem), unit), 0);
+    utFree(unit);
+
+    spec = "km";
+    unit = utParse(unitSystem, spec, UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    CU_ASSERT_EQUAL(utGetParseLength(), strlen(spec));
+    CU_ASSERT_EQUAL(utCompare(kilometer, unit), 0);
+    utFree(unit);
+
+    spec = "µm";
+    unit = utParse(unitSystem, spec, UT_LATIN1);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    CU_ASSERT_EQUAL(utGetParseLength(), strlen(spec));
+    CU_ASSERT_EQUAL(utCompare(unit, micron), 0);
+    utFree(unit);
+
+    spec = "µmegaHz";
+    unit = utParse(unitSystem, spec, UT_LATIN1);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    CU_ASSERT_EQUAL(utGetParseLength(), strlen(spec));
+    CU_ASSERT_EQUAL(utCompare(unit, hertz), 0);
+    utFree(unit);
+
+    spec = "MµHertz";
+    unit = utParse(unitSystem, spec, UT_LATIN1);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    CU_ASSERT_EQUAL(utGetParseLength(), strlen(spec));
+    CU_ASSERT_EQUAL(utCompare(unit, hertz), 0);
+    utFree(unit);
+}
+
+
+static void
+test_xml(void)
+{
 }
 
 
@@ -1221,7 +1459,9 @@ main(
 	    CU_ADD_TEST(testSuite, test_utGetConverter);
 	    CU_ADD_TEST(testSuite, test_utOffsetByTime);
 	    CU_ADD_TEST(testSuite, test_utSetEncoding);
+	    CU_ADD_TEST(testSuite, test_utCompare);
 	    CU_ADD_TEST(testSuite, test_parsing);
+	    CU_ADD_TEST(testSuite, test_xml);
 	    /*
 	    */
 

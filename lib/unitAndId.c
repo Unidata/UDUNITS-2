@@ -1,7 +1,7 @@
 /*
  * Searchable unit-and-identifier tree.
  *
- * $Id: unitAndId.c,v 1.1 2006/11/16 20:21:06 steve Exp $
+ * $Id: unitAndId.c,v 1.2 2006/12/02 22:33:47 steve Exp $
  */
 
 /*LINTLIBRARY*/
@@ -17,7 +17,7 @@
 #include "unitAndId.h"
 #include "units.h"
 
-extern utStatus	unitStatus;
+extern enum utStatus	utStatus;
 
 
 /*
@@ -25,7 +25,7 @@ extern utStatus	unitStatus;
  *	unit	The unit.  May be freed upon return.
  *	id	The identifier (name or symbol).  May be freed upon return.
  * Returns:
- *	NULL	Failure.  "unitStatus" will be
+ *	NULL	Failure.  "utStatus" will be
  *		    UT_BADARG	"unit" or "id" is NULL.
  *		    UT_OS	Operating-system failure.  See "errno".
  *	else	Pointer to the new unit-and-identifier.
@@ -38,30 +38,30 @@ uaiNew(
     UnitAndId*	entry = NULL;		/* failure */
 
     if (id == NULL || unit == NULL) {
-	unitStatus = UT_BADARG;
+	utStatus = UT_BADARG;
     }
     else {
 	entry = malloc(sizeof(UnitAndId));
 
 	if (entry == NULL) {
-	    unitStatus = UT_OS;
+	    utStatus = UT_OS;
 	}
 	else {
 	    entry->id = strdup(id);
 
 	    if (entry->id == NULL) {
-		unitStatus = UT_OS;
+		utStatus = UT_OS;
 	    }
 	    else {
 		entry->unit = utClone(unit);
 
 		if (entry->unit == NULL) {
-		    assert(unitStatus != UT_SUCCESS);
+		    assert(utStatus != UT_SUCCESS);
 		    free(entry->id);
 		}
 	    }
 
-	    if (unitStatus != UT_SUCCESS) {
+	    if (utStatus != UT_SUCCESS) {
 		free(entry);
 		entry = NULL;
 	    }

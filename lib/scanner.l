@@ -1,249 +1,333 @@
-%{
-
 /*
- * lex(1) specification for tokens for the Unidata units package, udunits.
+ * lex(1) specification for tokens for the Unidata units package, UDUNITS2.
+ *
+ * $Id: scanner.l,v 1.2 2006/12/02 22:33:46 steve Exp $
  */
 
-#ifndef _XOPEN_SOURCE
-#   define _XOPEN_SOURCE
-#endif
-#ifndef _ANSI_C_SOURCE
-#   define _ANSI_C_SOURCE
-#endif
+%option noyywrap
 
-#include <udposix.h>
+%{
+
+#include <ctype.h>
+#include <errno.h>
+#include <math.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <ctype.h>
 #include <string.h>
-#include <errno.h>
-#include <math.h>
 #include <time.h>
-#include "udunits.h"
-#include "utprivate.h"	/* private definitions */
-#include "utparse.h"	/* #include "udunits.h" before this one */
-#include "utscan.h"
 
 %}
 
-space		([ \t])
-integer		([+-]?[0-9]+)
-exp		([eE][+-]?[0-9]+)
-real		([+-]?[0-9]*("."[0-9]*{exp}?|{exp}))
-year		([+-]?[0-9]{1,4})
-month		(0?[1-9]|1[0-2])
-day		(0?[1-9]|[1-2][0-9]|30|31)
-hour		([0-1]?[0-9]|2[0-3])
-minute		([0-5]?[0-9])
-second		(({minute}|60)("."[0-9]*)?)
-name		(%|[a-zA-Z][a-zA-Z_]*([0-9]+[a-zA-Z_]+)*)
+space			[ \t\r\f\v]
+utf8_exp_0		\xe2\x81\xb0
+utf8_exp_1		\xc2\xb1
+utf8_exp_2		\xc2\xb2
+utf8_exp_3		\xc2\xb3
+utf8_exp_4		\xe2\x81\xb4
+utf8_exp_5		\xe2\x81\xb5
+utf8_exp_6		\xe2\x81\xb6
+utf8_exp_7		\xe2\x81\xb7
+utf8_exp_8		\xe2\x81\xb8
+utf8_exp_9		\xe2\x81\xb9
+utf8_exp_digit		{utf8_exp_0}|{utf8_exp_1}|{utf8_exp_2}|{utf8_exp_3}|{utf8_exp_4}|{utf8_exp_5}|{utf8_exp_6}|{utf8_exp_7}|{utf8_exp_8}|{utf8_exp_9}
+utf8_exp_sign		\xe2\x81\xba|\xe2\x81\xbb
+utf8_exponent		{utf8_exp_sign}?{utf8_exp_digit}+
+int			[0-9]+
+int_period		{int}\.
+period_int		\.{int}
+int_period_int		{int}\.{int}
+mantissa		{int_period}|{period_int}|{int_period_int}
+real_exp		[eE][+-]?[0-9]+
+real			[+-]?({int}{real_exp}|{mantissa}{real_exp}?)
+latin1_exponent		[¹²³]+
+year			[+-]?[0-9]{1,4}
+month			0?[1-9]|1[0-2]
+day			0?[1-9]|[1-2][0-9]|30|31
+hour			[+-]?[0-1]?[0-9]|2[0-3]
+minute			[0-5]?[0-9]
+second			({minute}|60)(\.[0-9]*)?
+ascii_letter		[_a-zA-Z]
+ascii_alphanum		[_a-zA-Z0-9]
+ascii_id		%|{ascii_letter}({ascii_alphanum}*{ascii_letter})?
+latin1_nbsp		\xa0
+latin1_shy		\xad
+latin1_degree		°
+latin1_mu		µ
+latin1_special		{latin1_nbsp}|{latin1_shy}|{latin1_degree}|{latin1_mu}
+latin1_blk1		[À-Ö]
+latin1_blk2		[Ø-ö]
+latin1_blk3		[ø-\xff]
+latin1_blk		{latin1_blk1}|{latin1_blk2}|{latin1_blk3}
+latin1_letter		[_a-zA-Z]|{latin1_special}|{latin1_blk}
+latin1_alphanum		{latin1_letter}|[0-9]
+latin1_id		%|{latin1_letter}({latin1_alphanum}*{latin1_letter})?
+utf8_ohm		\xe0\x96\xa9
+utf8_special		\xc2{latin1_special}|{utf8_ohm}
+utf8_blk		\xc2{latin1_blk}
+utf8_letter		[_a-zA-Z]|{utf8_special}|{utf8_blk}
+utf8_alphanum		{utf8_letter}|[0-9]
+utf8_id			%|{utf8_letter}({utf8_alphanum}*{utf8_letter})?
+broken_date		{year}-{month}(-{day})?
+packed_date		{year}({month}{day}?)?
+broken_clock		{hour}:{minute}(:{second})?
+packed_clock		{hour}({minute}{second}?)?
+broken_timestamp	{broken_date}({space}+{broken_clock})?
+packed_timestamp	{packed_date}T{packed_clock}?
+logref			\({space}*[Rr][Ee](:{space})?{space}*
 
-%Start		shift_seen date_seen time_seen
+%Start		latin1 utf8 ascii_exp latin1_exp utf8_exp
 
 %%
+    int	initial_condition;
+    int	exp_condition;
 
-"#".* {
-    /* comment */ ;
-}
+    if (_encoding == UT_UTF8) {
+	initial_condition = utf8;
+	exp_condition = utf8_exp;
+    }
+    else if (_encoding == UT_LATIN1) {
+	initial_condition = latin1;
+	exp_condition = latin1_exp;
+    }
+    else {
+	initial_condition = INITIAL;
+	exp_condition = ascii_exp;
+    }
 
-{space}*("@"|after|AFTER|from|FROM|since|SINCE|ref|REF){space}* {
-    BEGIN shift_seen;
+    if (_restartScanner) {
+	BEGIN(initial_condition);
+	_restartScanner = 0;
+    }
+
+{space}*(@|after|AFTER|from|FROM|since|SINCE|ref|REF){space}* {
+    BEGIN(initial_condition);
     return SHIFT;
 }
 
 {space}*(per|PER|"/"){space}* {
-    BEGIN 0;
+    BEGIN(initial_condition);
     return DIVIDE;
 }
 
 "-"|"."|"*"|{space}+ {
-    BEGIN 0;
+    BEGIN(initial_condition);
+    return MULTIPLY;
+}
+
+<latin1,latin1_exp>"·" {
+    BEGIN(initial_condition);
+    return MULTIPLY;
+}
+
+<utf8,utf8_exp>\xc2\xb7 {
+    BEGIN(initial_condition);
     return MULTIPLY;
 }
 
 "^"|"**" {
-    BEGIN 0;
-    return EXPONENT;
+    BEGIN(exp_condition);
+    return RAISE;
 }
 
-<shift_seen>{year}"-"{month}"-"{day}T?{space}* {
+<latin1,latin1_exp>{latin1_exponent} {
+    int	status = EXPONENT;
+    int	exponent = 0;
+    int	i;
+
+    for (i = 0; i < yyleng; i++) {
+	int	c = yytext[i];
+
+	exponent *= 10;
+
+	if (c == '¹') {
+	    exponent += 1;
+	}
+	else if (c == '²') {
+	    exponent += 2;
+	}
+	else if (c == '³') {
+	    exponent += 3;
+	}
+	else {
+	    status = ERR;
+	    break;
+	}
+    }
+
+    if (status == EXPONENT)
+	yylval.ival = exponent;
+
+    BEGIN(initial_condition);
+    return status;
+}
+
+<utf8,utf8_exp>{utf8_exponent} {
+    int		status = EXPONENT;
+    int		exponent = 0;
+    int		sign = 1;
+    char*	cp = yytext;
+
+    if (strncmp(cp, "\xe2\x81\xba", 3) == 0) {
+	cp += 3;
+    }
+    else if (strncmp(cp, "\xe2\x81\xbb", 3) == 0) {
+	sign = -1;
+	cp += 3;
+    }
+
+    while (cp < yytext + yyleng) {
+	int	j;
+	static struct {
+	    const char*	string;
+	    const int	len;
+	} utf8_exponents[] = {
+	    {"\xe2\x81\xb0", 3},
+	    {"\xc2\xb1",     2},
+	    {"\xc2\xb2",     2},
+	    {"\xc2\xb3",     2},
+	    {"\xe2\x81\xb4", 3},
+	    {"\xe2\x81\xb5", 3},
+	    {"\xe2\x81\xb6", 3},
+	    {"\xe2\x81\xb7", 3},
+	    {"\xe2\x81\xb8", 3},
+	    {"\xe2\x81\xb9", 3},
+	};
+
+	exponent *= 10;
+
+	for (j = 0; j < 10; j++) {
+	    int	len = utf8_exponents[j].len;
+
+	    if (strncmp(cp, utf8_exponents[j].string, len) == 0) {
+		exponent += j;
+		cp += len;
+		break;
+	    }
+	}
+
+	if (j >= 10) {
+	    status = ERR;
+	    break;
+	}
+    }
+
+    if (status == EXPONENT)
+	yylval.ival = sign * exponent;
+
+    BEGIN(initial_condition);
+    return status;
+}
+
+{broken_date}{space}* {
     int		year;
     int		month;
-    int		day;
+    int		day = 1;
 
     (void) sscanf((char*)yytext, "%d-%d-%d", &year, &month, &day);
-    yylval.rval	= utencdate(year, month, day);
 
-    BEGIN date_seen;
+    yylval.rval	= utEncodeDate(year, month, day);
+
+    BEGIN(initial_condition);
     return DATE;
 }
 
-<shift_seen>now{space}* {
-    time_t	now;
-    struct tm	*tp;
-
-    errno	= 0;
-    if (time(&now) == -1) {
-	(void) fprintf(stderr, "udunits(3): Can't get current time. %s\n",
-		       strerror(errno));
-	return ERR;
-    }
-
-    if ((tp = gmtime(&now)) == NULL) {
-	(void) fprintf(stderr, "udunits(3): can't get UTC time\n");
-	return ERR;
-    }
-    yylval.rval	= utencdate(1900+tp->tm_year, 1+tp->tm_mon, tp->tm_mday) +
-		  utencclock(tp->tm_hour, tp->tm_min, (double)tp->tm_sec);
-
-    BEGIN 0;
-    return REAL;
-}
-
-<date_seen>{hour}(":"{minute}(":"{second})?)?{space}* {
+{broken_clock}{space}* {
     int		hour;
-    int		minute	= 0;
+    int		minute;
     double	second	= 0.0;
 
     (void) sscanf((char*)yytext, "%d:%d:%lf", &hour, &minute, &second);
-    yylval.rval	= utencclock(hour, minute, second);
 
-    BEGIN time_seen;
-    return TIME;
+    yylval.rval	= utEncodeClock(hour, minute, second);
+
+    BEGIN(initial_condition);
+    return CLOCK;
 }
 
-<date_seen>[0-2][0-9][0-5][0-9]{space}* {
-    int		hour;
-    int		minute;
+{packed_timestamp}{space}* {
+    int		year;
+    int		month = 1;
+    int		day = 1;
+    int		hour = 0;
+    int		minute = 0;
+    double	second	= 0.0;
 
-    (void) sscanf((char*)yytext, "%2d%2d", &hour, &minute);
-    if (hour >= 24 || minute >= 60)
-	return ERR;
-    yylval.rval	= utencclock(hour, minute, 0.0);
+    (void) sscanf((char*)yytext, "%4d%2d%2dT%2d%2d%lf", &year, &month, &day,
+	&hour, &minute, &second);
 
-    BEGIN time_seen;
-    return TIME;
+    yylval.rval	= utEncodeTime(year, month, day, hour, minute, second);
+
+    BEGIN(initial_condition);
+    return TIMESTAMP;
 }
 
-<date_seen>([0-9][0-5][0-9]){space}* {
-    int		hour;
-    int		minute;
+{ascii_id} {
+    yylval.id = strdup((char*)yytext);
 
-    (void) sscanf((char*)yytext, "%1d%2d", &hour, &minute);
-    if (minute >= 60)
-	return ERR;
-    yylval.rval	= utencclock(hour, minute, 0.0);
-
-    BEGIN time_seen;
-    return TIME;
+    BEGIN(exp_condition);
+    return ID;
 }
 
-<time_seen>UTC{space}* {
-    yylval.rval	= 0;
+<latin1>{latin1_id} {
+    yylval.id = strdup((char*)yytext);
 
-    BEGIN 0;
-    return ZONE;
+    BEGIN(latin1_exp);
+    return ID;
 }
 
-<time_seen>([+-]?{hour}":"{minute}){space}* {
-    int		hour;
-    int		minute;
-
-    (void) sscanf((char*)yytext, "%d:%d", &hour, &minute);
-    if (hour < 0)
-	minute	= -minute;
-
-    yylval.rval	= utencclock(hour, minute, 0.0);
-
-    BEGIN 0;
-    return ZONE;
-}
-
-<time_seen>([+-]?{hour}":"?){space}* {
-    int		hour;
-
-    (void) sscanf((char*)yytext, "%d", &hour);
-
-    yylval.rval	= utencclock(hour, 0, 0.0);
-
-    BEGIN 0;
-    return ZONE;
-}
-
-<time_seen>([+-]{hour}{minute}){space}* {
-    int		zone;
-    int		hour;
-    int		minute;
-
-    (void) sscanf((char*)yytext, "%d", &zone);
-    minute	= zone < 0
-		    ? -(-zone % 100)
-		    :    zone % 100;
-    hour	= (zone - minute) / 100;
-
-    yylval.rval	= utencclock(hour, minute, 0.0);
-
-    BEGIN 0;
-    return ZONE;
-}
-
-{name} {
-    if (strlen((char*)yytext) > UT_NAMELEN-1)
-	(void) fprintf(stderr, "udunits(3): Name `%s' too long; truncated\n",
-		       yytext);
-    (void) strncpy(yylval.name, (char*)yytext, UT_NAMELEN-1);
-    yylval.name[UT_NAMELEN-1]	= 0;
-
-    BEGIN 0;
-    return NAME;
-}
-
-{integer} {
+[+-]?{int} {
     int		status;
 
     errno	= 0;
     yylval.ival = atol((char*)yytext);
+
     if (errno == 0) {
 	status	= INT;
     } else {
 	(void) fputs("udunits(3): Invalid integer\n", stderr);
+
 	status	= ERR;
     }
 
-    BEGIN 0;
     return status;
 }
 
-{real} {
+<INITIAL,latin1,utf8>{real} {
     int		status;
 
     errno	= 0;
     yylval.rval = atof((char*)yytext);
+
     if (errno == 0) {
 	status	= REAL;
     } else {
 	(void) fputs("udunits(3): Invalid real\n", stderr);
+
 	status	= ERR;
     }
 
-    BEGIN 0;
     return status;
 }
 
-")" {
-    BEGIN 0;
-    return yytext[0];
+(log|lg){space}*{logref} {
+    yylval.rval = M_LOG10E;
+    return LOGREF;
+}
+
+ln{space}*{logref} {
+    yylval.rval = 1.0;
+    return LOGREF;
+}
+
+lb{space}*{logref} {
+    yylval.rval = M_LOG2E;
+    return LOGREF;
 }
 
 . {
+    BEGIN(initial_condition);
     return yytext[0];
 }
 
 %%
-
-    void
-utLexReset()
-{
-    BEGIN 0;
-}

@@ -1,21 +1,484 @@
 %{
 /*
- * $Id: parser.y,v 1.1 2006/11/16 20:21:06 steve Exp $
+ * $Id: parser.y,v 1.2 2006/12/02 22:33:46 steve Exp $
  *
  * yacc(1)-based parser for decoding formatted unit specifications.
  */
 
 /*LINTLIBRARY*/
 
+#ifndef	_XOPEN_SOURCE
+#   define _XOPEN_SOURCE 500
+#endif
+
+#include <ctype.h>
+#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <strings.h>
 
 #include "units.h"
-#include "scanner.h"
 
-int	UtLineno;		/* input-file line index */
-int	UnitNotFound;		/* parser didn't find unit */
-utUnit	*FinalUnit;		/* fully-parsed specification */
+static utUnit*		finalUnit;	/* fully-parsed specification */
+static utSystem*	unitSystem;	/* The unit-system to use */
+static char*		errorMessage;	/* last error-message */
+static utEncoding	_encoding;	/* encoding of string to be parsed */
+static int		_restartScanner;	/* restart scanner? */
+static size_t		_nchar;		/* number of parsed characters */
+
+
+/*
+ * Returns a string with leading and trailing whitespace removed.  The returned
+ * string should be freed when it is no longer needed.
+ *
+ * Arguments:
+ *	string		NUL-terminated string.  May be freed upon return.
+ *	encoding	The character-encoding of "string".
+ * Returns:
+ *	NULL	Failure.  "utStatus" will be:
+ *		    UT_OS	Operating-system failure.  See "errno".
+ *	else	Pointer to the string with leading and trailing whitespace
+ *		removed.
+ */
+char*
+utTrim(
+    const char* const	string,
+    const utEncoding	encoding)
+{
+    static const char*	asciiSpace = " \t\n\r\f\v";
+    static const char*	latin1Space = " \t\n\r\f\v\xa0";	/* add NBSP */
+    const char*		whiteSpace;
+    const char*		start;
+    const char*		stop;
+    size_t		nchar;
+    char*		newString;
+
+    whiteSpace =
+	encoding == UT_LATIN1
+	    ? latin1Space
+	    : asciiSpace;
+
+    start = string + strspn(string, whiteSpace);
+
+    for (stop = string + strlen(string); stop > string; --stop)
+	 if (strchr(whiteSpace, stop[-1]) == NULL)
+	    break;
+
+    nchar = stop - start;
+    newString = malloc(nchar + 1);
+
+    if (newString == NULL) {
+	utStatus = UT_OS;
+    }
+    else {
+	strncpy(newString, start, nchar);
+	newString[nchar] = 0;
+	utStatus = UT_SUCCESS;
+    }
+
+    return newString;
+}
+
+
+/*
+ * Returns the number of successfully parsed characters.  If utParse() was
+ * successful, then the returned number will equal the length of the string;
+ * otherwise, the returned number will be the 0-based index of the character
+ * that caused the parse to fail.
+ *
+ * Returns:
+ *	The number of successfully parsed characters.
+ */
+size_t
+utGetParseLength(void)
+{
+    return _nchar;
+}
+
+
+/*
+ *  YACC error routine:
+ */
+void
+ut_error(
+    char        	*s)
+{
+    static char*	nomem = "ut_error(): out of memory";
+
+    if (errorMessage != NULL && errorMessage != nomem)
+	free(errorMessage);
+
+    errorMessage = strdup(s);
+
+    if (errorMessage == NULL)
+	errorMessage = nomem;
+}
+%}
+
+%union {
+    char*	id;			/* identifier */
+    utUnit*	unit;			/* "unit" structure */
+    double	rval;			/* floating-point numerical value */
+    long	ival;			/* integer numerical value */
+}
+
+%token  	ERR
+%token		SHIFT
+%token  	MULTIPLY
+%token  	DIVIDE
+%token  	RAISE
+%token  <ival>	INT
+%token  <ival>	EXPONENT
+%token  <rval>	REAL
+%token  <id>	ID
+%token	<rval>	DATE
+%token	<rval>	CLOCK
+%token	<rval>	TIMESTAMP
+%token	<rval>	LOGREF
+
+%type	<unit>	unit_spec
+%type   <unit>	shift_exp
+%type   <unit>	scaled_exp
+%type   <unit>	product_exp
+%type   <unit>	power_exp
+%type   <unit>	basic_exp
+%type   <rval>	timestamp
+%type   <rval>	number_exp
+%type   <rval>	number
+
+%%
+
+unit_spec:      /* nothing */ {
+		    finalUnit = utGetDimensionlessUnitOne(unitSystem);
+		    YYACCEPT;
+		} |
+		shift_exp {
+		    finalUnit = $1;
+		    YYACCEPT;
+		} |
+		error {
+		    utStatus = UT_SYNTAX;
+		    YYABORT;
+		}
+		;
+
+shift_exp:	scaled_exp {
+		    $$ = $1;
+		} |
+		scaled_exp SHIFT REAL {
+		    $$ = utOffset($1, $3);
+
+		    utFree($1);
+
+		    if ($$ == NULL)
+			YYABORT;
+		} |
+		scaled_exp SHIFT INT {
+		    $$ = utOffset($1, $3);
+
+		    utFree($1);
+
+		    if ($$ == NULL)
+			YYABORT;
+		} |
+		scaled_exp SHIFT timestamp {
+		    $$ = utOffsetByScalarTime($1, $3);
+
+		    utFree($1);
+
+		    if ($$ == NULL)
+			YYABORT;
+		}
+		;
+
+scaled_exp:	number_exp {
+		    $$ = utScale($1, utGetDimensionlessUnitOne(unitSystem));
+
+		    if ($$ == NULL)
+			YYABORT;
+		} |
+		product_exp {
+		    $$ = $1;
+		} |
+		number_exp product_exp {
+		    $$ = utScale($1, $2);
+
+		    utFree($2);
+
+		    if ($$ == NULL)
+			YYABORT;
+		} |
+		number_exp MULTIPLY product_exp {
+		    $$ = utScale($1, $3);
+
+		    utFree($3);
+
+		    if ($$ == NULL)
+			YYABORT;
+		} |
+		product_exp DIVIDE number_exp {
+		    $$ = utScale(1.0/$3, $1);
+
+		    utFree($1);
+
+		    if ($$ == NULL)
+			YYABORT;
+		} |
+		number_exp product_exp DIVIDE number_exp {
+		    $$ = utScale($1/$4, $2);
+
+		    utFree($2);
+
+		    if ($$ == NULL)
+			YYABORT;
+		} |
+		number_exp MULTIPLY product_exp DIVIDE number_exp {
+		    $$ = utScale($1/$5, $3);
+
+		    utFree($3);
+
+		    if ($$ == NULL)
+			YYABORT;
+		}
+		;
+
+
+product_exp:	power_exp {
+		    $$ = $1;
+		} |
+		product_exp power_exp	{
+		    $$ = utMultiply($1, $2);
+
+		    utFree($1);
+		    utFree($2);
+
+		    if ($$ == NULL)
+			YYABORT;
+		} |
+		product_exp MULTIPLY power_exp	{
+		     $$ = utMultiply($1, $3);
+
+		    utFree($1);
+		    utFree($3);
+
+		    if ($$ == NULL)
+			YYABORT;
+		} |
+		product_exp DIVIDE power_exp	{
+		     $$ = utDivide($1, $3);
+
+		    utFree($1);
+		    utFree($3);
+
+		    if ($$ == NULL)
+			YYABORT;
+		}
+		;
+
+power_exp:	basic_exp {
+		    $$ = $1;
+		} |
+		basic_exp INT {
+		    $$ = utRaise($1, $2);
+
+		    utFree($1);
+
+		    if ($$ == NULL)
+			YYABORT;
+		} |
+		basic_exp EXPONENT {
+		    $$ = utRaise($1, $2);
+
+		    utFree($1);
+
+		    if ($$ == NULL)
+			YYABORT;
+		} |
+		basic_exp RAISE INT {
+		    $$ = utRaise($1, $3);
+
+		    utFree($1);
+
+		    if ($$ == NULL)
+			YYABORT;
+		}
+		;
+
+basic_exp:	ID {
+		    double	prefix = 1;
+		    utUnit*	unit = NULL;
+		    char*	cp = $1;
+
+		    while (*cp) {
+			size_t	nchar;
+			double	value;
+
+			unit = utGetUnitByName(unitSystem, cp);
+
+			if (unit != NULL)
+			    break;
+
+			unit = utGetUnitBySymbol(unitSystem, cp);
+
+			if (unit != NULL)
+			    break;
+
+			if (utGetPrefixByName(unitSystem, cp, &value, &nchar)
+				!= UT_SUCCESS) {
+			    if (utGetPrefixBySymbol(unitSystem, cp, &value,
+				    &nchar) != UT_SUCCESS)
+				break;
+			}
+
+			prefix *= value;
+			cp += nchar;
+		    }
+
+		    free($1);
+
+		    if (unit == NULL) {
+			utStatus = UT_UNKNOWN;
+			YYABORT;
+		    }
+
+		    $$ = utScale(prefix, unit);
+
+		    utFree(unit);
+
+		    if ($$ == NULL)
+			YYABORT;
+		} |
+		'(' shift_exp ')' {
+		    $$ = $2;
+		} |
+		LOGREF scaled_exp ')' {
+		    $$ = utLog($1, $2);
+
+		    utFree($2);
+
+		    if ($$ == NULL)
+			YYABORT;
+		}
+		;
+
+number_exp:	number {
+		    $$ = $1;
+		} |
+		number DIVIDE number {
+		    $$ = $1/$3;
+		} |
+		'(' number_exp ')' {
+		    $$ = $2;
+		}
+		;
+
+number:		INT {
+		    $$ = $1;
+		} |
+		REAL {
+		    $$ = $1;
+		}
+		;
+
+timestamp:	DATE {
+		    $$ = $1;
+		} |
+		DATE CLOCK {
+		    $$ = $1 + $2;
+		} |
+		DATE CLOCK CLOCK {
+		    $$ = $1 + ($2 - $3);
+		} |
+		DATE CLOCK INT {
+		    $$ = $1 + ($2 - utEncodeClock($3/60, $3%60, 0));
+		} |
+		DATE CLOCK ID {
+		    int	error = 0;
+
+		    if (strcasecmp($3, "UTC") != 0 &&
+			    strcasecmp($3, "GMT") != 0) {
+			utStatus = UT_UNKNOWN;
+			error = 1;
+		    }
+
+		    free($3);
+
+		    if (!error) {
+			$$ = $1 + $2;
+		    }
+		    else {
+			YYABORT;
+		    }
+		} |
+		TIMESTAMP {
+		    $$ = $1;
+		} |
+		TIMESTAMP CLOCK {
+		    $$ = $1 - $2;
+		} |
+		TIMESTAMP INT {
+		    $$ = $1 - utEncodeClock($2/60, $2%60, 0);
+		} |
+		TIMESTAMP ID {
+		    int	error = 0;
+
+		    if (strcasecmp($2, "UTC") != 0 &&
+			    strcasecmp($2, "GMT") != 0) {
+			utStatus = UT_UNKNOWN;
+			error = 1;
+		    }
+
+		    free($2);
+
+		    if (!error) {
+			$$ = $1;
+		    }
+		    else {
+			YYABORT;
+		    }
+		}
+		;
+
+%%
+
+#define yymaxdepth	ut_maxdepth
+#define yylval		ut_lval
+#define yychar		ut_char
+#define yypact		ut_pact
+#define yyr1		ut_r1
+#define yyr2		ut_r2
+#define yydef		ut_def
+#define yychk		ut_chk
+#define yypgo		ut_pgo
+#define yyact		ut_act
+#define yyexca		ut_exca
+#define yyerrflag	ut_errflag
+#define yynerrs		ut_nerrs
+#define yyps		ut_ps
+#define yypv		ut_pv
+#define yys		ut_s
+#define yy_yys		ut_yys
+#define yystate		ut_state
+#define yytmp		ut_tmp
+#define yyv		ut_v
+#define yy_yyv		ut_yyv
+#define yyval		ut_val
+#define yylloc		ut_lloc
+#define yyreds		ut_reds
+#define yytoks		ut_toks
+#define yylhs		ut_yylhs
+#define yylen		ut_yylen
+#define yydefred	ut_yydefred
+#define yydgoto		ut_yydgoto
+#define yysindex	ut_yysindex
+#define yyrindex	ut_yyrindex
+#define yygindex	ut_yygindex
+#define yytable		ut_yytable
+#define yycheck		ut_yycheck
+#define yyname		ut_yyname
+#define yyrule		ut_yyrule
+
+#include "scanner.c"
 
 
 /*
@@ -28,175 +491,67 @@ utUnit	*FinalUnit;		/* fully-parsed specification */
  *			should be no leading or trailing whitespace in the
  *			string.
  *	encoding	The encoding of "string".
- *	nchar		NULL or pointer to storage for the number of characters
- *			at the beginning of "string" that correspond to the
- *			returned unit.
  * Returns:
- *	NULL	Failure.  "utGetStatus()" will be
+ *	NULL	Failure.  "utGetStatus()" will be one of
+ *		    UT_BADARG	"system" is NULL.
  *		    UT_BADARG	"string" is NULL.
- *		    UT_PARSE	"string" couldn't be parsed into a known unit.
- *	else	Pointer to the unit corresponding to the first "*nchar"
- *		characters of "string".
+ *		    UT_SYNTAX	"string" contained a syntax error.
+ *		    UT_UNKNOWN	"string" contained an unknown identifier.
+ *		    UT_OS	Operating-system failure.  See "errno".
+ *	else	Pointer to the unit corresponding to "string".
  */
 utUnit*
 utParse(
     utSystem* const	system,
     const char* const	string,
-    const utEncoding	encoding,
-    int* const		nchar)
+    const utEncoding	encoding)
 {
-    unitStatus = UT_PARSE;
+    utUnit*	unit = NULL;		/* failure */
 
-    return NULL;
+    if (system == NULL || string == NULL) {
+	utStatus = UT_BADARG;
+    }
+    else {
+	YY_BUFFER_STATE	buf;
+
+	ut_restart((FILE*)NULL);
+
+	buf = ut__scan_string(string);
+	unitSystem = system;
+	_encoding = encoding;
+	_restartScanner = 1;
+
+#if YYDEBUG
+	ut_debug = 0;
+	ut__flex_debug = 0;
+#endif
+
+	finalUnit = NULL;
+
+	if (ut_parse() == 0) {
+	    int	n = yy_c_buf_p  - buf->yy_ch_buf;
+
+	    if (n >= strlen(string)) {
+		unit = finalUnit;	/* success */
+	    }
+	    else {
+		/*
+		 * Parsing terminated before the end of the string.
+		 */
+		utFree(finalUnit);
+
+		/*
+		 * The number of characters parsed is adjusted because
+		 * the scanner accepted the terminating character.
+		 */
+		n--;
+	    }
+
+	    _nchar = n;
+	}
+
+	ut__delete_buffer(buf);
+    }
+
+    return unit;
 }
-
-%}
-
-%union {
-    double	rval;			/* floating-point numerical value */
-    long	ival;			/* integer numerical value */
-    const char*	name;			/* name of a quantity */
-    utUnit	unit;			/* "unit" structure */
-}
-
-%token  <ival>	INT
-%token  <ival>	ERR
-%token	<ival>	SHIFT
-%token  <ival>	SPACE
-%token  <ival>	MULTIPLY
-%token  <ival>	DIVIDE
-%token  <ival>	EXPONENT
-%token  <rval>	REAL
-%token  <name>	NAME
-%token	<rval>	DATE
-%token	<rval>	TIME
-%token	<rval>	ZONE
-
-%type   <rval>	number_exp
-%type   <rval>	value_exp
-%type   <rval>	timestamp
-%type   <rval>	time_exp
-%type   <unit>	unit_exp
-%type   <unit>	power_exp
-%type   <unit>	factor_exp
-%type   <unit>	quant_exp
-%type   <unit>	origin_exp
-%type	<unit>	unit_spec
-
-%%
-
-unit_spec:        /* nothing */			{
-			YYACCEPT;
-		  }
-		| origin_exp			{
-			(void)utCopy(&$1, FinalUnit);
-			YYACCEPT;
-		  }
-		| error				{
-			yyerrok;
-			yyclearin;
-			YYABORT;
-		  }
-		;
-
-origin_exp:	  unit_exp			{
-			(void)utCopy(&$1, &$$);
-		  }
-		| unit_exp SHIFT value_exp	{
-			if (utIsTime(&$1)) {
-			    /*
-			     * The shift amount is divided by the unit scale
-			     * factor in the following because the shift amount
-			     * must be in the units of the first argument (e.g.
-			     * 0.555556 kelvins for the fahrenheit unit) and a
-			     * timestamp isn't necessarily so proportioned.
-			    (void)utShift(&$1, $3, &$$);
-			     */
-			    (void)utShift(&$1, $3/$1.factor, &$$);
-			} else {
-			    (void) utShift(&$1, $3, &$$);
-			}
-		  }
-		| unit_exp SHIFT timestamp	{
-			if (utIsTime(&$1)) {
-			    (void)utShift(&$1, $3/$1.factor, &$$);
-			} else {
-			    UnitNotFound	= 1;
-			    YYERROR;
-			}
-		  }
-		    ;
-
-unit_exp:	  power_exp			{
-			(void)utCopy(&$1, &$$);
-		  }
-		| unit_exp power_exp	{
-			(void)utMultiply(&$1, &$2, &$$);
-		  }
-		| unit_exp MULTIPLY power_exp	{
-			(void)utMultiply(&$1, &$3, &$$);
-		  }
-		| unit_exp DIVIDE power_exp	{
-			(void)utDivide(&$1, &$3, &$$);
-		  }
-		;
-
-power_exp:	  factor_exp			{
-			(void)utCopy(&$1, &$$);
-		  }
-		| power_exp INT			{
-			(void)utRaise(&$1, $2, &$$);
-		  }
-		| power_exp EXPONENT INT	{
-			(void)utRaise(&$1, $3, &$$);
-		  }
-		;
-
-factor_exp:	  number_exp			{
-			utUnit	unit;
-			(void)utScale(utClear(&unit), $1, &$$);
-		  }
-		| quant_exp			{
-			(void)utCopy(&$1, &$$);
-		  }
-		| '(' origin_exp ')'		{
-			(void)utCopy(&$2, &$$);
-		  }
-		;
-
-quant_exp:	  NAME                          {
-			utUnit     unit;
-			if (utFind($1, &unit) != 0) {
-			    UnitNotFound	= 1;
-			    YYERROR;
-			}
-			(void)utCopy(&unit, &$$);
-		  }
-		| NAME INT			{
-			utUnit     unit;
-			if (utFind($1, &unit) != 0) {
-			    UnitNotFound	= 1;
-			    YYERROR;
-			}
-			(void)utRaise(&unit, $2, &$$);
-		  }
-		;
-
-value_exp:	  number_exp			{ $$ = $1; }
-		| '(' value_exp ')'		{ $$ = $2; }
-		;
-
-number_exp:	  INT				{ $$ = $1; }
-		| REAL				{ $$ = $1; }
-		;
-
-timestamp:	  time_exp			{ $$ = $1; }
-		| '(' timestamp ')'		{ $$ = $2; }
-		;
-
-time_exp:	  DATE 				{ $$ = $1; }
-		| DATE TIME 			{ $$ = $1 + $2; }
-		| DATE TIME ZONE 		{ $$ = $1 + ($2 - $3); }
-		;
-
-%%

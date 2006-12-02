@@ -1,11 +1,13 @@
 /*
- * $Id: converter.h,v 1.1 2006/11/16 20:21:06 steve Exp $
+ * $Id: converter.h,v 1.2 2006/12/02 22:33:45 steve Exp $
  *
  * Public header-file for the Unidata units(3) library.
  */
 
 #ifndef CV_CONVERTER_H_INCLUDED
 #define CV_CONVERTER_H_INCLUDED
+
+#include <stddef.h>
 
 #ifdef __cplusplus
 extern "C" {

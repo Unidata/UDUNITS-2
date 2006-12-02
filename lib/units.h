@@ -7,7 +7,7 @@ typedef struct utSystem		utSystem;
 typedef union utUnit		utUnit;
 
 
-typedef enum utStatus {
+enum utStatus {
     UT_SUCCESS = 0,	/* Success */
     UT_BADARG,		/* An argument is invalid (e.g., NULL) */
     UT_BADSYSTEM,	/* Unit-system argument is NULL */
@@ -25,7 +25,8 @@ typedef enum utStatus {
     UT_VISIT_ERROR,	/* An error occurred while visiting a unit */
     UT_CANT_FORMAT,	/* A unit can't be formatted in the desired manner */
     UT_INTERNAL,	/* Internal, assertion-type failure. Shouldn't occur. */
-    UT_PARSE,
+    UT_SYNTAX,		/* string unit representation contains syntax error */
+    UT_UNKNOWN,		/* string unit representation contains unknown word */
 } utStatus;
 
 typedef enum {
@@ -42,15 +43,15 @@ typedef enum {
  * Data-structure for a visitor to a unit:
  */
 typedef struct {
-    utStatus	(*visitBasic)(const utUnit*, void*); 
-    utStatus	(*visitProduct)(const utUnit*, int count,
+    enum utStatus	(*visitBasic)(const utUnit*, void*); 
+    enum utStatus	(*visitProduct)(const utUnit*, int count,
 	const utUnit* const* basicUnits, const int* powers, void*); 
-    utStatus	(*visitGalilean)(const utUnit*, double scale,
+    enum utStatus	(*visitGalilean)(const utUnit*, double scale,
 	const utUnit* unit, double offset, void*); 
-    utStatus	(*visitTimestamp)(const utUnit*, const utUnit* timeUnit,
+    enum utStatus	(*visitTimestamp)(const utUnit*, const utUnit* timeUnit,
 	int year, int month, int day, int hour, int minute, double second, 
 	double resolution, void*); 
-    utStatus	(*visitLogarithmic)(const utUnit*, double logE,
+    enum utStatus	(*visitLogarithmic)(const utUnit*, double logE,
 	const utUnit* reference, void*); 
 } utVisitor;
 
@@ -60,22 +61,13 @@ extern "C" {
 #endif
 
 
-/*
- * Returns the status of the last operation by this library.
- *
- * Returns one of:
- *	UT_SUCCESS
- *	UT_BADSYSTEM
- *	UT_BADID	
- *	UT_BADVALUE
- *	UT_EXISTS
- *	UT_BADUNIT
- *	UT_NOUNIT
- *	UT_INTERNAL
- *	UT_OS
- */
-utStatus
-utGetStatus();
+enum utStatus
+utGetStatus(void);
+
+
+void
+utSetStatus(
+    enum utStatus	status);
 
 
 /*
@@ -172,7 +164,7 @@ utNewDimensionlessUnit(
  *	UT_NOMEM	Out of memory.
  *	UT_EXISTS	"name" already maps to a unit.
  */
-utStatus
+enum utStatus
 utMapNameToUnit(
     const char* const	name,
     utUnit* const	unit);
@@ -191,7 +183,7 @@ utMapNameToUnit(
  *	UT_NOMEM	Out of memory.
  *	UT_EXISTS	"symbol" already maps to a unit.
  */
-utStatus
+enum utStatus
 utMapSymbolToUnit(
     const char* const	symbol,
     utUnit* const	unit);
@@ -212,7 +204,7 @@ utMapSymbolToUnit(
  *	UT_EXISTS	A prefix with the same name but a different value
  *			already exists.
  */
-utStatus
+enum utStatus
 utAddNamePrefix(
     utSystem* const	system,
     const char* const	name,
@@ -234,7 +226,7 @@ utAddNamePrefix(
  *	UT_EXISTS	A prefix with the same symbol but a different value
  *			already exists.
  */
-utStatus
+enum utStatus
 utAddSymbolPrefix(
     utSystem* const	system,
     const char* const	symbol,
@@ -330,10 +322,53 @@ utGetBaseUnit(
  *	UT_EXISTS	The second unit of "system" is set to a different unit.
  *	UT_SUCCESS	Success.
  */
-utStatus
+enum utStatus
 utSetSecond(
     utSystem* const	system,
     utUnit* const	second);
+
+
+/*
+ * Returns a clock-time as a double-precision value.
+ */
+double
+utEncodeClock(
+    int		hours,
+    int		minutes,
+    double	seconds);
+
+
+/*
+ * Returns a date as a double-precision value.
+ */
+double
+utEncodeDate(
+    int		year,
+    int		month,
+    int		day);
+
+
+/*
+ * Encodes a time as a double-precision value.
+ *
+ * Arguments:
+ *	year	The year.
+ *	month	The month.
+ *	day	The day.
+ *	hour	The hour.
+ *	minute	The minute.
+ *	second	The second.
+ * Returns:
+ *	The input time encoded as a scalar value.
+ */
+double
+utEncodeTime(
+    const int		year,
+    const int		month,
+    const int		day,
+    const int		hour,
+    const int		minute,
+    const double	second);
 
 
 /*
@@ -410,6 +445,68 @@ utUnit*
 utOffset(
     utUnit* const	unit,
     const double	offset);
+
+
+/*
+ * Returns a unit equivalent to another unit relative to a particular time.
+ * e.g.,
+ *	const utUnit*	second = ...
+ *	const utUnit*	secondsSinceTheEpoch =
+ *	    utOffsetByTime(day, 1970, 1, 1, 0, 0, 0.0);
+ *
+ * Arguments:
+ *	unit	The unit to be offset.
+ *	year	The year of the origin.
+ *	month	The month of the origin (1 through 12).
+ *	day	The day of the origin (1 through 31).
+ *	hour	The hour of the origin (0 through 23).
+ *	minute	The minute of the origin (0 through 59).
+ *	second	The second of the origin (0 through 61).
+ * Returns:
+ *	NULL	Failure.  "utGetStatus()" will be
+ *		    UT_BADUNIT		"unit" is NULL.
+ *		    UT_OS		Operating-system error.  See "errno".
+ *		    UT_MEANINGLESS	Creation of a timestamp unit based on
+ *					"unit" is not meaningful.
+ *	else	Pointer to the timestamp-unit.
+ */
+utUnit*
+utOffsetByTime(
+    utUnit* const	unit,
+    const int		year,
+    const int		month,
+    const int		day,
+    const int		hour,
+    const int		minute,
+    const double	second);
+
+
+/*
+ * Returns a unit equivalent to another unit relative to a particular time.
+ * e.g.,
+ *	const utUnit*	second = ...
+ *	const utUnit*	secondsSinceUdunitsOrigin =
+ *	    utOffsetByScalarTime(second, 0.0);
+ *
+ * "utSetSecond()" must be called before the first call to this function.
+ *
+ * Arguments:
+ *	unit	Pointer to the time-unit to be made relative to a time-origin.
+ *	origin	The origin as returned by utEncodeTime().
+ * Returns:
+ *	NULL	Failure.  "utGetStatus()" will be
+ *		    UT_BADUNIT		"unit" is NULL.
+ *		    UT_OS		Operating-system error.  See "errno".
+ *		    UT_MEANINGLESS	Creation of a timestamp unit based on
+ *					"unit" is not meaningful.
+ *		    UT_NOSECOND		The associated unit-system doesn't
+ *					contain a second unit.
+ *	else	Pointer to the timestamp-unit.
+ */
+utUnit*
+utOffsetByScalarTime(
+    utUnit* const	unit,
+    const double	origin);
 
 
 /*
@@ -515,40 +612,6 @@ utLog(
 
 
 /*
- * Returns a unit equivalent to another unit relative to a particular time.
- * e.g.,
- *	const utUnit*	second = ...
- *	const utUnit*	secondsSinceTheEpoch =
- *	    utOffsetByTime(day, 1970, 1, 1, 0, 0, 0.0);
- *
- * Arguments:
- *	unit	The unit to be offset.
- *	year	The year of the origin.
- *	month	The month of the origin (1 through 12).
- *	day	The day of the origin (1 through 31).
- *	hour	The hour of the origin (0 through 23).
- *	minute	The minute of the origin (0 through 59).
- *	second	The second of the origin (0 through 61).
- * Returns:
- *	NULL	Failure.  "utGetStatus()" will be
- *		    UT_BADUNIT		"unit" is NULL.
- *		    UT_OS		Operating-system error.  See "errno".
- *		    UT_MEANINGLESS	Creation of a timestamp unit based on
- *					"unit" is not meaningful.
- *	else	Pointer to the timestamp-unit.
- */
-utUnit*
-utOffsetByTime(
-    utUnit* const	unit,
-    const int		year,
-    const int		month,
-    const int		day,
-    const int		hour,
-    const int		minute,
-    const double	second);
-
-
-/*
  * Returns a clone of a unit.
  *
  * Arguments:
@@ -628,20 +691,48 @@ utGetConverter(
  *	system	Pointer to the unit-system in which the parsing will occur.
  *	string	The string to be parsed (e.g., "millimeters").  There should be
  *		no leading or trailing whitespace in the string.
- *	nchar	NULL or pointer to storage for the number of characters at the
- *		beginning of "string" that correspond to the returned unit.
  * Returns:
  *	NULL	"string" is NULL.
  *	NULL	"string" couldn't be parsed into a known unit.
- *	else	The unit corresponding to the first "*nchar" characters of
- *		"string".
+ *	else	The unit corresponding to "string".
  */
 utUnit*
 utParse(
     utSystem* const	system,
     const char* const	string,
-    const utEncoding	encoding,
-    int*		nchar);
+    const utEncoding	encoding);
+
+
+/*
+ * Returns the number of successfully parsed characters.  If utParse() was
+ * successful, then the returned number will equal the length of the string;
+ * otherwise, the returned number will be the 0-based index of the character
+ * that caused the parse to fail.
+ *
+ * Returns:
+ *	The number of successfully parsed characters.
+ */
+size_t
+utGetParseLength(void);
+
+
+/*
+ * Returns a string with leading and trailing whitespace removed.  The returned
+ * string should be freed when it is no longer needed.
+ *
+ * Arguments:
+ *	string		NUL-terminated string.  May be freed upon return.
+ *	encoding	The character-encoding of "string".
+ * Returns:
+ *	NULL	Failure.  "unitStatus" will be:
+ *		    UT_OS	Operating-system failure.  See "errno".
+ *	else	Pointer to the string with leading and trailing whitespace
+ *		removed.
+ */
+char*
+utTrim(
+    const char* const	string,
+    const utEncoding	encoding);
 
 
 /*
@@ -657,7 +748,7 @@ utParse(
  *	UT_VISIT_ERROR	A error occurred in "visitor" while visiting "unit".
  *	UT_SUCCESS	Success.
  */
-utStatus
+enum utStatus
 utAcceptVisitor(
     const utUnit* const		unit,
     const utVisitor* const	visitor,
@@ -681,7 +772,7 @@ utAcceptVisitor(
  *			continue down to basic-units.
  *	encoding	The type of encoding to use.
  * Returns:
- *	-1	Failure:  "utStatus()" will be
+ *	-1	Failure:  "utGetStatus()" will be
  *		    UT_BADUNIT		"unit" is NULL.
  *		    UT_BADBUF		"buf" is NULL.
  *		    UT_CANT_FORMAT	"unit" can't be formatted in the desired

@@ -19,7 +19,7 @@ extern "C" {
  *	UT_EXISTS	"unit" already maps to a name.
  *	UT_SUCCESS	Success.
  */
-utStatus
+enum utStatus
 utMapUnitToName(
     utUnit* const	unit,
     const char* const	name,
@@ -40,7 +40,7 @@ utMapUnitToName(
  *	UT_EXISTS	"unit" already maps to a symbol.
  *	UT_SUCCESS	Success.
  */
-utStatus
+enum utStatus
 utMapUnitToSymbol(
     utUnit* const	unit,
     const char* const	symbol,

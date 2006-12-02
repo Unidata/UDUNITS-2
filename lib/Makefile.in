@@ -40,7 +40,7 @@ host_triplet = @host@
 check_PROGRAMS = testUnits$(EXEEXT)
 subdir = lib
 DIST_COMMON = $(include_HEADERS) $(srcdir)/Makefile.am \
-	$(srcdir)/Makefile.in
+	$(srcdir)/Makefile.in parser.c
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
@@ -60,11 +60,11 @@ LTLIBRARIES = $(lib_LTLIBRARIES)
 libudunits2_la_LIBADD =
 am_libudunits2_la_OBJECTS = core.lo converter.lo formatter.lo \
 	idToUnitMap.lo unitToIdMap.lo unitAndId.lo systemMap.lo \
-	prefix.lo
+	prefix.lo parser.lo
 libudunits2_la_OBJECTS = $(am_libudunits2_la_OBJECTS)
 testUnits_SOURCES = testUnits.c
 testUnits_OBJECTS = testUnits-testUnits.$(OBJEXT)
-testUnits_DEPENDENCIES = libudunits2.la
+testUnits_DEPENDENCIES = libudunits2.la ../expat/libexpat.la
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -76,6 +76,9 @@ LTCOMPILE = $(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) \
 CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
+YACCCOMPILE = $(YACC) $(YFLAGS) $(AM_YFLAGS)
+LTYACCCOMPILE = $(LIBTOOL) --mode=compile $(YACC) $(YFLAGS) \
+	$(AM_YFLAGS)
 SOURCES = $(libudunits2_la_SOURCES) testUnits.c
 DIST_SOURCES = $(libudunits2_la_SOURCES) testUnits.c
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
@@ -117,6 +120,10 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 LDFLAGS = @LDFLAGS@
+LEX = @LEX@
+LEXLIB = @LEXLIB@
+LEX_OUTPUT_ROOT = @LEX_OUTPUT_ROOT@
+LFLAGS = -Put_ @LFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
 LIBTOOL = @LIBTOOL@
@@ -136,6 +143,8 @@ SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
 VERSION = @VERSION@
+YACC = @YACC@
+YFLAGS = @YFLAGS@
 ac_ct_AR = @ac_ct_AR@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_CXX = @ac_ct_CXX@
@@ -177,6 +186,7 @@ prefix = @prefix@
 program_transform_name = @program_transform_name@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
+subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 lib_LTLIBRARIES = libudunits2.la
@@ -185,21 +195,29 @@ libudunits2_la_SOURCES = core.c converter.c formatter.c \
     unitToIdMap.c unitToIdMap.h \
     unitAndId.c unitAndId.h \
     systemMap.c systemMap.h \
-    prefix.c
+    prefix.c \
+    parser.y
 
 include_HEADERS = units.h converter.h
+AM_CPPFLAGS = -I$(srcdir)/expat
 AM_CTAGSFLAGS = -t
+BUILT_SOURCES = scanner.c
+AM_YFLAGS = -p ut_
 testUnits_CPPFLAGS = -I/opt/include
-testUnits_LDADD = libudunits2.la
+testUnits_LDADD = libudunits2.la ../expat/libexpat.la
 testUnits_LDFLAGS = -L/opt/lib -lcunit -lm
 TESTS = testUnits
 MOSTLYCLEANFILES = lint.log *.ln
+CLEANFILES = scanner.c
+TAGS_FILES = parser.c
 LINTFLAGS = -u
 LINT = lint
-all: all-am
+SUFFIXES = .c .l
+all: $(BUILT_SOURCES)
+	$(MAKE) $(AM_MAKEFLAGS) all-am
 
 .SUFFIXES:
-.SUFFIXES: .c .i .ln .lo .o .obj
+.SUFFIXES: .c .l .i .ln .lo .o .obj .y
 $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -279,6 +297,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/core.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/formatter.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/idToUnitMap.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/parser.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/prefix.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/systemMap.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/testUnits-testUnits.Po@am__quote@
@@ -322,6 +341,27 @@ testUnits-testUnits.obj: testUnits.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='testUnits.c' object='testUnits-testUnits.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(testUnits_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o testUnits-testUnits.obj `if test -f 'testUnits.c'; then $(CYGPATH_W) 'testUnits.c'; else $(CYGPATH_W) '$(srcdir)/testUnits.c'; fi`
+
+.y.c:
+	$(YACCCOMPILE) $<
+	if test -f y.tab.h; then \
+	  to=`echo "$*_H" | sed \
+                -e 'y/abcdefghijklmnopqrstuvwxyz/ABCDEFGHIJKLMNOPQRSTUVWXYZ/' \
+                -e 's/[^ABCDEFGHIJKLMNOPQRSTUVWXYZ]/_/g'`; \
+	  sed -e "/^#/!b" -e "s/Y_TAB_H/$$to/g" -e "s|y\.tab\.h|$*.h|" \
+            y.tab.h >$*.ht; \
+	  rm -f y.tab.h; \
+	  if cmp -s $*.ht $*.h; then \
+	    rm -f $*.ht ;\
+	  else \
+	    mv $*.ht $*.h; \
+	  fi; \
+	fi
+	if test -f y.output; then \
+	  mv y.output $*.output; \
+	fi
+	sed '/^#/ s|y\.tab\.c|$@|' y.tab.c >$@t && mv $@t $@
+	rm -f y.tab.c
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -501,13 +541,15 @@ distdir: $(DISTFILES)
 check-am: all-am
 	$(MAKE) $(AM_MAKEFLAGS) $(check_PROGRAMS)
 	$(MAKE) $(AM_MAKEFLAGS) check-TESTS
-check: check-am
+check: $(BUILT_SOURCES)
+	$(MAKE) $(AM_MAKEFLAGS) check-am
 all-am: Makefile $(LTLIBRARIES) $(HEADERS)
 installdirs:
 	for dir in "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)"; do \
 	  test -z "$$dir" || $(mkdir_p) "$$dir"; \
 	done
-install: install-am
+install: $(BUILT_SOURCES)
+	$(MAKE) $(AM_MAKEFLAGS) install-am
 install-exec: install-exec-am
 install-data: install-data-am
 uninstall: uninstall-am
@@ -525,6 +567,7 @@ mostlyclean-generic:
 	-test -z "$(MOSTLYCLEANFILES)" || rm -f $(MOSTLYCLEANFILES)
 
 clean-generic:
+	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
@@ -532,6 +575,8 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
+	-rm -f parser.c
+	-test -z "$(BUILT_SOURCES)" || rm -f $(BUILT_SOURCES)
 clean: clean-am
 
 clean-am: clean-checkPROGRAMS clean-generic clean-libLTLIBRARIES \
@@ -604,6 +649,9 @@ uninstall-am: uninstall-includeHEADERS uninstall-info-am \
 
 .c.i:
 	$(CPP) $(CPPFLAGS) $< >$@
+
+debug:
+	libtool --mode=execute gdb testUnits
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

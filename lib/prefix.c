@@ -1,7 +1,7 @@
 /*
  * Module for handling unit prefixes -- both names and symbols.
  *
- * $Id: prefix.c,v 1.1 2006/11/16 20:21:06 steve Exp $
+ * $Id: prefix.c,v 1.2 2006/12/02 22:33:46 steve Exp $
  */
 
 /*LINTLIBRARY*/
@@ -26,14 +26,14 @@ typedef struct {
 typedef struct {
     void*	nextTree;
     double	value;
-    size_t	position;
+    size_t	position;	/* origin-0 index of character in prefix */
     int		character;
 } PrefixSearchEntry;
 
 static SystemMap*	systemToNameToValue = NULL;
 static SystemMap*	systemToSymbolToValue = NULL;
 
-extern utStatus		unitStatus;
+extern enum utStatus	utStatus;
 
 
 /******************************************************************************
@@ -49,7 +49,7 @@ pseNew(
     PrefixSearchEntry*	entry = malloc(sizeof(PrefixSearchEntry));
 
     if (entry == NULL) {
-	unitStatus = UT_OS;
+	utStatus = UT_OS;
     }
     else {
 	entry->character = character;
@@ -180,6 +180,58 @@ ptvmSearch(
 }
 
 
+/*
+ * Returns the prefix search-entry that matches the beginning of a string.
+ *
+ * Arguments:
+ *	map		Pointer to the prefix-to-value map.
+ *	string		Pointer to the string to be examined for a prefix.
+ * Returns:
+ *	NULL		"map" is NULL.
+ *	NULL		"string" is NULL or the empty string.
+ *	NULL		"value" is 0.
+ *	else		Pointer to the prefix-search-entry that matches the
+ *			beginning of "string".
+ */
+static const PrefixSearchEntry*
+ptvmFind(
+    PrefixToValueMap* const	map,
+    const char* const		string)
+{
+    PrefixSearchEntry*	entry = NULL;	/* failure */
+
+    if (string != NULL && map != NULL && strlen(string) > 0) {
+	size_t	len = strlen(string);
+
+	if (len > 0) {
+	    size_t			i;
+	    PrefixSearchEntry*		lastEntry = NULL;
+	    void**			tree = &map->tree;
+
+	    for (i = 0; i < len; i++) {
+		PrefixSearchEntry		targetEntry;
+		PrefixSearchEntry* const*	treeEntry;
+		
+		targetEntry.character = string[i];
+		treeEntry = tfind(&targetEntry, tree, map->compare);
+
+		if (treeEntry == NULL)
+		    break;
+
+		lastEntry = *treeEntry;
+
+		tree = &(*treeEntry)->nextTree;	/* next binary-search tree */
+	    }
+
+	    if (lastEntry != NULL && lastEntry->value != 0)
+		entry = lastEntry;
+	}
+    }
+
+    return entry;
+}
+
+
 /******************************************************************************
  * Public API:
  ******************************************************************************/
@@ -203,7 +255,7 @@ ptvmSearch(
  *	UT_EXISTS	"prefix" already maps to a different value.
  *	UT_OS		Operating-system failure.  See "errno".
  */
-static utStatus
+static enum utStatus
 addPrefix(
     utSystem* const	system,
     const char* const	prefix,
@@ -211,7 +263,7 @@ addPrefix(
     SystemMap** const	systemMap,
     int			(*compare)(const void*, const void*))
 {
-    utStatus	status;
+    enum utStatus	status;
 
     if (system == NULL) {
 	status = UT_BADSYSTEM;
@@ -280,13 +332,13 @@ addPrefix(
  *	UT_EXISTS	"name" already maps to a different value.
  *	UT_OS		Operating-system failure.  See "errno".
  */
-utStatus
+enum utStatus
 utAddNamePrefix(
     utSystem* const	system,
     const char* const	name,
     const double	value)
 {
-    return unitStatus = addPrefix(system, name, value, &systemToNameToValue,
+    return utStatus = addPrefix(system, name, value, &systemToNameToValue,
 	pseInsensitiveCompare);
 }
 
@@ -307,12 +359,147 @@ utAddNamePrefix(
  *	UT_EXISTS	"symbol" already maps to a different value.
  *	UT_OS		Operating-system failure.  See "errno".
  */
-utStatus
+enum utStatus
 utAddSymbolPrefix(
     utSystem* const	system,
     const char* const	symbol,
     const double	value)
 {
-    return unitStatus = addPrefix(system, symbol, value, &systemToSymbolToValue,
+    return utStatus = addPrefix(system, symbol, value, &systemToSymbolToValue,
 	pseSensitiveCompare);
+}
+
+
+/*
+ * Finds a prefix of a unit-system.
+ *
+ * Arguments:
+ *	system		Pointer to the unit-system.
+ *	systemMap	Pointer to system-map.
+ *	string		Pointer to the string to be examined for a prefix.
+ *	compare		Prefix comparison function.
+ *	value		NULL or pointer to the memory location to receive the
+ *			value of the name-prefix, if one is discovered.
+ *	len		NULL or pointer to the memory location to receive the
+ *			number of characters in the name-prefix, if one is
+ *			discovered.
+ *	
+ * Returns:
+ *	UT_SUCCESS	Success.
+ *	UT_BADSYSTEM	"system" is NULL.
+ *	UT_BADARG	"systemMap" is NULL.
+ *	UT_BADARG	"string" is NULL or empty.
+ *	UT_BADARG	"compare" is NULL.
+ *	UT_BADVALUE	"value" is 0.
+ *	UT_OS		Operating-system failure.  See "errno".
+ *	UT_UNKNOWN	No prefix-to-value map is associated with "system".
+ *	UT_UNKNOWN	No prefix found in the prefix-to-value map associated
+ *			with "system".
+ */
+static enum utStatus
+findPrefix(
+    utSystem* const	system,
+    SystemMap* const	systemMap,
+    const char* const	string,
+    double* const	value,
+    size_t* const	len)
+{
+    enum utStatus	status;
+
+    if (system == NULL) {
+	status = UT_BADSYSTEM;
+    }
+    else if (systemMap == NULL) {
+	status = UT_BADARG;
+    }
+    else if (string == NULL || strlen(string) == 0) {
+	status = UT_BADARG;
+    }
+    else {
+	PrefixToValueMap** const	prefixToValue =
+	    (PrefixToValueMap**)smFind(systemMap, system);
+
+	if (prefixToValue == NULL) {
+	    status = UT_UNKNOWN;
+	}
+	else {
+	    const PrefixSearchEntry*	entry =
+		ptvmFind(*prefixToValue, string);
+
+	    if (entry == NULL) {
+		status = UT_UNKNOWN;
+	    }
+	    else {
+		if (value != NULL)
+		    *value = entry->value;
+
+		if (len != NULL)
+		    *len = entry->position + 1;
+
+		status = UT_SUCCESS;
+	    }				/* have prefix entry */
+	}				/* have system-map entry */
+    }					/* valid arguments */
+
+    return status;
+}
+
+
+/*
+ * Examines a string for a name-prefix and returns the length of the name-prefix
+ * and its value if one is discovered.
+ *
+ * Arguments:
+ *	system	Pointer to the unit-system.
+ *	string	Pointer to the string to be examined for a name-prefix.
+ *	value	NULL or pointer to the memory location to receive the value of
+ *		the name-prefix, if one is discovered.
+ *	len	NULL or pointer to the memory location to receive the number of
+ *		characters in the name-prefix, if one is discovered.
+ * Returns:
+ *	UT_BADARG	"string" is NULL.
+ *	UT_UNKNOWN	A name-prefix was not discovered.
+ *	UT_SUCCESS	Success.  "*value" and "*len" will be set if non-NULL.
+ */
+enum utStatus
+utGetPrefixByName(
+    utSystem* const	system,
+    const char* const	string,
+    double* const	value,
+    size_t* const	len)
+{
+    return
+	string == NULL
+	    ? UT_BADARG
+	    : findPrefix(system, systemToNameToValue, string, value, len);
+}
+
+
+/*
+ * Examines a string for a symbol-prefix and returns the length of the
+ * symbol-prefix and its value if one is discovered.
+ *
+ * Arguments:
+ *	system	Pointer to the unit-system.
+ *	string	Pointer to the string to be examined for a symbol-prefix.
+ *	value	NULL or pointer to the memory location to receive the value of
+ *		the symbol-prefix, if one is discovered.
+ *	len	NULL or pointer to the memory location to receive the number of
+ *		characters in the symbol-prefix, if one is discovered.
+ * Returns:
+ *	UT_BADARG	"string" is NULL.
+ *	UT_UNKNOWN	A symbol-prefix was not discovered.
+ *	UT_SUCCESS	Success.  "*value" and "*len" will be set if non-NULL.
+ */
+enum utStatus
+utGetPrefixBySymbol(
+    utSystem* const	system,
+    const char* const	string,
+    double* const	value,
+    size_t* const	len)
+{
+    return
+	string == NULL
+	    ? UT_BADARG
+	    : findPrefix(system, systemToSymbolToValue, string, value, len);
 }

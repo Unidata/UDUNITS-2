@@ -25,7 +25,7 @@
  * This module is thread-compatible but not thread-safe: multi-thread access to
  * this module must be externally synchronized.
  *
- * $Id: core.c,v 1.1 2006/11/16 20:21:06 steve Exp $
+ * $Id: core.c,v 1.2 2006/12/02 22:33:46 steve Exp $
  */
 
 /*LINTLIBRARY*/
@@ -74,15 +74,15 @@ typedef struct {
     utUnit*		(*clone)(const utUnit*);
     void		(*free)(utUnit*);
     /*
-     * The following comparison function must only be called if the units are
-     * the same type.
+     * The following comparison function is called if and only if the two units
+     * belong to the same unit system.
      */
     int			(*compare)(const utUnit*, const utUnit*);
     utUnit*		(*multiply)(utUnit*, utUnit*);
     utUnit*		(*raise)(utUnit*, const int power);
     int			(*initConverterToProduct)(utUnit*);
     int			(*initConverterFromProduct)(utUnit*);
-    utStatus		(*acceptVisitor)(const utUnit*, const utVisitor*,
+    enum utStatus	(*acceptVisitor)(const utUnit*, const utVisitor*,
 			    void*);
 } UnitOps;
 
@@ -215,7 +215,7 @@ static utUnit*		logNew(
     const double		logE,
     utUnit* const		reference);
 
-utStatus		unitStatus = UT_SUCCESS;
+enum utStatus		utStatus = UT_SUCCESS;
 static long		juldayOrigin = 0;
 
 
@@ -358,8 +358,8 @@ gregorianDateToJulianDay(year, month, day)
 /*
  * Encode a time as a double-precision value.
  */
-static double
-encodeClock(hours, minutes, seconds)
+double
+utEncodeClock(hours, minutes, seconds)
     int		hours;
     int		minutes;
     double	seconds;
@@ -415,8 +415,8 @@ decompose(value, uncer, nbasis, basis, count)
 /*
  * Encode a date as a double-precision value.
  */
-static double
-encodeDate(year, month, day)
+double
+utEncodeDate(year, month, day)
     int		year;
     int		month;
     int		day;
@@ -431,9 +431,19 @@ encodeDate(year, month, day)
 
 /*
  * Encodes a time as a double-precision value.
+ *
+ * Arguments:
+ *	year	The year.
+ *	month	The month.
+ *	day	The day.
+ *	hour	The hour.
+ *	minute	The minute.
+ *	second	The second.
+ * Returns:
+ *	The input time encoded as a scalar value.
  */
-static double
-encodeTime(
+double
+utEncodeTime(
     const int		year,
     const int		month,
     const int		day,
@@ -441,7 +451,7 @@ encodeTime(
     const int		minute,
     const double	second)
 {
-    return encodeDate(year, month, day) + encodeClock(hour, minute, second);
+    return utEncodeDate(year, month, day) + utEncodeClock(hour, minute, second);
 }
 
 
@@ -526,7 +536,7 @@ decodeTime(value, year, month, day, hour, minute, second, resolution)
  *	system	Pointer to unit-system.
  *	type	The type of unit.
  * Returns:
- *	-1	Failure.  "unitStatus" is set:
+ *	-1	Failure.  "utGetStatus()" will be:
  *		    UT_INTERNAL	"common" is NULL.
  *		    UT_INTERNAL	"ops" is NULL.
  *		    UT_INTERNAL	"system" is NULL.
@@ -542,7 +552,7 @@ commonInit(
     int	retval;
 
     if (system == NULL || common == NULL || ops == NULL) {
-	unitStatus = UT_INTERNAL;
+	utStatus = UT_INTERNAL;
 	retval = -1;
     }
     else {
@@ -599,7 +609,21 @@ basicCompare(
     const utUnit* const	unit1,
     const utUnit* const	unit2)
 {
-    return unit1 < unit2 ? -1 : unit1 == unit2 ? 0 : 1;
+    int	cmp;
+
+    if (IS_PRODUCT(unit2)) {
+	cmp = -COMPARE(unit2, unit1);
+    }
+    else if (!IS_BASIC(unit2)) {
+	int	diff = unit1->common.type - unit2->common.type;
+
+	cmp = diff < 0 ? -1 : diff == 0 ? 0 : 1;
+    }
+    else {
+	cmp = unit1 < unit2 ? -1 : unit1 == unit2 ? 0 : 1;
+    }
+
+    return cmp;
 }
 
 
@@ -610,7 +634,7 @@ basicCompare(
  *	unit1	The basic-unit.
  *	unit2	The other unit.
  * Returns:
- *	NULL	Failure.  "unitStatus" is set:
+ *	NULL	Failure.  "utGetStatus()" will be:
  *		    UT_INTERNAL		"unit1" is NULL.
  *		    UT_INTERNAL		"unit2" is NULL.
  *		    UT_INTERNAL		"unit1" is not a product-unit.
@@ -626,7 +650,7 @@ basicMultiply(
     utUnit*		result = NULL;	/* failure */
 
     if (unit1 == NULL || !IS_BASIC(unit1) || unit2 == NULL) {
-	unitStatus = UT_INTERNAL;
+	utStatus = UT_INTERNAL;
     }
     else {
 	result = productMultiply((utUnit*)unit1->basic.product, unit2);
@@ -643,7 +667,7 @@ basicMultiply(
  *	unit	The basic-unit.
  *	power	The power.  Must be greater than -256 and less than 256.
  * Returns:
- *	NULL	Failure.  "unitStatus" is set:
+ *	NULL	Failure.  "utGetStatus()" will be:
  *		    UT_INTERNAL		"unit" is NULL.
  *		    UT_INTERNAL		"unit" is not a product-unit.
  *		    UT_INTERNAL		"power" is out-of-range
@@ -659,7 +683,7 @@ basicRaise(
     utUnit*		result = NULL;	/* failure */
 
     if (unit == NULL || !IS_BASIC(unit) || power < -255 || power > 255) {
-	unitStatus = UT_INTERNAL;
+	utStatus = UT_INTERNAL;
     }
     else if (power == 0) {
 	result = unit->common.system->one;
@@ -682,7 +706,7 @@ basicRaise(
  * Arguments:
  *	unit	The product unit.
  * Returns:
- *	-1	Failure.  "unitStatus" is set:
+ *	-1	Failure.  "utGetStatus()" will be:
  *		    UT_INTERNAL	"unit" is NULL.
  *		    UT_INTERNAL	"unit" is not a product-unit.
  *	 0	Success.
@@ -705,7 +729,7 @@ basicInitConverterToProduct(
  * Arguments:
  *	unit	The product unit.
  * Returns:
- *	-1	Failure.  "unitStatus" is set:
+ *	-1	Failure.  "utGetStatus()" will be:
  *		    UT_INTERNAL	"unit" is NULL.
  *		    UT_INTERNAL	"unit" is not a product-unit.
  *	 0	Success.
@@ -721,7 +745,7 @@ basicInitConverterFromProduct(
 }
 
 
-static utStatus
+static enum utStatus
 basicAcceptVisitor(
     const utUnit* const		unit,
     const utVisitor* const	visitor,
@@ -752,7 +776,7 @@ static UnitOps	basicOps = {
  *	isDimensionless	Whether or not the unit is dimensionless (e.g., 
  *			"radian").
  * Returns:
- *	NULL	Failure.  "unitStatus" is set:
+ *	NULL	Failure.  "utGetStatus()" will be:
  *		    UT_INTERNAL	"system == NULL"
  *		    UT_INTERNAL	"name" is NULL
  *		    UT_INTERNAL	"productUnit" is NULL
@@ -768,7 +792,7 @@ basicNew(
     BasicUnit*	basicUnit = NULL;	/* failure */
 
     if (system == NULL) {
-	unitStatus = UT_INTERNAL;
+	utStatus = UT_INTERNAL;
     }
     else {
 	int		error = 1;
@@ -777,13 +801,13 @@ basicNew(
 	ProductUnit*	product = productNew(system, &index, &power, 1);
 
 	if (product == NULL) {
-	    unitStatus = UT_OS;
+	    utStatus = UT_OS;
 	}
 	else {
 	    basicUnit = malloc(sizeof(BasicUnit));
 
 	    if (basicUnit == NULL) {
-		unitStatus = UT_OS;
+		utStatus = UT_OS;
 	    }
 	    else if (commonInit(&basicUnit->common, &basicOps, system,
 		    BASIC) == 0) {
@@ -823,7 +847,7 @@ productClone(
 
     if (unit == NULL) {
 	clone = NULL;
-	unitStatus = UT_INTERNAL;
+	utStatus = UT_INTERNAL;
     }
     else {
 	clone = (utUnit*)productNew(unit->common.system, unit->product.indexes,
@@ -839,29 +863,42 @@ productCompare(
     const utUnit* const	unit1,
     const utUnit* const	unit2)
 {
-    const ProductUnit* const	product1 = &unit1->product;
-    const ProductUnit* const	product2 = &unit2->product;
-    int				result = product1->count - product2->count;
+    int	cmp;
 
-    if (result == 0) {
-	const short* const	indexes1 = product1->indexes;
-	const short* const	indexes2 = product2->indexes;
-	const short* const	powers1	= product1->powers;
-	const short* const	powers2	= product2->powers;
-	int			i;
+    if (IS_BASIC(unit2)) {
+	cmp = productCompare(unit1, (utUnit*)unit2->basic.product);
+    }
+    else if (!IS_PRODUCT(unit2)) {
+	int	diff = unit1->common.type - unit2->common.type;
 
-	for (i = 0; i < product1->count; ++i) {
-	    result = indexes1[i] - indexes2[i];
+	cmp = diff < 0 ? -1 : diff == 0 ? 0 : 1;
+    }
+    else {
+	const ProductUnit* const	product1 = &unit1->product;
+	const ProductUnit* const	product2 = &unit2->product;
 
-	    if (result == 0)
-		result = powers1[i] - powers2[i];
+	cmp = product1->count - product2->count;
 
-	    if (result != 0)
-		break;
+	if (cmp == 0) {
+	    const short* const	indexes1 = product1->indexes;
+	    const short* const	indexes2 = product2->indexes;
+	    const short* const	powers1	= product1->powers;
+	    const short* const	powers2	= product2->powers;
+	    int			i;
+
+	    for (i = 0; i < product1->count; ++i) {
+		cmp = indexes1[i] - indexes2[i];
+
+		if (cmp == 0)
+		    cmp = powers1[i] - powers2[i];
+
+		if (cmp != 0)
+		    break;
+	    }
 	}
     }
 
-    return result;
+    return cmp;
 }
 
 
@@ -883,7 +920,7 @@ productFree(
  *	unit1	The product unit.
  *	unit2	The other unit.
  * Returns:
- *	NULL	Failure.  "unitStatus" is set:
+ *	NULL	Failure.  "utGetStatus()" will be:
  *		    UT_INTERNAL		"unit1" is NULL.
  *		    UT_INTERNAL		"unit2" is NULL.
  *		    UT_INTERNAL		"unit1" is not a product-unit.
@@ -899,7 +936,7 @@ productMultiply(
     utUnit*		result = NULL;	/* failure */
 
     if (unit1 == NULL || !IS_PRODUCT(unit1) || unit2 == NULL) {
-	unitStatus = UT_INTERNAL;
+	utStatus = UT_INTERNAL;
     }
     else {
 	const ProductUnit* const	product1 = &unit1->product;
@@ -966,7 +1003,7 @@ productMultiply(
  *	unit	The product unit.
  *	power	The power.  Must be greater than -256 and less than 256.
  * Returns:
- *	NULL	Failure.  "unitStatus" is set:
+ *	NULL	Failure.  "utGetStatus()" will be:
  *		    UT_INTERNAL		"unit" is NULL.
  *		    UT_INTERNAL		"unit" is not a product-unit.
  *		    UT_INTERNAL		"power" is out-of-range
@@ -982,7 +1019,7 @@ productRaise(
     utUnit*		result = NULL;	/* failure */
 
     if (unit == NULL || !IS_PRODUCT(unit) || power < -255 || power > 255) {
-	unitStatus = UT_INTERNAL;
+	utStatus = UT_INTERNAL;
     }
     else {
 	const ProductUnit* const	product = &unit->product;
@@ -998,7 +1035,7 @@ productRaise(
 	    short*	newPowers = malloc(sizeof(short)*count);
 
 	    if (newPowers == NULL) {
-		unitStatus = UT_OS;
+		utStatus = UT_OS;
 	    }
 	    else {
 		const short* const	oldPowers = product->powers;
@@ -1026,7 +1063,7 @@ productRaise(
  * Arguments:
  *	converter	Pointer to pointer to the converter to be initialized.
  * Returns:
- *	-1	Failure.  "unitStatus" is set:
+ *	-1	Failure.  "utGetStatus()" will be:
  *		    UT_INTERNAL	"unit" is NULL.
  *		    UT_INTERNAL	"unit" is not a product-unit.
  *	 0	Success.
@@ -1038,7 +1075,7 @@ productInitConverter(
     int		retCode;
 
     if (converter == NULL) {
-	unitStatus = UT_INTERNAL;
+	utStatus = UT_INTERNAL;
 	retCode = -1;
     }
     else {
@@ -1057,7 +1094,7 @@ productInitConverter(
  * Arguments:
  *	unit	The product unit.
  * Returns:
- *	-1	Failure.  "unitStatus" is set:
+ *	-1	Failure.  "utGetStatus()" will be:
  *		    UT_INTERNAL	"unit" is NULL.
  *		    UT_INTERNAL	"unit" is not a product-unit.
  *	 0	Success.
@@ -1077,7 +1114,7 @@ productInitConverterToProduct(
  * Arguments:
  *	unit	The product unit.
  * Returns:
- *	-1	Failure.  "unitStatus" is set:
+ *	-1	Failure.  "utGetStatus()" will be:
  *		    UT_INTERNAL	"unit" is NULL.
  *		    UT_INTERNAL	"unit" is not a product-unit.
  *	 0	Success.
@@ -1103,7 +1140,7 @@ productInitConverterFromProduct(
  *	PRODUCT_INVERSE		The units are reciprocals of each other.
  *	PRODUCT_UNCONVERTIBLE	The dimensionalities of the units are
  *				unconvertible.
- *	PRODUCT_UNKNOWN		An error occurred.  "unitStatus" will be:
+ *	PRODUCT_UNKNOWN		An error occurred.  "utGetStatus()" will be:
  *	    UT_INTERNAL		    "unit1" is NULL.
  *	    UT_INTERNAL		    "unit2" is NULL.
  */
@@ -1115,7 +1152,7 @@ productRelationship(
     ProductRelationship		relationship = PRODUCT_UNKNOWN;
 
     if (unit1 == NULL || unit2 == NULL) {
-	unitStatus = UT_INTERNAL;
+	utStatus = UT_INTERNAL;
     }
     else {
 	const short* const	indexes1 = unit1->indexes;
@@ -1190,7 +1227,7 @@ productRelationship(
 }
 
 
-static utStatus
+static enum utStatus
 productAcceptVisitor(
     const utUnit* const		unit,
     const utVisitor* const	visitor,
@@ -1233,7 +1270,7 @@ static UnitOps	productOps = {
  *	powers	Pointer to array of powers.  Client may free upon return.
  *	count	The number of elements in "indexes" and "powers".
  * Returns:
- *	NULL	Failure.  "unitStatus" is set:
+ *	NULL	Failure.  "utGetStatus()" will be:
  *		    UT_INTERNAL	"count > 0 &&
  *				(indexes == NULL || powers == NULL)".
  *		    UT_INTERNAL	"count" < 0
@@ -1252,14 +1289,14 @@ productNew(
 
     if (system == NULL || (count > 0 && (indexes == NULL || powers == NULL)) ||
 	    count < 0) {
-	unitStatus = UT_INTERNAL;
+	utStatus = UT_INTERNAL;
 	productUnit = NULL;
     }
     else {
 	productUnit = malloc(sizeof(ProductUnit));
 
 	if (productUnit == NULL) {
-	    unitStatus = UT_OS;
+	    utStatus = UT_OS;
 	}
 	else {
 	    int	error = 1;
@@ -1296,7 +1333,8 @@ productNew(
  * Arguments:
  *	unit	The product-unit in question.
  * Returns:
- *	0	"unit" is dimensionfull or an error occurred.  "unitStatus" will be
+ *	0	"unit" is dimensionfull or an error occurred.  "utGetStatus()"
+ *		will be:
  *		    UT_INTERNAL	"unit" is NULL.
  *		    UT_INTERNAL	"unit" is not a product-unit.
  *	else	"unit" is dimensionless.
@@ -1308,7 +1346,7 @@ productIsDimensionless(
     int		isDimensionless = 0;
 
     if (unit == NULL || !IS_PRODUCT(unit)) {
-	unitStatus = UT_INTERNAL;
+	utStatus = UT_INTERNAL;
     }
     else {
 	const int		count = unit->count;
@@ -1350,7 +1388,7 @@ galileanClone(
 
     if (unit == NULL) {
 	clone = NULL;
-	unitStatus = UT_INTERNAL;
+	utStatus = UT_INTERNAL;
     }
     else {
 	const GalileanUnit* const	galileanUnit = &unit->galilean;
@@ -1368,28 +1406,38 @@ galileanCompare(
     const utUnit* const	unit1,
     const utUnit* const	unit2)
 {
-    const GalileanUnit* const	galilean1 = &unit1->galilean;
-    const GalileanUnit* const	galilean2 = &unit2->galilean;
-    int				result =
-	galilean1->offset < galilean2->offset
-	    ? -1
-	    : galilean1->offset == galilean2->offset
-		? 0
-		: -1;
+    int	cmp;
 
-    if (result == 0) {
-	result =
-	    galilean1->scale < galilean2->scale
+    if (!IS_GALILEAN(unit2)) {
+	int	diff = unit1->common.type - unit2->common.type;
+
+	cmp = diff < 0 ? -1 : diff == 0 ? 0 : 1;
+    }
+    else {
+	const GalileanUnit* const	galilean1 = &unit1->galilean;
+	const GalileanUnit* const	galilean2 = &unit2->galilean;
+
+	cmp =
+	    galilean1->offset < galilean2->offset
 		? -1
-		: galilean1->scale == galilean2->scale
+		: galilean1->offset == galilean2->offset
 		    ? 0
 		    : -1;
 
-	if (result == 0)
-	    result = COMPARE(galilean1->unit, galilean2->unit);
+	if (cmp == 0) {
+	    cmp =
+		galilean1->scale < galilean2->scale
+		    ? -1
+		    : galilean1->scale == galilean2->scale
+			? 0
+			: -1;
+
+	    if (cmp == 0)
+		cmp = COMPARE(galilean1->unit, galilean2->unit);
+	}
     }
 
-    return result;
+    return cmp;
 }
 
 
@@ -1411,7 +1459,7 @@ galileanFree(
  *	unit1	The Galilean-unit.
  *	unit2	The other unit.
  * Returns:
- *	NULL	Failure.  "unitStatus" is set:
+ *	NULL	Failure.  "utGetStatus()" will be:
  *		    UT_INTERNAL		"unit1" is NULL.
  *		    UT_INTERNAL		"unit2" is NULL.
  *		    UT_INTERNAL		"unit1" is not a Galilean-unit.
@@ -1427,7 +1475,7 @@ galileanMultiply(
     utUnit*	result = NULL;	/* failure */
 
     if (unit1 == NULL || !IS_GALILEAN(unit1) || unit2 == NULL) {
-	unitStatus = UT_INTERNAL;
+	utStatus = UT_INTERNAL;
     }
     else {
 	const GalileanUnit* const	galilean1 = &unit1->galilean;
@@ -1459,7 +1507,7 @@ galileanMultiply(
  *	unit	The Galilean-unit.
  *	power	The power.  Must be greater than -256 and less than 256.
  * Returns:
- *	NULL	Failure.  "unitStatus" is set:
+ *	NULL	Failure.  "utGetStatus()" will be:
  *		    UT_INTERNAL		"unit" is NULL.
  *		    UT_INTERNAL		"unit" is not a Galilean-unit.
  *		    UT_INTERNAL		"power" is out-of-range.
@@ -1475,7 +1523,7 @@ galileanRaise(
     utUnit*	result = NULL;	/* failure */
 
     if (unit == NULL || !IS_GALILEAN(unit) || power < -255 || power > 255) {
-	unitStatus = UT_INTERNAL;
+	utStatus = UT_INTERNAL;
     }
     else {
 	const GalileanUnit* const	galilean = &unit->galilean;
@@ -1500,7 +1548,7 @@ galileanRaise(
  * Arguments:
  *	unit	The Galilean unit.
  * Returns:
- *	-1	Failure.  "unitStatus" is set:
+ *	-1	Failure.  "utGetStatus()" will be:
  *		    UT_INTERNAL		"unit" is NULL.
  *		    UT_INTERNAL		"unit" is not a Galilean-unit.
  *		    UT_OS		Operating-system fault.  See "errno".
@@ -1513,14 +1561,14 @@ galileaninitConverterToProduct(
     int			retCode = -1;	/* failure */
 
     if (unit == NULL || !IS_GALILEAN(unit)) {
-	unitStatus = UT_INTERNAL;
+	utStatus = UT_INTERNAL;
     }
     else {
 	cvConverter* const	toUnderlying = cvGetGalilean(
 	    unit->galilean.scale, unit->galilean.offset * unit->galilean.scale);
 
 	if (toUnderlying == NULL) {
-	    unitStatus = UT_OS;
+	    utStatus = UT_OS;
 	}
 	else {
 	    if (ENSURE_CONVERTER_TO_PRODUCT(unit->galilean.unit)) {
@@ -1530,7 +1578,7 @@ galileaninitConverterToProduct(
 		    toUnderlying, unit->galilean.unit->common.toProduct);
 
 		if (unit->common.toProduct == NULL) {
-		    unitStatus = UT_OS;
+		    utStatus = UT_OS;
 		}
 		else {
 		    retCode = 0;
@@ -1552,7 +1600,7 @@ galileaninitConverterToProduct(
  * Arguments:
  *	unit	The Galilean unit.
  * Returns:
- *	-1	Failure.  "unitStatus" is set:
+ *	-1	Failure.  "utGetStatus()" will be:
  *		    UT_INTERNAL		"unit" is NULL.
  *		    UT_INTERNAL		"unit" is not a Galilean-unit.
  *		    UT_OS		Operating-system fault.  See "errno".
@@ -1565,14 +1613,14 @@ galileaninitConverterFromProduct(
     int		retCode = -1;		/* failure */
 
     if (unit == NULL || !IS_GALILEAN(unit)) {
-	unitStatus = UT_INTERNAL;
+	utStatus = UT_INTERNAL;
     }
     else {
 	cvConverter* const	fromUnderlying = cvGetGalilean(
 	    1.0/unit->galilean.scale, -unit->galilean.offset);
 
 	if (fromUnderlying == NULL) {
-	    unitStatus = UT_OS;
+	    utStatus = UT_OS;
 	}
 	else {
 	    if (ENSURE_CONVERTER_FROM_PRODUCT(unit->galilean.unit)) {
@@ -1582,7 +1630,7 @@ galileaninitConverterFromProduct(
 		    unit->galilean.unit->common.fromProduct, fromUnderlying);
 
 		if (unit->common.fromProduct == NULL) {
-		    unitStatus = UT_OS;
+		    utStatus = UT_OS;
 		}
 		else {
 		    retCode = 0;
@@ -1597,7 +1645,7 @@ galileaninitConverterFromProduct(
 }
 
 
-static utStatus
+static enum utStatus
 galileanAcceptVisitor(
     const utUnit* const		unit,
     const utVisitor* const	visitor,
@@ -1630,7 +1678,7 @@ static UnitOps	galileanOps = {
  *	unit	The underlying unit.  May be freed upon return.
  *	offset	The offset for the new unit.
  * Returns:
- *	NULL	Failure.  "unitStatus" is set:
+ *	NULL	Failure.  "utGetStatus()" will be:
  *		    UT_INTERNAL	"scale == 0"
  *		    UT_INTERNAL	"unit" is NULL
  *		    UT_OS	Operating-system error.  See "errno".
@@ -1645,7 +1693,7 @@ galileanNew(
     utUnit*	newUnit = NULL;	/* failure */
 
     if (scale == 0 || unit == NULL) {
-	unitStatus = UT_INTERNAL;
+	utStatus = UT_INTERNAL;
     }
     else {
 	if (IS_GALILEAN(unit)) {
@@ -1661,7 +1709,7 @@ galileanNew(
 	    GalileanUnit*	galileanUnit = malloc(sizeof(GalileanUnit));
 
 	    if (galileanUnit == NULL) {
-		unitStatus = UT_OS;
+		utStatus = UT_OS;
 	    }
 	    else {
 		int	error = 1;
@@ -1709,7 +1757,7 @@ timestampClone(
 
     if (unit == NULL) {
 	clone = NULL;
-	unitStatus = UT_INTERNAL;
+	utStatus = UT_INTERNAL;
     }
     else {
 	clone =
@@ -1725,19 +1773,29 @@ timestampCompare(
     const utUnit* const	unit1,
     const utUnit* const	unit2)
 {
-    const TimestampUnit* const	timestamp1 = &unit1->timestamp;
-    const TimestampUnit* const	timestamp2 = &unit2->timestamp;
-    int				result =
-	timestamp1->origin < timestamp2->origin
-	    ? -1
-	    : timestamp1->origin == timestamp2->origin
-		? 0
-		: -1;
+    int	cmp;
 
-    if (result == 0)
-	result = COMPARE(timestamp1->unit, timestamp2->unit);
+    if (!IS_TIMESTAMP(unit2)) {
+	int	diff = unit1->common.type - unit2->common.type;
 
-    return result;
+	cmp = diff < 0 ? -1 : diff == 0 ? 0 : 1;
+    }
+    else {
+	const TimestampUnit* const	timestamp1 = &unit1->timestamp;
+	const TimestampUnit* const	timestamp2 = &unit2->timestamp;
+
+	cmp =
+	    timestamp1->origin < timestamp2->origin
+		? -1
+		: timestamp1->origin == timestamp2->origin
+		    ? 0
+		    : -1;
+
+	if (cmp == 0)
+	    cmp = COMPARE(timestamp1->unit, timestamp2->unit);
+    }
+
+    return cmp;
 }
 
 
@@ -1759,7 +1817,7 @@ timestampFree(
  *	unit1	The timestamp-unit.
  *	unit2	The other unit.
  * Returns:
- *	NULL	Failure.  "unitStatus" is set:
+ *	NULL	Failure.  "utGetStatus()" will be:
  *		    UT_INTERNAL		"unit1" is NULL.
  *		    UT_INTERNAL		"unit2" is NULL.
  *		    UT_INTERNAL		"unit1" is not a timestamp-unit.
@@ -1775,7 +1833,7 @@ timestampMultiply(
     utUnit*	result = NULL;	/* failure */
 
     if (unit1 == NULL || !IS_TIMESTAMP(unit1) || unit2 == NULL) {
-	unitStatus = UT_INTERNAL;
+	utStatus = UT_INTERNAL;
     }
     else {
 	result = MULTIPLY(unit1->timestamp.unit, unit2);
@@ -1793,7 +1851,7 @@ timestampMultiply(
  *	unit	The Timestamp-unit.
  *	power	The power.  Must be greater than -256 and less than 256.
  * Returns:
- *	NULL	Failure.  "unitStatus" is set:
+ *	NULL	Failure.  "utGetStatus()" will be:
  *		    UT_INTERNAL		"unit" is NULL.
  *		    UT_INTERNAL		"unit" is not a Timestamp-unit.
  *		    UT_INTERNAL		"power" is out-of-range.
@@ -1809,7 +1867,7 @@ timestampRaise(
     utUnit*	result = NULL;	/* failure */
 
     if (unit == NULL || !IS_TIMESTAMP(unit) || power < -255 || power > 255) {
-	unitStatus = UT_INTERNAL;
+	utStatus = UT_INTERNAL;
     }
     else {
 	result = RAISE(unit->timestamp.unit, power);
@@ -1826,7 +1884,7 @@ timestampRaise(
  * Arguments:
  *	unit	The Timestamp unit.
  * Returns:
- *	-1	Failure.  "unitStatus" is set:
+ *	-1	Failure.  "utGetStatus()" will be:
  *		    UT_INTERNAL		"unit" is NULL.
  *		    UT_INTERNAL		"unit" is not a Timestamp-unit.
  *		    UT_OS		Operating-system fault.  See "errno".
@@ -1839,14 +1897,14 @@ timestampinitConverterToProduct(
     int			retCode = -1;	/* failure */
 
     if (unit == NULL || !IS_TIMESTAMP(unit)) {
-	unitStatus = UT_INTERNAL;
+	utStatus = UT_INTERNAL;
     }
     else {
 	cvConverter* const	toUnderlying =
 	    cvGetGalilean(1.0, unit->timestamp.origin);
 
 	if (toUnderlying == NULL) {
-	    unitStatus = UT_OS;
+	    utStatus = UT_OS;
 	}
 	else {
 	    if (ENSURE_CONVERTER_TO_PRODUCT(unit->timestamp.unit)) {
@@ -1856,7 +1914,7 @@ timestampinitConverterToProduct(
 		    toUnderlying, unit->timestamp.unit->common.toProduct);
 
 		if (unit->common.toProduct == NULL) {
-		    unitStatus = UT_OS;
+		    utStatus = UT_OS;
 		}
 		else {
 		    retCode = 0;
@@ -1878,7 +1936,7 @@ timestampinitConverterToProduct(
  * Arguments:
  *	unit	The Timestamp unit.
  * Returns:
- *	-1	Failure.  "unitStatus" is set:
+ *	-1	Failure.  "utGetStatus()" will be:
  *		    UT_INTERNAL		"unit" is NULL.
  *		    UT_INTERNAL		"unit" is not a Timestamp-unit.
  *		    UT_OS		Operating-system fault.  See "errno".
@@ -1891,14 +1949,14 @@ timestampinitConverterFromProduct(
     int		retCode = -1;		/* failure */
 
     if (unit == NULL || !IS_TIMESTAMP(unit)) {
-	unitStatus = UT_INTERNAL;
+	utStatus = UT_INTERNAL;
     }
     else {
 	cvConverter* const	fromUnderlying =
 	    cvGetGalilean(1.0, -unit->timestamp.origin);
 
 	if (fromUnderlying == NULL) {
-	    unitStatus = UT_OS;
+	    utStatus = UT_OS;
 	}
 	else {
 	    if (ENSURE_CONVERTER_FROM_PRODUCT(unit->timestamp.unit)) {
@@ -1908,7 +1966,7 @@ timestampinitConverterFromProduct(
 		    unit->timestamp.unit->common.fromProduct, fromUnderlying);
 
 		if (unit->common.fromProduct == NULL) {
-		    unitStatus = UT_OS;
+		    utStatus = UT_OS;
 		}
 		else {
 		    retCode = 0;
@@ -1923,7 +1981,7 @@ timestampinitConverterFromProduct(
 }
 
 
-static utStatus
+static enum utStatus
 timestampAcceptVisitor(
     const utUnit* const		unit,
     const utVisitor* const	visitor,
@@ -1960,7 +2018,7 @@ static UnitOps	timestampOps = {
  *	unit	The underlying unit.  May be freed upon return.
  *	origin	The timestamp origin.
  * Returns:
- *	NULL	Failure.  "unitStatus" is set:
+ *	NULL	Failure.  "utGetStatus()" will be:
  *		    UT_INTERNAL		"unit" is NULL
  *		    UT_OS		Operating-system error.  See "errno".
  *		    UT_MEANINGLESS	Creation of a timestamp unit based on
@@ -1977,22 +2035,22 @@ timestampNewOrigin(
     utUnit*	newUnit = NULL;	/* failure */
 
     if (unit == NULL) {
-	unitStatus = UT_INTERNAL;
+	utStatus = UT_INTERNAL;
     }
     if (IS_TIMESTAMP(unit)) {
-	unitStatus = UT_MEANINGLESS;
+	utStatus = UT_MEANINGLESS;
     }
     else {
 	utUnit* const	secondUnit = unit->common.system->second;
 
 	if (secondUnit == NULL) {
-	    unitStatus = UT_NOSECOND;
+	    utStatus = UT_NOSECOND;
 	}
 	else if (utAreConvertible(secondUnit, unit)) {
 	    TimestampUnit*	timestampUnit = malloc(sizeof(TimestampUnit));
 
 	    if (timestampUnit == NULL) {
-		unitStatus = UT_OS;
+		utStatus = UT_OS;
 	    }
 	    else {
 		if (commonInit(&timestampUnit->common, &timestampOps,
@@ -2026,7 +2084,7 @@ timestampNewOrigin(
  *	minute	The minute of the origin.
  *	second	The second of the origin.
  * Returns:
- *	NULL	Failure.  "unitStatus" is set:
+ *	NULL	Failure.  "utGetStatus()" will be:
  *		    UT_INTERNAL		"unit" is NULL
  *		    UT_OS		Operating-system error.  See "errno".
  *		    UT_MEANINGLESS	Creation of a timestamp unit base on
@@ -2046,7 +2104,7 @@ timestampNew(
     double	second)
 {
     return timestampNewOrigin(
-	unit, encodeTime(year, month, day, hour, minute, second));
+	unit, utEncodeTime(year, month, day, hour, minute, second));
 }
 
 
@@ -2071,7 +2129,7 @@ logClone(
 
     if (unit == NULL) {
 	clone = NULL;
-	unitStatus = UT_INTERNAL;
+	utStatus = UT_INTERNAL;
     }
     else {
 	clone = logNew(unit->log.logE, unit->log.reference);
@@ -2086,20 +2144,29 @@ logCompare(
     const utUnit* const	unit1,
     const utUnit* const	unit2)
 {
-    const LogUnit* const	u1 = &unit1->log;
-    const LogUnit* const	u2 = &unit2->log;
-    int				result =
-	utCompare(u1->reference, u2->reference);
+    int	cmp;
 
-    if (result == 0)
-	result =
-	    u1->logE < u2->logE
-		? -1
-		: u1->logE == u2->logE
-		    ? 0
-		    : 1;
+    if (!IS_LOG(unit2)) {
+	int	diff = unit1->common.type - unit2->common.type;
 
-    return result;
+	cmp = diff < 0 ? -1 : diff == 0 ? 0 : 1;
+    }
+    else {
+	const LogUnit* const	u1 = &unit1->log;
+	const LogUnit* const	u2 = &unit2->log;
+
+	cmp = utCompare(u1->reference, u2->reference);
+
+	if (cmp == 0)
+	    cmp =
+		u1->logE < u2->logE
+		    ? -1
+		    : u1->logE == u2->logE
+			? 0
+			: 1;
+    }
+
+    return cmp;
 }
 
 
@@ -2121,7 +2188,7 @@ logFree(
  *	unit1	The logarithmic-unit.
  *	unit2	The other unit.
  * Returns:
- *	NULL	Failure.  "unitStatus" is set:
+ *	NULL	Failure.  "utGetStatus()" will be:
  *		    UT_INTERNAL		"unit1" is NULL.
  *		    UT_INTERNAL		"unit2" is NULL.
  *		    UT_INTERNAL		"unit1" is not a logarithmic-unit.
@@ -2134,18 +2201,22 @@ logMultiply(
     utUnit* const	unit1,
     utUnit* const	unit2)
 {
-    utUnit*	result;
+    utUnit*	result = NULL;		/* failure */
 
     if (unit1 == NULL || unit2 == NULL || !IS_LOG(unit1)) {
-	result = NULL;
-	unitStatus = UT_INTERNAL;
+	utStatus = UT_INTERNAL;
+    }
+    else if (!utIsDimensionless(unit2)) {
+	utStatus = UT_MEANINGLESS;
+    }
+    else if (IS_BASIC(unit2) || IS_PRODUCT(unit2)) {
+	result = CLONE(unit1);
+    }
+    else if (IS_GALILEAN(unit2)) {
+	result = galileanNew(unit2->galilean.scale, unit1, 0);
     }
     else {
-	/*
-	 * Because a logarithmic unit is dimensionless, the result is simply
-	 * a scaling of the other unit.
-	 */
-	result = galileanNew(1.0/unit1->log.logE, unit2, 0.0);
+	utStatus = UT_MEANINGLESS;
     }
 
     return result;
@@ -2159,7 +2230,7 @@ logMultiply(
  *	unit	The logarithmic-unit.
  *	power	The power.  Must be greater than -256 and less than 256.
  * Returns:
- *	NULL	Failure.  "unitStatus" is set:
+ *	NULL	Failure.  "utGetStatus()" will be:
  *		    UT_INTERNAL		"unit" is NULL.
  *		    UT_INTERNAL		"unit" is not a logarithmic-unit.
  *		    UT_INTERNAL		"power" is out-of-range.
@@ -2172,24 +2243,19 @@ logRaise(
     utUnit* const	unit,
     const int		power)
 {
-    utUnit*	result;
+    utUnit*	result = NULL;		/* failure */
 
     if (unit == NULL || !IS_LOG(unit) || power < -255 || power > 255) {
-	result = NULL;
-	unitStatus = UT_INTERNAL;
+	utStatus = UT_INTERNAL;
+    }
+    else if (power == 0) {
+	result = unit->common.system->one;
     }
     else {
-	if (power == 0) {
-	    result = unit->common.system->one;
-	}
-	else {
-	    /*
-	     * Because a logarithmic unit is dimensionless, the result is simply
-	     * a scaling of the dimensionless-unit one.
-	     */
-	    result = galileanNew(pow(unit->log.logE, -power),
-		unit->common.system->one, 0.0);
-	}
+	/*
+	 * We don't know how to raise a logarithmic unit to a non-zero power.
+	 */
+	utStatus = UT_MEANINGLESS;
     }
 
     return result;
@@ -2203,7 +2269,7 @@ logRaise(
  * Arguments:
  *	unit	The logarithmic unit.
  * Returns:
- *	-1	Failure.  "unitStatus" is set:
+ *	-1	Failure.  "utGetStatus()" will be:
  *		    UT_INTERNAL		"unit" is NULL.
  *		    UT_INTERNAL		"unit" is not a logarithmic-unit.
  *		    UT_OS		Operating-system fault.  See "errno".
@@ -2216,13 +2282,13 @@ logInitConverterToProduct(
     int			retCode = -1;		/* failure */
 
     if (unit == NULL || !IS_LOG(unit)) {
-	unitStatus = UT_INTERNAL;
+	utStatus = UT_INTERNAL;
     }
     else {
 	cvConverter* const	toUnderlying = cvGetExp(unit->log.logE);
 
 	if (toUnderlying == NULL) {
-	    unitStatus = UT_OS;
+	    utStatus = UT_OS;
 	}
 	else {
 	    if (ENSURE_CONVERTER_TO_PRODUCT(unit->log.reference)) {
@@ -2232,7 +2298,7 @@ logInitConverterToProduct(
 		    toUnderlying, unit->log.reference->common.toProduct);
 
 		if (unit->common.toProduct == NULL) {
-		    unitStatus = UT_OS;
+		    utStatus = UT_OS;
 		}
 		else {
 		    retCode = 0;
@@ -2254,7 +2320,7 @@ logInitConverterToProduct(
  * Arguments:
  *	unit	The logarithmic unit.
  * Returns:
- *	-1	Failure.  "unitStatus" is set:
+ *	-1	Failure.  "utGetStatus()" will be:
  *		    UT_INTERNAL		"unit" is NULL.
  *		    UT_INTERNAL		"unit" is not a logarithmic-unit.
  *		    UT_OS		Operating-system fault.  See "errno".
@@ -2267,13 +2333,13 @@ logInitConverterFromProduct(
     int		retCode = -1;		/* failure */
 
     if (unit == NULL || !IS_LOG(unit)) {
-	unitStatus = UT_INTERNAL;
+	utStatus = UT_INTERNAL;
     }
     else {
 	cvConverter* const	fromUnderlying = cvGetLog(unit->log.logE);
 
 	if (fromUnderlying == NULL) {
-	    unitStatus = UT_OS;
+	    utStatus = UT_OS;
 	}
 	else {
 	    if (ENSURE_CONVERTER_FROM_PRODUCT(unit->log.reference)) {
@@ -2283,7 +2349,7 @@ logInitConverterFromProduct(
 		    unit->log.reference->common.fromProduct, fromUnderlying);
 
 		if (unit->common.fromProduct == NULL) {
-		    unitStatus = UT_OS;
+		    utStatus = UT_OS;
 		}
 		else {
 		    retCode = 0;
@@ -2298,7 +2364,7 @@ logInitConverterFromProduct(
 }
 
 
-static utStatus
+static enum utStatus
 logAcceptVisitor(
     const utUnit* const		unit,
     const utVisitor* const	visitor,
@@ -2342,14 +2408,14 @@ logNew(
     LogUnit*	logUnit;
 
     if (logE <= 0 || reference == NULL) {
-	unitStatus = UT_INTERNAL;
+	utStatus = UT_INTERNAL;
 	logUnit = NULL;
     }
     else {
 	logUnit = malloc(sizeof(LogUnit));
 
 	if (logUnit == NULL) {
-	    unitStatus = UT_OS;
+	    utStatus = UT_OS;
 	}
 	else {
 	    if (commonInit(&logUnit->common, &logOps, reference->common.system,
@@ -2380,29 +2446,27 @@ logNew(
 
 
 /*
- * Returns the status of the last operation by this module.
- *
- * Returns one of:
- *	UT_SUCCESS		Success
- *	UT_BADSYSTEM		The unit-system pointer is NULL
- *	UT_BADID		A name or symbol is invalid
- *	UT_BADVALUE		A value is invalid
- *	UT_EXISTS		The unit or mapping already exists
- *	UT_BADUNIT		A unit pointer is NULL
- *	UT_NOUNIT		No such unit exists
- *	UT_MEANINGLESS		The requested operation on the given unit(s)
- *				is meaningless
- *	UT_NOSECOND		The relevant unit-system doesn't contain a unit
- *				named "second".
- *	UT_OS			Operating system error
- *	UT_NOSYMBOL		The unit-system doesn't contain a necessary
- *				symbol.
- *	UT_INTERNAL		Internal error (this should not occur)
+ * Returns the status of the units module.
  */
-utStatus
+enum utStatus
 utGetStatus()
 {
-    return unitStatus;
+    return utStatus;
+}
+
+
+/*
+ * Sets the status of the units module.  This function would not normally be
+ * called by the user unless they were doing their own parsing or formatting.
+ *
+ * Arguments:
+ *	status	The status of the units module.
+ */
+void
+utSetStatus(
+    const enum utStatus	status)
+{
+    utStatus = status;
 }
 
 
@@ -2419,10 +2483,10 @@ utNewSystem()
 {
     utSystem*	system = malloc(sizeof(utSystem));
 
-    unitStatus = UT_SUCCESS;
+    utStatus = UT_SUCCESS;
 
     if (system == NULL) {
-	unitStatus = UT_OS;
+	utStatus = UT_OS;
     }
     else {
 	system->second = NULL;
@@ -2433,7 +2497,7 @@ utNewSystem()
 	if ((system->one = (utUnit*)productNew(system, NULL, NULL, 0)) != NULL)
 	    system->size++;
 
-	if (unitStatus != UT_SUCCESS)
+	if (utStatus != UT_SUCCESS)
 	    free(system);
     }
 
@@ -2458,11 +2522,11 @@ utGetDimensionlessUnitOne(
 {
     utUnit*	one;
 
-    unitStatus = UT_SUCCESS;
+    utStatus = UT_SUCCESS;
 
     if (system == NULL) {
 	one = NULL;
-	unitStatus = UT_BADSYSTEM;
+	utStatus = UT_BADSYSTEM;
     }
     else {
 	one = system->one;
@@ -2488,11 +2552,11 @@ utGetSystem(
 {
     utSystem*	system;
 
-    unitStatus = UT_SUCCESS;
+    utStatus = UT_SUCCESS;
 
     if (unit == NULL) {
 	system = NULL;
-	unitStatus = UT_BADUNIT;
+	utStatus = UT_BADUNIT;
     }
     else {
 	system = unit->common.system;
@@ -2523,10 +2587,10 @@ utSameSystem(
     int	sameSystem;
 
     if (unit1 == NULL || unit2 == NULL) {
-	unitStatus = UT_BADUNIT;
+	utStatus = UT_BADUNIT;
     }
     else {
-	unitStatus = UT_SUCCESS;
+	utStatus = UT_SUCCESS;
 	sameSystem = unit1->common.system == unit2->common.system;
     }
 
@@ -2555,7 +2619,7 @@ newBasicUnit(
     BasicUnit*	basicUnit = NULL;	/* failure */
 
     if (system == NULL) {
-	unitStatus = UT_BADSYSTEM;
+	utStatus = UT_BADSYSTEM;
     }
     else {
 	basicUnit = basicNew(system, isDimensionless);
@@ -2568,7 +2632,7 @@ newBasicUnit(
 		basicFree((utUnit*)basicUnit);
 
 		basicUnit = NULL;
-		unitStatus = UT_OS;
+		utStatus = UT_OS;
 	    }
 	    else {
 		system->size++;
@@ -2600,7 +2664,9 @@ utUnit*
 utNewBaseUnit(
     utSystem* const	system)
 {
-    return (utUnit*)newBasicUnit(system, 0);
+    BasicUnit*	basicUnit = newBasicUnit(system, 0);
+
+    return (utUnit*)basicUnit;
 }
 
 
@@ -2645,11 +2711,11 @@ utSize(
 
     if (system == NULL) {
 	size = -1;
-	unitStatus = UT_BADSYSTEM;
+	utStatus = UT_BADSYSTEM;
     }
     else {
 	size = system->size;
-	unitStatus = UT_SUCCESS;
+	utStatus = UT_SUCCESS;
     }
 
     return size;
@@ -2670,38 +2736,38 @@ utSize(
  *	UT_EXISTS	The second unit of "system" is set to a different unit.
  *	UT_SUCCESS	Success.
  */
-utStatus
+enum utStatus
 utSetSecond(
     utSystem* const	system,
     utUnit* const	second)
 {
-    unitStatus = UT_SUCCESS;
+    utStatus = UT_SUCCESS;
 
     if (system == NULL) {
-	unitStatus = UT_BADSYSTEM;
+	utStatus = UT_BADSYSTEM;
     }
     else if (second == NULL) {
-	unitStatus = UT_BADUNIT;
+	utStatus = UT_BADUNIT;
     }
     else if (system != utGetSystem(second)) {
-	unitStatus = UT_BADUNIT;
+	utStatus = UT_BADUNIT;
     }
     else if (system->second == NULL) {
 	system->second = CLONE(second);
     }
     else {
 	if (utCompare(system->second, second) != 0)
-	    unitStatus = UT_EXISTS;
+	    utStatus = UT_EXISTS;
     }
 
-    return unitStatus;
+    return utStatus;
 }
 
 
 /*
  * Compares two units.  Returns a value less than, equal to, or greater than
  * zero as the first unit is considered less than, equal to, or greater than
- * the second unit, respectively.  Units from different unit-systems will never
+ * the second unit, respectively.  Units from different unit-systems never
  * compare equal.
  *
  * Arguments:
@@ -2719,7 +2785,7 @@ utCompare(
 {
     int	cmp = 0;
 
-    unitStatus = UT_SUCCESS;
+    utStatus = UT_SUCCESS;
 
     if (unit1 == NULL) {
 	cmp = unit2 != NULL ? -1 : 0;
@@ -2738,15 +2804,10 @@ utCompare(
 	const UnitOps* const	ops2 = unit2->common.ops;
 
 	/*
-	 * NB: The unit-specific comparison function is called if and only
-	 * if the units are the same type.
+	 * NB: The comparison function is called if and only if the units
+	 * belong to the same unit system.
 	 */
-	cmp = 
-	    ops1 < ops2
-		? -1
-		: ops1 == ops2
-		    ? ops1->compare(unit1, unit2)
-		    : 1;
+	cmp = COMPARE(unit1, unit2);
     }
 
     return cmp;
@@ -2776,14 +2837,14 @@ utScale(
 {
     utUnit*		result = NULL;	/* failure */
 
-    unitStatus = UT_SUCCESS;
+    utStatus = UT_SUCCESS;
 
     if (unit == NULL) {
-	unitStatus = UT_BADUNIT;
+	utStatus = UT_BADUNIT;
     }
     else {
 	if (factor == 0) {
-	    unitStatus = UT_BADVALUE;
+	    utStatus = UT_BADVALUE;
 	}
 	else {
 	    result = factor == 1
@@ -2818,10 +2879,10 @@ utOffset(
 {
     utUnit*		result = NULL;	/* failure */
 
-    unitStatus = UT_SUCCESS;
+    utStatus = UT_SUCCESS;
 
     if (unit == NULL) {
-	unitStatus = UT_BADUNIT;
+	utStatus = UT_BADUNIT;
     }
     else {
 	result = offset == 0
@@ -2872,13 +2933,55 @@ utOffsetByTime(
 {
     utUnit*		result = NULL;	/* failure */
 
-    unitStatus = UT_SUCCESS;
+    utStatus = UT_SUCCESS;
 
     if (unit == NULL) {
-	unitStatus = UT_BADUNIT;
+	utStatus = UT_BADUNIT;
     }
     else {
 	result = timestampNew(unit, year, month, day, hour, minute, second);
+    }
+
+    return result;
+}
+
+
+/*
+ * Returns a unit equivalent to another unit relative to a particular time.
+ * e.g.,
+ *	const utUnit*	second = ...
+ *	const utUnit*	secondsSinceUdunitsOrigin =
+ *	    utOffsetByScalarTime(second, 0.0);
+ *
+ * "utSetSecond()" must be called before the first call to this function.
+ *
+ * Arguments:
+ *	unit	Pointer to the time-unit to be made relative to a time-origin.
+ *	origin	The origin as returned by utEncodeTime().
+ * Returns:
+ *	NULL	Failure.  "utGetStatus()" will be
+ *		    UT_BADUNIT		"unit" is NULL.
+ *		    UT_OS		Operating-system error.  See "errno".
+ *		    UT_MEANINGLESS	Creation of a timestamp unit based on
+ *					"unit" is not meaningful.
+ *		    UT_NOSECOND		The associated unit-system doesn't
+ *					contain a second unit.
+ *	else	Pointer to the timestamp-unit.
+ */
+utUnit*
+utOffsetByScalarTime(
+    utUnit* const	unit,
+    const double	origin)
+{
+    utUnit*		result = NULL;	/* failure */
+
+    utStatus = UT_SUCCESS;
+
+    if (unit == NULL) {
+	utStatus = UT_BADUNIT;
+    }
+    else {
+	result = timestampNewOrigin(unit, origin);
     }
 
     return result;
@@ -2906,13 +3009,13 @@ utMultiply(
 {
     utUnit*	result = NULL;	/* failure */
 
-    unitStatus = UT_SUCCESS;
+    utStatus = UT_SUCCESS;
 
     if (unit1 == NULL || unit2 == NULL) {
-	unitStatus = UT_BADUNIT;
+	utStatus = UT_BADUNIT;
     }
     else if (unit1->common.system != unit2->common.system) {
-	unitStatus = UT_NOTSAMESYSTEM;
+	utStatus = UT_NOTSAMESYSTEM;
     }
     else {
 	result = MULTIPLY(unit1, unit2);
@@ -2969,13 +3072,13 @@ utDivide(
 {
     utUnit*	result = NULL;		/* failure */
 
-    unitStatus = UT_SUCCESS;
+    utStatus = UT_SUCCESS;
 
     if (numer == NULL || denom == NULL) {
-	unitStatus = UT_BADUNIT;
+	utStatus = UT_BADUNIT;
     }
     else if (numer->common.system != denom->common.system) {
-	unitStatus = UT_NOTSAMESYSTEM;
+	utStatus = UT_NOTSAMESYSTEM;
     }
     else {
 	utUnit*	inverse = RAISE(denom, -1);
@@ -3012,13 +3115,13 @@ utRaise(
 {
     utUnit*		result = NULL;	/* failure */
 
-    unitStatus = UT_SUCCESS;
+    utStatus = UT_SUCCESS;
 
     if (unit == NULL) {
-	unitStatus = UT_BADUNIT;
+	utStatus = UT_BADUNIT;
     }
     else if (power < -255 || power > 255) {
-	unitStatus = UT_BADVALUE;
+	utStatus = UT_BADVALUE;
     }
     else {
 	result = 
@@ -3078,13 +3181,13 @@ utLog(
 {
     utUnit*		result = NULL;	/* failure */
 
-    unitStatus = UT_SUCCESS;
+    utStatus = UT_SUCCESS;
 
     if (logE <= 0) {
-	unitStatus = UT_BADVALUE;
+	utStatus = UT_BADVALUE;
     }
     else if (reference == NULL) {
-	unitStatus = UT_BADUNIT;
+	utStatus = UT_BADUNIT;
     }
     else {
 	result = logNew(logE, reference);
@@ -3121,13 +3224,13 @@ utAreConvertible(
     int			areConvertible = 0;
 
     if (unit1 == NULL || unit2 == NULL) {
-	unitStatus = UT_BADUNIT;
+	utStatus = UT_BADUNIT;
     }
     else if (unit1->common.system != unit2->common.system) {
-	unitStatus = UT_NOTSAMESYSTEM;
+	utStatus = UT_NOTSAMESYSTEM;
     }
     else {
-	unitStatus = UT_SUCCESS;
+	utStatus = UT_SUCCESS;
 
 	if (IS_TIMESTAMP(unit1) || IS_TIMESTAMP(unit2)) {
 	    areConvertible = IS_TIMESTAMP(unit1) && IS_TIMESTAMP(unit2);
@@ -3170,20 +3273,20 @@ utGetConverter(
     cvConverter*	converter = NULL;	/* failure */
 
     if (from == NULL || to == NULL) {
-	unitStatus = UT_BADUNIT;
+	utStatus = UT_BADUNIT;
     }
     else if (from->common.system != to->common.system) {
-	unitStatus = UT_NOTSAMESYSTEM;
+	utStatus = UT_NOTSAMESYSTEM;
     }
     else {
-	unitStatus = UT_SUCCESS;
+	utStatus = UT_SUCCESS;
 
 	if (!IS_TIMESTAMP(from) && !IS_TIMESTAMP(to)) {
 	    ProductRelationship	relationship =
 		productRelationship(GET_PRODUCT(from), GET_PRODUCT(to));
 
 	    if (relationship == PRODUCT_UNCONVERTIBLE) {
-		unitStatus = UT_MEANINGLESS;
+		utStatus = UT_MEANINGLESS;
 	    }
 	    else if (ENSURE_CONVERTER_TO_PRODUCT(from) &&
 			ENSURE_CONVERTER_FROM_PRODUCT(to)) {
@@ -3214,7 +3317,7 @@ utGetConverter(
 		}			/* reciprocal product-units */
 
 		if (converter == NULL)
-		    unitStatus = UT_OS;
+		    utStatus = UT_OS;
 	    }				/* got necessary product converters */
 	}				/* neither unit is a timestamp */
 	else {
@@ -3222,34 +3325,34 @@ utGetConverter(
 		from->common.system->second);
 
 	    if (toSeconds == NULL) {
-		unitStatus = UT_OS;
+		utStatus = UT_OS;
 	    }
 	    else {
 		cvConverter*	shiftOrigin =
 		    cvGetOffset(from->timestamp.origin - to->timestamp.origin);
 
 		if (shiftOrigin == NULL) {
-		    unitStatus = UT_OS;
+		    utStatus = UT_OS;
 		}
 		else {
 		    cvConverter*	toToUnit =
 			cvCombine(toSeconds, shiftOrigin);
 
 		    if (toToUnit == NULL) {
-			unitStatus = UT_OS;
+			utStatus = UT_OS;
 		    }
 		    else {
 			cvConverter*	fromSeconds = utGetConverter(
 			    to->common.system->second, to->timestamp.unit); 
 
 			if (fromSeconds == NULL) {
-			    unitStatus = UT_OS;
+			    utStatus = UT_OS;
 			}
 			else {
 			    converter = cvCombine(toToUnit, fromSeconds);
 
 			    if (converter == NULL)
-				unitStatus = UT_OS;
+				utStatus = UT_OS;
 
 			    cvFree(fromSeconds);
 			}		/* "fromSeconds" allocated */
@@ -3286,7 +3389,7 @@ int
 utIsDimensionless(
     utUnit* const	unit)
 {
-    unitStatus = UT_SUCCESS;
+    utStatus = UT_SUCCESS;
 
     return productIsDimensionless(GET_PRODUCT(unit));
 }
@@ -3300,13 +3403,28 @@ utIsDimensionless(
  * Returns:
  *	NULL	Failure.  utGetStatus() will be
  *		    UT_OS	Operating-system failure.  See "errno".
+ *		    UT_BADUNIT	"unit" is NULL.
  *	else	Pointer to the clone of "unit".  Might equal "unit".
  */
 utUnit*
 utClone(
     const utUnit* const	unit)
 {
-    return CLONE(unit);
+    utUnit*	clone = NULL;		/* failure */
+
+    utStatus = UT_SUCCESS;
+
+    if (unit == NULL) {
+	utStatus = UT_BADUNIT;
+    }
+    else {
+	clone =
+	    clone == unit->common.system->one
+		? (utUnit*)unit
+		: CLONE(unit);
+    }
+
+    return clone;
 }
 
 
@@ -3322,10 +3440,12 @@ void
 utFree(
     const utUnit* const unit)
 {
-    unitStatus = UT_SUCCESS;
+    utStatus = UT_SUCCESS;
 
-    if (unit != NULL)
-	FREE((utUnit*)unit);
+    if (unit != NULL) {
+	if (unit != unit->common.system->one)
+	    FREE((utUnit*)unit);
+    }
 }
 
 
@@ -3342,23 +3462,23 @@ utFree(
  *	UT_VISIT_ERROR	A error occurred in "visitor" while visiting "unit".
  *	UT_SUCCESS	Success.
  */
-utStatus
+enum utStatus
 utAcceptVisitor(
     const utUnit* const		unit,
     const utVisitor* const	visitor,
     void* const			arg)
 {
-    unitStatus = UT_SUCCESS;
+    utStatus = UT_SUCCESS;
 
     if (unit == NULL) {
-	unitStatus = UT_BADUNIT;
+	utStatus = UT_BADUNIT;
     }
     else if (visitor == NULL) {
-	unitStatus = UT_BADVISITOR;
+	utStatus = UT_BADVISITOR;
     }
     else {
-	unitStatus = ACCEPT_VISITOR(unit, visitor, arg);
+	utStatus = ACCEPT_VISITOR(unit, visitor, arg);
     }
 
-    return unitStatus;
+    return utStatus;
 }
