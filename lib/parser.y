@@ -1,6 +1,6 @@
 %{
 /*
- * $Id: parser.y,v 1.3 2006/12/07 20:16:53 steve Exp $
+ * $Id: parser.y,v 1.4 2006/12/07 20:26:21 steve Exp $
  *
  * yacc(1)-based parser for decoding formatted unit specifications.
  */
@@ -141,12 +141,10 @@ ut_error(
 
 %type	<unit>	unit_spec
 %type   <unit>	shift_exp
-%type   <unit>	scaled_exp
 %type   <unit>	product_exp
 %type   <unit>	power_exp
 %type   <unit>	basic_exp
 %type   <rval>	timestamp
-%type   <rval>	number_exp
 %type   <rval>	number
 
 %%
@@ -165,10 +163,10 @@ unit_spec:      /* nothing */ {
 		}
 		;
 
-shift_exp:	scaled_exp {
+shift_exp:	product_exp {
 		    $$ = $1;
 		} |
-		scaled_exp SHIFT REAL {
+		product_exp SHIFT REAL {
 		    $$ = utOffset($1, $3);
 
 		    utFree($1);
@@ -176,7 +174,7 @@ shift_exp:	scaled_exp {
 		    if ($$ == NULL)
 			YYABORT;
 		} |
-		scaled_exp SHIFT INT {
+		product_exp SHIFT INT {
 		    $$ = utOffset($1, $3);
 
 		    utFree($1);
@@ -184,7 +182,7 @@ shift_exp:	scaled_exp {
 		    if ($$ == NULL)
 			YYABORT;
 		} |
-		scaled_exp SHIFT timestamp {
+		product_exp SHIFT timestamp {
 		    $$ = utOffsetByScalarTime($1, $3);
 
 		    utFree($1);
@@ -193,58 +191,6 @@ shift_exp:	scaled_exp {
 			YYABORT;
 		}
 		;
-
-scaled_exp:	number_exp {
-		    $$ = utScale($1, utGetDimensionlessUnitOne(unitSystem));
-
-		    if ($$ == NULL)
-			YYABORT;
-		} |
-		product_exp {
-		    $$ = $1;
-		} |
-		number_exp product_exp {
-		    $$ = utScale($1, $2);
-
-		    utFree($2);
-
-		    if ($$ == NULL)
-			YYABORT;
-		} |
-		number_exp MULTIPLY product_exp {
-		    $$ = utScale($1, $3);
-
-		    utFree($3);
-
-		    if ($$ == NULL)
-			YYABORT;
-		} |
-		product_exp DIVIDE number_exp {
-		    $$ = utScale(1.0/$3, $1);
-
-		    utFree($1);
-
-		    if ($$ == NULL)
-			YYABORT;
-		} |
-		number_exp product_exp DIVIDE number_exp {
-		    $$ = utScale($1/$4, $2);
-
-		    utFree($2);
-
-		    if ($$ == NULL)
-			YYABORT;
-		} |
-		number_exp MULTIPLY product_exp DIVIDE number_exp {
-		    $$ = utScale($1/$5, $3);
-
-		    utFree($3);
-
-		    if ($$ == NULL)
-			YYABORT;
-		}
-		;
-
 
 product_exp:	power_exp {
 		    $$ = $1;
@@ -354,24 +300,16 @@ basic_exp:	ID {
 		'(' shift_exp ')' {
 		    $$ = $2;
 		} |
-		LOGREF scaled_exp ')' {
+		LOGREF product_exp ')' {
 		    $$ = utLog($1, $2);
 
 		    utFree($2);
 
 		    if ($$ == NULL)
 			YYABORT;
-		}
-		;
-
-number_exp:	number {
-		    $$ = $1;
 		} |
-		number DIVIDE number {
-		    $$ = $1/$3;
-		} |
-		'(' number_exp ')' {
-		    $$ = $2;
+		number {
+		    $$ = utScale($1, utGetDimensionlessUnitOne(unitSystem));
 		}
 		;
 
