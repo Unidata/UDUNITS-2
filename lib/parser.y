@@ -1,6 +1,6 @@
 %{
 /*
- * $Id: parser.y,v 1.2 2006/12/02 22:33:46 steve Exp $
+ * $Id: parser.y,v 1.3 2006/12/07 20:16:53 steve Exp $
  *
  * yacc(1)-based parser for decoding formatted unit specifications.
  */
@@ -12,6 +12,7 @@
 #endif
 
 #include <ctype.h>
+#include <errno.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -68,6 +69,8 @@ utTrim(
     newString = malloc(nchar + 1);
 
     if (newString == NULL) {
+	utStartErrorMessages(strerror(errno));
+	utAddErrorMessage("Couldn't allocate %lu-byte string-buffer", nchar+1);
 	utStatus = UT_OS;
     }
     else {
