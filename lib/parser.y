@@ -1,6 +1,6 @@
 %{
 /*
- * $Id: parser.y,v 1.4 2006/12/07 20:26:21 steve Exp $
+ * $Id: parser.y,v 1.5 2006/12/18 18:03:18 steve Exp $
  *
  * yacc(1)-based parser for decoding formatted unit specifications.
  */
@@ -69,8 +69,9 @@ utTrim(
     newString = malloc(nchar + 1);
 
     if (newString == NULL) {
-	utStartErrorMessages(strerror(errno));
-	utAddErrorMessage("Couldn't allocate %lu-byte string-buffer", nchar+1);
+	utHandleErrorMessage(strerror(errno));
+	utHandleErrorMessage("Couldn't allocate %lu-byte string-buffer",
+	    nchar+1);
 	utStatus = UT_OS;
     }
     else {
@@ -257,6 +258,7 @@ basic_exp:	ID {
 		    double	prefix = 1;
 		    utUnit*	unit = NULL;
 		    char*	cp = $1;
+		    int		symbolPrefixSeen = 0;
 
 		    while (*cp) {
 			size_t	nchar;
@@ -274,9 +276,12 @@ basic_exp:	ID {
 
 			if (utGetPrefixByName(unitSystem, cp, &value, &nchar)
 				!= UT_SUCCESS) {
-			    if (utGetPrefixBySymbol(unitSystem, cp, &value,
-				    &nchar) != UT_SUCCESS)
+			    if (symbolPrefixSeen ||
+				    utGetPrefixBySymbol(unitSystem, cp, &value,
+					&nchar) != UT_SUCCESS)
 				break;
+
+			    symbolPrefixSeen = 1;
 			}
 
 			prefix *= value;
@@ -423,7 +428,8 @@ timestamp:	DATE {
 
 
 /*
- * Parses a string representation of a unit and returns the corresponding unit.
+ * Returns the binary representation of a unit corresponding to a string
+ * representation.
  *
  * Arguments:
  *	system		Pointer to the unit-system in which the parsing will

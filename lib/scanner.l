@@ -1,7 +1,7 @@
 /*
  * lex(1) specification for tokens for the Unidata units package, UDUNITS2.
  *
- * $Id: scanner.l,v 1.2 2006/12/02 22:33:46 steve Exp $
+ * $Id: scanner.l,v 1.3 2006/12/18 18:03:19 steve Exp $
  */
 
 %option noyywrap
@@ -49,7 +49,7 @@ minute			[0-5]?[0-9]
 second			({minute}|60)(\.[0-9]*)?
 ascii_letter		[_a-zA-Z]
 ascii_alphanum		[_a-zA-Z0-9]
-ascii_id		%|{ascii_letter}({ascii_alphanum}*{ascii_letter})?
+ascii_id		%|'|\"|{ascii_letter}({ascii_alphanum}*{ascii_letter})?
 latin1_nbsp		\xa0
 latin1_shy		\xad
 latin1_degree		°
@@ -61,13 +61,13 @@ latin1_blk3		[ø-\xff]
 latin1_blk		{latin1_blk1}|{latin1_blk2}|{latin1_blk3}
 latin1_letter		[_a-zA-Z]|{latin1_special}|{latin1_blk}
 latin1_alphanum		{latin1_letter}|[0-9]
-latin1_id		%|{latin1_letter}({latin1_alphanum}*{latin1_letter})?
+latin1_id		%|'|´|{latin1_letter}({latin1_alphanum}*{latin1_letter})?
 utf8_ohm		\xe0\x96\xa9
 utf8_special		\xc2{latin1_special}|{utf8_ohm}
 utf8_blk		\xc2{latin1_blk}
 utf8_letter		[_a-zA-Z]|{utf8_special}|{utf8_blk}
 utf8_alphanum		{utf8_letter}|[0-9]
-utf8_id			%|{utf8_letter}({utf8_alphanum}*{utf8_letter})?
+utf8_id			%|'|\"|\xe2\x80\xb3|{utf8_letter}({utf8_alphanum}*{utf8_letter})?
 broken_date		{year}-{month}(-{day})?
 packed_date		{year}({month}{day}?)?
 broken_clock		{hour}:{minute}(:{second})?

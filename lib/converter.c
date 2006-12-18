@@ -1,7 +1,7 @@
 /*
  * Value converters for the udunits(3) library.
  *
- * $Id: converter.c,v 1.1 2006/11/16 20:21:06 steve Exp $
+ * $Id: converter.c,v 1.2 2006/12/18 18:03:18 steve Exp $
  */
 
 /*LINTLIBRARY*/
@@ -897,7 +897,7 @@ compositeGetExpression(
     const char* const		variable)
 {
     char	tmpBuf[132];
-    int		nchar = utGetExpression(conv->composite.first, buf, max,
+    int		nchar = cvGetExpression(conv->composite.first, buf, max,
 	variable);
 
     if (nchar >= 0) {
@@ -914,7 +914,7 @@ compositeGetExpression(
 	    tmpBuf[sizeof(tmpBuf)-1] = 0;
 	}
 
-	n = utGetExpression(conv->composite.second, buf, max, tmpBuf);
+	n = cvGetExpression(conv->composite.second, buf, max, tmpBuf);
 
 	nchar = n >= 0 ? nchar + n : n;
     }
@@ -1385,7 +1385,7 @@ cvConvertDoubles(
  *	else	The number of bytes formatted excluding the terminating null.
  */
 int
-utGetExpression(
+cvGetExpression(
     const cvConverter* const	conv,
     char* const			buf,
     size_t			max,

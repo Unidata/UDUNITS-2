@@ -1,7 +1,7 @@
 /*
  * Identifier-to-unit map.
  *
- * $Id: idToUnitMap.c,v 1.2 2006/12/02 22:33:46 steve Exp $
+ * $Id: idToUnitMap.c,v 1.3 2006/12/18 18:03:18 steve Exp $
  */
 
 /*LINTLIBRARY*/
@@ -66,6 +66,30 @@ itumNew(
 
 
 /*
+ * Frees an identifier-to-unit map.  All entries are freed.
+ *
+ * Arguments:
+ *	map		Pointer to the identifier-to-unit map.
+ * Returns:
+ */
+static void
+itumFree(
+    IdToUnitMap*	map)
+{
+    if (map != NULL) {
+	while (map->tree != NULL) {
+	    UnitAndId*	uai = *(UnitAndId**)map->tree;
+
+	    (void)tdelete(uai, &map->tree, map->compare);
+	    uaiFree(uai);
+	}
+
+	free(map);
+    }					/* valid arguments */
+}
+
+
+/*
  * Adds an entry to an identifier-to-unit map.
  *
  * Arguments:
@@ -108,15 +132,61 @@ itumAdd(
 		status = UT_OS;
 	    }
 	    else {
-		status = 
-		    utCompare((*treeEntry)->unit, unit) != 0
-			? UT_EXISTS
-			: UT_SUCCESS;
+		if (utCompare((*treeEntry)->unit, unit) == 0) {
+		    status = UT_SUCCESS;
+		}
+		else {
+		    utHandleErrorMessage(
+			"\"%s\" maps to existing but different unit", id);
+		    status = UT_EXISTS;
+		}
 	    }				/* found entry */
 
 	    if (status != UT_SUCCESS)
 		uaiFree(targetEntry);
 	}				/* "targetEntry" allocated */
+    }					/* valid arguments */
+
+    return status;
+}
+
+
+/*
+ * Removes an entry to an identifier-to-unit map.
+ *
+ * Arguments:
+ *	map		The database.
+ *	id		The identifier.  May be freed upon return.
+ * Returns:
+ *	UT_INTERNAL	"map" is NULL.
+ *	UT_BADID	"id" is NULL.
+ *	UT_SUCCESS	Success.
+ */
+static enum utStatus
+itumRemove(
+    IdToUnitMap*	map,
+    const char* const	id)
+{
+    enum utStatus	status;
+
+    if (map == NULL) {
+	status = UT_INTERNAL;
+    }
+    else if (id == NULL) {
+	status = UT_BADID;
+    }
+    else {
+	UnitAndId	targetEntry;
+	UnitAndId**	treeEntry;
+	
+	targetEntry.id = (char*)id;
+
+	treeEntry = tfind(&targetEntry, &map->tree, map->compare);
+
+	if (treeEntry != NULL) {
+	    (void)tdelete(*treeEntry, &map->tree, map->compare);
+	    uaiFree(*treeEntry);
+	}
     }					/* valid arguments */
 
     return status;
@@ -146,9 +216,11 @@ itumFind(
     UnitAndId*	entry = NULL;		/* failure */
 
     if (map == NULL) {
+	utHandleErrorMessage("itumFind(): NULL map argument");
 	utStatus = UT_INTERNAL;
     }
     else if (id == NULL) {
+	utHandleErrorMessage("itumFind(): NULL identifierargument");
 	utStatus = UT_BADID;
     }
     else {
@@ -231,6 +303,44 @@ mapIdToUnit(
 
 
 /*
+ * Removes the mapping from an identifier to a unit.
+ *
+ * Arguments:
+ *	systemMap	Address of the pointer to the system-map.
+ *	id		Pointer to the identifier.  May be freed upon return.
+ *	system		Pointer to the unit-system associated with the mapping.
+ * Returns:
+ *	UT_BADARG	"id" is NULL.
+ *	UT_BADARG	"system" is NULL.
+ *	UT_BADARG	"compare" is NULL.
+ *	UT_SUCCESS	Success.
+ */
+static enum utStatus
+unmapId(
+    SystemMap* const	systemMap,
+    const char* const	id,
+    utSystem*		system)
+{
+    enum utStatus	status;
+
+    if (systemMap == NULL || id == NULL || system == NULL) {
+	status = UT_BADARG;
+    }
+    else {
+	IdToUnitMap** const	idToUnit =
+	    (IdToUnitMap**)smFind(systemMap, system);
+
+	status = 
+	    (idToUnit == NULL || *idToUnit == NULL)
+		? UT_SUCCESS
+		: itumRemove(*idToUnit, id);
+    }					/* valid arguments */
+
+    return status;
+}
+
+
+/*
  * Adds a mapping from a name to a unit.
  *
  * Arguments:
@@ -250,6 +360,26 @@ utMapNameToUnit(
 {
     return utStatus =
 	mapIdToUnit(&systemToNameToUnit, name, unit, insensitiveCompare);
+}
+
+
+/*
+ * Removes a mapping from a name to a unit.  After this function,
+ * getUnitByName() will no longer return a unit.
+ *
+ * Arguments:
+ *	name		The name of the unit.
+ *	system		The unit-system to which the unit belongs.
+ * Returns:
+ *	UT_SUCCESS	Success.
+ */
+enum utStatus
+utUnmapName(
+    const char* const	name,
+    utSystem*		system)
+{
+    return utStatus =
+	unmapId(systemToNameToUnit, name, system);
 }
 
 
@@ -277,10 +407,31 @@ utMapSymbolToUnit(
 
 
 /*
+ * Removes a mapping from a symbol to a unit.  After this function,
+ * getUnitBySymbol() will no longer return a unit.
+ *
+ * Arguments:
+ *	symbol		The symbol of the unit.
+ *	system		The unit-system to which the unit belongs.
+ * Returns:
+ *	UT_SUCCESS	Success.
+ */
+enum utStatus
+utUnmapSymbol(
+    const char* const	symbol,
+    utSystem*		system)
+{
+    return utStatus =
+	unmapId(systemToSymbolToUnit, symbol, system);
+}
+
+
+/*
  * Returns the unit to which an identifier maps in a particular unit-system.
  *
  * Arguments:
- *	systemMap	Address of the pointer to the system-map.
+ *	systemMap	NULL or pointer to the system-map.  If NULL, then
+ *			NULL will be returned.
  *	system		Pointer to the unit-system.
  *	id		Pointer to the identifier.
  * Returns:
@@ -298,16 +449,15 @@ getUnitById(
 {
     utUnit*	unit = NULL;		/* failure */
 
-    if (systemMap == NULL) {
-	utStatus = UT_INTERNAL;
-    }
-    else if (system == NULL) {
+    if (system == NULL) {
+	utHandleErrorMessage("getUnitById(): NULL unit-system argument");
 	utStatus = UT_BADSYSTEM;
     }
     else if (id == NULL) {
+	utHandleErrorMessage("getUnitById(): NULL identifier argument");
 	utStatus = UT_BADID;
     }
-    else {
+    else if (systemMap != NULL) {
 	IdToUnitMap** const	idToUnit =
 	    (IdToUnitMap**)smFind(systemMap, system);
 
@@ -374,4 +524,37 @@ utGetUnitBySymbol(
     utStatus = UT_SUCCESS;
 
     return getUnitById(systemToSymbolToUnit, system, symbol);
+}
+
+
+/*
+ * Frees resources associated with a unit-system.
+ *
+ * Arguments:
+ *	system		Pointer to the unit-system to have its associated
+ *			resources freed.
+ */
+void
+itumFreeSystem(
+    utSystem*	system)
+{
+    if (system != NULL) {
+	SystemMap*	systemMaps[2];
+	int		i;
+
+	systemMaps[0] = systemToNameToUnit;
+	systemMaps[1] = systemToSymbolToUnit;
+
+	for (i = 0; i < 2; i++) {
+	    if (systemMaps[i] != NULL) {
+		IdToUnitMap** const	idToUnit =
+		    (IdToUnitMap**)smFind(systemMaps[i], system);
+
+		if (idToUnit != NULL)
+		    itumFree(*idToUnit);
+
+		smRemove(systemMaps[i], system);
+	    }
+	}
+    }					/* valid arguments */
 }

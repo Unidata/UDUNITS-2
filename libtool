@@ -1,4 +1,4 @@
-#! /bin/bash
+#! /bin/sh
 
 # libtoolT - Provide generalized library-building support services.
 # Generated automatically by  (GNU udunits 2.0)
@@ -47,7 +47,7 @@ available_tags=" CXX F77"
 # Libtool was configured on host gilda.unidata.ucar.edu:
 
 # Shell to use when invoking shell scripts.
-SHELL="/bin/bash"
+SHELL="/bin/sh"
 
 # Whether or not to build shared libraries.
 build_libtool_libs=yes
@@ -7216,7 +7216,7 @@ disable_libs=static
 # Libtool was configured on host gilda.unidata.ucar.edu:
 
 # Shell to use when invoking shell scripts.
-SHELL="/bin/bash"
+SHELL="/bin/sh"
 
 # Whether or not to build shared libraries.
 build_libtool_libs=yes
@@ -7522,7 +7522,7 @@ include_expsyms=""
 # Libtool was configured on host gilda.unidata.ucar.edu:
 
 # Shell to use when invoking shell scripts.
-SHELL="/bin/bash"
+SHELL="/bin/sh"
 
 # Whether or not to build shared libraries.
 build_libtool_libs=yes

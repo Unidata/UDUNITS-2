@@ -1,5 +1,5 @@
 /*
- * $Id: converter.h,v 1.2 2006/12/02 22:33:45 steve Exp $
+ * $Id: converter.h,v 1.3 2006/12/18 18:03:18 steve Exp $
  *
  * Public header-file for the Unidata units(3) library.
  */
@@ -239,7 +239,7 @@ cvConvertDoubles(
  *	else	The number of bytes formatted excluding the terminating null.
  */
 int
-utGetExpression(
+cvGetExpression(
     const cvConverter* const	conv,
     char* const			buf,
     size_t			max,

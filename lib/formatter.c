@@ -155,9 +155,11 @@ format(
     int	nchar = -1;	/* failure */
 
     if (unit == NULL) {
+	utHandleErrorMessage("format(): NULL unit argument");
 	utStatus = UT_BADUNIT;
     }
     else if (buf == NULL) {
+	utHandleErrorMessage("format(): NULL buffer argument");
 	utStatus = UT_BADBUF;
     }
     else {
@@ -436,27 +438,35 @@ utf8PrintProduct(
 		     * Append UTF-8 encoding of exponent magnitude.
 		     */
 		    {
-			int	digit[(int)((sizeof(powers[0])*
-				    CHAR_BIT*(M_LOG10E/M_LOG2E)) + 1)];
-			int	idig = 0;
+			static int*	digit = NULL;
 
-			for (; power > 0; power /= 10)
-			    digit[idig++] = power % 10;
+			digit = realloc(digit, (size_t)((sizeof(powers[0])*
+				    CHAR_BIT*(M_LOG10E/M_LOG2E)) + 1));
 
-			while (idig-- > 0) {
-			    n = snprintf(buf+nchar, max-nchar,
-				    exponentStrings[digit[idig]]);
+			if (digit == NULL) {
+			    nchar = -1;
+			}
+			else {
+			    int	idig = 0;
 
-			    if (n < 0) {
-				nchar = n;
-				break;
+			    for (; power > 0; power /= 10)
+				digit[idig++] = power % 10;
+
+			    while (idig-- > 0) {
+				n = snprintf(buf+nchar, max-nchar,
+					exponentStrings[digit[idig]]);
+
+				if (n < 0) {
+				    nchar = n;
+				    break;
+				}
+
+				nchar += n;
 			    }
 
-			    nchar += n;
+			    if (nchar < 0)
+				break;
 			}
-
-			if (nchar < 0)
-			    break;
 		    }			/* exponent digits block */
 		}			/* must print exponent */
 	    }				/* must print basic-unit */
@@ -651,44 +661,51 @@ latin1PrintProduct(
 	nchar = asciiPrintProduct(basicUnits, powers, count, buf, max, getId);
     }
     else {
-	int	positiveCount;
-	int	negativeCount;
-	int	order[count];
+	int		positiveCount;
+	int		negativeCount;
+	static int*	order = NULL;
 
-	getBasicOrder(powers, count, order, &positiveCount, &negativeCount);
+	order = realloc(order, count);
 
-	nchar = snprintf(buf, max, "%s", "");
+	if (order == NULL) {
+	    nchar = -1;
+	}
+	else {
+	    getBasicOrder(powers, count, order, &positiveCount, &negativeCount);
 
-	if (nchar >= 0 && (positiveCount + negativeCount > 0)) {
-	    int		n;
+	    nchar = snprintf(buf, max, "%s", "");
 
-	    if (positiveCount == 0) {
-		n = snprintf(buf+nchar, max-nchar, "1");
-		nchar = n < 0 ? n : nchar + n;
-	    }
-	    else {
-		n = latin1PrintBasics(buf+nchar, max-nchar, basicUnits,
-		    powers, order, positiveCount, getId);
-		nchar = n < 0 ? n : nchar + n;
-	    }
+	    if (nchar >= 0 && (positiveCount + negativeCount > 0)) {
+		int		n;
 
-	    if (nchar >= 0 && negativeCount > 0) {
-		n = snprintf(buf+nchar, max-nchar,
-		    negativeCount == 1 ? "/" : "/(");
-		nchar = n < 0 ? n : nchar + n;
-
-		if (nchar >= 0) {
+		if (positiveCount == 0) {
+		    n = snprintf(buf+nchar, max-nchar, "1");
+		    nchar = n < 0 ? n : nchar + n;
+		}
+		else {
 		    n = latin1PrintBasics(buf+nchar, max-nchar, basicUnits,
-			powers, order+positiveCount, negativeCount, getId);
+			powers, order, positiveCount, getId);
+		    nchar = n < 0 ? n : nchar + n;
+		}
+
+		if (nchar >= 0 && negativeCount > 0) {
+		    n = snprintf(buf+nchar, max-nchar,
+			negativeCount == 1 ? "/" : "/(");
 		    nchar = n < 0 ? n : nchar + n;
 
-		    if (nchar >= 0 && negativeCount > 1) {
-			n = snprintf(buf+nchar, max-nchar, ")");
+		    if (nchar >= 0) {
+			n = latin1PrintBasics(buf+nchar, max-nchar, basicUnits,
+			    powers, order+positiveCount, negativeCount, getId);
 			nchar = n < 0 ? n : nchar + n;
-		    }
-		}			/* solidus appended */
-	    }				/* positive exponents printed */
-	}				/* "buf" initialized */
+
+			if (nchar >= 0 && negativeCount > 1) {
+			    n = snprintf(buf+nchar, max-nchar, ")");
+			    nchar = n < 0 ? n : nchar + n;
+			}
+		    }			/* solidus appended */
+		}			/* positive exponents printed */
+	    }				/* "buf" initialized */
+	}				/* "order" re-allocated */
     }					/* using Latin-1 encoding */
 
     return nchar;
@@ -1173,7 +1190,7 @@ static utVisitor	formatter = {
  *			UT_LATIN1 and UT_UTF8 are mutually exclusive: they may
  *			not both be specified.
  * Returns:
- *	-1	Failure:  "utFormatStatus()" will be
+ *	-1	Failure:  "utStatus()" will be
  *		    UT_BADARG		"unit" is NULL, or "buf" is NULL, or
  *					both UT_LATIN1 and UT_UTF8 specified.
  *		    UT_CANT_FORMAT	"unit" can't be formatted in the desired
@@ -1196,11 +1213,19 @@ utFormat(
 
     if (unit == NULL || buf == NULL ||
 	    ((encoding & UT_LATIN1) && (encoding & UT_UTF8))) {
+	utHandleErrorMessage("Invalid argument");
 	utStatus = UT_BADARG;
     }
     else {
 	nchar = format(unit, buf, size, useNames, getDefinition, encoding, 0);
-	utStatus = nchar < 0 ? UT_CANT_FORMAT : UT_SUCCESS;
+
+	if (nchar < 0) {
+	    utHandleErrorMessage("Couldn't format unit");
+	    utStatus = UT_CANT_FORMAT;
+	}
+	else {
+	    utStatus = UT_SUCCESS;
+	}
     }
 
     return nchar;

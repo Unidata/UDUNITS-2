@@ -37,7 +37,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-check_PROGRAMS = testUnits$(EXEEXT)
+@HAVE_CUNIT_TRUE@check_PROGRAMS = testUnits$(EXEEXT)
 subdir = lib
 DIST_COMMON = $(include_HEADERS) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in parser.c
@@ -57,14 +57,14 @@ am__strip_dir = `echo $$p | sed -e 's|^.*/||'`;
 am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)"
 libLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(lib_LTLIBRARIES)
-libudunits2_la_LIBADD =
+libudunits2_la_DEPENDENCIES = ../expat/libexpat.la
 am_libudunits2_la_OBJECTS = core.lo converter.lo formatter.lo \
 	idToUnitMap.lo unitToIdMap.lo unitAndId.lo systemMap.lo \
-	prefix.lo parser.lo
+	prefix.lo parser.lo xml.lo error.lo utFreeSystem.lo
 libudunits2_la_OBJECTS = $(am_libudunits2_la_OBJECTS)
 testUnits_SOURCES = testUnits.c
 testUnits_OBJECTS = testUnits-testUnits.$(OBJEXT)
-testUnits_DEPENDENCIES = libudunits2.la ../expat/libexpat.la
+@HAVE_CUNIT_TRUE@testUnits_DEPENDENCIES = libudunits2.la
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -105,6 +105,8 @@ CXXCPP = @CXXCPP@
 CXXDEPMODE = @CXXDEPMODE@
 CXXFLAGS = @CXXFLAGS@
 CYGPATH_W = @CYGPATH_W@
+DEBUG_FALSE = @DEBUG_FALSE@
+DEBUG_TRUE = @DEBUG_TRUE@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
 ECHO = @ECHO@
@@ -115,15 +117,17 @@ EGREP = @EGREP@
 EXEEXT = @EXEEXT@
 F77 = @F77@
 FFLAGS = @FFLAGS@
+HAVE_CUNIT_FALSE = @HAVE_CUNIT_FALSE@
+HAVE_CUNIT_TRUE = @HAVE_CUNIT_TRUE@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 LDFLAGS = @LDFLAGS@
+LD_CUNIT = @LD_CUNIT@
 LEX = @LEX@
 LEXLIB = @LEXLIB@
-LEX_OUTPUT_ROOT = @LEX_OUTPUT_ROOT@
-LFLAGS = -Put_ @LFLAGS@
+LEX_OUTPUT_ROOT = lex.$(lex_prefix)
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
 LIBTOOL = @LIBTOOL@
@@ -144,7 +148,6 @@ SHELL = @SHELL@
 STRIP = @STRIP@
 VERSION = @VERSION@
 YACC = @YACC@
-YFLAGS = @YFLAGS@
 ac_ct_AR = @ac_ct_AR@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_CXX = @ac_ct_CXX@
@@ -186,7 +189,6 @@ prefix = @prefix@
 program_transform_name = @program_transform_name@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
-subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 lib_LTLIBRARIES = libudunits2.la
@@ -196,19 +198,25 @@ libudunits2_la_SOURCES = core.c converter.c formatter.c \
     unitAndId.c unitAndId.h \
     systemMap.c systemMap.h \
     prefix.c \
-    parser.y
+    parser.y \
+    xml.c \
+    error.c \
+    utFreeSystem.c
 
+BUILT_SOURCES = parser.c scanner.c
+lex_prefix = ut_
+LFLAGS = -d -P$(lex_prefix)
+libudunits2_la_LIBADD = ../expat/libexpat.la
 include_HEADERS = units.h converter.h
-AM_CPPFLAGS = -I$(srcdir)/expat
+AM_CPPFLAGS = -I$(top_srcdir)/expat/lib
 AM_CTAGSFLAGS = -t
-BUILT_SOURCES = scanner.c
-AM_YFLAGS = -p ut_
-testUnits_CPPFLAGS = -I/opt/include
-testUnits_LDADD = libudunits2.la ../expat/libexpat.la
-testUnits_LDFLAGS = -L/opt/lib -lcunit -lm
-TESTS = testUnits
-MOSTLYCLEANFILES = lint.log *.ln
-CLEANFILES = scanner.c
+EXTRA_DIST = SI.xml scanner.l scanner.c
+AM_YFLAGS = -t -p ut_
+@HAVE_CUNIT_TRUE@testUnits_CPPFLAGS = -I/opt/include
+@HAVE_CUNIT_TRUE@testUnits_LDFLAGS = @LD_CUNIT@ -lm
+@HAVE_CUNIT_TRUE@testUnits_LDADD = libudunits2.la
+@HAVE_CUNIT_TRUE@TESTS = testUnits
+MOSTLYCLEANFILES = lint.log *.ln *.i
 TAGS_FILES = parser.c
 LINTFLAGS = -u
 LINT = lint
@@ -295,6 +303,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/converter.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/core.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/error.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/formatter.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/idToUnitMap.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/parser.Plo@am__quote@
@@ -303,6 +312,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/testUnits-testUnits.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/unitAndId.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/unitToIdMap.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/utFreeSystem.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xml.Plo@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`; \
@@ -567,7 +578,6 @@ mostlyclean-generic:
 	-test -z "$(MOSTLYCLEANFILES)" || rm -f $(MOSTLYCLEANFILES)
 
 clean-generic:
-	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
@@ -645,13 +655,15 @@ uninstall-am: uninstall-includeHEADERS uninstall-info-am \
 
 
 .c.ln:
-	$(LINT.c) -c $<
+	$(LINT.c) $(AM_CPPFLAGS) -c $<
 
 .c.i:
 	$(CPP) $(CPPFLAGS) $< >$@
 
-debug:
-	libtool --mode=execute gdb testUnits
+@HAVE_CUNIT_TRUE@debug:		testUnits
+@HAVE_CUNIT_TRUE@	libtool --mode=execute gdb testUnits
+
+parser.o: scanner.c
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

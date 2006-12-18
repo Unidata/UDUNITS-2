@@ -25,7 +25,7 @@
  * This module is thread-compatible but not thread-safe: multi-thread access to
  * this module must be externally synchronized.
  *
- * $Id: core.c,v 1.2 2006/12/02 22:33:46 steve Exp $
+ * $Id: core.c,v 1.3 2006/12/18 18:03:18 steve Exp $
  */
 
 /*LINTLIBRARY*/
@@ -36,6 +36,7 @@
 
 #include <assert.h>
 #include <ctype.h>
+#include <errno.h>
 #include <float.h>
 #include <inttypes.h>
 #include <limits.h>
@@ -91,7 +92,7 @@ typedef enum {
     PRODUCT,
     GALILEAN,
     LOG,
-    TIMESTAMP,
+    TIMESTAMP
 } UnitType;
 
 #undef	ABS
@@ -176,44 +177,23 @@ union utUnit {
 #define IS_LOG(unit)		((unit)->common.type == LOG)
 #define IS_TIMESTAMP(unit)	((unit)->common.type == TIMESTAMP)
 
+/*
+ * The following function are declared here because they are used in the
+ * basic-unit section  before they are defined in the product-unit section.
+ */
+static ProductUnit*	productNew(
+    utSystem* const		system,
+    const short* const		indexes,
+    const short* const		powers,
+    const int			count);
+static void		productFree(
+    utUnit* const		unit);
 static utUnit*		productMultiply(
     utUnit* const		unit1,
     utUnit* const		unit2);
 static utUnit*		productRaise(
     utUnit* const		unit,
     const int			power);
-static int		productInitConverterToProduct(
-    utUnit* const		unit);
-static int		productInitConverterFromProduct(
-    utUnit* const		unit);
-static void		productFree(
-    utUnit* const		unit);
-static BasicUnit*	basicNew(
-    utSystem* const		system,
-    const int			isDimensionless);
-static ProductUnit*	productNew(
-    utSystem* const		system,
-    const short* const		indexes,
-    const short* const		powers,
-    const int			count);
-static utUnit*		galileanNew(
-    double			scale,
-    utUnit*			unit,
-    double			offset);
-static utUnit*		timestampNewOrigin(
-    utUnit*			unit,
-    const double		origin);
-static utUnit*		timestampNew(
-    utUnit*			unit,
-    const int			year,
-    const int			month,
-    const int			day,
-    const int			hour,
-    const int			minute,
-    const double		second);
-static utUnit*		logNew(
-    const double		logE,
-    utUnit* const		reference);
 
 enum utStatus		utStatus = UT_SUCCESS;
 static long		juldayOrigin = 0;
@@ -552,6 +532,7 @@ commonInit(
     int	retval;
 
     if (system == NULL || common == NULL || ops == NULL) {
+	utHandleErrorMessage("NULL argument");
 	utStatus = UT_INTERNAL;
 	retval = -1;
     }
@@ -573,6 +554,71 @@ commonInit(
  ******************************************************************************/
 
 
+static UnitOps	basicOps;
+
+
+/*
+ * Returns a new instance of a basic-unit.
+ *
+ * Arguments:
+ *	system		The unit-system to be associated with the new instance.
+ *	isDimensionless	Whether or not the unit is dimensionless (e.g., 
+ *			"radian").
+ *	index		The index of the basic-unit in "system".
+ * Returns:
+ *	NULL	Failure.  "utGetStatus()" will be:
+ *		    UT_INTERNAL	"system == NULL"
+ *		    UT_OS	Operating-system error.  See "errno".
+ *	else	Pointer to newly-allocated basic-unit.
+ */
+static BasicUnit*
+basicNew(
+    utSystem* const	system,
+    const int		isDimensionless,
+    const int		index)
+{
+    BasicUnit*	basicUnit = NULL;	/* failure */
+
+    if (system == NULL) {
+	utHandleErrorMessage("NULL argument");
+	utStatus = UT_INTERNAL;
+    }
+    else {
+	int		error = 1;
+	short		power = 1;
+	short		shortIndex = (short)index;
+	ProductUnit*	product = productNew(system, &shortIndex, &power, 1);
+
+	if (product == NULL) {
+	    utHandleErrorMessage("Couldn't create new product-unit");
+	    utStatus = UT_OS;
+	}
+	else {
+	    basicUnit = malloc(sizeof(BasicUnit));
+
+	    if (basicUnit == NULL) {
+		utHandleErrorMessage(strerror(errno));
+		utHandleErrorMessage("Couldn't allocate %lu-byte basic-unit",
+		    sizeof(BasicUnit));
+		utStatus = UT_OS;
+	    }
+	    else if (commonInit(&basicUnit->common, &basicOps, system,
+		    BASIC) == 0) {
+		basicUnit->index = index;
+		basicUnit->isDimensionless = isDimensionless;
+		basicUnit->product = product;
+		error = 0;
+	    }				/* "basicUnit" allocated */
+
+	    if (error)
+		productFree((utUnit*)product);
+	}				/* "product" allocated */
+    }					/* valid arguments */
+
+    return basicUnit;
+}
+
+
 static ProductUnit*
 basicGetProduct(
     const utUnit* const	unit)
@@ -585,7 +631,8 @@ static utUnit*
 basicClone(
     const utUnit* const	unit)
 {
-    return (utUnit*)unit;
+    return (utUnit*)basicNew(unit->common.system, unit->basic.isDimensionless,
+	unit->basic.index);
 }
 
 
@@ -593,14 +640,10 @@ static void
 basicFree(
     utUnit* const	unit)
 {
-    free(unit);
-}
-
-
-static void
-basicDontFree(
-    utUnit* const	unit)
-{
+    if (unit != NULL) {
+	productFree((utUnit*)unit->basic.product);
+	free(unit);
+    }
 }
 
 
@@ -620,7 +663,10 @@ basicCompare(
 	cmp = diff < 0 ? -1 : diff == 0 ? 0 : 1;
     }
     else {
-	cmp = unit1 < unit2 ? -1 : unit1 == unit2 ? 0 : 1;
+	int	index1 = unit1->basic.index;
+	int	index2 = unit2->basic.index;
+
+	cmp = index1 < index2 ? -1 : index1 == index2 ? 0 : 1;
     }
 
     return cmp;
@@ -650,6 +696,7 @@ basicMultiply(
     utUnit*		result = NULL;	/* failure */
 
     if (unit1 == NULL || !IS_BASIC(unit1) || unit2 == NULL) {
+	utHandleErrorMessage("Invalid argument");
 	utStatus = UT_INTERNAL;
     }
     else {
@@ -683,6 +730,7 @@ basicRaise(
     utUnit*		result = NULL;	/* failure */
 
     if (unit == NULL || !IS_BASIC(unit) || power < -255 || power > 255) {
+	utHandleErrorMessage("Invalid argument");
 	utStatus = UT_INTERNAL;
     }
     else if (power == 0) {
@@ -758,7 +806,7 @@ basicAcceptVisitor(
 static UnitOps	basicOps = {
     basicGetProduct,
     basicClone,
-    basicDontFree,
+    basicFree,
     basicCompare,
     basicMultiply,
     basicRaise,
@@ -768,67 +816,79 @@ static UnitOps	basicOps = {
 };
 
 
-/*
- * Returns a new instance of a basic-unit.
- *
- * Arguments:
- *	system		The unit-system in which to create a new basic-unit.
- *	isDimensionless	Whether or not the unit is dimensionless (e.g., 
- *			"radian").
- * Returns:
- *	NULL	Failure.  "utGetStatus()" will be:
- *		    UT_INTERNAL	"system == NULL"
- *		    UT_INTERNAL	"name" is NULL
- *		    UT_INTERNAL	"productUnit" is NULL
- *		    UT_BADID	"name" is non-ASCII.
- *		    UT_OS	Operating-system error.  See "errno".
- *	else	Pointer to newly-allocated basic-unit.
- */
-static BasicUnit*
-basicNew(
-    utSystem* const	system,
-    const int		isDimensionless)
-{
-    BasicUnit*	basicUnit = NULL;	/* failure */
-
-    if (system == NULL) {
-	utStatus = UT_INTERNAL;
-    }
-    else {
-	int		error = 1;
-	short		index = system->basicCount;
-	short		power = 1;
-	ProductUnit*	product = productNew(system, &index, &power, 1);
-
-	if (product == NULL) {
-	    utStatus = UT_OS;
-	}
-	else {
-	    basicUnit = malloc(sizeof(BasicUnit));
-
-	    if (basicUnit == NULL) {
-		utStatus = UT_OS;
-	    }
-	    else if (commonInit(&basicUnit->common, &basicOps, system,
-		    BASIC) == 0) {
-		basicUnit->index = index;
-		basicUnit->isDimensionless = isDimensionless;
-		basicUnit->product = product;
-		error = 0;
-	    }				/* "basicUnit" allocated */
-
-	    if (error)
-		productFree((utUnit*)product);
-	}				/* "product" allocated */
-    }					/* valid arguments */
-
-    return basicUnit;
-}
-
-
 /******************************************************************************
  * Product Unit:
  ******************************************************************************/
+
+static UnitOps	productOps;
+
+
+/*
+ * Arguments:
+ *	system	The unit-system for the new unit.
+ *	indexes	Pointer to array of indexes of basic-units.  May be freed upon
+ *		return.
+ *	powers	Pointer to array of powers.  Client may free upon return.
+ *	count	The number of elements in "indexes" and "powers".
+ * Returns:
+ *	NULL	Failure.  "utGetStatus()" will be:
+ *		    UT_INTERNAL	"count > 0 &&
+ *				(indexes == NULL || powers == NULL)".
+ *		    UT_INTERNAL	"count" < 0
+ *		    UT_INTERNAL	"unit->common.system" is NULL
+ *		    UT_OS	Operating-system error.  See "errno".
+ *	else	The newly-allocated, product-unit.
+ */
+static ProductUnit*
+productNew(
+    utSystem* const	system,
+    const short* const	indexes,
+    const short* const	powers,
+    const int		count)
+{
+    ProductUnit*	productUnit;
+
+    if (system == NULL || (count > 0 && (indexes == NULL || powers == NULL)) ||
+	    count < 0) {
+	utHandleErrorMessage("productNew(): Invalid argument");
+	utStatus = UT_INTERNAL;
+	productUnit = NULL;
+    }
+    else {
+	productUnit = malloc(sizeof(ProductUnit));
+
+	if (productUnit == NULL) {
+	    utHandleErrorMessage("Couldn't allocate %d-byte product-unit",
+		sizeof(ProductUnit));
+	    utStatus = UT_OS;
+	}
+	else {
+	    int	error = 1;
+
+	    if (commonInit(&productUnit->common, &productOps, system, PRODUCT)
+		    == 0) {
+		size_t	nbytes = sizeof(short)*count;
+		short*	newIndexes = malloc(nbytes*2);
+
+		if (count == 0 || newIndexes != NULL) {
+		    short*	newPowers = newIndexes + count;
+
+		    productUnit->indexes = memcpy(newIndexes, indexes, nbytes);
+		    productUnit->powers = memcpy(newPowers, powers, nbytes);
+		    productUnit->count = count;
+		    error = 0;
+		}
+	    }
+
+	    if (error) {
+		free(productUnit);
+		productUnit = NULL;
+	    }
+	}				/* "productUnit" allocated */
+    }					/* valid arguments */
+
+    return productUnit;
+}
 
 
 static ProductUnit*
@@ -847,6 +907,7 @@ productClone(
 
     if (unit == NULL) {
 	clone = NULL;
+	utHandleErrorMessage("NULL argument");
 	utStatus = UT_INTERNAL;
     }
     else {
@@ -926,6 +987,7 @@ productFree(
  *		    UT_INTERNAL		"unit1" is not a product-unit.
  *		    UT_MEANINGLESS	The operation on the given units is
  *					meaningless.
+ *		    UT_OS		Operating-system failure.  See "errno".
  *	else	The resulting unit.
  */
 static utUnit*
@@ -936,6 +998,7 @@ productMultiply(
     utUnit*		result = NULL;	/* failure */
 
     if (unit1 == NULL || !IS_PRODUCT(unit1) || unit2 == NULL) {
+	utHandleErrorMessage("productMultiply(): Invalid argument");
 	utStatus = UT_INTERNAL;
     }
     else {
@@ -953,42 +1016,58 @@ productMultiply(
 	    int				count1 = product1->count;
 	    int				count2 = product2->count;
 	    int				sumCount = count1 + count2;
-	    short			indexes[sumCount];
-	    short			powers[sumCount];
-	    int				count = 0;
-	    int				i1 = 0;
-	    int				i2 = 0;
+	    static short*		indexes = NULL;
 
-	    while (i1 < count1 || i2 < count2) {
-		if (i1 >= count1) {
-		    indexes[count] = indexes2[i2];
-		    powers[count++] = powers2[i2++];
-		}
-		else if (i2 >= count2) {
-		    indexes[count] = indexes1[i1];
-		    powers[count++] = powers1[i1++];
-		}
-		else if (indexes1[i1] > indexes2[i2]) {
-		    indexes[count] = indexes2[i2];
-		    powers[count++] = powers2[i2++];
-		}
-		else if (indexes1[i1] < indexes2[i2]) {
-		    indexes[count] = indexes1[i1];
-		    powers[count++] = powers1[i1++];
+	    indexes = realloc(indexes, sizeof(short)*sumCount);
+
+	    if (indexes == NULL) {
+		utStatus = UT_OS;
+	    }
+	    else {
+		static short*	powers = NULL;
+		
+		powers = realloc(powers, sizeof(short)*sumCount);
+
+		if (powers == NULL) {
+		    utStatus = UT_OS;
 		}
 		else {
-		    if (powers1[i1] != -powers2[i2]) {
-			indexes[count] = indexes1[i1];
-			powers[count++] = powers1[i1] + powers2[i2];
+		    int				count = 0;
+		    int				i1 = 0;
+		    int				i2 = 0;
+
+		    while (i1 < count1 || i2 < count2) {
+			if (i1 >= count1) {
+			    indexes[count] = indexes2[i2];
+			    powers[count++] = powers2[i2++];
+			}
+			else if (i2 >= count2) {
+			    indexes[count] = indexes1[i1];
+			    powers[count++] = powers1[i1++];
+			}
+			else if (indexes1[i1] > indexes2[i2]) {
+			    indexes[count] = indexes2[i2];
+			    powers[count++] = powers2[i2++];
+			}
+			else if (indexes1[i1] < indexes2[i2]) {
+			    indexes[count] = indexes1[i1];
+			    powers[count++] = powers1[i1++];
+			}
+			else {
+			    if (powers1[i1] != -powers2[i2]) {
+				indexes[count] = indexes1[i1];
+				powers[count++] = powers1[i1] + powers2[i2];
+			    }
+
+			    i1++;
+			    i2++;
+			}
 		    }
 
-		    i1++;
-		    i2++;
-		}
-	    }
-
-	    result = (utUnit*)productNew(unit1->common.system, indexes,
-		powers, count);
+		    result = (utUnit*)productNew(unit1->common.system, indexes,
+			powers, count);
+		}			/* "powers" re-allocated */
+	    }				/* "indexes" re-allocated */
 	}				/* "unit2" is a product-unit */
     }					/* valid arguments */
 
@@ -1019,6 +1098,7 @@ productRaise(
     utUnit*		result = NULL;	/* failure */
 
     if (unit == NULL || !IS_PRODUCT(unit) || power < -255 || power > 255) {
+	utHandleErrorMessage("productRaise(): Invalid argument");
 	utStatus = UT_INTERNAL;
     }
     else {
@@ -1035,6 +1115,9 @@ productRaise(
 	    short*	newPowers = malloc(sizeof(short)*count);
 
 	    if (newPowers == NULL) {
+		utHandleErrorMessage(strerror(errno));
+		utHandleErrorMessage(
+		    "Couldn't allocate %d-element powers-buffer", count);
 		utStatus = UT_OS;
 	    }
 	    else {
@@ -1075,6 +1158,7 @@ productInitConverter(
     int		retCode;
 
     if (converter == NULL) {
+	utHandleErrorMessage("productInitConverter(): NULL argument");
 	utStatus = UT_INTERNAL;
 	retCode = -1;
     }
@@ -1152,6 +1236,7 @@ productRelationship(
     ProductRelationship		relationship = PRODUCT_UNKNOWN;
 
     if (unit1 == NULL || unit2 == NULL) {
+	utHandleErrorMessage("productRelationship(): NULL argument");
 	utStatus = UT_INTERNAL;
     }
     else {
@@ -1233,19 +1318,38 @@ productAcceptVisitor(
     const utVisitor* const	visitor,
     void* const			arg)
 {
-    const ProductUnit* const	prodUnit = &unit->product;
-    const int			count = prodUnit->count;
-    const BasicUnit*		basicUnits[count];
-    int				powers[count];
-    int				i;
+    int		count = unit->product.count;
+    BasicUnit**	basicUnits = malloc(sizeof(BasicUnit)*count);
 
-    for (i = 0; i < count; ++i) {
-	basicUnits[i] = unit->common.system->basicUnits[prodUnit->indexes[i]];
-	powers[i] = prodUnit->powers[i];
+    if (basicUnits == NULL) {
+	utStatus = UT_OS;
+    }
+    else {
+	int*	powers = malloc(sizeof(int)*count);
+
+	if (powers == NULL) {
+	    utStatus = UT_OS;
+	}
+	else {
+	    const ProductUnit*	prodUnit = &unit->product;
+	    int			i;
+
+	    for (i = 0; i < count; ++i) {
+		basicUnits[i] =
+		    unit->common.system->basicUnits[prodUnit->indexes[i]];
+		powers[i] = prodUnit->powers[i];
+	    }
+
+	    utStatus = visitor->visitProduct(unit, count,
+		(const utUnit**)basicUnits, powers, arg);
+
+	    free(powers);
+	}
+
+	free(basicUnits);
     }
 
-    return visitor->visitProduct(unit, count, (const utUnit**)basicUnits,
-	powers, arg);
+    return utStatus;
 }
 
 
@@ -1260,71 +1364,6 @@ static UnitOps	productOps = {
     productInitConverterFromProduct,
     productAcceptVisitor
 };
-
-
-/*
- * Arguments:
- *	system	The unit-system for the new unit.
- *	indexes	Pointer to array of indexes of basic-units.  May be freed upon
- *		return.
- *	powers	Pointer to array of powers.  Client may free upon return.
- *	count	The number of elements in "indexes" and "powers".
- * Returns:
- *	NULL	Failure.  "utGetStatus()" will be:
- *		    UT_INTERNAL	"count > 0 &&
- *				(indexes == NULL || powers == NULL)".
- *		    UT_INTERNAL	"count" < 0
- *		    UT_INTERNAL	"unit->common.system" is NULL
- *		    UT_OS	Operating-system error.  See "errno".
- *	else	The newly-allocated, product-unit.
- */
-static ProductUnit*
-productNew(
-    utSystem* const	system,
-    const short* const	indexes,
-    const short* const	powers,
-    const int		count)
-{
-    ProductUnit*	productUnit;
-
-    if (system == NULL || (count > 0 && (indexes == NULL || powers == NULL)) ||
-	    count < 0) {
-	utStatus = UT_INTERNAL;
-	productUnit = NULL;
-    }
-    else {
-	productUnit = malloc(sizeof(ProductUnit));
-
-	if (productUnit == NULL) {
-	    utStatus = UT_OS;
-	}
-	else {
-	    int	error = 1;
-
-	    if (commonInit(&productUnit->common, &productOps, system, PRODUCT)
-		    == 0) {
-		size_t	nbytes = sizeof(short)*count;
-		short*	newIndexes = malloc(nbytes*2);
-
-		if (count == 0 || newIndexes != NULL) {
-		    short*	newPowers = newIndexes + count;
-
-		    productUnit->indexes = memcpy(newIndexes, indexes, nbytes);
-		    productUnit->powers = memcpy(newPowers, powers, nbytes);
-		    productUnit->count = count;
-		    error = 0;
-		}
-	    }
-
-	    if (error) {
-		free(productUnit);
-		productUnit = NULL;
-	    }
-	}				/* "productUnit" allocated */
-    }					/* valid arguments */
-
-    return productUnit;
-}
 
 
 /*
@@ -1346,6 +1385,7 @@ productIsDimensionless(
     int		isDimensionless = 0;
 
     if (unit == NULL || !IS_PRODUCT(unit)) {
+	utHandleErrorMessage("productIsDimensionless(): Invalid argument");
 	utStatus = UT_INTERNAL;
     }
     else {
@@ -1372,6 +1412,79 @@ productIsDimensionless(
  ******************************************************************************/
 
 
+static UnitOps	galileanOps;
+
+
+/*
+ * Returns a new unit instance.  The returned instance is not necessarily a
+ * Galilean unit.
+ *
+ * Arguments:
+ *	scale	The scale-factor for the new unit.
+ *	unit	The underlying unit.  May be freed upon return.
+ *	offset	The offset for the new unit.
+ * Returns:
+ *	NULL	Failure.  "utGetStatus()" will be:
+ *		    UT_INTERNAL	"scale == 0"
+ *		    UT_INTERNAL	"unit" is NULL
+ *		    UT_OS	Operating-system error.  See "errno".
+ *	else	The newly-allocated, galilean-unit.
+ */
+static utUnit*
+galileanNew(
+    double	scale,
+    utUnit*	unit,
+    double	offset)
+{
+    utUnit*	newUnit = NULL;	/* failure */
+
+    if (scale == 0 || unit == NULL) {
+	utHandleErrorMessage("galileanNew(): Invalid argument");
+	utStatus = UT_INTERNAL;
+    }
+    else {
+	if (IS_GALILEAN(unit)) {
+	    scale *= unit->galilean.scale;
+	    offset += (unit->galilean.scale * unit->galilean.offset) / scale;
+	    unit = unit->galilean.unit;
+	}
+
+	if (scale == 1 && offset == 0) {
+	    newUnit = CLONE(unit);
+	}
+	else {
+	    GalileanUnit*	galileanUnit = malloc(sizeof(GalileanUnit));
+
+	    if (galileanUnit == NULL) {
+		utHandleErrorMessage("Couldn't allocate %lu-byte Galilean unit",
+		    sizeof(GalileanUnit));
+		utStatus = UT_OS;
+	    }
+	    else {
+		int	error = 1;
+
+		if (commonInit(&galileanUnit->common, &galileanOps,
+			unit->common.system, GALILEAN) == 0) {
+		    galileanUnit->scale = scale;
+		    galileanUnit->offset = offset;
+		    galileanUnit->unit = CLONE(unit);
+		    error = 0;
+		}
+
+		if (error) {
+		    free(galileanUnit);
+		    galileanUnit = NULL;
+		}
+	    }				/* "galileanUnit" allocated */
+
+	    newUnit = (utUnit*)galileanUnit;
+	}				/* Galilean unit necessary */
+    }					/* valid arguments */
+
+    return newUnit;
+}
+
+
 static ProductUnit*
 galileanGetProduct(
     const utUnit* const	unit)
@@ -1388,6 +1501,7 @@ galileanClone(
 
     if (unit == NULL) {
 	clone = NULL;
+	utHandleErrorMessage("galileanClone(): NULL argument");
 	utStatus = UT_INTERNAL;
     }
     else {
@@ -1475,6 +1589,7 @@ galileanMultiply(
     utUnit*	result = NULL;	/* failure */
 
     if (unit1 == NULL || !IS_GALILEAN(unit1) || unit2 == NULL) {
+	utHandleErrorMessage("galileanMultiply(): Invalid argument");
 	utStatus = UT_INTERNAL;
     }
     else {
@@ -1523,6 +1638,7 @@ galileanRaise(
     utUnit*	result = NULL;	/* failure */
 
     if (unit == NULL || !IS_GALILEAN(unit) || power < -255 || power > 255) {
+	utHandleErrorMessage("galileanRaise(): Invalid argument");
 	utStatus = UT_INTERNAL;
     }
     else {
@@ -1555,12 +1671,13 @@ galileanRaise(
  *	0	Success.
  */
 static int
-galileaninitConverterToProduct(
+galileanInitConverterToProduct(
     utUnit* const	unit)
 {
     int			retCode = -1;	/* failure */
 
     if (unit == NULL || !IS_GALILEAN(unit)) {
+	utHandleErrorMessage("galileanInitConverterToProduct(): NULL argument");
 	utStatus = UT_INTERNAL;
     }
     else {
@@ -1568,6 +1685,8 @@ galileaninitConverterToProduct(
 	    unit->galilean.scale, unit->galilean.offset * unit->galilean.scale);
 
 	if (toUnderlying == NULL) {
+	    utHandleErrorMessage(strerror(errno));
+	    utHandleErrorMessage("Couldn't get converter to underlying unit");
 	    utStatus = UT_OS;
 	}
 	else {
@@ -1578,6 +1697,8 @@ galileaninitConverterToProduct(
 		    toUnderlying, unit->galilean.unit->common.toProduct);
 
 		if (unit->common.toProduct == NULL) {
+		    utHandleErrorMessage(strerror(errno));
+		    utHandleErrorMessage("Couldn't combine converters");
 		    utStatus = UT_OS;
 		}
 		else {
@@ -1607,12 +1728,14 @@ galileaninitConverterToProduct(
  *	0	Success.
  */
 static int
-galileaninitConverterFromProduct(
+galileanInitConverterFromProduct(
     utUnit* const	unit)
 {
     int		retCode = -1;		/* failure */
 
     if (unit == NULL || !IS_GALILEAN(unit)) {
+	utHandleErrorMessage(
+	    "galileanInitConverterFromProduct(): Invalid argument");
 	utStatus = UT_INTERNAL;
     }
     else {
@@ -1620,6 +1743,8 @@ galileaninitConverterFromProduct(
 	    1.0/unit->galilean.scale, -unit->galilean.offset);
 
 	if (fromUnderlying == NULL) {
+	    utHandleErrorMessage(strerror(errno));
+	    utHandleErrorMessage("Couldn't get converter from underlying unit");
 	    utStatus = UT_OS;
 	}
 	else {
@@ -1630,6 +1755,8 @@ galileaninitConverterFromProduct(
 		    unit->galilean.unit->common.fromProduct, fromUnderlying);
 
 		if (unit->common.fromProduct == NULL) {
+		    utHandleErrorMessage(strerror(errno));
+		    utHandleErrorMessage("Couldn't combine converters");
 		    utStatus = UT_OS;
 		}
 		else {
@@ -1663,82 +1790,121 @@ static UnitOps	galileanOps = {
     galileanCompare,
     galileanMultiply,
     galileanRaise,
-    galileaninitConverterToProduct,
-    galileaninitConverterFromProduct,
+    galileanInitConverterToProduct,
+    galileanInitConverterFromProduct,
     galileanAcceptVisitor
 };
 
 
+/******************************************************************************
+ * Timestamp Unit:
+ ******************************************************************************/
+
+
+static UnitOps	timestampOps;
+
+
 /*
- * Returns a new unit instance.  The returned instance is not necessarily a
- * Galilean unit.
+ * Returns a new unit instance.
  *
  * Arguments:
- *	scale	The scale-factor for the new unit.
  *	unit	The underlying unit.  May be freed upon return.
- *	offset	The offset for the new unit.
+ *	origin	The timestamp origin.
  * Returns:
  *	NULL	Failure.  "utGetStatus()" will be:
- *		    UT_INTERNAL	"scale == 0"
- *		    UT_INTERNAL	"unit" is NULL
- *		    UT_OS	Operating-system error.  See "errno".
- *	else	The newly-allocated, galilean-unit.
+ *		    UT_INTERNAL		"unit" is NULL
+ *		    UT_OS		Operating-system error.  See "errno".
+ *		    UT_MEANINGLESS	Creation of a timestamp unit based on
+ *					"unit" is not meaningful.
+ *		    UT_NOSECOND		The associated unit-system doesn't
+ *					contain a second unit.
+ *	else	The newly-allocated, timestamp-unit.
  */
 static utUnit*
-galileanNew(
-    double	scale,
-    utUnit*	unit,
-    double	offset)
+timestampNewOrigin(
+    utUnit*		unit,
+    const double	origin)
 {
     utUnit*	newUnit = NULL;	/* failure */
 
-    if (scale == 0 || unit == NULL) {
+    if (unit == NULL) {
+	utHandleErrorMessage("timestampNewOrigin(): NULL argument");
 	utStatus = UT_INTERNAL;
     }
+    if (IS_TIMESTAMP(unit)) {
+	utHandleErrorMessage("timestampNewOrigin(): Timestamp-unit argument");
+	utStatus = UT_MEANINGLESS;
+    }
     else {
-	if (IS_GALILEAN(unit)) {
-	    scale *= unit->galilean.scale;
-	    offset += (unit->galilean.scale * unit->galilean.offset) / scale;
-	    unit = unit->galilean.unit;
-	}
+	utUnit* const	secondUnit = unit->common.system->second;
 
-	if (scale == 1 && offset == 0) {
-	    newUnit = CLONE(unit);
+	if (secondUnit == NULL) {
+	    utHandleErrorMessage("No \"second\" unit defined");
+	    utStatus = UT_NOSECOND;
 	}
-	else {
-	    GalileanUnit*	galileanUnit = malloc(sizeof(GalileanUnit));
+	else if (utAreConvertible(secondUnit, unit)) {
+	    TimestampUnit*	timestampUnit = malloc(sizeof(TimestampUnit));
 
-	    if (galileanUnit == NULL) {
+	    if (timestampUnit == NULL) {
+		utHandleErrorMessage(strerror(errno));
+		utHandleErrorMessage("timestampNewOrigin(): Couldn't allocate "
+		    "%lu-byte timestamp-unit", sizeof(TimestampUnit));
 		utStatus = UT_OS;
 	    }
 	    else {
-		int	error = 1;
-
-		if (commonInit(&galileanUnit->common, &galileanOps,
-			unit->common.system, GALILEAN) == 0) {
-		    galileanUnit->scale = scale;
-		    galileanUnit->offset = offset;
-		    galileanUnit->unit = CLONE(unit);
-		    error = 0;
+		if (commonInit(&timestampUnit->common, &timestampOps,
+			unit->common.system, TIMESTAMP) == 0) {
+		    timestampUnit->origin = origin;
+		    timestampUnit->unit = CLONE(unit);
 		}
-
-		if (error) {
-		    free(galileanUnit);
-		    galileanUnit = NULL;
+		else {
+		    free(timestampUnit);
+		    timestampUnit = NULL;
 		}
-	    }				/* "galileanUnit" allocated */
+	    }			/* "timestampUnit" allocated */
 
-	    newUnit = (utUnit*)galileanUnit;
-	}				/* Galilean unit necessary */
+	    newUnit = (utUnit*)timestampUnit;
+	}				/* "secondUnit != NULL" && time unit */
     }					/* valid arguments */
 
     return newUnit;
 }
 
 
-/******************************************************************************
- * Timestamp Unit:
- ******************************************************************************/
+/*
+ * Returns a new unit instance.
+ *
+ * Arguments:
+ *	unit	The underlying unit.  May be freed upon return.
+ *	year	The year of the origin.
+ *	month	The month of the origin.
+ *	day	The day of the origin.
+ *	hour	The hour of the origin.
+ *	minute	The minute of the origin.
+ *	second	The second of the origin.
+ * Returns:
+ *	NULL	Failure.  "utGetStatus()" will be:
+ *		    UT_INTERNAL		"unit" is NULL
+ *		    UT_OS		Operating-system error.  See "errno".
+ *		    UT_MEANINGLESS	Creation of a timestamp unit base on
+ *					"unit" is not meaningful.
+ *		    UT_NOSECOND		The associated unit-system doesn't
+ *					contain a unit named "second".
+ *	else	The newly-allocated, timestamp-unit.
+ */
+static utUnit*
+timestampNew(
+    utUnit*	unit,
+    const int	year,
+    const int	month,
+    const int	day,
+    const int	hour,
+    const int	minute,
+    double	second)
+{
+    return timestampNewOrigin(
+	unit, utEncodeTime(year, month, day, hour, minute, second));
+}
 
 
 static ProductUnit*
@@ -1757,6 +1923,7 @@ timestampClone(
 
     if (unit == NULL) {
 	clone = NULL;
+	utHandleErrorMessage("timestampClone(): NULL argument");
 	utStatus = UT_INTERNAL;
     }
     else {
@@ -1833,6 +2000,7 @@ timestampMultiply(
     utUnit*	result = NULL;	/* failure */
 
     if (unit1 == NULL || !IS_TIMESTAMP(unit1) || unit2 == NULL) {
+	utHandleErrorMessage("timestampMultiply(): Invalid argument");
 	utStatus = UT_INTERNAL;
     }
     else {
@@ -1867,6 +2035,7 @@ timestampRaise(
     utUnit*	result = NULL;	/* failure */
 
     if (unit == NULL || !IS_TIMESTAMP(unit) || power < -255 || power > 255) {
+	utHandleErrorMessage("timestampRaise(): Invalid argument");
 	utStatus = UT_INTERNAL;
     }
     else {
@@ -1897,6 +2066,8 @@ timestampinitConverterToProduct(
     int			retCode = -1;	/* failure */
 
     if (unit == NULL || !IS_TIMESTAMP(unit)) {
+	utHandleErrorMessage(
+	    "timestampinitConverterToProduct(): Invalid argument");
 	utStatus = UT_INTERNAL;
     }
     else {
@@ -1904,6 +2075,8 @@ timestampinitConverterToProduct(
 	    cvGetGalilean(1.0, unit->timestamp.origin);
 
 	if (toUnderlying == NULL) {
+	    utHandleErrorMessage(strerror(errno));
+	    utHandleErrorMessage("Couldn't get convert to underlying unit");
 	    utStatus = UT_OS;
 	}
 	else {
@@ -1914,6 +2087,8 @@ timestampinitConverterToProduct(
 		    toUnderlying, unit->timestamp.unit->common.toProduct);
 
 		if (unit->common.toProduct == NULL) {
+		    utHandleErrorMessage(strerror(errno));
+		    utHandleErrorMessage("Couldn'combine converters");
 		    utStatus = UT_OS;
 		}
 		else {
@@ -1949,6 +2124,8 @@ timestampinitConverterFromProduct(
     int		retCode = -1;		/* failure */
 
     if (unit == NULL || !IS_TIMESTAMP(unit)) {
+	utHandleErrorMessage(
+	    "timestampinitConverterFromProduct(): Invalid argument");
 	utStatus = UT_INTERNAL;
     }
     else {
@@ -1956,6 +2133,8 @@ timestampinitConverterFromProduct(
 	    cvGetGalilean(1.0, -unit->timestamp.origin);
 
 	if (fromUnderlying == NULL) {
+	    utHandleErrorMessage(strerror(errno));
+	    utHandleErrorMessage("Couldn't get converter from underlying unit");
 	    utStatus = UT_OS;
 	}
 	else {
@@ -1966,6 +2145,8 @@ timestampinitConverterFromProduct(
 		    unit->timestamp.unit->common.fromProduct, fromUnderlying);
 
 		if (unit->common.fromProduct == NULL) {
+		    utHandleErrorMessage(strerror(errno));
+		    utHandleErrorMessage("Couldn't combine converters");
 		    utStatus = UT_OS;
 		}
 		else {
@@ -2011,106 +2192,70 @@ static UnitOps	timestampOps = {
 };
 
 
-/*
- * Returns a new unit instance.
- *
- * Arguments:
- *	unit	The underlying unit.  May be freed upon return.
- *	origin	The timestamp origin.
- * Returns:
- *	NULL	Failure.  "utGetStatus()" will be:
- *		    UT_INTERNAL		"unit" is NULL
- *		    UT_OS		Operating-system error.  See "errno".
- *		    UT_MEANINGLESS	Creation of a timestamp unit based on
- *					"unit" is not meaningful.
- *		    UT_NOSECOND		The associated unit-system doesn't
- *					contain a second unit.
- *	else	The newly-allocated, timestamp-unit.
- */
-static utUnit*
-timestampNewOrigin(
-    utUnit*		unit,
-    const double	origin)
-{
-    utUnit*	newUnit = NULL;	/* failure */
-
-    if (unit == NULL) {
-	utStatus = UT_INTERNAL;
-    }
-    if (IS_TIMESTAMP(unit)) {
-	utStatus = UT_MEANINGLESS;
-    }
-    else {
-	utUnit* const	secondUnit = unit->common.system->second;
-
-	if (secondUnit == NULL) {
-	    utStatus = UT_NOSECOND;
-	}
-	else if (utAreConvertible(secondUnit, unit)) {
-	    TimestampUnit*	timestampUnit = malloc(sizeof(TimestampUnit));
-
-	    if (timestampUnit == NULL) {
-		utStatus = UT_OS;
-	    }
-	    else {
-		if (commonInit(&timestampUnit->common, &timestampOps,
-			unit->common.system, TIMESTAMP) == 0) {
-		    timestampUnit->origin = origin;
-		    timestampUnit->unit = CLONE(unit);
-		}
-		else {
-		    free(timestampUnit);
-		    timestampUnit = NULL;
-		}
-	    }			/* "timestampUnit" allocated */
-
-	    newUnit = (utUnit*)timestampUnit;
-	}				/* "secondUnit != NULL" && time unit */
-    }					/* valid arguments */
-
-    return newUnit;
-}
-
-
-/*
- * Returns a new unit instance.
- *
- * Arguments:
- *	unit	The underlying unit.  May be freed upon return.
- *	year	The year of the origin.
- *	month	The month of the origin.
- *	day	The day of the origin.
- *	hour	The hour of the origin.
- *	minute	The minute of the origin.
- *	second	The second of the origin.
- * Returns:
- *	NULL	Failure.  "utGetStatus()" will be:
- *		    UT_INTERNAL		"unit" is NULL
- *		    UT_OS		Operating-system error.  See "errno".
- *		    UT_MEANINGLESS	Creation of a timestamp unit base on
- *					"unit" is not meaningful.
- *		    UT_NOSECOND		The associated unit-system doesn't
- *					contain a unit named "second".
- *	else	The newly-allocated, timestamp-unit.
- */
-static utUnit*
-timestampNew(
-    utUnit*	unit,
-    const int	year,
-    const int	month,
-    const int	day,
-    const int	hour,
-    const int	minute,
-    double	second)
-{
-    return timestampNewOrigin(
-	unit, utEncodeTime(year, month, day, hour, minute, second));
-}
-
-
 /******************************************************************************
  * Logarithmic Unit:
  ******************************************************************************/
+
+
+static UnitOps	logOps;
+
+
+/*
+ * Returns a new instance.
+ *
+ * Arguments:
+ *	logE		The logarithm of "e" in the logarithmic base.
+ *	reference	The reference value.
+ * Returns:
+ *	NULL	Failure.  "utGetStatus()" will be:
+ *		    UT_INTERNAL	"logE" <= 0.
+ *		    UT_INTERNAL	"reference" is NULL.
+ *		    UT_INTERNAL	"unit->common.system" is NULL.
+ *		    UT_OS	Operating-system error.  See "errno".
+ *	else	The newly-allocated, logarithmic-unit.
+ */
+static utUnit*
+logNew(
+    const double	logE,
+    utUnit* const	reference)
+{
+    LogUnit*	logUnit;
+
+    if (logE <= 0 || reference == NULL) {
+	utHandleErrorMessage("logNew(): Invalid argument");
+	utStatus = UT_INTERNAL;
+	logUnit = NULL;
+    }
+    else {
+	logUnit = malloc(sizeof(LogUnit));
+
+	if (logUnit == NULL) {
+	    utHandleErrorMessage(strerror(errno));
+	    utHandleErrorMessage("Couldn't allocate %lu-byte logarithmic-unit",
+		sizeof(LogUnit));
+	    utStatus = UT_OS;
+	}
+	else {
+	    if (commonInit(&logUnit->common, &logOps, reference->common.system,
+		    LOG) != 0) {
+		free(logUnit);
+	    }
+	    else {
+		logUnit->reference = CLONE(reference);
+
+		if (logUnit->reference != NULL) {
+		    logUnit->logE = logE;
+		}
+		else {
+		    free(logUnit);
+		    logUnit = NULL;
+		}
+	    }
+	}
+    }
+
+    return (utUnit*)logUnit;
+}
 
 
 static ProductUnit*
@@ -2129,6 +2274,7 @@ logClone(
 
     if (unit == NULL) {
 	clone = NULL;
+	utHandleErrorMessage("logClone(): NULL argument");
 	utStatus = UT_INTERNAL;
     }
     else {
@@ -2204,9 +2350,11 @@ logMultiply(
     utUnit*	result = NULL;		/* failure */
 
     if (unit1 == NULL || unit2 == NULL || !IS_LOG(unit1)) {
+	utHandleErrorMessage("logMultiply(): Invalid argument");
 	utStatus = UT_INTERNAL;
     }
     else if (!utIsDimensionless(unit2)) {
+	utHandleErrorMessage("logMultiply(): Second unit not dimensionless");
 	utStatus = UT_MEANINGLESS;
     }
     else if (IS_BASIC(unit2) || IS_PRODUCT(unit2)) {
@@ -2216,6 +2364,7 @@ logMultiply(
 	result = galileanNew(unit2->galilean.scale, unit1, 0);
     }
     else {
+	utHandleErrorMessage("logMultiply(): can't multiply second unit");
 	utStatus = UT_MEANINGLESS;
     }
 
@@ -2246,6 +2395,7 @@ logRaise(
     utUnit*	result = NULL;		/* failure */
 
     if (unit == NULL || !IS_LOG(unit) || power < -255 || power > 255) {
+	utHandleErrorMessage("logRaise(): Invalid argument");
 	utStatus = UT_INTERNAL;
     }
     else if (power == 0) {
@@ -2255,6 +2405,7 @@ logRaise(
 	/*
 	 * We don't know how to raise a logarithmic unit to a non-zero power.
 	 */
+	utHandleErrorMessage("Can't raise logarithmic-unit to non-zero power");
 	utStatus = UT_MEANINGLESS;
     }
 
@@ -2282,12 +2433,15 @@ logInitConverterToProduct(
     int			retCode = -1;		/* failure */
 
     if (unit == NULL || !IS_LOG(unit)) {
+	utHandleErrorMessage("logInitConverterToProduct(): Invalid argument");
 	utStatus = UT_INTERNAL;
     }
     else {
 	cvConverter* const	toUnderlying = cvGetExp(unit->log.logE);
 
 	if (toUnderlying == NULL) {
+	    utHandleErrorMessage(strerror(errno));
+	    utHandleErrorMessage("Couldn't get converter to underlying unit");
 	    utStatus = UT_OS;
 	}
 	else {
@@ -2298,6 +2452,8 @@ logInitConverterToProduct(
 		    toUnderlying, unit->log.reference->common.toProduct);
 
 		if (unit->common.toProduct == NULL) {
+		    utHandleErrorMessage(strerror(errno));
+		    utHandleErrorMessage("Couldn't combine converters");
 		    utStatus = UT_OS;
 		}
 		else {
@@ -2333,12 +2489,15 @@ logInitConverterFromProduct(
     int		retCode = -1;		/* failure */
 
     if (unit == NULL || !IS_LOG(unit)) {
+	utHandleErrorMessage("logInitConverterFromProduct(): Invalid argument");
 	utStatus = UT_INTERNAL;
     }
     else {
 	cvConverter* const	fromUnderlying = cvGetLog(unit->log.logE);
 
 	if (fromUnderlying == NULL) {
+	    utHandleErrorMessage(strerror(errno));
+	    utHandleErrorMessage("Couldn't get converter from underlying unit");
 	    utStatus = UT_OS;
 	}
 	else {
@@ -2349,6 +2508,8 @@ logInitConverterFromProduct(
 		    unit->log.reference->common.fromProduct, fromUnderlying);
 
 		if (unit->common.fromProduct == NULL) {
+		    utHandleErrorMessage(strerror(errno));
+		    utHandleErrorMessage("Couldn't combine converters");
 		    utStatus = UT_OS;
 		}
 		else {
@@ -2386,58 +2547,6 @@ static UnitOps	logOps = {
     logInitConverterFromProduct,
     logAcceptVisitor
 };
-
-
-/*
- * Arguments:
- *	logE		The logarithm of "e" in the logarithmic base.
- *	reference	The reference value.
- * Returns:
- *	NULL	Failure.  "utGetStatus()" will be:
- *		    UT_INTERNAL	"logE" <= 0.
- *		    UT_INTERNAL	"reference" is NULL.
- *		    UT_INTERNAL	"unit->common.system" is NULL.
- *		    UT_OS	Operating-system error.  See "errno".
- *	else	The newly-allocated, logarithmic-unit.
- */
-static utUnit*
-logNew(
-    const double	logE,
-    utUnit* const	reference)
-{
-    LogUnit*	logUnit;
-
-    if (logE <= 0 || reference == NULL) {
-	utStatus = UT_INTERNAL;
-	logUnit = NULL;
-    }
-    else {
-	logUnit = malloc(sizeof(LogUnit));
-
-	if (logUnit == NULL) {
-	    utStatus = UT_OS;
-	}
-	else {
-	    if (commonInit(&logUnit->common, &logOps, reference->common.system,
-		    LOG) != 0) {
-		free(logUnit);
-	    }
-	    else {
-		logUnit->reference = CLONE(reference);
-
-		if (logUnit->reference != NULL) {
-		    logUnit->logE = logE;
-		}
-		else {
-		    free(logUnit);
-		    logUnit = NULL;
-		}
-	    }
-	}
-    }
-
-    return (utUnit*)logUnit;
-}
 
 
 /******************************************************************************
@@ -2486,6 +2595,9 @@ utNewSystem()
     utStatus = UT_SUCCESS;
 
     if (system == NULL) {
+	utHandleErrorMessage(strerror(errno));
+	utHandleErrorMessage("Couldn't allocate %lu-byte unit-system",
+	    sizeof(utSystem));
 	utStatus = UT_OS;
     }
     else {
@@ -2497,11 +2609,38 @@ utNewSystem()
 	if ((system->one = (utUnit*)productNew(system, NULL, NULL, 0)) != NULL)
 	    system->size++;
 
-	if (utStatus != UT_SUCCESS)
+	if (utStatus != UT_SUCCESS) {
+	    utHandleErrorMessage("Couldn't create dimensionless unit one");
 	    free(system);
+	}
     }
 
     return system;
+}
+
+
+/*
+ * Frees resources associated with a unit-system by this module.
+ *
+ * Arguments:
+ *	system		Pointer to the unit-system.
+ */
+void
+coreFreeSystem(
+    utSystem*	system)
+{
+    if (system != NULL) {
+	int	i;
+
+	for (i = 0; i < system->basicCount; ++i)
+	    basicFree((utUnit*)system->basicUnits[i]);
+
+	free(system->basicUnits);
+	FREE(system->second);
+	FREE(system->one);
+
+	free(system);
+    }
 }
 
 
@@ -2526,6 +2665,7 @@ utGetDimensionlessUnitOne(
 
     if (system == NULL) {
 	one = NULL;
+	utHandleErrorMessage("NULL unit-system argument");
 	utStatus = UT_BADSYSTEM;
     }
     else {
@@ -2556,6 +2696,7 @@ utGetSystem(
 
     if (unit == NULL) {
 	system = NULL;
+	utHandleErrorMessage("NULL unit argument");
 	utStatus = UT_BADUNIT;
     }
     else {
@@ -2587,6 +2728,7 @@ utSameSystem(
     int	sameSystem;
 
     if (unit1 == NULL || unit2 == NULL) {
+	utHandleErrorMessage("NULL argument");
 	utStatus = UT_BADUNIT;
     }
     else {
@@ -2599,7 +2741,7 @@ utSameSystem(
 
 
 /*
- * Adds a basic-unit to a unit-system.
+ * Returns a new basic-unit that has been added to a unit-system.
  *
  * Arguments:
  *	system		The unit-system to which to add the new basic-unit.
@@ -2619,26 +2761,46 @@ newBasicUnit(
     BasicUnit*	basicUnit = NULL;	/* failure */
 
     if (system == NULL) {
+	utHandleErrorMessage("NULL unit-system argument");
 	utStatus = UT_BADSYSTEM;
     }
     else {
-	basicUnit = basicNew(system, isDimensionless);
+	basicUnit = basicNew(system, isDimensionless, system->basicCount);
 
 	if (basicUnit != NULL) {
-	    BasicUnit**	basicUnits = realloc(system->basicUnits,
-		(system->basicCount+1)*sizeof(BasicUnit*));
+	    int		error = 1;
+	    BasicUnit*	save = (BasicUnit*)basicClone((utUnit*)basicUnit);
 
-	    if (basicUnits == NULL) {
-		basicFree((utUnit*)basicUnit);
-
-		basicUnit = NULL;
+	    if (save == NULL) {
+		utHandleErrorMessage(strerror(errno));
+		utHandleErrorMessage("Couldn't clone basic-unit");
 		utStatus = UT_OS;
 	    }
 	    else {
-		system->size++;
-		system->basicUnits = basicUnits;
-		basicUnits[system->basicCount++] = basicUnit;
-	    }				/* "basicUnits" allocated */
+		BasicUnit**	basicUnits = realloc(system->basicUnits,
+		    (system->basicCount+1)*sizeof(BasicUnit*));
+
+		if (basicUnits == NULL) {
+		    utHandleErrorMessage(strerror(errno));
+		    utHandleErrorMessage("Couldn't allocate %d-element "
+			"basic-unit array", system->basicCount+1);
+		    utStatus = UT_OS;
+		}
+		else {
+		    system->size++;
+		    basicUnits[system->basicCount++] = save;
+		    system->basicUnits = basicUnits;
+		    error = 0;
+		}			/* "system->basicUnits" re-allocated */
+
+		if (error)
+		    basicFree((utUnit*)save);
+	    }				/* "save" allocated */
+
+	    if (error) {
+		basicFree((utUnit*)basicUnit);
+		basicUnit = NULL;
+	    }
 	}				/* "basicUnit" allocated */
     }					/* valid arguments */
 
@@ -2711,6 +2873,7 @@ utSize(
 
     if (system == NULL) {
 	size = -1;
+	utHandleErrorMessage("NULL unit-system argument");
 	utStatus = UT_BADSYSTEM;
     }
     else {
@@ -2744,20 +2907,25 @@ utSetSecond(
     utStatus = UT_SUCCESS;
 
     if (system == NULL) {
+	utHandleErrorMessage("NULL unit-system argument");
 	utStatus = UT_BADSYSTEM;
     }
     else if (second == NULL) {
+	utHandleErrorMessage("NULL \"second\" unit argument");
 	utStatus = UT_BADUNIT;
     }
     else if (system != utGetSystem(second)) {
+	utHandleErrorMessage("Unit-systems don't match");
 	utStatus = UT_BADUNIT;
     }
     else if (system->second == NULL) {
 	system->second = CLONE(second);
     }
     else {
-	if (utCompare(system->second, second) != 0)
+	if (utCompare(system->second, second) != 0) {
+	    utHandleErrorMessage("Different \"second\" unit already defined");
 	    utStatus = UT_EXISTS;
+	}
     }
 
     return utStatus;
@@ -2800,12 +2968,9 @@ utCompare(
 	cmp = 1;
     }
     else {
-	const UnitOps* const	ops1 = unit1->common.ops;
-	const UnitOps* const	ops2 = unit2->common.ops;
-
 	/*
 	 * NB: The comparison function is called if and only if the units
-	 * belong to the same unit system.
+	 * belong to the same unit-system.
 	 */
 	cmp = COMPARE(unit1, unit2);
     }
@@ -2840,10 +3005,12 @@ utScale(
     utStatus = UT_SUCCESS;
 
     if (unit == NULL) {
+	utHandleErrorMessage("NULL unit argument");
 	utStatus = UT_BADUNIT;
     }
     else {
 	if (factor == 0) {
+	    utHandleErrorMessage("NULL factor argument");
 	    utStatus = UT_BADVALUE;
 	}
 	else {
@@ -2882,6 +3049,7 @@ utOffset(
     utStatus = UT_SUCCESS;
 
     if (unit == NULL) {
+	utHandleErrorMessage("utOffset(): NULL unit argument");
 	utStatus = UT_BADUNIT;
     }
     else {
@@ -2936,6 +3104,7 @@ utOffsetByTime(
     utStatus = UT_SUCCESS;
 
     if (unit == NULL) {
+	utHandleErrorMessage("NULL unit argument");
 	utStatus = UT_BADUNIT;
     }
     else {
@@ -2978,6 +3147,7 @@ utOffsetByScalarTime(
     utStatus = UT_SUCCESS;
 
     if (unit == NULL) {
+	utHandleErrorMessage("NULL unit argument");
 	utStatus = UT_BADUNIT;
     }
     else {
@@ -3012,9 +3182,11 @@ utMultiply(
     utStatus = UT_SUCCESS;
 
     if (unit1 == NULL || unit2 == NULL) {
+	utHandleErrorMessage("NULL argument");
 	utStatus = UT_BADUNIT;
     }
     else if (unit1->common.system != unit2->common.system) {
+	utHandleErrorMessage("Units in different unit-systems");
 	utStatus = UT_NOTSAMESYSTEM;
     }
     else {
@@ -3047,7 +3219,7 @@ utInvert(
 
 /*
  * Returns the result of dividing one unit by another unit.  This convenience
- * function is equivalent to the following code:
+ * function is equivalent to the following sequence:
  *     {
  *         utUnit* inverse = utInvert(denom);
  *         utMultiply(numer, inverse);
@@ -3075,9 +3247,11 @@ utDivide(
     utStatus = UT_SUCCESS;
 
     if (numer == NULL || denom == NULL) {
+	utHandleErrorMessage("NULL argument");
 	utStatus = UT_BADUNIT;
     }
     else if (numer->common.system != denom->common.system) {
+	utHandleErrorMessage("Units in different unit-systems");
 	utStatus = UT_NOTSAMESYSTEM;
     }
     else {
@@ -3118,9 +3292,11 @@ utRaise(
     utStatus = UT_SUCCESS;
 
     if (unit == NULL) {
+	utHandleErrorMessage("NULL unit argument");
 	utStatus = UT_BADUNIT;
     }
     else if (power < -255 || power > 255) {
+	utHandleErrorMessage("Invalid power argument");
 	utStatus = UT_BADVALUE;
     }
     else {
@@ -3184,9 +3360,11 @@ utLog(
     utStatus = UT_SUCCESS;
 
     if (logE <= 0) {
+	utHandleErrorMessage("Invalid log(e) argument, %g", logE);
 	utStatus = UT_BADVALUE;
     }
     else if (reference == NULL) {
+	utHandleErrorMessage("NULL reference argument");
 	utStatus = UT_BADUNIT;
     }
     else {
@@ -3224,9 +3402,11 @@ utAreConvertible(
     int			areConvertible = 0;
 
     if (unit1 == NULL || unit2 == NULL) {
+	utHandleErrorMessage("NULL unit argument");
 	utStatus = UT_BADUNIT;
     }
     else if (unit1->common.system != unit2->common.system) {
+	utHandleErrorMessage("Units in different unit-systems");
 	utStatus = UT_NOTSAMESYSTEM;
     }
     else {
@@ -3273,9 +3453,11 @@ utGetConverter(
     cvConverter*	converter = NULL;	/* failure */
 
     if (from == NULL || to == NULL) {
+	utHandleErrorMessage("NULL unit argument");
 	utStatus = UT_BADUNIT;
     }
     else if (from->common.system != to->common.system) {
+	utHandleErrorMessage("Units in different unit-systems");
 	utStatus = UT_NOTSAMESYSTEM;
     }
     else {
@@ -3286,6 +3468,7 @@ utGetConverter(
 		productRelationship(GET_PRODUCT(from), GET_PRODUCT(to));
 
 	    if (relationship == PRODUCT_UNCONVERTIBLE) {
+		utHandleErrorMessage("Units not convertible");
 		utStatus = UT_MEANINGLESS;
 	    }
 	    else if (ENSURE_CONVERTER_TO_PRODUCT(from) &&
@@ -3316,8 +3499,11 @@ utGetConverter(
 		    }			/* "invert" allocated */
 		}			/* reciprocal product-units */
 
-		if (converter == NULL)
+		if (converter == NULL) {
+		    utHandleErrorMessage(strerror(errno));
+		    utHandleErrorMessage("Couldn't get converter");
 		    utStatus = UT_OS;
+		}
 	    }				/* got necessary product converters */
 	}				/* neither unit is a timestamp */
 	else {
@@ -3325,6 +3511,8 @@ utGetConverter(
 		from->common.system->second);
 
 	    if (toSeconds == NULL) {
+		utHandleErrorMessage(strerror(errno));
+		utHandleErrorMessage("Couldn't get converter to seconds");
 		utStatus = UT_OS;
 	    }
 	    else {
@@ -3332,6 +3520,8 @@ utGetConverter(
 		    cvGetOffset(from->timestamp.origin - to->timestamp.origin);
 
 		if (shiftOrigin == NULL) {
+		    utHandleErrorMessage(strerror(errno));
+		    utHandleErrorMessage("Couldn't get offset-converter");
 		    utStatus = UT_OS;
 		}
 		else {
@@ -3339,6 +3529,8 @@ utGetConverter(
 			cvCombine(toSeconds, shiftOrigin);
 
 		    if (toToUnit == NULL) {
+			utHandleErrorMessage(strerror(errno));
+			utHandleErrorMessage("Couldn't combine converters");
 			utStatus = UT_OS;
 		    }
 		    else {
@@ -3346,13 +3538,20 @@ utGetConverter(
 			    to->common.system->second, to->timestamp.unit); 
 
 			if (fromSeconds == NULL) {
+			    utHandleErrorMessage(strerror(errno));
+			    utHandleErrorMessage("Couldn't get converter from "
+				"seconds");
 			    utStatus = UT_OS;
 			}
 			else {
 			    converter = cvCombine(toToUnit, fromSeconds);
 
-			    if (converter == NULL)
+			    if (converter == NULL) {
+				utHandleErrorMessage(strerror(errno));
+				utHandleErrorMessage(
+				    "Couldn't combine converters");
 				utStatus = UT_OS;
+			    }
 
 			    cvFree(fromSeconds);
 			}		/* "fromSeconds" allocated */
@@ -3415,6 +3614,7 @@ utClone(
     utStatus = UT_SUCCESS;
 
     if (unit == NULL) {
+	utHandleErrorMessage("NULL unit argument");
 	utStatus = UT_BADUNIT;
     }
     else {
@@ -3443,8 +3643,11 @@ utFree(
     utStatus = UT_SUCCESS;
 
     if (unit != NULL) {
-	if (unit != unit->common.system->one)
+	if (unit != unit->common.system->one) {
 	    FREE((utUnit*)unit);
+
+	    unit->common.system->size--;
+	}
     }
 }
 
@@ -3471,9 +3674,11 @@ utAcceptVisitor(
     utStatus = UT_SUCCESS;
 
     if (unit == NULL) {
+	utHandleErrorMessage("NULL unit argument");
 	utStatus = UT_BADUNIT;
     }
     else if (visitor == NULL) {
+	utHandleErrorMessage("NULL visitor argument");
 	utStatus = UT_BADVISITOR;
     }
     else {

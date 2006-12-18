@@ -5,12 +5,13 @@
 
 #include <float.h>
 #include <math.h>
+#include <stdarg.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
 #include <CUnit/CUnit.h>
 #include <CUnit/Basic.h>
 
-#include "expat.h"
 #include "units.h"
 
 
@@ -125,7 +126,7 @@ test_utNewDimensionlessUnit(void)
     CU_ASSERT_EQUAL(utMapUnitToName(radian, "dummy", UT_ASCII), UT_EXISTS);
 
     CU_ASSERT_EQUAL(utMapUnitToSymbol(radian, "f", UT_ASCII), UT_EXISTS);
-    CU_ASSERT_EQUAL(utMapUnitToSymbol(NULL, "f", UT_ASCII), UT_BADUNIT);
+    CU_ASSERT_EQUAL(utMapUnitToSymbol(NULL, "f", UT_ASCII), UT_BADARG);
 
     CU_ASSERT_EQUAL(utMapUnitToName(radian, "Ångström", UT_UTF8), UT_BADID);
 }
@@ -142,7 +143,10 @@ test_utSize(void)
 static void
 test_utGetUnitByName(void)
 {
-    CU_ASSERT_PTR_EQUAL(utGetUnitByName(unitSystem, "meter"), meter);
+    utUnit*	altMeter = utGetUnitByName(unitSystem, "meter");
+
+    CU_ASSERT_PTR_NOT_NULL(altMeter);
+    CU_ASSERT_EQUAL(utCompare(altMeter, meter), 0);
 
     CU_ASSERT_PTR_NULL(utGetUnitByName(unitSystem, NULL));
     CU_ASSERT_EQUAL(utGetStatus(), UT_BADID);
@@ -155,7 +159,10 @@ test_utGetUnitByName(void)
 static void
 test_utGetUnitBySymbol(void)
 {
-    CU_ASSERT_PTR_EQUAL(utGetUnitBySymbol(unitSystem, "m"), meter);
+    utUnit*	altMeter = utGetUnitBySymbol(unitSystem, "m");
+
+    CU_ASSERT_PTR_NOT_NULL(altMeter);
+    CU_ASSERT_EQUAL(utCompare(altMeter, meter), 0);
 
     CU_ASSERT_PTR_NULL(utGetUnitBySymbol(unitSystem, NULL));
     CU_ASSERT_EQUAL(utGetStatus(), UT_BADID);
@@ -214,7 +221,6 @@ test_utMapNameToUnit(void)
     metre = utGetUnitByName(unitSystem, "metre");
     CU_ASSERT_PTR_NOT_NULL(metre);
     CU_ASSERT_EQUAL(utCompare(metre, meter), 0);
-    CU_ASSERT_EQUAL(metre, meter);	/* same unit */
     utFree(metre);
 }
 
@@ -274,7 +280,6 @@ test_utScale(void)
     CU_ASSERT_PTR_NOT_NULL(metre);
     CU_ASSERT_EQUAL(utGetSystem(meter), utGetSystem(metre));
     CU_ASSERT_EQUAL(utCompare(meter, metre), 0);
-    CU_ASSERT_EQUAL(meter, metre);
     utFree(metre);
 
     minute = utScale(60, second);
@@ -348,7 +353,6 @@ test_utOffset(void)
     CU_ASSERT_PTR_NOT_NULL(dupKelvin);
     CU_ASSERT_EQUAL(utGetSystem(kelvin), utGetSystem(dupKelvin));
     CU_ASSERT_EQUAL(utCompare(kelvin, dupKelvin), 0);
-    CU_ASSERT_EQUAL(kelvin, dupKelvin);
 
     dupKelvin = utOffset(celsius, -273.15);
     CU_ASSERT_EQUAL(utGetStatus(), UT_SUCCESS);
@@ -377,6 +381,30 @@ test_utMapUnitToName(void)
 	UT_SUCCESS);
 
     utFree(metre);
+}
+
+
+static void
+test_utGetName(void)
+{
+    CU_ASSERT_STRING_EQUAL(utGetName(meter, UT_ASCII), "meter");
+    CU_ASSERT_STRING_EQUAL(utGetName(celsius, UT_ASCII), "degrees_celsius");
+    CU_ASSERT_STRING_EQUAL(utGetName(kilogram, UT_ASCII), "kilogram");
+    CU_ASSERT_STRING_EQUAL(utGetName(kelvin, UT_ASCII), "kelvin");
+    CU_ASSERT_STRING_EQUAL(utGetName(second, UT_ASCII), "second");
+    CU_ASSERT_STRING_EQUAL(utGetName(radian, UT_ASCII), "radian");
+}
+
+
+static void
+test_utGetSymbol(void)
+{
+    CU_ASSERT_STRING_EQUAL(utGetSymbol(kilogram, UT_ASCII), "kg");
+    CU_ASSERT_STRING_EQUAL(utGetSymbol(meter, UT_ASCII), "m");
+    CU_ASSERT_STRING_EQUAL(utGetSymbol(kelvin, UT_ASCII), "K");
+    CU_ASSERT_STRING_EQUAL(utGetSymbol(second, UT_ASCII), "s");
+    CU_ASSERT_STRING_EQUAL(utGetSymbol(radian, UT_ASCII), "rad");
+    CU_ASSERT_STRING_EQUAL(utGetSymbol(hertz, UT_ASCII), "Hz");
 }
 
 
@@ -459,6 +487,7 @@ test_utMultiply(void)
     utFree(meterCelsius);
     utFree(meterRadian);
     utFree(kilometerMinute);
+/*###474 [cc] cannot recover from previous errors%%%*/
 }
 
 
@@ -1245,6 +1274,13 @@ test_parsing(void)
     CU_ASSERT_EQUAL(utGetParseLength(), strlen(spec));
     utFree(unit);
 
+    spec = "1/s";
+    unit = utParse(unitSystem, spec, UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    CU_ASSERT_EQUAL(utGetParseLength(), strlen(spec));
+    CU_ASSERT_EQUAL(utCompare(unit, hertz), 0);
+    utFree(unit);
+
     spec = "kg.m2.s-3";
     unit = utParse(unitSystem, spec, UT_ASCII);
     CU_ASSERT_PTR_NOT_NULL(unit);
@@ -1413,7 +1449,7 @@ test_parsing(void)
     CU_ASSERT_EQUAL(utCompare(unit, hertz), 0);
     utFree(unit);
 
-    spec = "MµHertz";
+    spec = "MeGaµHertz";
     unit = utParse(unitSystem, spec, UT_LATIN1);
     CU_ASSERT_PTR_NOT_NULL(unit);
     CU_ASSERT_EQUAL(utGetParseLength(), strlen(spec));
@@ -1425,13 +1461,21 @@ test_parsing(void)
 static void
 test_xml(void)
 {
+    utSystem*	xmlSystem;
+
+    utSetErrorMessageHandler(utWriteToStderr);
+
+    chdir(getenv("srcdir"));
+    xmlSystem = utReadXml("SI.xml");
+
+    CU_ASSERT_PTR_NOT_NULL(xmlSystem);
 }
 
 
 int
 main(
     const int		argc,
-    const char* const	argv)
+    const char* const*	argv)
 {
     int	exitCode = EXIT_FAILURE;
 
@@ -1455,6 +1499,8 @@ main(
 	    CU_ADD_TEST(testSuite, test_utRaise);
 	    CU_ADD_TEST(testSuite, test_utLog);
 	    CU_ADD_TEST(testSuite, test_utMapUnitToName);
+	    CU_ADD_TEST(testSuite, test_utGetName);
+	    CU_ADD_TEST(testSuite, test_utGetSymbol);
 	    CU_ADD_TEST(testSuite, test_utToString);
 	    CU_ADD_TEST(testSuite, test_utGetConverter);
 	    CU_ADD_TEST(testSuite, test_utOffsetByTime);
@@ -1464,6 +1510,8 @@ main(
 	    CU_ADD_TEST(testSuite, test_xml);
 	    /*
 	    */
+
+	    utSetErrorMessageHandler(utIgnore);
 
 	    if (CU_basic_run_tests() == CUE_SUCCESS) {
 		if (CU_get_number_of_tests_failed() == 0)

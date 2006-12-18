@@ -1,7 +1,7 @@
 /*
  * Unit-to-identifier map.
  *
- * $Id: unitToIdMap.c,v 1.2 2006/12/02 22:33:48 steve Exp $
+ * $Id: unitToIdMap.c,v 1.3 2006/12/18 18:03:19 steve Exp $
  */
 
 /*LINTLIBRARY*/
@@ -11,6 +11,7 @@
 #endif
 
 #include <assert.h>
+#include <errno.h>
 #include <search.h>
 #include <stdlib.h>
 #include <string.h>
@@ -18,6 +19,7 @@
 #include "units.h"
 #include "unitAndId.h"
 #include "unitToIdMap.h"		/* this module's API */
+#include "systemMap.h"
 
 typedef struct {
     void*		ascii;
@@ -25,8 +27,8 @@ typedef struct {
     void*		utf8;
 } UnitToIdMap;
 
-static UnitToIdMap	unitToNameMap;
-static UnitToIdMap	unitToSymbolMap;
+static SystemMap*	systemToUnitToName = NULL;
+static SystemMap*	systemToUnitToSymbol = NULL;
 
 extern enum utStatus	utStatus;
 
@@ -106,14 +108,14 @@ adjustEncoding(
     int		status = 0;		/* success */
 
     if (*encoding == UT_ASCII) {
-	while (*string && ((*string++ & 0x80U) == 0))
+	for (; *string && ((*string & 0x80U) == 0); string++)
 	    ;
 
-	if (*string)
+	if (*string != 0)
 	    *encoding = UT_LATIN1;
     }
     else if (*encoding == UT_LATIN1) {
-	while (*string && ((*string++ & 0x80U) == 0))
+	for (; *string && ((*string & 0x80U) == 0); string++)
 	    ;
 
 	if (*string == 0)
@@ -190,10 +192,62 @@ selectTree(
 
 
 /*
+ * Returns a new instance of a unit-to-identifier map.
+ *
+ * Returns:
+ *	NULL	Failure.  See "errno".
+ *	else	Pointer to a new unit-to-identifier map.
+ */
+static UnitToIdMap*
+utimNew(void)
+{
+    UnitToIdMap* const	map = malloc(sizeof(UnitToIdMap));
+
+    if (map != NULL) {
+	map->ascii = NULL;
+	map->latin1 = NULL;
+	map->utf8 = NULL;
+    }
+
+    return map;
+}
+
+
+/*
+ * Frees a unit-to-identifier map.  All entries in all encodings are freed.
+ *
+ * Arguments:
+ *	map		Pointer to the map to be freed.
+ */
+static void
+utimFree(
+    UnitToIdMap*	map)
+{
+    if (map != NULL) {
+	utEncoding	encodings[] = {UT_ASCII, UT_LATIN1, UT_UTF8};
+	int		i;
+
+	for (i = 0; i < sizeof(encodings)/sizeof(encodings[0]); ++i) {
+	    void**	rootp = selectTree(map, encodings[i]);
+
+	    while (*rootp != NULL) {
+		UnitAndId*	uai = *(UnitAndId**)rootp;
+
+		(void)tdelete(uai, rootp, compareUnits);
+		uaiFree(uai);
+	    }
+	}
+
+	free(map);
+    }
+}
+
+
+/*
  * Adds an entry to a unit-to-identifier map.
  *
  * Arguments:
- *	map		The unit-to-identifier map.
+ *	map		Pointer to unit-to-identifier map.
  *	unit		The unit.  May be freed upon return.
  *	id		The identifier.  May be freed upon return.
  *	encoding	The ostensible encoding of "id".
@@ -215,15 +269,19 @@ utimAdd(
     enum utStatus	status;
 
     if (map == NULL) {
+	utHandleErrorMessage("NULL map argument");
 	status = UT_INTERNAL;
     }
     else if (unit == NULL) {
+	utHandleErrorMessage("NULL unit argument");
 	status = UT_BADUNIT;
     }
     else if (id == NULL) {
+	utHandleErrorMessage("NULL identifier argument");
 	status = UT_BADID;
     }
     else if (adjustEncoding(&encoding, id)) {
+	utHandleErrorMessage("Identifier not in given encoding");
 	status = UT_BADID;
     }
     else {
@@ -234,18 +292,75 @@ utimAdd(
 		selectTree(map, encoding), compareUnits);
 
 	    if (treeEntry == NULL) {
+		utHandleErrorMessage(strerror(errno));
+		utHandleErrorMessage("Couldn't add search-tree entry");
 		status = UT_OS;
 	    }
 	    else {
-		status = 
-		    strcmp((*treeEntry)->id, id) != 0
-			? UT_EXISTS
-			: UT_SUCCESS;
+		if (strcmp((*treeEntry)->id, id) != 0) {
+		    utHandleErrorMessage("Unit already maps to \"%s\"",
+			(*treeEntry)->id);
+		    status = UT_EXISTS;
+		}
+		else {
+		    status = UT_SUCCESS;
+		}
 	    }
 
 	    if (status != UT_SUCCESS)
 		uaiFree(targetEntry);
 	}				/* "targetEntry" allocated */
+    }					/* valid arguments */
+
+    return status;
+}
+
+
+/*
+ * Removes an entry from a unit-to-identifier map.
+ *
+ * Arguments:
+ *	map		Pointer to the unit-to-identifier map.
+ *	unit		The unit.  May be freed upon return.
+ *	encoding	The encoding to be removed.
+ * Returns:
+ *	UT_INTERNAL	"map" is NULL.
+ *	UT_INTERNAL	"unit" is NULL.
+ *	UT_SUCCESS	Success.
+ */
+static enum utStatus
+utimRemove(
+    UnitToIdMap* const	map,
+    const utUnit*	unit,
+    utEncoding		encoding)
+{
+    enum utStatus	status;
+
+    if (map == NULL) {
+	utHandleErrorMessage("NULL map argument");
+	status = UT_INTERNAL;
+    }
+    else if (unit == NULL) {
+	utHandleErrorMessage("NULL unit argument");
+	status = UT_BADUNIT;
+    }
+    else {
+	UnitAndId	targetEntry;
+	UnitAndId**	treeEntry;
+
+	targetEntry.unit = (utUnit*)unit;
+
+	treeEntry =
+	    tfind(&targetEntry, selectTree(map, encoding), compareUnits);
+
+	if (treeEntry == NULL || *treeEntry == NULL) {
+	    status = UT_SUCCESS;
+	}
+	else {
+	    (void)tdelete(*treeEntry, selectTree(map, encoding),
+		compareUnits);
+	    uaiFree(*treeEntry);
+	}
     }					/* valid arguments */
 
     return status;
@@ -347,6 +462,9 @@ utimFindUtf8ByUnit(
 	    char* const	id = latin1ToUtf8((*treeEntry)->id);
 
 	    if (id == NULL) {
+		utHandleErrorMessage(strerror(errno));
+		utHandleErrorMessage(
+		    "Couldn't convert identifier from ISO-8859-1 to UTF-8");
 		utStatus = UT_OS;
 		treeEntry = NULL;
 	    }
@@ -358,6 +476,9 @@ utimFindUtf8ByUnit(
 
 		    if (treeEntry == NULL) {
 			uaiFree(newEntry);
+			utHandleErrorMessage(strerror(errno));
+			utHandleErrorMessage("Couldn't add unit-and-identifier "
+			    "to search-tree");
 			utStatus = UT_OS;
 		    }
 		}
@@ -372,9 +493,111 @@ utimFindUtf8ByUnit(
 
 
 /*
- * Returns the identifier in a given encoding to which a unit maps.
+ * Adds an entry to the unit-to-identifier map associated with a unit-system.
  *
  * Arguments:
+ *	sytemMap	Address of the pointer to the
+ *			system-to-unit-to-identifier map.
+ *	unit		The unit.  May be freed upon return.
+ *	id		The identifier.  May be freed upon return.
+ *	encoding	The ostensible encoding of "id".
+ * Returns:
+ *	UT_INTERNAL	"systemMap" is NULL.
+ *	UT_INTERNAL	"unit" is NULL.
+ *	UT_BADID	"id" is NULL or inconsistent with "encoding".
+ *	UT_OS		Operating-system error.  See "errno".
+ *	UT_EXISTS	"unit" already maps to a different identifier.
+ *	UT_SUCCESS	Success.
+ */
+static enum utStatus
+mapUnitToId(
+    SystemMap** const	systemMap,
+    utUnit* const	unit,
+    const char* const	id,
+    utEncoding		encoding)
+{
+    enum utStatus	status;
+
+    if (systemMap == NULL || unit == NULL || id == NULL) {
+	status = UT_BADARG;
+    }
+    else {
+	if (*systemMap == NULL) {
+	    *systemMap = smNew();
+
+	    if (*systemMap == NULL)
+		status = UT_OS;
+	}
+
+	if (*systemMap != NULL) {
+	    UnitToIdMap** const	unitToIdMap =
+		(UnitToIdMap**)smSearch(*systemMap, utGetSystem(unit));
+
+	    if (unitToIdMap == NULL) {
+		status = UT_OS;
+	    }
+	    else {
+		if (*unitToIdMap == NULL) {
+		    *unitToIdMap = utimNew();
+
+		    if (*unitToIdMap == NULL)
+			status = UT_OS;
+		}
+
+		if (*unitToIdMap != NULL)
+		    status = utimAdd(*unitToIdMap, unit, id, encoding);
+	    }
+	}
+    }
+
+    return status;
+}
+
+
+/*
+ * Removes an entry from the unit-to-identifier map associated with a
+ * unit-system.
+ *
+ * Arguments:
+ *	sytemMap	Pointer to the system-to-unit-to-identifier map.
+ *	unit		The unit.  May be freed upon return.
+ *	encoding	The ostensible encoding of "id".
+ * Returns:
+ *	UT_BADARG	"systemMap" is NULL.
+ *	UT_BADARG	"unit" is NULL.
+ *	UT_SUCCESS	Success.
+ */
+static enum utStatus
+unmapUnitToId(
+    SystemMap* const	systemMap,
+    utUnit* const	unit,
+    utEncoding		encoding)
+{
+    enum utStatus	status;
+
+    if (systemMap == NULL || unit == NULL) {
+	status = UT_BADARG;
+    }
+    else {
+	UnitToIdMap** const	unitToIdMap =
+	    (UnitToIdMap**)smFind(systemMap, utGetSystem(unit));
+
+	status =
+	    (unitToIdMap == NULL || *unitToIdMap == NULL)
+		? UT_SUCCESS
+		: utimRemove(*unitToIdMap, unit, encoding);
+    }
+
+    return status;
+}
+
+
+/*
+ * Returns the identifier in a given encoding to which a unit associated with
+ * a unit-system maps.
+ *
+ * Arguments:
+ *	systemMap	Pointer to the system-to-unit-to-id map.
  *	unit		Pointer to the unit whose identifier should be returned.
  *	encoding	The desired encoding of the identifier.
  * Returns:
@@ -385,25 +608,31 @@ utimFindUtf8ByUnit(
  */
 static const char*
 getId(
-    UnitToIdMap* const	map,
+    SystemMap* const	systemMap,
     const utUnit* const	unit,
     const utEncoding	encoding)
 {
     const char*	id = NULL;		/* failure */
 
     if (unit == NULL) {
+	utHandleErrorMessage("NULL unit argument");
 	utStatus = UT_BADUNIT;
     }
     else {
-	UnitAndId*	mapEntry = 
-	    encoding == UT_LATIN1
-		? mapEntry = utimFindLatin1ByUnit(map, unit)
-		: encoding == UT_UTF8
-		    ? mapEntry = utimFindUtf8ByUnit(map, unit)
-		    : utimFindAsciiByUnit(map, unit);
+	UnitToIdMap** const	unitToId = 
+	    (UnitToIdMap**)smFind(systemMap, utGetSystem(unit));
 
-	if (mapEntry != NULL)
-	    id = mapEntry->id;
+	if (unitToId != NULL) {
+	    UnitAndId*	mapEntry = 
+		encoding == UT_LATIN1
+		    ? utimFindLatin1ByUnit(*unitToId, unit)
+		    : encoding == UT_UTF8
+			? utimFindUtf8ByUnit(*unitToId, unit)
+			: utimFindAsciiByUnit(*unitToId, unit);
+
+	    if (mapEntry != NULL)
+		id = mapEntry->id;
+	}
     }
 
     return id;
@@ -414,8 +643,9 @@ getId(
  * Public API:
  ******************************************************************************/
 
+
 /*
- * Adds to a mapping from a unit to a name.
+ * Adds a mapping from a unit to a name.
  *
  * Arguments:
  *	unit		Pointer to the unit.  May be freed upon return.
@@ -434,7 +664,26 @@ utMapUnitToName(
     const char* const	name,
     utEncoding		encoding)
 {
-    return utStatus = utimAdd(&unitToNameMap, unit, name, encoding);
+    return utStatus = mapUnitToId(&systemToUnitToName, unit, name, encoding);
+}
+
+
+/*
+ * Removes a mapping from a unit to a name.
+ *
+ * Arguments:
+ *	unit		Pointer to the unit.  May be freed upon return.
+ *	encoding	The encoding to be removed.
+ * Returns:
+ *	UT_BADUNIT	"unit" is NULL.
+ *	UT_SUCCESS	Success.
+ */
+enum utStatus
+utUnmapUnitToName(
+    utUnit* const	unit,
+    utEncoding		encoding)
+{
+    return utStatus = unmapUnitToId(systemToUnitToName, unit, encoding);
 }
 
 
@@ -458,7 +707,27 @@ utMapUnitToSymbol(
     const char* const	symbol,
     utEncoding		encoding)
 {
-    return utStatus = utimAdd(&unitToSymbolMap, unit, symbol, encoding);
+    return
+	utStatus = mapUnitToId(&systemToUnitToSymbol, unit, symbol, encoding);
+}
+
+
+/*
+ * Removes a mapping from a unit to a symbol.
+ *
+ * Arguments:
+ *	unit		Pointer to the unit.  May be freed upon return.
+ *	encoding	The encoding to be removed.
+ * Returns:
+ *	UT_BADUNIT	"unit" is NULL.
+ *	UT_SUCCESS	Success.
+ */
+enum utStatus
+utUnmapUnitToSymbol(
+    utUnit* const	unit,
+    utEncoding		encoding)
+{
+    return utStatus = unmapUnitToId(systemToUnitToSymbol, unit, encoding);
 }
 
 
@@ -483,7 +752,7 @@ utGetName(
 {
     utStatus = UT_SUCCESS;
 
-    return getId(&unitToNameMap, unit, encoding);
+    return getId(systemToUnitToName, unit, encoding);
 }
 
 
@@ -508,5 +777,38 @@ utGetSymbol(
 {
     utStatus = UT_SUCCESS;
 
-    return getId(&unitToSymbolMap, unit, encoding);
+    return getId(systemToUnitToSymbol, unit, encoding);
+}
+
+
+/*
+ * Frees resources associated with a unit-system.
+ *
+ * Arguments:
+ *	system		Pointer to the unit-system to have its associated
+ *			resources freed.
+ */
+void
+utimFreeSystem(
+    utSystem*	system)
+{
+    if (system != NULL) {
+	SystemMap*	systemMaps[2];
+	int		i;
+
+	systemMaps[0] = systemToUnitToName;
+	systemMaps[1] = systemToUnitToSymbol;
+
+	for (i = 0; i < 2; i++) {
+	    if (systemMaps[i] != NULL) {
+		UnitToIdMap** const	unitToId =
+		    (UnitToIdMap**)smFind(systemMaps[i], system);
+
+		if (unitToId != NULL)
+		    utimFree(*unitToId);
+
+		smRemove(systemMaps[i], system);
+	    }
+	}
+    }
 }

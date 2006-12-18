@@ -6,21 +6,32 @@ libudunits2_la_SOURCES = core.c converter.c formatter.c \
     unitAndId.c unitAndId.h \
     systemMap.c systemMap.h \
     prefix.c \
-    parser.y
+    parser.y \
+    xml.c \
+    error.c \
+    utFreeSystem.c
+BUILT_SOURCES = parser.c scanner.c
+lex_prefix = ut_
+LEX_OUTPUT_ROOT = lex.$(lex_prefix)
+LFLAGS = -d -P$(lex_prefix)
+
+libudunits2_la_LIBADD = ../expat/libexpat.la
 include_HEADERS = units.h converter.h
-AM_CPPFLAGS = -I$(srcdir)/expat
+AM_CPPFLAGS = -I$(top_srcdir)/expat/lib
 AM_CTAGSFLAGS = -t
-BUILT_SOURCES = scanner.c
-AM_YFLAGS = -p ut_
+EXTRA_DIST = SI.xml scanner.l scanner.c
+AM_YFLAGS = -t -p ut_
+
+if HAVE_CUNIT
 check_PROGRAMS = testUnits
 testUnits_CPPFLAGS = -I/opt/include
-testUnits_LDADD = libudunits2.la ../expat/libexpat.la
-testUnits_LDFLAGS = -L/opt/lib -lcunit -lm
+testUnits_LDFLAGS = @LD_CUNIT@ -lm
+testUnits_LDADD = libudunits2.la
 TESTS = testUnits
-MOSTLYCLEANFILES = lint.log *.ln
-CLEANFILES = scanner.c
+endif
+
+MOSTLYCLEANFILES = lint.log *.ln *.i
 TAGS_FILES = parser.c
-LFLAGS = -Put_ @LFLAGS@
 
 LINTFLAGS	= -u
 LINT		= lint
@@ -28,10 +39,14 @@ LINT		= lint
 SUFFIXES = .c .l
 
 .c.ln:
-	$(LINT.c) -c $<
+	$(LINT.c) $(AM_CPPFLAGS) -c $<
 
 .c.i:
 	$(CPP) $(CPPFLAGS) $< >$@
 
-debug:
+if HAVE_CUNIT
+debug:		testUnits
 	libtool --mode=execute gdb testUnits
+endif
+
+parser.o: scanner.c

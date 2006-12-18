@@ -1,11 +1,12 @@
 #ifndef UT_UNITS_H_INCLUDED
 #define UT_UNITS_H_INCLUDED
 
+#include <stdarg.h>
+
 #include "converter.h"
 
 typedef struct utSystem		utSystem;
 typedef union utUnit		utUnit;
-
 
 enum utStatus {
     UT_SUCCESS = 0,	/* Success */
@@ -27,6 +28,7 @@ enum utStatus {
     UT_INTERNAL,	/* Internal, assertion-type failure. Shouldn't occur. */
     UT_SYNTAX,		/* string unit representation contains syntax error */
     UT_UNKNOWN,		/* string unit representation contains unknown word */
+    UT_XML		/* XML parsing error */
 } utStatus;
 
 typedef enum {
@@ -56,6 +58,9 @@ typedef struct {
 } utVisitor;
 
 
+typedef int (*utErrorMessageHandler)(const char* fmt, va_list args);
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -71,15 +76,26 @@ utSetStatus(
 
 
 /*
- * Returns a new unit system.
+ * Returns a new unit-system.
  *
  * Returns:
  *	NULL	Failure.  errno is set:
  *		    ENOMEM	Out of memory.
- *	else	Pointer to a new unit system.
+ *	else	Pointer to a new unit-system.
  */
 utSystem*
 utNewSystem();
+
+
+/*
+ * Frees a unit-system.
+ *
+ * Arguments:
+ *	system		Pointer to the unit-system to be freed.
+ */
+void
+utFreeSystem(
+    utSystem*	system);
 
 
 /*
@@ -171,6 +187,22 @@ utMapNameToUnit(
 
 
 /*
+ * Removes a mapping from a name to a unit.  After this function,
+ * getUnitByName() will no longer return a unit.
+ *
+ * Arguments:
+ *	name		The name of the unit.
+ *	system		The unit-system to which the unit belongs.
+ * Returns:
+ *	UT_SUCCESS	Success.
+ */
+enum utStatus
+utUnmapName(
+    const char* const	name,
+    utSystem*		system);
+
+
+/*
  * Adds a mapping from a symbol to a unit.
  *
  * Arguments:
@@ -187,6 +219,135 @@ enum utStatus
 utMapSymbolToUnit(
     const char* const	symbol,
     utUnit* const	unit);
+
+
+/*
+ * Removes a mapping from a symbol to a unit.  After this function,
+ * getUnitBySymbol() will no longer return a unit.
+ *
+ * Arguments:
+ *	symbol		The symbol of the unit.
+ *	system		The unit-system to which the unit belongs.
+ * Returns:
+ *	UT_SUCCESS	Success.
+ */
+enum utStatus
+utUnmapSymbol(
+    const char* const	symbol,
+    utSystem*		system);
+
+/*
+ * Adds a mapping from a unit to a name.
+ *
+ * Arguments:
+ *	unit		Pointer to the unit.  May be freed upon return.
+ *	name		Pointer to the name.  May be freed upon return.
+ *	encoding	The encoding of "name".
+ * Returns:
+ *	UT_BADUNIT	"unit" is NULL.
+ *	UT_BADID	"name" is NULL or not in the specified encoding.
+ *	UT_OS		Operating-system error.  See "errno".
+ *	UT_EXISTS	"unit" already maps to a name.
+ *	UT_SUCCESS	Success.
+ */
+enum utStatus
+utMapUnitToName(
+    utUnit* const	unit,
+    const char* const	name,
+    utEncoding		encoding);
+
+
+/*
+ * Removes a mapping from a unit to a name.
+ *
+ * Arguments:
+ *	unit		Pointer to the unit.  May be freed upon return.
+ *	encoding	The encoding to be removed.
+ * Returns:
+ *	UT_BADUNIT	"unit" is NULL.
+ *	UT_SUCCESS	Success.
+ */
+enum utStatus
+utUnmapUnitToName(
+    utUnit* const	unit,
+    utEncoding		encoding);
+
+
+/*
+ * Adds a mapping from a unit to a symbol.
+ *
+ * Arguments:
+ *	unit		Pointer to the unit.  May be freed upon return.
+ *	symbol		Pointer to the symbol.  May be freed upon return.
+ *	encoding	The encoding of "symbol".
+ * Returns:
+ *	UT_BADUNIT	"unit" is NULL.
+ *	UT_BADID	"symbol" is NULL.
+ *	UT_OS		Operating-system error.  See "errno".
+ *	UT_EXISTS	"unit" already maps to a symbol.
+ *	UT_SUCCESS	Success.
+ */
+enum utStatus
+utMapUnitToSymbol(
+    utUnit*		unit,
+    const char* const	symbol,
+    utEncoding		encoding);
+
+
+/*
+ * Removes a mapping from a unit to a symbol.
+ *
+ * Arguments:
+ *	unit		Pointer to the unit.  May be freed upon return.
+ *	encoding	The encoding to be removed.
+ * Returns:
+ *	UT_BADUNIT	"unit" is NULL.
+ *	UT_SUCCESS	Success.
+ */
+enum utStatus
+utUnmapUnitToSymbol(
+    utUnit* const	unit,
+    utEncoding		encoding);
+
+
+/*
+ * Returns the name in a given encoding to which a unit maps.
+ *
+ * Arguments:
+ *	unit		Pointer to the unit whose name should be returned.
+ *	encoding	The desired encoding of the name.
+ * Returns:
+ *	NULL		Failure.  "utGetStatus()" will be
+ *			    UT_BADUNIT	"unit" is NULL.
+ *			    UT_SUCCESS	There is no name in the given encoding
+ *					associated with "unit".
+ *	else		Pointer to the name in the given encoding associated
+ *			with "unit".
+ */
+const char*
+utGetName(
+    const utUnit* const	unit,
+    const utEncoding	encoding);
+
+
+/*
+ * Returns the symbol in a given encoding to which a unit maps.
+ *
+ * Arguments:
+ *	unit		Pointer to the unit whose symbol should be returned.
+ *	encoding	The desired encoding of the symbol.
+ * Returns:
+ *	NULL		Failure.  "utGetStatus()" will be
+ *			    UT_BADUNIT	"unit" is NULL.
+ *			    UT_SUCCESS	There is no symbol in the given encoding
+ *					associated with "unit".
+ *	else		Pointer to the symbol in the given encoding associated
+ *			with "unit".
+ */
+const char*
+utGetSymbol(
+    const utUnit* const	unit,
+    const utEncoding	encoding);
 
 
 /*
@@ -612,6 +773,24 @@ utLog(
 
 
 /*
+ * Indicates if a given unit is dimensionless or not.  Note that logarithmic
+ * units are dimensionless by definition.
+ *
+ * Arguments:
+ *	unit	Pointer to the unit in question.
+ * Returns:
+ *	0	"unit" is dimensionfull or an error occurred.  "utGetStatus()"
+ *		 will be
+ *		    UT_BADUNIT	"unit" is NULL.
+ *		    UT_SUCCESS	"unit" is dimensionfull.
+ *	else	"unit" is dimensionless.
+ */
+int
+utIsDimensionless(
+    utUnit* const	unit);
+
+
+/*
  * Returns a clone of a unit.
  *
  * Arguments:
@@ -787,6 +966,90 @@ utFormat(
     char*		buf,
     size_t		size,
     unsigned		opts);
+
+
+/*
+ * Returns the unit-system defined by an XML file.
+ *
+ * Arguments:
+ *	path	NULL or the pathname of the XML file.  If NULL, then the
+ *		pathname of the environment variable UDUNITS_PATH is used.
+ *		If that doesn't exist, then the compiled-in default pathname
+ *		is used.
+ * Returns:
+ *	NULL	Failure.  "utGetStatus()" will be
+ *		    UT_OS	Operating-system failure.  See "errno".
+ *	else	Pointer to the unit-system defined by "path".
+ */
+utSystem*
+utReadXml(
+    const char* const	path);
+
+
+/*
+ * Writes an error-message to the standard-error stream when received and
+ * appends a newline.
+ *
+ * Arguments:
+ *	fmt	The format for the error-message.
+ *	args	The arguments of "fmt".
+ * Returns:
+ *	<0	A output error was encountered.  See "errno".
+ *	else	The number of bytes of "fmt" and "arg" written excluding any
+ *		terminating NUL.
+ */
+int
+utWriteToStderr(
+    const char* const	fmt,
+    va_list		args);
+
+
+/*
+ * Does nothing with an error-message.
+ *
+ * Arguments:
+ *	fmt	The format for the error-message.
+ *	args	The arguments of "fmt".
+ * Returns:
+ *	0	Always.
+ */
+int
+utIgnore(
+    const char* const	fmt,
+    va_list		args);
+
+
+/*
+ * Returns the previously-installed error-message handler and optionally
+ * installs a new handler.  The initial handler is "utWriteToStderr()".
+ *
+ * Arguments:
+ *      handler		NULL or pointer to the error-message handler.  If NULL,
+ *			then the handler is not changed.  The 
+ *			currently-installed handler can be obtained this way.
+ * Returns:
+ *	Pointer to the previously-installed error-message handler.
+ */
+utErrorMessageHandler
+utSetErrorMessageHandler(
+    utErrorMessageHandler	handler);
+
+
+/*
+ * Handles an error-message.
+ *
+ * Arguments:
+ *	fmt	The format for the error-message.
+ *	...	The arguments of "fmt".
+ * Returns:
+ *	<0	An output error was encountered.
+ *	else	The number of bytes of "fmt" and "arg" written excluding any
+ *		terminating NUL.
+ */
+int
+utHandleErrorMessage(
+    const char* const	fmt,
+    ...);
 
 
 #ifdef __cplusplus
