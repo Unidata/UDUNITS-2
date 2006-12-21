@@ -1,7 +1,7 @@
 /*
  * Value converters for the udunits(3) library.
  *
- * $Id: converter.c,v 1.2 2006/12/18 18:03:18 steve Exp $
+ * $Id: converter.c,v 1.3 2006/12/21 20:52:37 steve Exp $
  */
 
 /*LINTLIBRARY*/
@@ -58,7 +58,7 @@ typedef struct {
 
 typedef struct {
     ConverterOps*	ops;
-    double		logE;
+    double		base;
 } ExpConverter;
 
 typedef struct {
@@ -711,7 +711,7 @@ static cvConverter*
 expClone(
     cvConverter* const	conv)
 {
-    return cvGetExp(conv->exp.logE);
+    return cvGetPow(conv->exp.base);
 }
 
 
@@ -720,7 +720,7 @@ expConvertDouble(
     const cvConverter* const	conv,
     const double		value)
 {
-    return exp(value / conv->exp.logE);
+    return pow(conv->exp.base, value);
 }
 
 static float*
@@ -738,11 +738,11 @@ expConvertFloats(
 
 	if (in < out) {
 	    for (i = count; i-- > 0;)
-		out[i] = (float)(exp(in[i] / conv->exp.logE));
+		out[i] = (float)(pow(conv->exp.base, in[i]));
 	}
 	else {
 	    for (i = 0; i < count; i++)
-		out[i] = (float)(exp(in[i] / conv->exp.logE));
+		out[i] = (float)(pow(conv->exp.base, in[i]));
 	}
     }
 
@@ -765,11 +765,11 @@ expConvertDoubles(
 
 	if (in < out) {
 	    for (i = count; i-- > 0;)
-		out[i] = exp(in[i] / conv->exp.logE);
+		out[i] = pow(conv->exp.base, in[i]);
 	}
 	else {
 	    for (i = 0; i < count; i++)
-		out[i] = exp(in[i] / conv->exp.logE);
+		out[i] = pow(conv->exp.base, in[i]);
 	}
     }
 
@@ -784,20 +784,12 @@ expGetExpression(
     const size_t		max,
     const char* const		variable)
 {
-    const int	isUnity = conv->exp.logE == 1.0;
+    const int	isUnity = conv->exp.base == 1.0;
 
     return 
 	cvNeedsParentheses(variable)
-	    ? (isUnity
-		? snprintf(buf, max, "ln((%s)/%g)", variable,
-		    conv->offset.value)
-		: snprintf(buf, max, "%g*ln((%s)/%g)", conv->exp.logE, variable,
-		    conv->offset.value))
-	    : (isUnity
-		? snprintf(buf, max, "ln(%s/%g)", variable,
-		    conv->offset.value)
-		: snprintf(buf, max, "%g*ln(%s/%g)", conv->exp.logE, variable,
-		    conv->offset.value));
+	    ? snprintf(buf, max, "pow(%g, (%s))", conv->exp.base, variable)
+	    : snprintf(buf, max, "pow(%g, %s)", conv->exp.base, variable);
 }
 
 
@@ -1113,20 +1105,19 @@ cvGetLog(
  * cvFree().
  *
  * Arguments:
- *	logE		The logarithm of "e" in the base of the desired 
- *			logarithm.  Must be positive.
+ *	base		The desired base.  Must be positive.
  * Returns:
- *	NULL		"logE" is invalid or necessary memory couldn't be
+ *	NULL		"base" is invalid or necessary memory couldn't be
  *			allocated.
- *	else		A logarithmic converter corresponding to the inputs.
+ *	else		An exponential converter corresponding to the inputs.
  */
 cvConverter*
-cvGetExp(
-    const double	logE)
+cvGetPow(
+    const double	base)
 {
     cvConverter*	conv;
 
-    if (logE <= 0) {
+    if (base <= 0) {
 	conv = NULL;
     }
     else {
@@ -1134,7 +1125,7 @@ cvGetExp(
 
 	if (conv != NULL) {
 	    conv->ops = &expOps;
-	    conv->log.logE = logE;
+	    conv->exp.base = base;
 	}
     }
 

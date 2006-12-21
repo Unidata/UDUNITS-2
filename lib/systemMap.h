@@ -1,7 +1,7 @@
 #ifndef UT_SYSTEM_MAP_H_INCLUDED
 #define UT_SYSTEM_MAP_H_INCLUDED
 
-#include "units.h"
+#include "udunits2.h"
 
 typedef struct SystemMap	SystemMap;
 

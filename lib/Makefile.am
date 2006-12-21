@@ -16,9 +16,8 @@ LEX_OUTPUT_ROOT = lex.$(lex_prefix)
 LFLAGS = -d -P$(lex_prefix)
 
 libudunits2_la_LIBADD = ../expat/libexpat.la
-include_HEADERS = units.h converter.h
+include_HEADERS = udunits2.h converter.h
 AM_CPPFLAGS = -I$(top_srcdir)/expat/lib
-AM_CTAGSFLAGS = -t
 EXTRA_DIST = SI.xml scanner.l scanner.c
 AM_YFLAGS = -t -p ut_
 
@@ -30,7 +29,7 @@ testUnits_LDADD = libudunits2.la
 TESTS = testUnits
 endif
 
-MOSTLYCLEANFILES = lint.log *.ln *.i
+MOSTLYCLEANFILES = lint.log *.ln *.i core core.[0-9]*
 TAGS_FILES = parser.c
 
 LINTFLAGS	= -u

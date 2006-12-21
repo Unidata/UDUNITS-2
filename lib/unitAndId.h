@@ -1,7 +1,7 @@
 #ifndef UT_UNIT_SEARCH_NODE_H_INCLUDED
 #define UT_UNIT_SEARCH_NODE_H_INCLUDED
 
-#include "units.h"
+#include "udunits2.h"
 
 typedef struct {
     char*	id;

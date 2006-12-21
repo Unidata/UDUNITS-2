@@ -1,6 +1,6 @@
 %{
 /*
- * $Id: parser.y,v 1.5 2006/12/18 18:03:18 steve Exp $
+ * $Id: parser.y,v 1.6 2006/12/21 20:52:37 steve Exp $
  *
  * yacc(1)-based parser for decoding formatted unit specifications.
  */
@@ -18,7 +18,7 @@
 #include <string.h>
 #include <strings.h>
 
-#include "units.h"
+#include "udunits2.h"
 
 static utUnit*		finalUnit;	/* fully-parsed specification */
 static utSystem*	unitSystem;	/* The unit-system to use */
@@ -436,16 +436,18 @@ timestamp:	DATE {
  *			occur.
  *	string		The string to be parsed (e.g., "millimeters").  There
  *			should be no leading or trailing whitespace in the
- *			string.
+ *			string.  See utTrim().
  *	encoding	The encoding of "string".
  * Returns:
- *	NULL	Failure.  "utGetStatus()" will be one of
- *		    UT_BADARG	"system" is NULL.
- *		    UT_BADARG	"string" is NULL.
- *		    UT_SYNTAX	"string" contained a syntax error.
- *		    UT_UNKNOWN	"string" contained an unknown identifier.
- *		    UT_OS	Operating-system failure.  See "errno".
- *	else	Pointer to the unit corresponding to "string".
+ *	NULL		Failure.  "utGetStatus()" will be one of
+ *			    UT_NULL_ARG		"system" or "string" is NULL.
+ *			    UT_SYNTAX		"string" contained a syntax
+ *						error.
+ *			    UT_UNKNOWN		"string" contained an unknown
+ *						identifier.
+ *			    UT_OS		Operating-system failure.  See
+ *						"errno".
+ *	else		Pointer to the unit corresponding to "string".
  */
 utUnit*
 utParse(
@@ -456,7 +458,7 @@ utParse(
     utUnit*	unit = NULL;		/* failure */
 
     if (system == NULL || string == NULL) {
-	utStatus = UT_BADARG;
+	utStatus = UT_NULL_ARG;
     }
     else {
 	YY_BUFFER_STATE	buf;

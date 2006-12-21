@@ -1,7 +1,7 @@
 #ifndef UT_ID_TO_UNIT_MAP_H_INCLUDED
 #define UT_ID_TO_UNIT_MAP_H_INCLUDED
 
-#include "units.h"
+#include "udunits2.h"
 
 
 #ifdef __cplusplus

@@ -25,7 +25,7 @@
  * This module is thread-compatible but not thread-safe: multi-thread access to
  * this module must be externally synchronized.
  *
- * $Id: core.c,v 1.3 2006/12/18 18:03:18 steve Exp $
+ * $Id: core.c,v 1.4 2006/12/21 20:52:37 steve Exp $
  */
 
 /*LINTLIBRARY*/
@@ -48,7 +48,7 @@
 #include <string.h>
 #include <strings.h>
 
-#include "units.h"		/* this module's API */
+#include "udunits2.h"		/* this module's API */
 #include "converter.h"
 
 typedef enum {
@@ -67,7 +67,6 @@ struct utSystem {
     utUnit*		one;		/* the dimensionless-unit one */
     BasicUnit**		basicUnits;
     int			basicCount;
-    int			size;
 };
 
 typedef struct {
@@ -336,7 +335,14 @@ gregorianDateToJulianDay(year, month, day)
 
 
 /*
- * Encode a time as a double-precision value.
+ * Encodes a time as a double-precision value.
+ *
+ * Arguments:
+ *	hours		The number of hours (0 = midnight).
+ *	minutes		The number of minutes.
+ *	seconds		The number of seconds.
+ * Returns:
+ *	The clock-time encoded as a scalar value.
  */
 double
 utEncodeClock(hours, minutes, seconds)
@@ -393,7 +399,14 @@ decompose(value, uncer, nbasis, basis, count)
 
 
 /*
- * Encode a date as a double-precision value.
+ * Encodes a date as a double-precision value.
+ *
+ * Arguments:
+ *	year		The year.
+ *	month		The month.
+ *	day		The day (1 = the first of the month).
+ * Returns:
+ *	The date encoded as a scalar value.
  */
 double
 utEncodeDate(year, month, day)
@@ -410,7 +423,9 @@ utEncodeDate(year, month, day)
 
 
 /*
- * Encodes a time as a double-precision value.
+ * Encodes a time as a double-precision value.  The convenience function is
+ * equivalent to "utEncodeDate(year,month,day) + 
+ * utEncodeClock(hour,minute,second)"
  *
  * Arguments:
  *	year	The year.
@@ -420,7 +435,7 @@ utEncodeDate(year, month, day)
  *	minute	The minute.
  *	second	The second.
  * Returns:
- *	The input time encoded as a scalar value.
+ *	The time encoded as a scalar value.
  */
 double
 utEncodeTime(
@@ -911,8 +926,14 @@ productClone(
 	utStatus = UT_INTERNAL;
     }
     else {
-	clone = (utUnit*)productNew(unit->common.system, unit->product.indexes,
-	    unit->product.powers, unit->product.count);
+	if (unit == unit->common.system->one) {
+	    clone = unit->common.system->one;
+	}
+	else {
+	    clone = (utUnit*)productNew(unit->common.system,
+		unit->product.indexes, unit->product.powers,
+		unit->product.count);
+	}
     }
 
     return clone;
@@ -964,13 +985,22 @@ productCompare(
 
 
 static void
-productFree(
+productReallyFree(
     utUnit* const	unit)
 {
     if (unit != NULL) {
 	free(unit->product.indexes);
 	free(unit);
     }
+}
+
+
+static void
+productFree(
+    utUnit* const	unit)
+{
+    if (unit != unit->common.system->one)
+	productReallyFree(unit);
 }
 
 
@@ -1016,58 +1046,64 @@ productMultiply(
 	    int				count1 = product1->count;
 	    int				count2 = product2->count;
 	    int				sumCount = count1 + count2;
-	    static short*		indexes = NULL;
 
-	    indexes = realloc(indexes, sizeof(short)*sumCount);
-
-	    if (indexes == NULL) {
-		utStatus = UT_OS;
+	    if (sumCount == 0) {
+		result = unit1->common.system->one;
 	    }
 	    else {
-		static short*	powers = NULL;
-		
-		powers = realloc(powers, sizeof(short)*sumCount);
+		static short*		indexes = NULL;
 
-		if (powers == NULL) {
+		indexes = realloc(indexes, sizeof(short)*sumCount);
+
+		if (indexes == NULL) {
 		    utStatus = UT_OS;
 		}
 		else {
-		    int				count = 0;
-		    int				i1 = 0;
-		    int				i2 = 0;
+		    static short*	powers = NULL;
+		    
+		    powers = realloc(powers, sizeof(short)*sumCount);
 
-		    while (i1 < count1 || i2 < count2) {
-			if (i1 >= count1) {
-			    indexes[count] = indexes2[i2];
-			    powers[count++] = powers2[i2++];
-			}
-			else if (i2 >= count2) {
-			    indexes[count] = indexes1[i1];
-			    powers[count++] = powers1[i1++];
-			}
-			else if (indexes1[i1] > indexes2[i2]) {
-			    indexes[count] = indexes2[i2];
-			    powers[count++] = powers2[i2++];
-			}
-			else if (indexes1[i1] < indexes2[i2]) {
-			    indexes[count] = indexes1[i1];
-			    powers[count++] = powers1[i1++];
-			}
-			else {
-			    if (powers1[i1] != -powers2[i2]) {
-				indexes[count] = indexes1[i1];
-				powers[count++] = powers1[i1] + powers2[i2];
-			    }
-
-			    i1++;
-			    i2++;
-			}
+		    if (powers == NULL) {
+			utStatus = UT_OS;
 		    }
+		    else {
+			int				count = 0;
+			int				i1 = 0;
+			int				i2 = 0;
 
-		    result = (utUnit*)productNew(unit1->common.system, indexes,
-			powers, count);
-		}			/* "powers" re-allocated */
-	    }				/* "indexes" re-allocated */
+			while (i1 < count1 || i2 < count2) {
+			    if (i1 >= count1) {
+				indexes[count] = indexes2[i2];
+				powers[count++] = powers2[i2++];
+			    }
+			    else if (i2 >= count2) {
+				indexes[count] = indexes1[i1];
+				powers[count++] = powers1[i1++];
+			    }
+			    else if (indexes1[i1] > indexes2[i2]) {
+				indexes[count] = indexes2[i2];
+				powers[count++] = powers2[i2++];
+			    }
+			    else if (indexes1[i1] < indexes2[i2]) {
+				indexes[count] = indexes1[i1];
+				powers[count++] = powers1[i1++];
+			    }
+			    else {
+				if (powers1[i1] != -powers2[i2]) {
+				    indexes[count] = indexes1[i1];
+				    powers[count++] = powers1[i1] + powers2[i2];
+				}
+
+				i1++;
+				i2++;
+			    }
+			}
+
+			result = (utUnit*)productNew(unit1->common.system,
+			    indexes, powers, count);
+		    }			/* "powers" re-allocated */
+		}			/* "indexes" re-allocated */
+	    }				/* "sumCount > 0" */
 	}				/* "unit2" is a product-unit */
     }					/* valid arguments */
 
@@ -1816,7 +1852,7 @@ static UnitOps	timestampOps;
  *		    UT_OS		Operating-system error.  See "errno".
  *		    UT_MEANINGLESS	Creation of a timestamp unit based on
  *					"unit" is not meaningful.
- *		    UT_NOSECOND		The associated unit-system doesn't
+ *		    UT_NO_SECOND		The associated unit-system doesn't
  *					contain a second unit.
  *	else	The newly-allocated, timestamp-unit.
  */
@@ -1840,7 +1876,7 @@ timestampNewOrigin(
 
 	if (secondUnit == NULL) {
 	    utHandleErrorMessage("No \"second\" unit defined");
-	    utStatus = UT_NOSECOND;
+	    utStatus = UT_NO_SECOND;
 	}
 	else if (utAreConvertible(secondUnit, unit)) {
 	    TimestampUnit*	timestampUnit = malloc(sizeof(TimestampUnit));
@@ -1888,7 +1924,7 @@ timestampNewOrigin(
  *		    UT_OS		Operating-system error.  See "errno".
  *		    UT_MEANINGLESS	Creation of a timestamp unit base on
  *					"unit" is not meaningful.
- *		    UT_NOSECOND		The associated unit-system doesn't
+ *		    UT_NO_SECOND		The associated unit-system doesn't
  *					contain a unit named "second".
  *	else	The newly-allocated, timestamp-unit.
  */
@@ -2437,7 +2473,14 @@ logInitConverterToProduct(
 	utStatus = UT_INTERNAL;
     }
     else {
-	cvConverter* const	toUnderlying = cvGetExp(unit->log.logE);
+	cvConverter* const	toUnderlying = cvGetPow(
+	    unit->log.logE == M_LOG2E
+		? 2.0
+		: unit->log.logE == 1.0
+		    ? M_E
+		    : unit->log.logE == M_LOG10E
+			? 10.0
+			: exp(1.0/unit->log.logE));
 
 	if (toUnderlying == NULL) {
 	    utHandleErrorMessage(strerror(errno));
@@ -2555,7 +2598,23 @@ static UnitOps	logOps = {
 
 
 /*
- * Returns the status of the units module.
+ * Returns the status of the units module.  One of
+ *   UT_SUCCESS		Success
+ *   UT_NULL_ARG	An argument is NULL
+ *   UT_BAD_ID		Identifier is NULL or empty
+ *   UT_BAD_VALUE	Invalid numeric value
+ *   UT_EXISTS		Unit, prefix, or identifier already exists
+ *   UT_OS		Operating-system error.  See "errno".
+ *   UT_NOT_SAME_SYSTEM	The units belong to different unit-systems
+ *   UT_MEANINGLESS	The operation on the unit(s) is meaningless
+ *   UT_NO_SECOND	The unit-system doesn't have a unit named "second"
+ *   UT_BAD_BUF		Character buffer argument is NULL
+ *   UT_VISIT_ERROR	An error occurred while visiting a unit
+ *   UT_CANT_FORMAT	A unit can't be formatted in the desired manner
+ *   UT_SYNTAX		String unit representation contains syntax error
+ *   UT_UNKNOWN		String unit representation contains unknown word
+ *   UT_XML		XML parsing error
+ *   UT_INTERNAL	Internal, assertion-type failure. Shouldn't occur.
  */
 enum utStatus
 utGetStatus()
@@ -2580,7 +2639,8 @@ utSetStatus(
 
 
 /*
- * Returns a new unit system.
+ * Returns a new unit-system.  On success, the unit-system will only contain
+ * the dimensionless unit one.  See "utGetDimensionlessUnitOne()".
  *
  * Returns:
  *	NULL	Failure.  "utGetStatus()" will be:
@@ -2604,10 +2664,8 @@ utNewSystem()
 	system->second = NULL;
 	system->basicUnits = NULL;
 	system->basicCount = 0;
-	system->size = 0;
 
-	if ((system->one = (utUnit*)productNew(system, NULL, NULL, 0)) != NULL)
-	    system->size++;
+	system->one = (utUnit*)productNew(system, NULL, NULL, 0);
 
 	if (utStatus != UT_SUCCESS) {
 	    utHandleErrorMessage("Couldn't create dimensionless unit one");
@@ -2636,8 +2694,12 @@ coreFreeSystem(
 	    basicFree((utUnit*)system->basicUnits[i]);
 
 	free(system->basicUnits);
-	FREE(system->second);
-	FREE(system->one);
+
+	if (system->second != NULL)
+	    FREE(system->second);
+
+	if (system->one != NULL)
+	    productReallyFree(system->one);
 
 	free(system);
     }
@@ -2652,8 +2714,10 @@ coreFreeSystem(
  *		will be returned.
  * Returns:
  *	NULL	Failure.  "utgetStatus()" will be:
- *		    UT_BADSYSTEM	"system" is NULL.
+ *		    UT_NULL_ARG	"system" is NULL.
  *	else	Pointer to the dimensionless-unit one associated with "system".
+ *		While not necessary, the pointer may be passed to utFree()
+ *		when the unit is no longer needed by the client.
  */
 utUnit*
 utGetDimensionlessUnitOne(
@@ -2666,7 +2730,7 @@ utGetDimensionlessUnitOne(
     if (system == NULL) {
 	one = NULL;
 	utHandleErrorMessage("NULL unit-system argument");
-	utStatus = UT_BADSYSTEM;
+	utStatus = UT_NULL_ARG;
     }
     else {
 	one = system->one;
@@ -2683,7 +2747,7 @@ utGetDimensionlessUnitOne(
  *	unit	Pointer to the unit in question.
  * Returns:
  *	NULL	Failure.  "utGetStatus()" will be
- *		    UT_BADUNIT	"unit" is NULL.
+ *		    UT_NULL_ARG	"unit" is NULL.
  *	else	Pointer to the unit-system to which "unit" belongs.
  */
 utSystem*
@@ -2697,7 +2761,7 @@ utGetSystem(
     if (unit == NULL) {
 	system = NULL;
 	utHandleErrorMessage("NULL unit argument");
-	utStatus = UT_BADUNIT;
+	utStatus = UT_NULL_ARG;
     }
     else {
 	system = unit->common.system;
@@ -2711,14 +2775,15 @@ utGetSystem(
  * Indicates if two units belong to the same unit-system.
  *
  * Arguments:
- *	unit1	Pointer to a unit.
- *	unit2	Pointer to another unit.
+ *	unit1		Pointer to a unit.
+ *	unit2		Pointer to another unit.
  * Returns:
- *	0	Failure or the units belong to different unit-systems.
- *		"utGetStatus()" will be
- *	    	    UT_BADUNIT	"unit1" or "unit2" is NULL.
- *	    	    UT_SUCCESS	The units belong to different unit-systems.
- *	else	The units belong to the same unit-system.
+ *	0		Failure or the units belong to different unit-systems.
+ *			"utGetStatus()" will be
+ *	    		    UT_NULL_ARG		"unit1" or "unit2" is NULL.
+ *	    		    UT_SUCCESS		The units belong to different
+ *						unit-systems.
+ *	else		The units belong to the same unit-system.
  */
 int
 utSameSystem(
@@ -2729,7 +2794,7 @@ utSameSystem(
 
     if (unit1 == NULL || unit2 == NULL) {
 	utHandleErrorMessage("NULL argument");
-	utStatus = UT_BADUNIT;
+	utStatus = UT_NULL_ARG;
     }
     else {
 	utStatus = UT_SUCCESS;
@@ -2749,7 +2814,7 @@ utSameSystem(
  *			a radian).
  * Returns:
  *	NULL	Failure.  "utGetStatus()" will be
- *		    UT_BADSYSTEM	"system" is NULL.
+ *		    UT_NULL_ARG	"system" is NULL.
  *		    UT_OS		Operating-system error.  See "errno".
  *	else	Pointer to the new base-unit.
  */
@@ -2762,7 +2827,7 @@ newBasicUnit(
 
     if (system == NULL) {
 	utHandleErrorMessage("NULL unit-system argument");
-	utStatus = UT_BADSYSTEM;
+	utStatus = UT_NULL_ARG;
     }
     else {
 	basicUnit = basicNew(system, isDimensionless, system->basicCount);
@@ -2787,7 +2852,6 @@ newBasicUnit(
 		    utStatus = UT_OS;
 		}
 		else {
-		    system->size++;
 		    basicUnits[system->basicCount++] = save;
 		    system->basicUnits = basicUnits;
 		    error = 0;
@@ -2809,18 +2873,18 @@ newBasicUnit(
 
 
 /*
- * Adds a base-unit to a unit-system.
+ * Adds a base-unit to a unit-system.  Clients that use utReadXml() should not
+ * normally need to call this function.
  *
  * Arguments:
  *	system	Pointer to the unit-system to which to add the new base-unit.
  * Returns:
  *	NULL	Failure.  "utGetStatus()" will be
- *		    UT_BADSYSTEM	"system" is NULL.
- *		    UT_BADID		"name" is NULL or empty.
+ *		    UT_NULL_ARG		"system" or "name" is NULL.
  *		    UT_OS		Operating-system error.  See "errno".
- *		    UT_EXISTS		A unit with the same name already
- *					exists.
- *	else	Pointer to the new base-unit.
+ *	else	Pointer to the new base-unit.  The pointer should be passed to
+ *		utFree() when the unit is no longer needed by the client (the
+ *		unit will remain in the unit-system).
  */
 utUnit*
 utNewBaseUnit(
@@ -2833,20 +2897,20 @@ utNewBaseUnit(
 
 
 /*
- * Adds a dimensionless-unit to a unit-system.  In the SI system of units,
- * the derived-unit radian is a dimensionless-unit.
+ * Adds a dimensionless-unit to a unit-system.  In the SI system of units, the
+ * derived-unit radian is a dimensionless-unit.  Clients that use utReadXml()
+ * should not normally need to call this function.
  *
  * Arguments:
  *	system	Pointer to the unit-system to which to add the new
  *		dimensionless-unit.
  * Returns:
  *	NULL	Failure.  "utGetStatus()" will be
- *		    UT_BADSYSTEM	"system" is NULL.
- *		    UT_BADID		"name" is NULL.
+ *		    UT_NULL_ARG		"system" is NULL.
  *		    UT_OS		Operating-system error.  See "errno".
- *		    UT_EXISTS		A unit with the same name already
- *					exists.
- *	else	Pointer to the new dimensionless-unit.
+ *	else	Pointer to the new dimensionless-unit.  The pointer should be
+ *		passed to utFree() when the unit is no longer needed by the
+ *		client (the unit will remain in the unit-system).
  */
 utUnit*
 utNewDimensionlessUnit(
@@ -2857,46 +2921,20 @@ utNewDimensionlessUnit(
 
 
 /*
- * Returns the total number of units that have been added to a unit-system.
+ * Sets the "second" unit of a unit-system.  This function must be called before
+ * the first call to "utOffsetByTime()". utReadXml() calls this function if the
+ * resulting unit-system contains a unit named "second".
  *
  * Arguments:
- *	system	Pointer to the unit-system in question.
+ *	system		Pointer to the unit-system to have its "second" unit
+ *			set.
+ *	second		Pointer to the "second" unit.
  * Returns:
- *	-1	"system" is NULL.  "utGetStatus()" will be UT_BADSYSTEM.
- *	else	The total number of units that have been added to "system".
- */
-int
-utSize(
-    const utSystem* const	system)
-{
-    int	size;
-
-    if (system == NULL) {
-	size = -1;
-	utHandleErrorMessage("NULL unit-system argument");
-	utStatus = UT_BADSYSTEM;
-    }
-    else {
-	size = system->size;
-	utStatus = UT_SUCCESS;
-    }
-
-    return size;
-}
-
-
-/*
- * Sets the second unit of a unit-system.  This function must be called before
- * the first call to "utOffsetByTime()".
- *
- * Arguments:
- *	system	The unit-system to have its second unit set.
- *	second	The second unit.
- * Returns:
- *	UT_BADSYSTEM	"system" is NULL.
- *	UT_BADUNIT	"second" is NULL.
- *	UT_BADUNIT	"utGetSystem(second) != system".
- *	UT_EXISTS	The second unit of "system" is set to a different unit.
+ *	UT_NULL_ARG	"system" or "second" is NULL.
+ *	UT_NOT_SAME_SYSTEM
+ *			"utGetSystem(second) != system".
+ *	UT_EXISTS	The "second" unit of "system" is set to a different
+ *			unit.
  *	UT_SUCCESS	Success.
  */
 enum utStatus
@@ -2908,15 +2946,15 @@ utSetSecond(
 
     if (system == NULL) {
 	utHandleErrorMessage("NULL unit-system argument");
-	utStatus = UT_BADSYSTEM;
+	utStatus = UT_NULL_ARG;
     }
     else if (second == NULL) {
 	utHandleErrorMessage("NULL \"second\" unit argument");
-	utStatus = UT_BADUNIT;
+	utStatus = UT_NULL_ARG;
     }
     else if (system != utGetSystem(second)) {
 	utHandleErrorMessage("Unit-systems don't match");
-	utStatus = UT_BADUNIT;
+	utStatus = UT_NULL_ARG;
     }
     else if (system->second == NULL) {
 	system->second = CLONE(second);
@@ -2939,8 +2977,8 @@ utSetSecond(
  * compare equal.
  *
  * Arguments:
- *	unit1	Pointer to a unit or NULL.
- *	unit2	Pointer to another unit or NULL.
+ *	unit1		Pointer to a unit or NULL.
+ *	unit2		Pointer to another unit or NULL.
  * Returns:
  *	<0	The first unit is less than the second unit.
  *	 0	The first and second units are equal or both units are NULL.
@@ -2986,14 +3024,17 @@ utCompare(
  *	const utUnit*	kilometer = utScale(1000, meter);
  *
  * Arguments:
- *	factor	The numeric scale factor.
- *	unit	Pointer to the unit to be scaled.
+ *	factor		The numeric scale factor.
+ *	unit		Pointer to the unit to be scaled.
  * Returns:
- *	NULL	Failure.  "utGetStatus()" will be
- *		    UT_BADVALUE		"factor" is 0.
- *		    UT_BADUNIT		"unit" is NULL.
- *		    UT_OS		Operating-system error.  See "errno".
- *	else	Pointer to scaled-unit.
+ *	NULL		Failure.  "utGetStatus()" will be
+ *			    UT_BAD_VALUE	"factor" is 0.
+ *			    UT_NULL_ARG		"unit" is NULL.
+ *			    UT_OS		Operating-system error.  See
+ *						"errno".
+ *	else		Pointer to the resulting unit.  The pointer should be
+ *			passed to utFree() when the unit is no longer needed by
+ *			the client.
  */
 utUnit*
 utScale(
@@ -3006,12 +3047,12 @@ utScale(
 
     if (unit == NULL) {
 	utHandleErrorMessage("NULL unit argument");
-	utStatus = UT_BADUNIT;
+	utStatus = UT_NULL_ARG;
     }
     else {
 	if (factor == 0) {
 	    utHandleErrorMessage("NULL factor argument");
-	    utStatus = UT_BADVALUE;
+	    utStatus = UT_BAD_VALUE;
 	}
 	else {
 	    result = factor == 1
@@ -3031,13 +3072,16 @@ utScale(
  *	const utUnit*	celsius = utOffset(kelvin, 273.15);
  *
  * Arguments:
- *	unit	Pointer to the unit to be offset.
- *	offset	The numeric offset.
+ *	unit		Pointer to the unit to be offset.
+ *	offset		The numeric offset.
  * Returns:
- *	NULL	Failure.  "utGetStatus()" will be
- *		    UT_BADUNIT	"unit" is NULL.
- *		    UT_OS	Operating-system error.  See "errno".
- *	else	Pointer to offset-unit.
+ *	NULL		Failure.  "utGetStatus()" will be
+ *			    UT_NULL_ARG		"unit" is NULL.
+ *			    UT_OS		Operating-system error.  See
+ *						"errno".
+ *	else		Pointer to the resulting unit.  The pointer should be
+ *			passed to utFree() when the unit is no longer needed by
+ *			the client.
  */
 utUnit*
 utOffset(
@@ -3050,7 +3094,7 @@ utOffset(
 
     if (unit == NULL) {
 	utHandleErrorMessage("utOffset(): NULL unit argument");
-	utStatus = UT_BADUNIT;
+	utStatus = UT_NULL_ARG;
     }
     else {
 	result = offset == 0
@@ -3071,6 +3115,12 @@ utOffset(
  *
  * "utSetSecond()" must be called before the first call to this function.
  *
+ * NOTE: Such units were created to be analogous to, for example, the degree
+ * celsius -- but for time.  I've come to believe, however, that creating
+ * support for such units was a mistake because users try to use such units in
+ * ways for which they were not designed.  Please be careful about using such
+ * units.
+ *
  * Arguments:
  *	unit	Pointer to the time-unit to be made relative to a time-origin.
  *	year	The year of the origin.
@@ -3081,13 +3131,15 @@ utOffset(
  *	second	The second of the origin.
  * Returns:
  *	NULL	Failure.  "utGetStatus()" will be
- *		    UT_BADUNIT		"unit" is NULL.
+ *		    UT_NULL_ARG		"unit" is NULL.
  *		    UT_OS		Operating-system error.  See "errno".
  *		    UT_MEANINGLESS	Creation of a timestamp unit based on
  *					"unit" is not meaningful.
- *		    UT_NOSECOND		The associated unit-system doesn't
- *					contain a second unit.
- *	else	Pointer to the timestamp-unit.
+ *		    UT_NO_SECOND	The associated unit-system doesn't
+ *					contain a second unit.  See
+ *					utSetSecond().
+ *	else	Pointer to the resulting unit.  The pointer should be passed
+ *		to utFree() when the unit is no longer needed by the client.
  */
 utUnit*
 utOffsetByTime(
@@ -3105,7 +3157,7 @@ utOffsetByTime(
 
     if (unit == NULL) {
 	utHandleErrorMessage("NULL unit argument");
-	utStatus = UT_BADUNIT;
+	utStatus = UT_NULL_ARG;
     }
     else {
 	result = timestampNew(unit, year, month, day, hour, minute, second);
@@ -3122,20 +3174,20 @@ utOffsetByTime(
  *	const utUnit*	secondsSinceUdunitsOrigin =
  *	    utOffsetByScalarTime(second, 0.0);
  *
- * "utSetSecond()" must be called before the first call to this function.
- *
  * Arguments:
  *	unit	Pointer to the time-unit to be made relative to a time-origin.
  *	origin	The origin as returned by utEncodeTime().
  * Returns:
  *	NULL	Failure.  "utGetStatus()" will be
- *		    UT_BADUNIT		"unit" is NULL.
+ *		    UT_NULL_ARG		"unit" is NULL.
  *		    UT_OS		Operating-system error.  See "errno".
  *		    UT_MEANINGLESS	Creation of a timestamp unit based on
  *					"unit" is not meaningful.
- *		    UT_NOSECOND		The associated unit-system doesn't
- *					contain a second unit.
- *	else	Pointer to the timestamp-unit.
+ *		    UT_NO_SECOND	The associated unit-system doesn't
+ *					contain a "second" unit.  See
+ *					utSetSecond().
+ *	else	Pointer to the resulting unit.  The pointer should be passed
+ *		to utFree() when the unit is no longer needed by the client.
  */
 utUnit*
 utOffsetByScalarTime(
@@ -3148,7 +3200,7 @@ utOffsetByScalarTime(
 
     if (unit == NULL) {
 	utHandleErrorMessage("NULL unit argument");
-	utStatus = UT_BADUNIT;
+	utStatus = UT_NULL_ARG;
     }
     else {
 	result = timestampNewOrigin(unit, origin);
@@ -3166,11 +3218,12 @@ utOffsetByScalarTime(
  *	unit2	Pointer to another unit.
  * Returns:
  *	NULL	Failure.  "utGetStatus()" will be:
- *		    UT_BADUNIT		"unit1" or "unit2" is NULL.
- *		    UT_NOTSAMESYSTEM	"unit1" and "unit2" belong to
+ *		    UT_NULL_ARG		"unit1" or "unit2" is NULL.
+ *		    UT_NOT_SAME_SYSTEM	"unit1" and "unit2" belong to
  *					different unit-systems.
  *		    UT_OS		Operating-system error. See "errno".
- *	else	Pointer to unit corresponding to the product.
+ *	else	Pointer to the resulting unit.  The pointer should be passed
+ *		to utFree() when the unit is no longer needed by the client.
  */
 utUnit*
 utMultiply(
@@ -3183,11 +3236,11 @@ utMultiply(
 
     if (unit1 == NULL || unit2 == NULL) {
 	utHandleErrorMessage("NULL argument");
-	utStatus = UT_BADUNIT;
+	utStatus = UT_NULL_ARG;
     }
     else if (unit1->common.system != unit2->common.system) {
 	utHandleErrorMessage("Units in different unit-systems");
-	utStatus = UT_NOTSAMESYSTEM;
+	utStatus = UT_NOT_SAME_SYSTEM;
     }
     else {
 	result = MULTIPLY(unit1, unit2);
@@ -3205,9 +3258,10 @@ utMultiply(
  *	unit	Pointer to the unit.
  * Returns:
  *	NULL	Failure.  "utGetStatus()" will be:
- *		    UT_BADUNIT	"unit" is NULL.
- *		    UT_OS	Operating-system error. See "errno".
- *	else	Pointer to unit corresponding to the inverse.
+ *		    UT_NULL_ARG		"unit" is NULL.
+ *		    UT_OS		Operating-system error. See "errno".
+ *	else	Pointer to the resulting unit.  The pointer should be passed to
+ *		utFree() when the unit is no longer needed by the client.
  */
 utUnit*
 utInvert(
@@ -3231,11 +3285,12 @@ utInvert(
  *	denom	Pointer to the denominator (bottom, divisor) unit.
  * Returns:
  *	NULL	Failure.  "utGetStatus()" will be:
- *		    UT_BADUNIT		"numer" or "denom" is NULL.
- *		    UT_NOTSAMESYSTEM	"unit1" and "unit2" belong to
+ *		    UT_NULL_ARG		"numer" or "denom" is NULL.
+ *		    UT_NOT_SAME_SYSTEM	"unit1" and "unit2" belong to
  *					different unit-systems.
  *		    UT_OS		Operating-system error. See "errno".
- *	else	Pointer to unit corresponding to the product.
+ *	else	Pointer to the resulting unit.  The pointer should be passed to
+ *		utFree() when the unit is no longer needed by the client.
  */
 utUnit*
 utDivide(
@@ -3248,11 +3303,11 @@ utDivide(
 
     if (numer == NULL || denom == NULL) {
 	utHandleErrorMessage("NULL argument");
-	utStatus = UT_BADUNIT;
+	utStatus = UT_NULL_ARG;
     }
     else if (numer->common.system != denom->common.system) {
 	utHandleErrorMessage("Units in different unit-systems");
-	utStatus = UT_NOTSAMESYSTEM;
+	utStatus = UT_NOT_SAME_SYSTEM;
     }
     else {
 	utUnit*	inverse = RAISE(denom, -1);
@@ -3277,10 +3332,11 @@ utDivide(
  *		equal to -255 and less than or equal to 255.
  * Returns:
  *	NULL	Failure.  "utGetStatus()" will be:
- *		    UT_BADUNIT	"unit" is NULL.
- *		    UT_BADVALUE	"power" is invalid.
- *		    UT_OS	Operating-system error. See "errno".
- *	else	Pointer to unit corresponding to "unit" raised to "power".
+ *		    UT_NULL_ARG		"unit" is NULL.
+ *		    UT_BAD_VALUE	"power" is invalid.
+ *		    UT_OS		Operating-system error. See "errno".
+ *	else	Pointer to the resulting unit.  The pointer should be passed to
+ *		utFree() when the unit is no longer needed by the client.
  */
 utUnit*
 utRaise(
@@ -3293,11 +3349,11 @@ utRaise(
 
     if (unit == NULL) {
 	utHandleErrorMessage("NULL unit argument");
-	utStatus = UT_BADUNIT;
+	utStatus = UT_NULL_ARG;
     }
     else if (power < -255 || power > 255) {
 	utHandleErrorMessage("Invalid power argument");
-	utStatus = UT_BADVALUE;
+	utStatus = UT_BAD_VALUE;
     }
     else {
 	result = 
@@ -3341,14 +3397,17 @@ utRaise(
  *
  * Arguments:
  *	logE		The logarithm of "e" in the logarithmic base.  Must
- *			be positive.
+ *			be positive.  Use the macros defined in <math.h>.
  *	reference	Pointer to the reference value as a unit.
  * Returns:
- *	NULL	Failure.  "utGetStatus()" will be:
- *		    UT_BADVALUE	"logE" is invalid.
- *		    UT_BADUNIT	"reference" is NULL.
- *		    UT_OS	Operating-system error. See "errno".
- *	else	Pointer to corresponding logarithmic unit.
+ *	NULL		Failure.  "utGetStatus()" will be:
+ *			    UT_BAD_VALUE	"logE" is invalid.
+ *			    UT_NULL_ARG		"reference" is NULL.
+ *			    UT_OS		Operating-system error. See
+ *						"errno".
+ *	else		Pointer to the resulting unit.  The pointer should be
+ *			passed to utFree() when the unit is no longer needed by
+ *			the client.
  */
 utUnit*
 utLog(
@@ -3361,11 +3420,11 @@ utLog(
 
     if (logE <= 0) {
 	utHandleErrorMessage("Invalid log(e) argument, %g", logE);
-	utStatus = UT_BADVALUE;
+	utStatus = UT_BAD_VALUE;
     }
     else if (reference == NULL) {
 	utHandleErrorMessage("NULL reference argument");
-	utStatus = UT_BADUNIT;
+	utStatus = UT_NULL_ARG;
     }
     else {
 	result = logNew(logE, reference);
@@ -3377,21 +3436,21 @@ utLog(
 
 /*
  * Indicates if numeric values in one unit are convertible to numeric values in
- * another unit via "utGetConverter()".  In making this determination, units
- * created by "utNewDimensionlessUnit()" are ignored.
+ * another unit via "utGetConverter()".  In making this determination, 
+ * dimensionless units are ignored.
  *
  * Arguments:
- *	unit1	Pointer to a unit.
- *	unit2	Pointer to another unit.
+ *	unit1		Pointer to a unit.
+ *	unit2		Pointer to another unit.
  * Returns:
- *	0	Numeric values cannot be converted between the units.  
- *		"utGetStatus()" will be
- *	    	    UT_BADUNIT		"unit1" or "unit2" is NULL.
- *		    UT_NOTSAMESYSTEM	"unit1" and "unit2" belong to different
- *					unit-sytems.
- *		    UT_SUCCESS		Conversion between the units is not
- *					possible (e.g., "unit1" is "meter"
- *					and "unit2" is "kilogram").
+ *	0		Failure.  "utGetStatus()" will be
+ *	    		    UT_NULL_ARG		"unit1" or "unit2" is NULL.
+ *			    UT_NOT_SAME_SYSTEM	"unit1" and "unit2" belong to
+ *						different unit-sytems.
+ *			    UT_SUCCESS		Conversion between the units is
+ *						not possible (e.g., "unit1" is
+ *						"meter" and "unit2" is
+ *						"kilogram").
  *	else	Numeric values can be converted between the units.
  */
 int
@@ -3403,11 +3462,11 @@ utAreConvertible(
 
     if (unit1 == NULL || unit2 == NULL) {
 	utHandleErrorMessage("NULL unit argument");
-	utStatus = UT_BADUNIT;
+	utStatus = UT_NULL_ARG;
     }
     else if (unit1->common.system != unit2->common.system) {
 	utHandleErrorMessage("Units in different unit-systems");
-	utStatus = UT_NOTSAMESYSTEM;
+	utStatus = UT_NOT_SAME_SYSTEM;
     }
     else {
 	utStatus = UT_SUCCESS;
@@ -3431,19 +3490,22 @@ utAreConvertible(
 /*
  * Returns a converter of numeric values in one unit to numeric values in
  * another unit.  The returned converter should be passed to cvFree() when it is
- * no longer needed.
+ * no longer needed by the client.
  *
  * Arguments:
- *	from	Pointer to the unit from which to convert values.
- *	to	Pointer to the unit to which to convert values.
+ *	from		Pointer to the unit from which to convert values.
+ *	to		Pointer to the unit to which to convert values.
  * Returns:
- *	NULL	Failure.  "utGetStatus()" will be:
- *		    UT_BADUNIT		"from" or "to" is NULL.
- *		    UT_NOTSAMESYSTEM	"from" and "to" belong to different
- *					unit-systems.
- *		    UT_MEANINGLESS	Conversion between the units is not
- *					possible.  See "utAreConvertible()".
- *	else	Pointer to the appropriate converter.
+ *	NULL		Failure.  "utGetStatus()" will be:
+ *			    UT_NULL_ARG		"from" or "to" is NULL.
+ *			    UT_NOT_SAME_SYSTEM	"from" and "to" belong to
+ *						different unit-systems.
+ *			    UT_MEANINGLESS	Conversion between the units is
+ *						not possible.  See
+ *						"utAreConvertible()".
+ *	else		Pointer to the appropriate converter.  The pointer
+ *			should be passed to cvFree() when no longer needed by
+ *			the client.
  */
 cvConverter*
 utGetConverter(
@@ -3454,11 +3516,11 @@ utGetConverter(
 
     if (from == NULL || to == NULL) {
 	utHandleErrorMessage("NULL unit argument");
-	utStatus = UT_BADUNIT;
+	utStatus = UT_NULL_ARG;
     }
     else if (from->common.system != to->common.system) {
 	utHandleErrorMessage("Units in different unit-systems");
-	utStatus = UT_NOTSAMESYSTEM;
+	utStatus = UT_NOT_SAME_SYSTEM;
     }
     else {
 	utStatus = UT_SUCCESS;
@@ -3580,8 +3642,8 @@ utGetConverter(
  * Returns:
  *	0	"unit" is dimensionfull or an error occurred.  "utGetStatus()"
  *		 will be
- *		    UT_BADUNIT	"unit" is NULL.
- *		    UT_SUCCESS	"unit" is dimensionfull.
+ *		    UT_NULL_ARG		"unit" is NULL.
+ *		    UT_SUCCESS		"unit" is dimensionfull.
  *	else	"unit" is dimensionless.
  */
 int
@@ -3602,8 +3664,10 @@ utIsDimensionless(
  * Returns:
  *	NULL	Failure.  utGetStatus() will be
  *		    UT_OS	Operating-system failure.  See "errno".
- *		    UT_BADUNIT	"unit" is NULL.
- *	else	Pointer to the clone of "unit".  Might equal "unit".
+ *		    UT_NULL_ARG	"unit" is NULL.
+ *	else	Pointer to the clone of "unit".  The pointer should be
+ *		passed to utFree() when the unit is no longer needed by the
+ *		client.
  */
 utUnit*
 utClone(
@@ -3615,11 +3679,11 @@ utClone(
 
     if (unit == NULL) {
 	utHandleErrorMessage("NULL unit argument");
-	utStatus = UT_BADUNIT;
+	utStatus = UT_NULL_ARG;
     }
     else {
 	clone =
-	    clone == unit->common.system->one
+	    unit == unit->common.system->one
 		? (utUnit*)unit
 		: CLONE(unit);
     }
@@ -3629,25 +3693,22 @@ utClone(
 
 
 /*
- * Frees resources associated with a unit, when appropriate.  This function
- * should be invoked when a unit is no longer needed.  Use of the unit upon
- * return from this function may result in undefined behavior.
+ * Frees resources associated with a unit.  This function should be invoked on
+ * all units that are no longer needed by the client.  Use of the unit upon
+ * return from this function will result in undefined behavior.
  *
  * Arguments:
  *	unit	Pointer to the unit to have its resources freed or NULL.
  */
 void
 utFree(
-    const utUnit* const unit)
+    utUnit* const	unit)
 {
     utStatus = UT_SUCCESS;
 
     if (unit != NULL) {
-	if (unit != unit->common.system->one) {
-	    FREE((utUnit*)unit);
-
-	    unit->common.system->size--;
-	}
+	if (unit != unit->common.system->one)
+	    FREE(unit);
     }
 }
 
@@ -3656,12 +3717,11 @@ utFree(
  * Accepts a visitor to a unit.
  *
  * Arguments:
- *	unit	Pointer to the unit that will accept the visitor.
- *	visitor	Pointer to the visitor of "unit".
- *	arg	An arbitrary pointer that will be passed to "visitor".
+ *	unit		Pointer to the unit to accept the visitor.
+ *	visitor		Pointer to the visitor of "unit".
+ *	arg		An arbitrary pointer that will be passed to "visitor".
  * Returns:
- *	UT_BADUNIT	"unit" is NULL.
- *	UT_BADVISITOR	"visitor" is NULL.
+ *	UT_NULL_ARG	"unit" or "visitor" is NULL.
  *	UT_VISIT_ERROR	A error occurred in "visitor" while visiting "unit".
  *	UT_SUCCESS	Success.
  */
@@ -3673,13 +3733,9 @@ utAcceptVisitor(
 {
     utStatus = UT_SUCCESS;
 
-    if (unit == NULL) {
-	utHandleErrorMessage("NULL unit argument");
-	utStatus = UT_BADUNIT;
-    }
-    else if (visitor == NULL) {
-	utHandleErrorMessage("NULL visitor argument");
-	utStatus = UT_BADVISITOR;
+    if (unit == NULL || visitor == NULL) {
+	utHandleErrorMessage("NULL argument");
+	utStatus = UT_NULL_ARG;
     }
     else {
 	utStatus = ACCEPT_VISITOR(unit, visitor, arg);

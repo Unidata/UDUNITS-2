@@ -1,7 +1,7 @@
 /*
  * Module for handling unit prefixes -- both names and symbols.
  *
- * $Id: prefix.c,v 1.3 2006/12/18 18:03:18 steve Exp $
+ * $Id: prefix.c,v 1.4 2006/12/21 20:52:37 steve Exp $
  */
 
 /*LINTLIBRARY*/
@@ -16,7 +16,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "units.h"
+#include "udunits2.h"
 #include "systemMap.h"
 
 typedef struct {
@@ -253,9 +253,9 @@ ptvmFind(
  *	compare		Prefix comparison function.
  * Returns:
  *	UT_SUCCESS	Success.
- *	UT_BADSYSTEM	"system" is NULL.
- *	UT_BADID	"prefix" is NULL or empty.
- *	UT_BADVALUE	"value" is 0.
+ *	UT_NULL_ARG	"system" is NULL.
+ *	UT_BAD_ID	"prefix" is NULL or empty.
+ *	UT_BAD_VALUE	"value" is 0.
  *	UT_EXISTS	"prefix" already maps to a different value.
  *	UT_OS		Operating-system failure.  See "errno".
  */
@@ -270,13 +270,13 @@ addPrefix(
     enum utStatus	status;
 
     if (system == NULL) {
-	status = UT_BADSYSTEM;
+	status = UT_NULL_ARG;
     }
     else if (prefix == NULL || strlen(prefix) == 0) {
-	status = UT_BADID;
+	status = UT_BAD_ID;
     }
     else if (value == 0) {
-	status = UT_BADVALUE;
+	status = UT_BAD_VALUE;
     }
     else {
 	if (*systemMap == NULL) {
@@ -321,7 +321,8 @@ addPrefix(
 
 
 /*
- * Adds a name-prefix to a unit-system.
+ * Adds a name-prefix to a unit-system.  A name-prefix is something like "mega"
+ * or "milli".  Comparisons between name-prefixes are case-insensitive.
  *
  * Arguments:
  *	system		Pointer to the unit-system.
@@ -330,9 +331,8 @@ addPrefix(
  *	value		The value of the prefix (e.g., 1e6).
  * Returns:
  *	UT_SUCCESS	Success.
- *	UT_BADSYSTEM	"system" is NULL.
- *	UT_BADID	"name" is NULL or empty.
- *	UT_BADVALUE	"value" is 0.
+ *	UT_NULL_ARG	"system" or "name" is NULL.
+ *	UT_BAD_VALUE	"value" is 0.
  *	UT_EXISTS	"name" already maps to a different value.
  *	UT_OS		Operating-system failure.  See "errno".
  */
@@ -348,7 +348,8 @@ utAddNamePrefix(
 
 
 /*
- * Adds a symbol-prefix to a unit-system.
+ * Adds a symbol-prefix to a unit-system.  A symbol-prefix is something like
+ * "M" or "y".  Comparisons between symbol-prefixes are case-sensitive.
  *
  * Arguments:
  *	system		Pointer to the unit-system.
@@ -357,9 +358,8 @@ utAddNamePrefix(
  *	value		The value of the prefix (e.g., 1e6).
  * Returns:
  *	UT_SUCCESS	Success.
- *	UT_BADSYSTEM	"system" is NULL.
- *	UT_BADID	"symbol" is NULL or empty.
- *	UT_BADVALUE	"value" is 0.
+ *	UT_BADSYSTEM	"system" or "symbol" is NULL.
+ *	UT_BAD_VALUE	"value" is 0.
  *	UT_EXISTS	"symbol" already maps to a different value.
  *	UT_OS		Operating-system failure.  See "errno".
  */
@@ -390,11 +390,11 @@ utAddSymbolPrefix(
  *	
  * Returns:
  *	UT_SUCCESS	Success.
- *	UT_BADSYSTEM	"system" is NULL.
- *	UT_BADARG	"systemMap" is NULL.
- *	UT_BADARG	"string" is NULL or empty.
- *	UT_BADARG	"compare" is NULL.
- *	UT_BADVALUE	"value" is 0.
+ *	UT_NULL_ARG	"system" is NULL.
+ *	UT_NULL_ARG	"systemMap" is NULL.
+ *	UT_NULL_ARG	"string" is NULL or empty.
+ *	UT_NULL_ARG	"compare" is NULL.
+ *	UT_BAD_VALUE	"value" is 0.
  *	UT_OS		Operating-system failure.  See "errno".
  *	UT_UNKNOWN	No prefix-to-value map is associated with "system".
  *	UT_UNKNOWN	No prefix found in the prefix-to-value map associated
@@ -411,13 +411,13 @@ findPrefix(
     enum utStatus	status;
 
     if (system == NULL) {
-	status = UT_BADSYSTEM;
+	status = UT_NULL_ARG;
     }
     else if (systemMap == NULL) {
-	status = UT_BADARG;
+	status = UT_NULL_ARG;
     }
     else if (string == NULL || strlen(string) == 0) {
-	status = UT_BADARG;
+	status = UT_NULL_ARG;
     }
     else {
 	PrefixToValueMap** const	prefixToValue =
@@ -461,7 +461,7 @@ findPrefix(
  *	len	NULL or pointer to the memory location to receive the number of
  *		characters in the name-prefix, if one is discovered.
  * Returns:
- *	UT_BADARG	"string" is NULL.
+ *	UT_NULL_ARG	"string" is NULL.
  *	UT_UNKNOWN	A name-prefix was not discovered.
  *	UT_SUCCESS	Success.  "*value" and "*len" will be set if non-NULL.
  */
@@ -474,7 +474,7 @@ utGetPrefixByName(
 {
     return
 	string == NULL
-	    ? UT_BADARG
+	    ? UT_NULL_ARG
 	    : findPrefix(system, systemToNameToValue, string, value, len);
 }
 
@@ -491,7 +491,7 @@ utGetPrefixByName(
  *	len	NULL or pointer to the memory location to receive the number of
  *		characters in the symbol-prefix, if one is discovered.
  * Returns:
- *	UT_BADARG	"string" is NULL.
+ *	UT_NULL_ARG	"string" is NULL.
  *	UT_UNKNOWN	A symbol-prefix was not discovered.
  *	UT_SUCCESS	Success.  "*value" and "*len" will be set if non-NULL.
  */
@@ -504,6 +504,6 @@ utGetPrefixBySymbol(
 {
     return
 	string == NULL
-	    ? UT_BADARG
+	    ? UT_NULL_ARG
 	    : findPrefix(system, systemToSymbolToValue, string, value, len);
 }

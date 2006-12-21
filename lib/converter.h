@@ -1,5 +1,5 @@
 /*
- * $Id: converter.h,v 1.3 2006/12/18 18:03:18 steve Exp $
+ * $Id: converter.h,v 1.4 2006/12/21 20:52:37 steve Exp $
  *
  * Public header-file for the Unidata units(3) library.
  */
@@ -98,16 +98,15 @@ cvGetLog(
  * cvFree().
  *
  * Arguments:
- *	logE		The logarithm of "e" in the base of the desired 
- *			logarithm.  Must be positive.
+ *	base		The desired base.  Must be positive.
  * Returns:
- *	NULL		"logE" is invalid or necessary memory couldn't be
+ *	NULL		"base" is invalid or necessary memory couldn't be
  *			allocated.
- *	else		A logarithmic converter corresponding to the inputs.
+ *	else		An exponential converter corresponding to the inputs.
  */
 cvConverter*
-cvGetExp(
-    const double	logE);
+cvGetPow(
+    const double	base);
 
 /*
  * Returns a converter corresponding to the sequential application of two
@@ -125,25 +124,6 @@ cvGetExp(
  */
 cvConverter*
 cvCombine(
-    cvConverter* const	first,
-    cvConverter* const	second);
-
-/*
- * Returns a converter corresponding to the sequential application of two
- * other converters.
- * ARGUMENTS:
- *	first	The converter to be applied first.
- *	second	The converter to be applied second.
- * RETURNS:
- *	NULL	Either "first" or "second" is NULL or necessary memory couldn't
- *		be allocated.
- *      else    A converter corresponding to the sequential application of the
- *              given converters.  If one of the input converters is the trivial
- *              converter, then the returned converter will be the other input
- *              converter.
- */
-cvConverter*
-cvGetComposite(
     cvConverter* const	first,
     cvConverter* const	second);
 
@@ -227,7 +207,7 @@ cvConvertDoubles(
     double*		out);
 
 /*
- * Returns a string expression representation of a converter.
+ * Returns a string representation of a converter.
  * ARGUMENTS:
  *	conv		The converter.
  *	buf		The buffer into which to write the expression.

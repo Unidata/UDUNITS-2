@@ -2,7 +2,7 @@
  * This module is thread-compatible but not thread-safe.  Multi-threaded
  * access must be externally synchronized.
  *
- * $Id: xml.c,v 1.1 2006/12/18 18:03:20 steve Exp $
+ * $Id: xml.c,v 1.2 2006/12/21 20:52:38 steve Exp $
  */
 
 /*LINTLIBRARY*/
@@ -22,7 +22,7 @@
 #include <sys/types.h>
 
 #include "expat.h"
-#include "units.h"
+#include "udunits2.h"
 
 #define NAME_SIZE 128
 
@@ -391,7 +391,7 @@ xmlMapIdToUnit(
 	    nchar = utFormat(prev, buf, sizeof(buf), UT_ASCII | UT_DEFINITION);
 
 	utHandleErrorMessage(
-	    "Duplicate definition of \"%s\" at \"%s\":%d", id, _path,
+	    "Duplicate definition for \"%s\" at \"%s\":%d", id, _path,
 	    XML_GetCurrentLineNumber(parser));
 
 	if (nchar < 0 || nchar >= sizeof(buf)) {
@@ -650,25 +650,27 @@ endName(
 	    XML_StopParser(parser, 0);
 	}
 	else if (!pluralAdded) {
-	    const char*	plural = formPlural(singular);
+	    if (singular[0] != 0) {
+		const char*	plural = formPlural(singular);
 
-	    if (plural == NULL) {
-		utHandleErrorMessage(
-		    "Couldn't form plural of \"%s\"", singular);
-		XML_StopParser(parser, 0);
-	    }
-	    /*
-	     * NB: The unit has already been mapped to the singular name;
-	     * consequently, it is not mapped to the plural name.
-	     */
-	    else if (mapNameAndUnit(plural, encoding, unit, 0)) {
-		const char*	newForm = embeddedNbspForm(plural, encoding);
+		if (plural == NULL) {
+		    utHandleErrorMessage(
+			"Couldn't form plural of \"%s\"", singular);
+		    XML_StopParser(parser, 0);
+		}
+		/*
+		 * NB: The unit has already been mapped to the singular name;
+		 * consequently, it is not mapped to the plural name.
+		 */
+		else if (mapNameAndUnit(plural, encoding, unit, 0)) {
+		    const char*	newForm = embeddedNbspForm(plural, encoding);
 
-		if (newForm != NULL)
-		    mapNameAndUnit(newForm, encoding, unit, 0);
-	    }
-	}
-    }
+		    if (newForm != NULL)
+			mapNameAndUnit(newForm, encoding, unit, 0);
+		}
+	    }				/* non-empty "singular" */
+	}				/* plural form not seen */
+    }					/* defining name for unit or alias */
 
     clearText();
 }
@@ -698,11 +700,7 @@ static void
 endSingular(
     void*		data)
 {
-    if (nbytes == 0) {
-	utHandleErrorMessage("Empty <singular> element");
-	XML_StopParser(parser, 0);
-    }
-    else if (nbytes >= NAME_SIZE) {
+    if (nbytes >= NAME_SIZE) {
 	utHandleErrorMessage("Name \"%s\" is too long", text);
 	XML_StopParser(parser, 0);
     }
@@ -812,11 +810,7 @@ static void
 endSymbol(
     void*		data)
 {
-    if (nbytes == 0) {
-	utHandleErrorMessage("Empty <symbol> element");
-	XML_StopParser(parser, 0);
-    }
-    else if (*currElt == PREFIX) {
+    if (*currElt == PREFIX) {
 	if (utAddSymbolPrefix(unitSystem, text, value) != UT_SUCCESS) {
 	    utHandleErrorMessage(
 		"Couldn't map symbol-prefix \"%s\" to value %g", text, value);
@@ -1056,13 +1050,14 @@ declareXml(
 
 
 /*
- * Returns a unit-system corresponding to an XML file.
+ * Returns the unit-system corresponding to an XML file.  This is the usual way
+ * that a client will obtain a unit-system.
  *
  * Arguments:
  *	path	The pathname of the XML file.
  * Returns:
  *	NULL	Failure.  "utGetStatus()" will be
- *		    UT_BADARG	"path" is NULL.
+ *		    UT_NULL_ARG	"path" is NULL.
  *		    UT_OS	Operating-system error.  See "errno".
  *		    UT_XML	XML parse error.
  *	else	Pointer to the unit-system defined by "path".
@@ -1077,7 +1072,7 @@ utReadXml(
 
     if (path == NULL) {
 	utHandleErrorMessage("NULL path argument");
-	utSetStatus(UT_BADARG);
+	utSetStatus(UT_NULL_ARG);
     }
     else {
 	parser = XML_ParserCreate(NULL);
@@ -1094,6 +1089,7 @@ utReadXml(
 		utHandleErrorMessage(strerror(errno));
 	    }
 	    else {
+		int	error = 1;
 		int	nbytes;
 
 		_path = path;
@@ -1132,7 +1128,24 @@ utReadXml(
 			path, XML_GetCurrentLineNumber(parser),
 			XML_GetCurrentColumnNumber(parser));
 		    XML_ParserFree(parser);
+		}
+		else {
+		    utUnit*	second = utGetUnitByName(unitSystem, "second");
 
+		    if (second != NULL) {
+			if (utSetSecond(unitSystem, second) == UT_SUCCESS) {
+			    error = 0;
+			}
+			else {
+			    utHandleErrorMessage("Couldn't set \"second\" unit "
+				"in unit-system");
+			}
+
+			utFree(second);
+		    }
+		}
+
+		if (error) {
 		    utFreeSystem(unitSystem);
 		    unitSystem = NULL;
 		}

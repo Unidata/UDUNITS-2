@@ -3,7 +3,7 @@
  *
  * This module is thread-compatible but not thread-safe.
  *
- * $Id: systemMap.c,v 1.2 2006/12/02 22:33:47 steve Exp $
+ * $Id: systemMap.c,v 1.3 2006/12/21 20:52:37 steve Exp $
  */
 
 /*LINTLIBRARY*/
@@ -16,7 +16,7 @@
 #include <stdlib.h>
 
 #include "systemMap.h"
-#include "units.h"
+#include "udunits2.h"
 
 struct SystemMap {
     void*	tree;
@@ -161,8 +161,10 @@ smRemove(
     treeEntry = tfind(&targetEntry, &map->tree, compareEntries);
 
     if (treeEntry != NULL) {
-	(void)tdelete(&targetEntry, &map->tree, compareEntries);
-	free(*treeEntry);
+	Entry*	entry = *treeEntry;
+
+	(void)tdelete(entry, &map->tree, compareEntries);
+	free(entry);
     }
 }
 
@@ -183,7 +185,7 @@ smFree(
 	while (map->tree != NULL) {
 	    Entry*	entry = *(Entry**)map->tree;
 
-	    tdelete(entry->system, &map->tree, compareEntries);
+	    tdelete(entry, &map->tree, compareEntries);
 	    free(entry);
 	}
 

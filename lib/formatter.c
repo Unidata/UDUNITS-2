@@ -8,6 +8,7 @@
 #endif
 
 #include <ctype.h>
+#include <float.h>
 #include <limits.h>
 #include <math.h>
 #include <stddef.h>
@@ -15,7 +16,7 @@
 #include <stdlib.h>
 #include <time.h>
 
-#include "units.h"
+#include "udunits2.h"
 #include "unitToIdMap.h"
 
 typedef const char*	(*IdGetter)(const utUnit*, utEncoding);
@@ -138,8 +139,8 @@ getSymbol(
  *			whitespace is printed.
  * Returns:
  *	-1	Failure:  "utFormStatus()" will be
- *		    UT_BADUNIT	"unit" is NULL.
- *		    UT_BADBUF	"buf" is NULL.
+ *		    UT_NULL_ARG	"unit" is NULL.
+ *		    UT_BAD_BUF	"buf" is NULL.
  *	else	Number of characters printed in "buf".
  */
 static int
@@ -156,11 +157,11 @@ format(
 
     if (unit == NULL) {
 	utHandleErrorMessage("format(): NULL unit argument");
-	utStatus = UT_BADUNIT;
+	utStatus = UT_NULL_ARG;
     }
     else if (buf == NULL) {
 	utHandleErrorMessage("format(): NULL buffer argument");
-	utStatus = UT_BADBUF;
+	utStatus = UT_BAD_BUF;
     }
     else {
 	FormatPar	formatPar;
@@ -1190,14 +1191,15 @@ static utVisitor	formatter = {
  *			UT_LATIN1 and UT_UTF8 are mutually exclusive: they may
  *			not both be specified.
  * Returns:
- *	-1	Failure:  "utStatus()" will be
- *		    UT_BADARG		"unit" is NULL, or "buf" is NULL, or
- *					both UT_LATIN1 and UT_UTF8 specified.
- *		    UT_CANT_FORMAT	"unit" can't be formatted in the desired
- *					manner.
- *      else    Success.  Number of characters printed in "buf".  If the number
- *              is equal to the size of the buffer, then the buffer is too small
- *              to have a terminating NUL character.
+ *	-1		Failure:  "utStatus()" will be
+ *			    UT_NULL_ARG		"unit" or "buf" is NULL
+ *			    UT_BAD_VALUE	Both UT_LATIN1 and UT_UTF8
+ *						specified.
+ *			    UT_CANT_FORMAT	"unit" can't be formatted in
+ *						the desired manner.
+ *      else		Success.  Number of characters printed in "buf".  If
+ *			the number is equal to the size of the buffer, then the
+ *			buffer is too small to have a terminating NUL character.
  */
 int
 utFormat(
@@ -1211,10 +1213,13 @@ utFormat(
     const int		getDefinition = opts & UT_DEFINITION;
     const unsigned	encoding = opts & (UT_ASCII | UT_LATIN1 | UT_UTF8);
 
-    if (unit == NULL || buf == NULL ||
-	    ((encoding & UT_LATIN1) && (encoding & UT_UTF8))) {
-	utHandleErrorMessage("Invalid argument");
-	utStatus = UT_BADARG;
+    if (unit == NULL || buf == NULL) {
+	utHandleErrorMessage("NULL argument");
+	utStatus = UT_NULL_ARG;
+    }
+    else if ((encoding & UT_LATIN1) && (encoding & UT_UTF8)) {
+	utHandleErrorMessage("Both UT_LATIN1 and UT_UTF8 specified");
+	utStatus = UT_BAD_VALUE;
     }
     else {
 	nchar = format(unit, buf, size, useNames, getDefinition, encoding, 0);

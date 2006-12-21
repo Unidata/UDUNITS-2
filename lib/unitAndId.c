@@ -1,7 +1,7 @@
 /*
  * Searchable unit-and-identifier tree.
  *
- * $Id: unitAndId.c,v 1.3 2006/12/18 18:03:19 steve Exp $
+ * $Id: unitAndId.c,v 1.4 2006/12/21 20:52:37 steve Exp $
  */
 
 /*LINTLIBRARY*/
@@ -16,7 +16,7 @@
 #include <string.h>
 
 #include "unitAndId.h"
-#include "units.h"
+#include "udunits2.h"
 
 extern enum utStatus	utStatus;
 
@@ -27,7 +27,7 @@ extern enum utStatus	utStatus;
  *	id	The identifier (name or symbol).  May be freed upon return.
  * Returns:
  *	NULL	Failure.  "utStatus" will be
- *		    UT_BADARG	"unit" or "id" is NULL.
+ *		    UT_NULL_ARG	"unit" or "id" is NULL.
  *		    UT_OS	Operating-system failure.  See "errno".
  *	else	Pointer to the new unit-and-identifier.
  */
@@ -40,7 +40,7 @@ uaiNew(
 
     if (id == NULL || unit == NULL) {
 	utHandleErrorMessage("uaiNew(): NULL argument");
-	utStatus = UT_BADARG;
+	utStatus = UT_NULL_ARG;
     }
     else {
 	entry = malloc(sizeof(UnitAndId));

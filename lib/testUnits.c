@@ -12,7 +12,7 @@
 #include <CUnit/CUnit.h>
 #include <CUnit/Basic.h>
 
-#include "units.h"
+#include "udunits2.h"
 
 
 static utSystem*	unitSystem;
@@ -60,22 +60,33 @@ teardown(
 
 
 static void
+test_unitSystem(void)
+{
+    utSystem*	system = utNewSystem();
+    utUnit*	unit;
+
+    CU_ASSERT_PTR_NOT_NULL(system);
+    utSetStatus(UT_SUCCESS);
+    unit = utNewBaseUnit(system);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    CU_ASSERT_EQUAL(utMapUnitToName(unit, "name", UT_ASCII), UT_SUCCESS);
+    utFreeSystem(system);
+    CU_ASSERT_EQUAL(utGetStatus(), UT_SUCCESS);
+}
+
+
+static void
 test_utNewBaseUnit(void)
 {
-    int		size = utSize(unitSystem);
-
     kilogram = utNewBaseUnit(unitSystem);
     CU_ASSERT_PTR_NOT_NULL(kilogram);
-    CU_ASSERT_EQUAL(utSize(unitSystem), size+1);
     CU_ASSERT_EQUAL(utMapUnitToName(kilogram, "kilogram", UT_ASCII),
 	UT_SUCCESS);
     CU_ASSERT_EQUAL(utMapUnitToSymbol(kilogram, "kg", UT_ASCII), UT_SUCCESS);
     CU_ASSERT_EQUAL(utMapSymbolToUnit("kg", kilogram), UT_SUCCESS);
 
-    size = utSize(unitSystem);
     meter = utNewBaseUnit(unitSystem);
     CU_ASSERT_PTR_NOT_NULL(meter);
-    CU_ASSERT_EQUAL(utSize(unitSystem), size+1);
     CU_ASSERT_EQUAL(utMapNameToUnit("meter", meter), UT_SUCCESS);
     CU_ASSERT_EQUAL(utMapUnitToName(meter, "meter", UT_ASCII), UT_SUCCESS);
     CU_ASSERT_EQUAL(utMapUnitToSymbol(meter, "m", UT_ASCII), UT_SUCCESS);
@@ -99,44 +110,33 @@ test_utNewBaseUnit(void)
     CU_ASSERT_EQUAL(utMapSymbolToUnit("s", second), UT_SUCCESS);
 
     CU_ASSERT_PTR_NULL(utNewBaseUnit(NULL));
-    CU_ASSERT_EQUAL(utGetStatus(), UT_BADSYSTEM);
+    CU_ASSERT_EQUAL(utGetStatus(), UT_NULL_ARG);
 
-    CU_ASSERT_EQUAL(utMapUnitToName(kilogram, "Ångström", UT_UTF8), UT_BADID);
+    CU_ASSERT_EQUAL(utMapUnitToName(kilogram, "Ångström", UT_UTF8), UT_BAD_ID);
 
     CU_ASSERT_EQUAL(utSetSecond(unitSystem, second), UT_SUCCESS);
     CU_ASSERT_EQUAL(utSetSecond(unitSystem, meter), UT_EXISTS);
-    CU_ASSERT_EQUAL(utSetSecond(unitSystem, NULL), UT_BADUNIT);
-    CU_ASSERT_EQUAL(utSetSecond(NULL, second), UT_BADSYSTEM);
+    CU_ASSERT_EQUAL(utSetSecond(unitSystem, NULL), UT_NULL_ARG);
+    CU_ASSERT_EQUAL(utSetSecond(NULL, second), UT_NULL_ARG);
 }
 
 
 static void
 test_utNewDimensionlessUnit(void)
 {
-    int			size = utSize(unitSystem);
-
     radian = utNewDimensionlessUnit(unitSystem);
     CU_ASSERT_PTR_NOT_NULL(radian);
     CU_ASSERT_EQUAL(utMapUnitToName(radian, "radian", UT_ASCII), UT_SUCCESS);
     CU_ASSERT_EQUAL(utMapNameToUnit("radian", radian), UT_SUCCESS);
-    CU_ASSERT_EQUAL(utSize(unitSystem), size+1);
     CU_ASSERT_EQUAL(utMapUnitToSymbol(radian, "rad", UT_ASCII), UT_SUCCESS);
     CU_ASSERT_EQUAL(utMapSymbolToUnit("rad", radian), UT_SUCCESS);
 
     CU_ASSERT_EQUAL(utMapUnitToName(radian, "dummy", UT_ASCII), UT_EXISTS);
 
     CU_ASSERT_EQUAL(utMapUnitToSymbol(radian, "f", UT_ASCII), UT_EXISTS);
-    CU_ASSERT_EQUAL(utMapUnitToSymbol(NULL, "f", UT_ASCII), UT_BADARG);
+    CU_ASSERT_EQUAL(utMapUnitToSymbol(NULL, "f", UT_ASCII), UT_NULL_ARG);
 
-    CU_ASSERT_EQUAL(utMapUnitToName(radian, "Ångström", UT_UTF8), UT_BADID);
-}
-
-
-static void
-test_utSize(void)
-{
-    CU_ASSERT(utSize(unitSystem) >= 0);
-    CU_ASSERT(utSize(NULL) == -1);
+    CU_ASSERT_EQUAL(utMapUnitToName(radian, "Ångström", UT_UTF8), UT_BAD_ID);
 }
 
 
@@ -149,7 +149,7 @@ test_utGetUnitByName(void)
     CU_ASSERT_EQUAL(utCompare(altMeter, meter), 0);
 
     CU_ASSERT_PTR_NULL(utGetUnitByName(unitSystem, NULL));
-    CU_ASSERT_EQUAL(utGetStatus(), UT_BADID);
+    CU_ASSERT_EQUAL(utGetStatus(), UT_BAD_ID);
 
     CU_ASSERT_PTR_NULL(utGetUnitByName(unitSystem, "foo"));
     CU_ASSERT_EQUAL(utGetStatus(), UT_SUCCESS);
@@ -165,7 +165,7 @@ test_utGetUnitBySymbol(void)
     CU_ASSERT_EQUAL(utCompare(altMeter, meter), 0);
 
     CU_ASSERT_PTR_NULL(utGetUnitBySymbol(unitSystem, NULL));
-    CU_ASSERT_EQUAL(utGetStatus(), UT_BADID);
+    CU_ASSERT_EQUAL(utGetStatus(), UT_BAD_ID);
 
     CU_ASSERT_PTR_NULL(utGetUnitBySymbol(unitSystem, "M"));
     CU_ASSERT_EQUAL(utGetStatus(), UT_SUCCESS);
@@ -181,10 +181,10 @@ test_utAddNamePrefix(void)
 
     CU_ASSERT_EQUAL(utAddNamePrefix(unitSystem, "mega", 1e5), UT_EXISTS);
     CU_ASSERT_EQUAL(utAddNamePrefix(unitSystem, "MEGA", 1e5), UT_EXISTS);
-    CU_ASSERT_EQUAL(utAddNamePrefix(NULL, "foo", 1), UT_BADSYSTEM);
-    CU_ASSERT_EQUAL(utAddNamePrefix(unitSystem, "", 2), UT_BADID);
-    CU_ASSERT_EQUAL(utAddNamePrefix(unitSystem, NULL, 3), UT_BADID);
-    CU_ASSERT_EQUAL(utAddNamePrefix(unitSystem, "foo", 0), UT_BADVALUE);
+    CU_ASSERT_EQUAL(utAddNamePrefix(NULL, "foo", 1), UT_NULL_ARG);
+    CU_ASSERT_EQUAL(utAddNamePrefix(unitSystem, "", 2), UT_BAD_ID);
+    CU_ASSERT_EQUAL(utAddNamePrefix(unitSystem, NULL, 3), UT_BAD_ID);
+    CU_ASSERT_EQUAL(utAddNamePrefix(unitSystem, "foo", 0), UT_BAD_VALUE);
 }
 
 
@@ -198,10 +198,10 @@ test_utAddSymbolPrefix(void)
     CU_ASSERT_EQUAL(utAddSymbolPrefix(unitSystem, "k", 1e3), UT_SUCCESS);
 
     CU_ASSERT_EQUAL(utAddSymbolPrefix(unitSystem, "M", 1e5), UT_EXISTS);
-    CU_ASSERT_EQUAL(utAddSymbolPrefix(NULL, "foo", 1), UT_BADSYSTEM);
-    CU_ASSERT_EQUAL(utAddSymbolPrefix(unitSystem, "", 2), UT_BADID);
-    CU_ASSERT_EQUAL(utAddSymbolPrefix(unitSystem, NULL, 3), UT_BADID);
-    CU_ASSERT_EQUAL(utAddSymbolPrefix(unitSystem, "f", 0), UT_BADVALUE);
+    CU_ASSERT_EQUAL(utAddSymbolPrefix(NULL, "foo", 1), UT_NULL_ARG);
+    CU_ASSERT_EQUAL(utAddSymbolPrefix(unitSystem, "", 2), UT_BAD_ID);
+    CU_ASSERT_EQUAL(utAddSymbolPrefix(unitSystem, NULL, 3), UT_BAD_ID);
+    CU_ASSERT_EQUAL(utAddSymbolPrefix(unitSystem, "f", 0), UT_BAD_VALUE);
 }
 
 
@@ -216,7 +216,7 @@ test_utMapNameToUnit(void)
     CU_ASSERT_EQUAL(utMapNameToUnit("metre", meter), UT_SUCCESS);
 
     CU_ASSERT_EQUAL(utMapNameToUnit("metre", second), UT_EXISTS);
-    CU_ASSERT_EQUAL(utMapNameToUnit("metre", NULL), UT_BADUNIT);
+    CU_ASSERT_EQUAL(utMapNameToUnit("metre", NULL), UT_NULL_ARG);
 
     metre = utGetUnitByName(unitSystem, "metre");
     CU_ASSERT_PTR_NOT_NULL(metre);
@@ -304,10 +304,10 @@ test_utScale(void)
     utFree(metre);
 
     CU_ASSERT_PTR_NULL(utScale(0, meter));
-    CU_ASSERT_EQUAL(utGetStatus(), UT_BADVALUE);
+    CU_ASSERT_EQUAL(utGetStatus(), UT_BAD_VALUE);
 
     CU_ASSERT_PTR_NULL(utScale(0, NULL));
-    CU_ASSERT_EQUAL(utGetStatus(), UT_BADUNIT);
+    CU_ASSERT_EQUAL(utGetStatus(), UT_NULL_ARG);
 
     rankine = utScale(1/1.8, kelvin);
     CU_ASSERT_EQUAL(utGetStatus(), UT_SUCCESS);
@@ -371,7 +371,7 @@ test_utMapUnitToName(void)
     CU_ASSERT_EQUAL(utMapUnitToName(meter, "metre", UT_ASCII), UT_EXISTS);
 
     CU_ASSERT_EQUAL(utMapNameToUnit("metre", second), UT_EXISTS);
-    CU_ASSERT_EQUAL(utMapNameToUnit("metre", NULL), UT_BADUNIT);
+    CU_ASSERT_EQUAL(utMapNameToUnit("metre", NULL), UT_NULL_ARG);
 
     metre = utGetUnitByName(unitSystem, "metre");
     CU_ASSERT_PTR_NOT_NULL(metre);
@@ -704,7 +704,7 @@ test_utLog(void)
 
     dummy = utLog(-M_LOG10E, utScale(0.001, watt));
     CU_ASSERT_PTR_NULL(dummy);
-    CU_ASSERT_EQUAL(utGetStatus(), UT_BADVALUE);
+    CU_ASSERT_EQUAL(utGetStatus(), UT_BAD_VALUE);
 
     cubicMicron = utRaise(utScale(1e-6, meter), 3);
     CU_ASSERT_PTR_NOT_NULL(cubicMicron);
@@ -1483,9 +1483,9 @@ main(
 	CU_Suite*	testSuite = CU_add_suite(__FILE__, setup, teardown);
 
 	if (testSuite != NULL) {
+	    CU_ADD_TEST(testSuite, test_unitSystem);
 	    CU_ADD_TEST(testSuite, test_utNewBaseUnit);
 	    CU_ADD_TEST(testSuite, test_utNewDimensionlessUnit);
-	    CU_ADD_TEST(testSuite, test_utSize);
 	    CU_ADD_TEST(testSuite, test_utGetUnitByName);
 	    CU_ADD_TEST(testSuite, test_utGetUnitBySymbol);
 	    CU_ADD_TEST(testSuite, test_utAddNamePrefix);
