@@ -2,7 +2,7 @@
  * This module is thread-compatible but not thread-safe.  Multi-threaded
  * access must be externally synchronized.
  *
- * $Id: xml.c,v 1.2 2006/12/21 20:52:38 steve Exp $
+ * $Id: xml.c,v 1.3 2006/12/26 22:42:01 steve Exp $
  */
 
 /*LINTLIBRARY*/
@@ -1133,7 +1133,7 @@ utReadXml(
 		    utUnit*	second = utGetUnitByName(unitSystem, "second");
 
 		    if (second != NULL) {
-			if (utSetSecond(unitSystem, second) == UT_SUCCESS) {
+			if (utSetSecond(second) == UT_SUCCESS) {
 			    error = 0;
 			}
 			else {

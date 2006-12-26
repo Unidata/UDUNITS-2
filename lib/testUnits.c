@@ -29,8 +29,10 @@ static utUnit*		celsius;
 static utUnit*		fahrenheit;
 static utUnit*		watt;
 static utUnit*		cubicMicron;
+static utUnit*		BZ;
 static utUnit*		dBZ;
 static utUnit*		secondsSinceTheEpoch;
+static utUnit*		minutesSinceTheMillenium;
 static utUnit*		hertz;
 static utUnit*		megahertz;
 
@@ -55,6 +57,8 @@ static int
 teardown(
     void)
 {
+    utFreeSystem(unitSystem);
+
     return 0;
 }
 
@@ -103,7 +107,12 @@ test_utNewBaseUnit(void)
 
     second = utNewBaseUnit(unitSystem);
     CU_ASSERT_PTR_NOT_NULL(second);
-    CU_ASSERT_EQUAL(utSetSecond(unitSystem, second), UT_SUCCESS);
+
+    CU_ASSERT_PTR_NULL(utOffsetByTime(second, 1970, 1, 1, 0, 0, 0));
+    CU_ASSERT_EQUAL(utGetStatus(), UT_NO_SECOND);
+
+    CU_ASSERT_EQUAL(utSetSecond(second), UT_SUCCESS);
+    CU_ASSERT_EQUAL(utSetSecond(NULL), UT_NULL_ARG);
     CU_ASSERT_EQUAL(utMapUnitToName(second, "second", UT_ASCII), UT_SUCCESS);
     CU_ASSERT_EQUAL(utMapNameToUnit("second", second), UT_SUCCESS);
     CU_ASSERT_EQUAL(utMapUnitToSymbol(second, "s", UT_ASCII), UT_SUCCESS);
@@ -114,10 +123,9 @@ test_utNewBaseUnit(void)
 
     CU_ASSERT_EQUAL(utMapUnitToName(kilogram, "Ångström", UT_UTF8), UT_BAD_ID);
 
-    CU_ASSERT_EQUAL(utSetSecond(unitSystem, second), UT_SUCCESS);
-    CU_ASSERT_EQUAL(utSetSecond(unitSystem, meter), UT_EXISTS);
-    CU_ASSERT_EQUAL(utSetSecond(unitSystem, NULL), UT_NULL_ARG);
-    CU_ASSERT_EQUAL(utSetSecond(NULL, second), UT_NULL_ARG);
+    CU_ASSERT_EQUAL(utSetSecond(second), UT_SUCCESS);
+    CU_ASSERT_EQUAL(utSetSecond(meter), UT_EXISTS);
+    CU_ASSERT_EQUAL(utSetSecond(NULL), UT_NULL_ARG);
 }
 
 
@@ -321,6 +329,7 @@ test_utOffset(void)
     utUnit*	dupKelvin;
     char	buf[80];
     int		nchar;
+    utUnit*	unit;
 
     celsius = utOffset(kelvin, 273.15);
     CU_ASSERT_EQUAL(utGetStatus(), UT_SUCCESS);
@@ -358,8 +367,10 @@ test_utOffset(void)
     CU_ASSERT_EQUAL(utGetStatus(), UT_SUCCESS);
     CU_ASSERT_PTR_NOT_NULL(dupKelvin);
     CU_ASSERT_EQUAL(utGetSystem(kelvin), utGetSystem(dupKelvin));
-
     utFree(dupKelvin);
+
+    unit = utOffset(NULL, 5);
+    CU_ASSERT_EQUAL(utGetStatus(), UT_NULL_ARG);
 }
 
 
@@ -416,6 +427,7 @@ test_utMultiply(void)
     utUnit*	meterCelsius;
     utUnit*	meterRadian;
     utUnit*	kilometerMinute;
+    utUnit*	unit;
     char	buf[80];
     int		nchar;
 
@@ -482,12 +494,18 @@ test_utMultiply(void)
     buf[nchar] = 0;
     CU_ASSERT_STRING_EQUAL(buf, "60000 meter-second");
 
+    unit = utMultiply(secondsSinceTheEpoch, meter);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    utFree(unit);
+
     utFree(squareMeter);
     utFree(meterSecond);
     utFree(meterCelsius);
     utFree(meterRadian);
     utFree(kilometerMinute);
-/*###474 [cc] cannot recover from previous errors%%%*/
+
+    CU_ASSERT_PTR_NULL(utMultiply(NULL, meter));
+    CU_ASSERT_PTR_NULL(utMultiply(meter, NULL));
 }
 
 
@@ -628,6 +646,9 @@ test_utDivide(void)
     utFree(kilometerPerMinute);
     utFree(celsiusPerMeter);
     utFree(meterPerCelsius);
+
+    CU_ASSERT_PTR_NULL(utDivide(NULL, meter));
+    CU_ASSERT_PTR_NULL(utDivide(meter, NULL));
 }
 
 
@@ -637,7 +658,7 @@ test_utRaise(void)
     utUnit*	perCubicMeter;
     utUnit*	celsiusCubed;
     utUnit*	kilometersSquaredPerMinuteSquared;
-
+    utUnit*	unit;
     char	buf[80];
     int		nchar;
 
@@ -673,6 +694,23 @@ test_utRaise(void)
     utFree(perCubicMeter);
     utFree(celsiusCubed);
     utFree(kilometersSquaredPerMinuteSquared);
+
+    unit = utRaise(meter, 0);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    CU_ASSERT_EQUAL(utCompare(unit, utGetDimensionlessUnitOne(unitSystem)), 0);
+    utFree(unit);
+
+    unit = utRaise(meter, 1);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    CU_ASSERT_EQUAL(utCompare(unit, meter), 0);
+    utFree(unit);
+
+    unit = utRaise(secondsSinceTheEpoch, 2);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    utFree(unit);
+
+    CU_ASSERT_PTR_NULL(utRaise(dBZ, 2));
+    CU_ASSERT_PTR_NULL(utRaise(NULL, 2));
 }
 
 
@@ -681,7 +719,7 @@ test_utLog(void)
 {
     utUnit*	bel_1_mW = utLog(M_LOG10E, utScale(0.001, watt));
     utUnit*	decibel_1_mW;
-    utUnit*	dummy;
+    utUnit*	unit;
     char	buf[80];
     int		nchar;
 
@@ -702,14 +740,21 @@ test_utLog(void)
     buf[nchar] = 0;
     CU_ASSERT_STRING_EQUAL(buf, "0.1 lg(re 0.001 kg.m2.s-3)");
 
-    dummy = utLog(-M_LOG10E, utScale(0.001, watt));
-    CU_ASSERT_PTR_NULL(dummy);
+    unit = utLog(-M_LOG10E, utScale(0.001, watt));
+    CU_ASSERT_PTR_NULL(unit);
     CU_ASSERT_EQUAL(utGetStatus(), UT_BAD_VALUE);
 
     cubicMicron = utRaise(utScale(1e-6, meter), 3);
     CU_ASSERT_PTR_NOT_NULL(cubicMicron);
 
-    dBZ = utScale(0.1, utLog(M_LOG10E, cubicMicron));
+    BZ = utLog(M_LOG10E, cubicMicron);
+    CU_ASSERT_PTR_NOT_NULL(BZ);
+    CU_ASSERT_EQUAL(utIsDimensionless(BZ), 1);
+
+    CU_ASSERT_PTR_NULL(utRaise(BZ, 2));
+    CU_ASSERT_EQUAL(utGetStatus(), UT_MEANINGLESS);
+
+    dBZ = utScale(0.1, BZ);
     CU_ASSERT_PTR_NOT_NULL(dBZ);
     CU_ASSERT_EQUAL(utGetStatus(), UT_SUCCESS);
     nchar = utFormat(dBZ, buf, sizeof(buf)-1, asciiSymbolDef);
@@ -731,7 +776,19 @@ test_utLog(void)
 
     utFree(bel_1_mW);
     utFree(decibel_1_mW);
-    utFree(dummy);
+    utFree(unit);
+
+    CU_ASSERT_PTR_NULL(utLog(1, NULL));
+    CU_ASSERT_EQUAL(utGetStatus(), UT_NULL_ARG);
+    CU_ASSERT_PTR_NULL(utLog(0, meter));
+    CU_ASSERT_EQUAL(utGetStatus(), UT_BAD_VALUE);
+
+    CU_ASSERT_PTR_NULL(utMultiply(dBZ, meter));
+    unit = utMultiply(dBZ, radian);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    CU_ASSERT_EQUAL(utCompare(unit, dBZ), 0);
+    utFree(unit);
+    CU_ASSERT_PTR_NULL(utMultiply(dBZ, dBZ));
 }
 
 
@@ -768,6 +825,100 @@ areCloseDoubles(
     }
 
     return areClose;
+}
+
+
+static void
+test_utGetDimensionlessUnitOne(void)
+{
+    CU_ASSERT_PTR_NOT_NULL(utGetDimensionlessUnitOne(unitSystem));
+    CU_ASSERT_PTR_NULL(utGetDimensionlessUnitOne(NULL));
+}
+
+
+static void
+test_utGetSystem(void)
+{
+    CU_ASSERT_PTR_NOT_NULL(utGetSystem(meter));
+    CU_ASSERT_PTR_NULL(utGetSystem(NULL));
+}
+
+
+static void
+test_utSameSystem(void)
+{
+    utSystem*	system;
+
+    CU_ASSERT_EQUAL(utSameSystem(meter, kilogram), 1);
+
+    CU_ASSERT_EQUAL(utSameSystem(NULL, kilogram), 0);
+    CU_ASSERT_EQUAL(utGetStatus(), UT_NULL_ARG);
+    CU_ASSERT_EQUAL(utSameSystem(kilogram, NULL), 0);
+    CU_ASSERT_EQUAL(utGetStatus(), UT_NULL_ARG);
+
+    system = utNewSystem();
+    CU_ASSERT_PTR_NOT_NULL(system);
+
+    CU_ASSERT_EQUAL(utSameSystem(meter, utGetDimensionlessUnitOne(system)), 0);
+
+    utFreeSystem(system);
+}
+
+
+static void
+test_utIsDimensionless(void)
+{
+    utUnit*	unit;
+
+    CU_ASSERT_EQUAL(utIsDimensionless(meter), 0);
+    CU_ASSERT_EQUAL(utIsDimensionless(radian), 1);
+    CU_ASSERT_EQUAL(utIsDimensionless(secondsSinceTheEpoch), 0);
+    CU_ASSERT_EQUAL(utIsDimensionless(NULL), 0);
+    CU_ASSERT_EQUAL(utGetStatus(), UT_NULL_ARG);
+
+    unit = utRaise(radian, 2);
+    CU_ASSERT_EQUAL(utIsDimensionless(unit), 1);
+    utFree(unit);
+}
+
+
+static void
+test_utClone(void)
+{
+    utUnit*	unit;
+
+    unit = utClone(secondsSinceTheEpoch);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    CU_ASSERT_EQUAL(utAreConvertible(unit, secondsSinceTheEpoch), 1);
+    utFree(unit);
+
+    CU_ASSERT_PTR_NULL(utClone(NULL));
+    CU_ASSERT_EQUAL(utGetStatus(), UT_NULL_ARG);
+}
+
+
+static void
+test_utAreConvertible(void)
+{
+    utUnit*	unit;
+
+    CU_ASSERT_EQUAL(utAreConvertible(meter, meter), 1);
+    CU_ASSERT_EQUAL(utAreConvertible(radian, radian), 1);
+    CU_ASSERT_EQUAL(utAreConvertible(radian, meter), 0);
+    CU_ASSERT_EQUAL(utAreConvertible(cubicMicron, cubicMicron), 1);
+    CU_ASSERT_EQUAL(utAreConvertible(watt, watt), 1);
+    CU_ASSERT_EQUAL(utAreConvertible(watt, cubicMicron), 0);
+    CU_ASSERT_EQUAL(utAreConvertible(cubicMicron, watt), 0);
+    CU_ASSERT_EQUAL(utAreConvertible(secondsSinceTheEpoch,
+	secondsSinceTheEpoch), 1);
+    CU_ASSERT_EQUAL(utAreConvertible(secondsSinceTheEpoch, second), 0);
+
+    unit = utRaise(radian, 2);
+    CU_ASSERT_EQUAL(utAreConvertible(radian, unit), 1);
+    utFree(unit);
+
+    CU_ASSERT_EQUAL(utAreConvertible(NULL, meter), 0);
+    CU_ASSERT_EQUAL(utGetStatus(), UT_NULL_ARG);
 }
 
 
@@ -1075,6 +1226,13 @@ test_utGetConverter(void)
     CU_ASSERT_TRUE(areCloseDoubles(doubles[0], 1e-6));
     CU_ASSERT_TRUE(areCloseDoubles(doubles[1], 1));
     cvFree(converter);
+
+    converter = utGetConverter(secondsSinceTheEpoch, minutesSinceTheMillenium);
+    CU_ASSERT_PTR_NOT_NULL(converter);
+    cvFree(converter);
+
+    CU_ASSERT_PTR_NULL(utGetConverter(NULL, meter));
+    CU_ASSERT_PTR_NULL(utGetConverter(meter, NULL));
 }
 
 
@@ -1088,6 +1246,7 @@ test_utOffsetByTime(void)
     utUnit*		daysSinceTheEpoch;
     double		doubles[2];
     float		floats[2];
+    utUnit*		unit;
 
     secondsSinceTheEpoch = utOffsetByTime(second, 1970, 1, 1, 0, 0, 0);
     CU_ASSERT_PTR_NOT_NULL(secondsSinceTheEpoch);
@@ -1096,6 +1255,9 @@ test_utOffsetByTime(void)
     CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
     buf[nchar] = 0;
     CU_ASSERT_STRING_EQUAL(buf, "s @ 19700101T000000.0000000 UTC");
+
+    minutesSinceTheMillenium = utOffsetByTime(minute, 2001, 1, 1, 0, 0, 0);
+    CU_ASSERT_PTR_NOT_NULL(minutesSinceTheMillenium);
 
     nchar = utFormat(secondsSinceTheEpoch, buf, sizeof(buf)-1, asciiNameDef);
     CU_ASSERT_TRUE_FATAL(nchar > 0);
@@ -1196,6 +1358,12 @@ test_utOffsetByTime(void)
     cvFree(converter);
 
     utFree(daysSinceTheEpoch);
+
+    CU_ASSERT_PTR_NULL(utOffsetByTime(NULL, 0, 0, 0, 0, 0, 0));
+    CU_ASSERT_EQUAL(utGetStatus(), UT_NULL_ARG);
+
+    CU_ASSERT_PTR_NULL(utOffsetByScalarTime(NULL, 0));
+    CU_ASSERT_EQUAL(utGetStatus(), UT_NULL_ARG);
 }
 
 
@@ -1230,6 +1398,8 @@ test_utSetEncoding(void)
 static void
 test_utCompare(void)
 {
+    int		cmp;
+
     CU_ASSERT_NOT_EQUAL(utCompare(kilogram, meter), 0);
     CU_ASSERT_NOT_EQUAL(utCompare(meter, radian), 0);
     CU_ASSERT_NOT_EQUAL(utCompare(radian, kelvin), 0);
@@ -1241,11 +1411,17 @@ test_utCompare(void)
     CU_ASSERT_NOT_EQUAL(utCompare(celsius, fahrenheit), 0);
     CU_ASSERT_NOT_EQUAL(utCompare(fahrenheit, watt), 0);
     CU_ASSERT_NOT_EQUAL(utCompare(watt, cubicMicron), 0);
+    CU_ASSERT_NOT_EQUAL(utCompare(BZ, cubicMicron), 0);
     CU_ASSERT_NOT_EQUAL(utCompare(cubicMicron, dBZ), 0);
     CU_ASSERT_NOT_EQUAL(utCompare(dBZ, secondsSinceTheEpoch), 0);
     CU_ASSERT_NOT_EQUAL(utCompare(secondsSinceTheEpoch, hertz), 0);
     CU_ASSERT_NOT_EQUAL(utCompare(hertz, megahertz), 0);
     CU_ASSERT_NOT_EQUAL(utCompare(megahertz, kilogram), 0);
+    CU_ASSERT_NOT_EQUAL(utCompare(dBZ, meter), 0);
+
+    CU_ASSERT_EQUAL(utCompare(NULL, meter), -1);
+    CU_ASSERT_EQUAL(utCompare(NULL, NULL), 0);
+    CU_ASSERT_EQUAL(utCompare(meter, NULL), 1);
 }
 
 
@@ -1459,6 +1635,13 @@ test_parsing(void)
 
 
 static void
+test_visitor(void)
+{
+    CU_ASSERT_EQUAL(utAcceptVisitor(NULL, NULL, NULL), UT_NULL_ARG);
+}
+
+
+static void
 test_xml(void)
 {
     utSystem*	xmlSystem;
@@ -1493,6 +1676,7 @@ main(
 	    CU_ADD_TEST(testSuite, test_utMapNameToUnit);
 	    CU_ADD_TEST(testSuite, test_utScale);
 	    CU_ADD_TEST(testSuite, test_utOffset);
+	    CU_ADD_TEST(testSuite, test_utOffsetByTime);
 	    CU_ADD_TEST(testSuite, test_utMultiply);
 	    CU_ADD_TEST(testSuite, test_utInvert);
 	    CU_ADD_TEST(testSuite, test_utDivide);
@@ -1502,11 +1686,17 @@ main(
 	    CU_ADD_TEST(testSuite, test_utGetName);
 	    CU_ADD_TEST(testSuite, test_utGetSymbol);
 	    CU_ADD_TEST(testSuite, test_utToString);
+	    CU_ADD_TEST(testSuite, test_utGetDimensionlessUnitOne);
+	    CU_ADD_TEST(testSuite, test_utGetSystem);
+	    CU_ADD_TEST(testSuite, test_utSameSystem);
+	    CU_ADD_TEST(testSuite, test_utIsDimensionless);
+	    CU_ADD_TEST(testSuite, test_utClone);
+	    CU_ADD_TEST(testSuite, test_utAreConvertible);
 	    CU_ADD_TEST(testSuite, test_utGetConverter);
-	    CU_ADD_TEST(testSuite, test_utOffsetByTime);
 	    CU_ADD_TEST(testSuite, test_utSetEncoding);
 	    CU_ADD_TEST(testSuite, test_utCompare);
 	    CU_ADD_TEST(testSuite, test_parsing);
+	    CU_ADD_TEST(testSuite, test_visitor);
 	    CU_ADD_TEST(testSuite, test_xml);
 	    /*
 	    */

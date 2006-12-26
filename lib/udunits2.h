@@ -274,20 +274,15 @@ utGetUnitBySymbol(
  * resulting unit-system contains a unit named "second".
  *
  * Arguments:
- *	system		Pointer to the unit-system to have its "second" unit
- *			set.
  *	second		Pointer to the "second" unit.
  * Returns:
- *	UT_NULL_ARG	"system" or "second" is NULL.
- *	UT_NOT_SAME_SYSTEM
- *			"utGetSystem(second) != system".
- *	UT_EXISTS	The "second" unit of "system" is set to a different
- *			unit.
+ *	UT_NULL_ARG	"second" is NULL.
+ *	UT_EXISTS	The second unit of the unit-system to which "second"
+ *			belongs is set to a different unit.
  *	UT_SUCCESS	Success.
  */
 enum utStatus
 utSetSecond(
-    utSystem* const	system,
     utUnit* const	second);
 
 
@@ -714,6 +709,9 @@ utAreConvertible(
  * Returns a converter of numeric values in one unit to numeric values in
  * another unit.  The returned converter should be passed to cvFree() when it is
  * no longer needed by the client.
+ *
+ * NOTE:  Leap seconds are not taken into account when converting between
+ * timestamp units.
  *
  * Arguments:
  *	from		Pointer to the unit from which to convert values.
