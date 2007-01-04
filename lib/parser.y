@@ -1,6 +1,6 @@
 %{
 /*
- * $Id: parser.y,v 1.6 2006/12/21 20:52:37 steve Exp $
+ * $Id: parser.y,v 1.7 2007/01/04 17:13:01 steve Exp $
  *
  * yacc(1)-based parser for decoding formatted unit specifications.
  */
@@ -29,30 +29,25 @@ static size_t		_nchar;		/* number of parsed characters */
 
 
 /*
- * Returns a string with leading and trailing whitespace removed.  The returned
- * string should be freed when it is no longer needed.
+ * Removes leading and trailing whitespace from a string.
  *
  * Arguments:
- *	string		NUL-terminated string.  May be freed upon return.
+ *	string		NUL-terminated string.  Will be modified if it contains
+ *                      whitespace.
  *	encoding	The character-encoding of "string".
  * Returns:
- *	NULL	Failure.  "utStatus" will be:
- *		    UT_OS	Operating-system failure.  See "errno".
- *	else	Pointer to the string with leading and trailing whitespace
- *		removed.
+ *      "string"
  */
 char*
 utTrim(
-    const char* const	string,
+    char* const	        string,
     const utEncoding	encoding)
 {
     static const char*	asciiSpace = " \t\n\r\f\v";
     static const char*	latin1Space = " \t\n\r\f\v\xa0";	/* add NBSP */
     const char*		whiteSpace;
-    const char*		start;
-    const char*		stop;
-    size_t		nchar;
-    char*		newString;
+    char*		start;
+    char*		stop;
 
     whiteSpace =
 	encoding == UT_LATIN1
@@ -61,26 +56,16 @@ utTrim(
 
     start = string + strspn(string, whiteSpace);
 
-    for (stop = string + strlen(string); stop > string; --stop)
+    for (stop = start + strlen(start); stop > start; --stop)
 	 if (strchr(whiteSpace, stop[-1]) == NULL)
 	    break;
 
-    nchar = stop - start;
-    newString = malloc(nchar + 1);
+    (void)memmove(string, start, stop - start);
+    *stop = 0;
 
-    if (newString == NULL) {
-	utHandleErrorMessage(strerror(errno));
-	utHandleErrorMessage("Couldn't allocate %lu-byte string-buffer",
-	    nchar+1);
-	utStatus = UT_OS;
-    }
-    else {
-	strncpy(newString, start, nchar);
-	newString[nchar] = 0;
-	utStatus = UT_SUCCESS;
-    }
+    utSetStatus(UT_SUCCESS);
 
-    return newString;
+    return start;
 }
 
 
@@ -159,7 +144,7 @@ unit_spec:      /* nothing */ {
 		    YYACCEPT;
 		} |
 		error {
-		    utStatus = UT_SYNTAX;
+		    utSetStatus(UT_SYNTAX);
 		    YYABORT;
 		}
 		;
@@ -184,7 +169,7 @@ shift_exp:	product_exp {
 			YYABORT;
 		} |
 		product_exp SHIFT timestamp {
-		    $$ = utOffsetByScalarTime($1, $3);
+		    $$ = utOffsetByTime($1, $3);
 
 		    utFree($1);
 
@@ -291,7 +276,7 @@ basic_exp:	ID {
 		    free($1);
 
 		    if (unit == NULL) {
-			utStatus = UT_UNKNOWN;
+			utSetStatus(UT_UNKNOWN);
 			YYABORT;
 		    }
 
@@ -343,7 +328,7 @@ timestamp:	DATE {
 
 		    if (strcasecmp($3, "UTC") != 0 &&
 			    strcasecmp($3, "GMT") != 0) {
-			utStatus = UT_UNKNOWN;
+			utSetStatus(UT_UNKNOWN);
 			error = 1;
 		    }
 
@@ -370,7 +355,7 @@ timestamp:	DATE {
 
 		    if (strcasecmp($2, "UTC") != 0 &&
 			    strcasecmp($2, "GMT") != 0) {
-			utStatus = UT_UNKNOWN;
+			utSetStatus(UT_UNKNOWN);
 			error = 1;
 		    }
 
@@ -458,7 +443,7 @@ utParse(
     utUnit*	unit = NULL;		/* failure */
 
     if (system == NULL || string == NULL) {
-	utStatus = UT_NULL_ARG;
+	utSetStatus(UT_NULL_ARG);
     }
     else {
 	YY_BUFFER_STATE	buf;

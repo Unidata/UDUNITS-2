@@ -1,7 +1,7 @@
 /*
  * Unit-to-identifier map.
  *
- * $Id: unitToIdMap.c,v 1.4 2006/12/21 20:52:38 steve Exp $
+ * $Id: unitToIdMap.c,v 1.5 2007/01/04 17:13:01 steve Exp $
  */
 
 /*LINTLIBRARY*/
@@ -29,8 +29,6 @@ typedef struct {
 
 static SystemMap*	systemToUnitToName = NULL;
 static SystemMap*	systemToUnitToSymbol = NULL;
-
-extern enum utStatus	utStatus;
 
 
 /******************************************************************************
@@ -253,35 +251,25 @@ utimFree(
  *	id		The identifier.  May be freed upon return.
  *	encoding	The ostensible encoding of "id".
  * Returns:
- *	UT_INTERNAL	"map" is NULL.
- *	UT_INTERNAL	"unit" is NULL.
- *	UT_BAD_ID	"id" is NULL or inconsistent with "encoding".
+ *	UT_BAD_ID	"id" is inconsistent with "encoding".
  *	UT_OS		Operating-system error.  See "errno".
  *	UT_EXISTS	"unit" already maps to a different identifier.
  *	UT_SUCCESS	Success.
  */
-static enum utStatus
+static utStatus
 utimAdd(
     UnitToIdMap* const	map,
     const utUnit*	unit,
     const char* const	id,
     utEncoding		encoding)
 {
-    enum utStatus	status;
+    utStatus		status;
 
-    if (map == NULL) {
-	utHandleErrorMessage("NULL map argument");
-	status = UT_INTERNAL;
-    }
-    else if (unit == NULL) {
-	utHandleErrorMessage("NULL unit argument");
-	status = UT_NULL_ARG;
-    }
-    else if (id == NULL) {
-	utHandleErrorMessage("NULL identifier argument");
-	status = UT_BAD_ID;
-    }
-    else if (adjustEncoding(&encoding, id)) {
+    assert(map != NULL);
+    assert(unit != NULL);
+    assert(id != NULL);
+
+    if (adjustEncoding(&encoding, id)) {
 	utHandleErrorMessage("Identifier not in given encoding");
 	status = UT_BAD_ID;
     }
@@ -326,45 +314,33 @@ utimAdd(
  *	unit		The unit.  May be freed upon return.
  *	encoding	The encoding to be removed.
  * Returns:
- *	UT_INTERNAL	"map" is NULL.
- *	UT_INTERNAL	"unit" is NULL.
  *	UT_SUCCESS	Success.
  */
-static enum utStatus
+static utStatus
 utimRemove(
     UnitToIdMap* const	map,
     const utUnit*	unit,
     utEncoding		encoding)
 {
-    enum utStatus	status;
+    utStatus		status;
+    UnitAndId		targetEntry;
+    UnitAndId**		treeEntry;
 
-    if (map == NULL) {
-	utHandleErrorMessage("NULL map argument");
-	status = UT_INTERNAL;
-    }
-    else if (unit == NULL) {
-	utHandleErrorMessage("NULL unit argument");
-	status = UT_NULL_ARG;
+    assert(map != NULL);
+    assert(unit != NULL);
+
+    targetEntry.unit = (utUnit*)unit;
+    treeEntry = tfind(&targetEntry, selectTree(map, encoding), compareUnits);
+
+    if (treeEntry == NULL || *treeEntry == NULL) {
+	status = UT_SUCCESS;
     }
     else {
-	UnitAndId	targetEntry;
-	UnitAndId**	treeEntry;
+	UnitAndId*	uai = *treeEntry;
 
-	targetEntry.unit = (utUnit*)unit;
-
-	treeEntry =
-	    tfind(&targetEntry, selectTree(map, encoding), compareUnits);
-
-	if (treeEntry == NULL || *treeEntry == NULL) {
-	    status = UT_SUCCESS;
-	}
-	else {
-	    UnitAndId*	uai = *treeEntry;
-
-	    (void)tdelete(uai, selectTree(map, encoding), compareUnits);
-	    uaiFree(uai);
-	}
-    }					/* valid arguments */
+	(void)tdelete(uai, selectTree(map, encoding), compareUnits);
+	uaiFree(uai);
+    }
 
     return status;
 }
@@ -468,7 +444,7 @@ utimFindUtf8ByUnit(
 		utHandleErrorMessage(strerror(errno));
 		utHandleErrorMessage(
 		    "Couldn't convert identifier from ISO-8859-1 to UTF-8");
-		utStatus = UT_OS;
+		utSetStatus(UT_OS);
 		treeEntry = NULL;
 	    }
 	    else {
@@ -482,7 +458,7 @@ utimFindUtf8ByUnit(
 			utHandleErrorMessage(strerror(errno));
 			utHandleErrorMessage("Couldn't add unit-and-identifier "
 			    "to search-tree");
-			utStatus = UT_OS;
+			utSetStatus(UT_OS);
 		    }
 		}
 
@@ -505,23 +481,24 @@ utimFindUtf8ByUnit(
  *	id		The identifier.  May be freed upon return.
  *	encoding	The ostensible encoding of "id".
  * Returns:
- *	UT_INTERNAL	"systemMap" is NULL.
- *	UT_INTERNAL	"unit" is NULL.
- *	UT_BAD_ID	"id" is NULL or inconsistent with "encoding".
+ *	UT_NULL_ARG	"unit" or "id" is NULL.
+ *	UT_BAD_ID	"id" is inconsistent with "encoding".
  *	UT_OS		Operating-system error.  See "errno".
  *	UT_EXISTS	"unit" already maps to a different identifier.
  *	UT_SUCCESS	Success.
  */
-static enum utStatus
+static utStatus
 mapUnitToId(
     SystemMap** const	systemMap,
     utUnit* const	unit,
     const char* const	id,
     utEncoding		encoding)
 {
-    enum utStatus	status;
+    utStatus		status;
 
-    if (systemMap == NULL || unit == NULL || id == NULL) {
+    assert(systemMap != NULL);
+
+    if (unit == NULL || id == NULL) {
 	status = UT_NULL_ARG;
     }
     else {
@@ -570,13 +547,13 @@ mapUnitToId(
  *	UT_NULL_ARG	"unit" is NULL.
  *	UT_SUCCESS	Success.
  */
-static enum utStatus
+static utStatus
 unmapUnitToId(
     SystemMap* const	systemMap,
     utUnit* const	unit,
     utEncoding		encoding)
 {
-    enum utStatus	status;
+    utStatus		status;
 
     if (systemMap == NULL || unit == NULL) {
 	status = UT_NULL_ARG;
@@ -604,7 +581,7 @@ unmapUnitToId(
  *	unit		Pointer to the unit whose identifier should be returned.
  *	encoding	The desired encoding of the identifier.
  * Returns:
- *	NULL		Failure.  "utStatus" will be
+ *	NULL		Failure.  "utGetStatus()" will be
  *			    UT_NULL_ARG	"unit" was NULL.
  *	else		Pointer to the identifier in the given encoding
  *			associated with "unit".
@@ -619,7 +596,7 @@ getId(
 
     if (unit == NULL) {
 	utHandleErrorMessage("NULL unit argument");
-	utStatus = UT_NULL_ARG;
+	utSetStatus(UT_NULL_ARG);
     }
     else {
 	UnitToIdMap** const	unitToId = 
@@ -663,13 +640,15 @@ getId(
  *	UT_OS		Operating-system error.  See "errno".
  *	UT_EXISTS	"unit" already maps to a name.
  */
-enum utStatus
+utStatus
 utMapUnitToName(
     utUnit* const	unit,
     const char* const	name,
     utEncoding		encoding)
 {
-    return utStatus = mapUnitToId(&systemToUnitToName, unit, name, encoding);
+    utSetStatus(mapUnitToId(&systemToUnitToName, unit, name, encoding));
+
+    return utGetStatus();
 }
 
 
@@ -684,12 +663,14 @@ utMapUnitToName(
  *	UT_NULL_ARG	"unit" is NULL.
  *	UT_SUCCESS	Success.
  */
-enum utStatus
+utStatus
 utUnmapUnitToName(
     utUnit* const	unit,
     utEncoding		encoding)
 {
-    return utStatus = unmapUnitToId(systemToUnitToName, unit, encoding);
+    utSetStatus(unmapUnitToId(systemToUnitToName, unit, encoding));
+
+    return utGetStatus();
 }
 
 
@@ -708,14 +689,15 @@ utUnmapUnitToName(
  *	UT_OS		Operating-system error.  See "errno".
  *	UT_EXISTS	"unit" already maps to a symbol.
  */
-enum utStatus
+utStatus
 utMapUnitToSymbol(
     utUnit*		unit,
     const char* const	symbol,
     utEncoding		encoding)
 {
-    return
-	utStatus = mapUnitToId(&systemToUnitToSymbol, unit, symbol, encoding);
+    utSetStatus(mapUnitToId(&systemToUnitToSymbol, unit, symbol, encoding));
+
+    return utGetStatus();
 }
 
 
@@ -731,12 +713,14 @@ utMapUnitToSymbol(
  *	UT_SUCCESS	Success.
  *	UT_NULL_ARG	"unit" is NULL.
  */
-enum utStatus
+utStatus
 utUnmapUnitToSymbol(
     utUnit* const	unit,
     utEncoding		encoding)
 {
-    return utStatus = unmapUnitToId(systemToUnitToSymbol, unit, encoding);
+    utSetStatus(unmapUnitToId(systemToUnitToSymbol, unit, encoding));
+
+    return utGetStatus();
 }
 
 
@@ -759,7 +743,7 @@ utGetName(
     const utUnit* const	unit,
     const utEncoding	encoding)
 {
-    utStatus = UT_SUCCESS;
+    utSetStatus(UT_SUCCESS);
 
     return getId(systemToUnitToName, unit, encoding);
 }
@@ -784,7 +768,7 @@ utGetSymbol(
     const utUnit* const	unit,
     const utEncoding	encoding)
 {
-    utStatus = UT_SUCCESS;
+    utSetStatus(UT_SUCCESS);
 
     return getId(systemToUnitToSymbol, unit, encoding);
 }

@@ -1,5 +1,5 @@
 /*
- * $Id: converter.h,v 1.4 2006/12/21 20:52:37 steve Exp $
+ * $Id: converter.h,v 1.5 2007/01/04 17:13:01 steve Exp $
  *
  * Public header-file for the Unidata units(3) library.
  */
@@ -23,7 +23,7 @@ typedef union cvConverter	cvConverter;
  *	The trivial converter.
  */
 cvConverter*
-cvGetTrivial();
+cvGetTrivial(void);
 
 /*
  * Returns the reciprocal converter (i.e., y = 1/x).
@@ -33,7 +33,7 @@ cvGetTrivial();
  *	The reciprocal converter.
  */
 cvConverter*
-cvGetInverse();
+cvGetInverse(void);
 
 /*
  * Returns a scaling converter (i.e., y = ax).
@@ -134,7 +134,7 @@ cvCombine(
  */
 void
 cvFree(
-    const cvConverter* const	conv);
+    cvConverter* const	conv);
 
 /*
  * Converts a float.
@@ -168,13 +168,10 @@ cvConvertDouble(
  *	converter	The converter.
  *	in		The values to be converted.
  *	count		The number of values to be converted.
- *	out		The output array for the converted values or NULL.  May
- *			be the same array as "in"; otherwise, if the arrays
- *			overlap, then the results are unspecified.  If NULL, 
- *			then an output array is allocated which the client 
- *			should eventually free().
+ *	out		The output array for the converted values.  May
+ *			be the same array as "in" or overlap it.
  * RETURNS:
- *	NULL	"out" is NULL and necessary memory couldn't be allocated.
+ *	NULL	"out" is NULL.
  *	else	A pointer to the output array.
  */
 float*
@@ -190,13 +187,10 @@ cvConvertFloats(
  *	converter	The converter.
  *	in		The values to be converted.
  *	count		The number of values to be converted.
- *	out		The output array for the converted values or NULL.  May
- *			be the same array as "in"; otherwise, if the arrays
- *			overlap, then the results are unspecified.  If NULL, 
- *			then an output array is allocated which the client 
- *			should eventually free().
+ *	out		The output array for the converted values.  May
+ *			be the same array as "in" or overlap it.
  * RETURNS:
- *	NULL	"out" is NULL and necessary memory couldn't be allocated.
+ *	NULL	"out" is NULL.
  *	else	A pointer to the output array.
  */
 double*

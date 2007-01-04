@@ -1,7 +1,7 @@
 /*
  * Value converters for the udunits(3) library.
  *
- * $Id: converter.c,v 1.3 2006/12/21 20:52:37 steve Exp $
+ * $Id: converter.c,v 1.4 2007/01/04 17:13:01 steve Exp $
  */
 
 /*LINTLIBRARY*/
@@ -677,20 +677,14 @@ logGetExpression(
     const size_t		max,
     const char* const		variable)
 {
-    const int	isUnity = conv->log.logE == 1.0;
-
     return 
-	cvNeedsParentheses(variable)
-	    ? (isUnity
-		? snprintf(buf, max, "ln((%s)/%g)", variable,
-		    conv->offset.value)
-		: snprintf(buf, max, "%g*ln((%s)/%g)", conv->log.logE, variable,
-		    conv->offset.value))
-	    : (isUnity
-		? snprintf(buf, max, "ln(%s/%g)", variable,
-		    conv->offset.value)
-		: snprintf(buf, max, "%g*ln(%s/%g)", conv->log.logE, variable,
-		    conv->offset.value));
+        conv->log.logE == M_LOG2E
+            ? snprintf(buf, max, "lb(%s)", variable)
+            : conv->log.logE == 1
+                ? snprintf(buf, max, "ln(%s)", variable)
+                : conv->log.logE == M_LOG10E
+                    ? snprintf(buf, max, "lg(%s)", variable)
+                    : snprintf(buf, max, "%g*ln(%s)", conv->log.logE, variable);
 }
 
 
@@ -893,8 +887,6 @@ compositeGetExpression(
 	variable);
 
     if (nchar >= 0) {
-	int	n;
-
 	buf[max-1] = 0;
 
 	if (cvNeedsParentheses(buf)) {
@@ -906,9 +898,7 @@ compositeGetExpression(
 	    tmpBuf[sizeof(tmpBuf)-1] = 0;
 	}
 
-	n = cvGetExpression(conv->composite.second, buf, max, tmpBuf);
-
-	nchar = n >= 0 ? nchar + n : n;
+	nchar = cvGetExpression(conv->composite.second, buf, max, tmpBuf);
     }
 
     return nchar;
@@ -1187,9 +1177,6 @@ cvCombine(
 		    first->scale.value * second->galilean.slope, 
 		    second->galilean.intercept);
 	    }
-	    else if (CV_IS_LOG(second)) {
-		conv = cvGetLog(first->scale.value * second->log.logE);
-	    }
 	}
 	else if (IS_OFFSET(first)) {
 	    if (IS_SCALE(second)) {
@@ -1222,10 +1209,6 @@ cvCombine(
 			second->galilean.intercept);
 	    }
 	}
-	else if (CV_IS_LOG(first)) {
-	    if (IS_SCALE(second))
-		conv = cvGetLog(first->log.logE * second->scale.value);
-	}
 
 	if (conv == NULL) {
 	    /*
@@ -1256,7 +1239,7 @@ cvCombine(
  */
 void
 cvFree(
-    const cvConverter* const	conv)
+    cvConverter* const	conv)
 {
     conv->ops->free((cvConverter*)conv);
 }

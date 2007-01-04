@@ -2,7 +2,7 @@
  * This module is thread-compatible but not thread-safe.  Multi-threaded
  * access must be externally synchronized.
  *
- * $Id: xml.c,v 1.3 2006/12/26 22:42:01 steve Exp $
+ * $Id: xml.c,v 1.4 2007/01/04 17:13:01 steve Exp $
  */
 
 /*LINTLIBRARY*/
@@ -116,7 +116,7 @@ startUnitSystem(
 {
     if (*currElt != INITIAL) {
 	utHandleErrorMessage("Wrong place for <unit-system> element");
-	utSetStatus(UT_XML);
+	utSetStatus(UT_PARSE);
 	XML_StopParser(parser, 0);
     }
     else {
@@ -1054,27 +1054,77 @@ declareXml(
  * that a client will obtain a unit-system.
  *
  * Arguments:
- *	path	The pathname of the XML file.
+ *	path	The pathname of the XML file or NULL.  If NULL, then the
+ *		pathname specified by the environment variable UDUNITS2_XML_PATH
+ *		is used if set; otherwise, the compile-time pathname of the
+ *		installed, default, unit database is used.
  * Returns:
  *	NULL	Failure.  "utGetStatus()" will be
- *		    UT_NULL_ARG	"path" is NULL.
- *		    UT_OS	Operating-system error.  See "errno".
- *		    UT_XML	XML parse error.
+ *		    UT_OPEN_ARG		"path" is non-NULL but file couldn't be
+ *					opened.  See "errno" for reason.
+ *		    UT_OPEN_ENV		"path" is NULL and environment variable
+ *					UDUNITS2_XML_PATH is set but file
+ *					couldn't be opened.  See "errno" for
+ *					reason.
+ *		    UT_OPEN_DEFAULT	"path" is NULL, environment variable
+ *					UDUNITS2_XML_PATH is unset, and the
+ *					installed, default, unit database
+ *					couldn't be opened.  See "errno" for
+ *					reason.
+ *		    UT_PARSE		Couldn't parse unit database.
+ *		    UT_OS		Operating-system error.  See "errno".
  *	else	Pointer to the unit-system defined by "path".
  */
 utSystem*
 utReadXml(
-    const char* const	path)
+    const char*	path)
 {
     utSystem*	sys = NULL;		/* failure */
+    int		fd;
 
     utSetStatus(UT_SUCCESS);
 
-    if (path == NULL) {
-	utHandleErrorMessage("NULL path argument");
-	utSetStatus(UT_NULL_ARG);
+    if (path != NULL) {
+	fd = open(path, O_RDONLY);
+
+	if (fd == -1) {
+	    utHandleErrorMessage(strerror(errno));
+	    utHandleErrorMessage(
+		"utReadXml(): Couldn't open argument-specified database \"%s\"",
+		path);
+	    utSetStatus(UT_OPEN_ARG);
+	}
     }
     else {
+	path = getenv("UDUNITS2_XML_PATH");
+
+	if (path != NULL) {
+	    fd = open(path, O_RDONLY);
+
+	    if (fd == -1) {
+		utHandleErrorMessage(strerror(errno));
+		utHandleErrorMessage(
+		    "utReadXml(): Couldn't open UDUNITS2_XML_PATH-specified "
+			"database \"%s\"", path);
+		utSetStatus(UT_OPEN_ENV);
+	    }
+	}
+	else {
+	    path = UDUNITS2_XML_PATH;
+	    fd = open(path, O_RDONLY);
+
+	    if (fd == -1) {
+		utHandleErrorMessage(strerror(errno));
+		utHandleErrorMessage(
+		    "utReadXml(): Couldn't open installed, default database "
+			"\"%s\"", path);
+		utSetStatus(UT_OPEN_DEFAULT);
+	    }
+	}
+    }
+
+    if (fd != -1) {
+	_path = path;
 	parser = XML_ParserCreate(NULL);
 
 	if (parser == NULL) {
@@ -1083,80 +1133,73 @@ utReadXml(
 	    utSetStatus(UT_OS);
 	}
 	else {
-	    int	fd = open(path, O_RDONLY);
+	    int	error = 1;
+	    int	nbytes;
 
-	    if (fd == -1) {
-		utHandleErrorMessage(strerror(errno));
-	    }
-	    else {
-		int	error = 1;
-		int	nbytes;
+	    _path = path;
 
-		_path = path;
+	    XML_SetXmlDeclHandler(parser, declareXml);
+	    XML_SetElementHandler(parser, startElement, endElement);
 
-		XML_SetXmlDeclHandler(parser, declareXml);
-		XML_SetElementHandler(parser, startElement, endElement);
+	    do {
+		char	buf[BUFSIZ];	/* from <stdio.h> */
 
-		do {
-		    char	buf[BUFSIZ];	/* from <stdio.h> */
+		nbytes = read(fd, buf, sizeof(buf));
 
-		    nbytes = read(fd, buf, sizeof(buf));
+		if (nbytes < 0) {
+		    utHandleErrorMessage(strerror(errno));
+		    utSetStatus(UT_OS);
 
-		    if (nbytes < 0) {
-			utHandleErrorMessage(strerror(errno));
-			utSetStatus(UT_OS);
+		    break;
+		}
+		else {
+		    if (XML_Parse(parser, buf, nbytes, nbytes == 0)
+			    != XML_STATUS_OK) {
+			utHandleErrorMessage(
+			    XML_ErrorString(XML_GetErrorCode(parser)));
+			utSetStatus(UT_PARSE);
 
 			break;
 		    }
+		}
+	    } while (nbytes > 0);
+
+	    if (nbytes != 0) {
+		/*
+		 * Parsing of the XML file terminated prematurely.
+		 */
+		utHandleErrorMessage("Stopped at \"%s\":%d, column %d",
+		    path, XML_GetCurrentLineNumber(parser),
+		    XML_GetCurrentColumnNumber(parser));
+		XML_ParserFree(parser);
+	    }
+	    else {
+		utUnit*	second = utGetUnitByName(unitSystem, "second");
+
+		if (second != NULL) {
+		    if (utSetSecond(second) == UT_SUCCESS) {
+			error = 0;
+		    }
 		    else {
-			if (XML_Parse(parser, buf, nbytes, nbytes == 0)
-				!= XML_STATUS_OK) {
-			    utHandleErrorMessage(
-				XML_ErrorString(XML_GetErrorCode(parser)));
-			    utSetStatus(UT_XML);
-
-			    break;
-			}
+			utHandleErrorMessage("Couldn't set \"second\" unit "
+			    "in unit-system");
 		    }
-		} while (nbytes > 0);
 
-		if (nbytes != 0) {
-		    /*
-		     * Parsing of the XML file terminated prematurely.
-		     */
-		    utHandleErrorMessage("Stopped at \"%s\":%d, column %d",
-			path, XML_GetCurrentLineNumber(parser),
-			XML_GetCurrentColumnNumber(parser));
-		    XML_ParserFree(parser);
+		    utFree(second);
 		}
-		else {
-		    utUnit*	second = utGetUnitByName(unitSystem, "second");
+	    }
 
-		    if (second != NULL) {
-			if (utSetSecond(second) == UT_SUCCESS) {
-			    error = 0;
-			}
-			else {
-			    utHandleErrorMessage("Couldn't set \"second\" unit "
-				"in unit-system");
-			}
-
-			utFree(second);
-		    }
-		}
-
-		if (error) {
-		    utFreeSystem(unitSystem);
-		    unitSystem = NULL;
-		}
-
-		(void)close(fd);
-	    }				/* "fd" open */
+	    if (error) {
+		utFreeSystem(unitSystem);
+		unitSystem = NULL;
+	    }
 	}				/* "parser" allocated */
 
 	sys = unitSystem;
 	unitSystem = NULL;
-    }
+
+	(void)close(fd);
+    }					/* "fd" open */
 
     return sys;
 }

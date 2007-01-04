@@ -1,7 +1,7 @@
 /*
  * lex(1) specification for tokens for the Unidata units package, UDUNITS2.
  *
- * $Id: scanner.l,v 1.3 2006/12/18 18:03:19 steve Exp $
+ * $Id: scanner.l,v 1.4 2007/01/04 17:13:01 steve Exp $
  */
 
 %option noyywrap
@@ -21,7 +21,7 @@
 
 space			[ \t\r\f\v]
 utf8_exp_0		\xe2\x81\xb0
-utf8_exp_1		\xc2\xb1
+utf8_exp_1		\xc2\xb9
 utf8_exp_2		\xc2\xb2
 utf8_exp_3		\xc2\xb3
 utf8_exp_4		\xe2\x81\xb4
@@ -183,7 +183,7 @@ logref			\({space}*[Rr][Ee](:{space})?{space}*
 	    const int	len;
 	} utf8_exponents[] = {
 	    {"\xe2\x81\xb0", 3},
-	    {"\xc2\xb1",     2},
+	    {"\xc2\xb9",     2},
 	    {"\xc2\xb2",     2},
 	    {"\xc2\xb3",     2},
 	    {"\xe2\x81\xb4", 3},

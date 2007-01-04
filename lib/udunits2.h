@@ -2,13 +2,14 @@
 #define UT_UNITS_H_INCLUDED
 
 #include <stdarg.h>
+#include <stddef.h>
 
 #include "converter.h"
 
 typedef struct utSystem		utSystem;
 typedef union utUnit		utUnit;
 
-enum utStatus {
+typedef enum {
     UT_SUCCESS = 0,	/* Success */
     UT_NULL_ARG,	/* An argument is NULL */
     UT_BAD_ID,		/* Identifier is NULL or empty */
@@ -24,13 +25,16 @@ enum utStatus {
     UT_CANT_FORMAT,	/* A unit can't be formatted in the desired manner */
     UT_SYNTAX,		/* string unit representation contains syntax error */
     UT_UNKNOWN,		/* string unit representation contains unknown word */
-    UT_XML,		/* XML parsing error */
-    UT_INTERNAL		/* Internal, assertion-type failure. Shouldn't occur. */
+    UT_OPEN_ARG,	/* Can't open argument-specified unit database */
+    UT_OPEN_ENV,	/* Can't open environment-specified unit database */
+    UT_OPEN_DEFAULT,	/* Can't open installed, default, unit database */
+    UT_PARSE		/* Error parsing unit database */
 } utStatus;
 
 typedef enum {
     UT_ASCII = 0,
-    UT_LATIN1 = 1,
+    UT_ISO_8859_1 = 1,
+    UT_LATIN1 = UT_ISO_8859_1,
     UT_UTF8 = 2
 } utEncoding;
 
@@ -53,7 +57,7 @@ typedef struct {
      *	UT_SUCCESS	Success.
      *	else		Failure.
      */
-    enum utStatus	(*visitBasic)(const utUnit* unit, void* arg); 
+    utStatus	(*visitBasic)(const utUnit* unit, void* arg); 
 
     /*
      * Visits a product-unit.  A product-unit is a product of zero or more
@@ -70,7 +74,7 @@ typedef struct {
      *	UT_SUCCESS	Success.
      *	else		Failure.
      */
-    enum utStatus	(*visitProduct)(const utUnit* unit, int count,
+    utStatus	(*visitProduct)(const utUnit* unit, int count,
 	const utUnit* const* basicUnits, const int* powers, void* arg); 
 
     /*
@@ -88,31 +92,24 @@ typedef struct {
      *	UT_SUCCESS	Success.
      *	else		Failure.
      */
-    enum utStatus	(*visitGalilean)(const utUnit* unit, double scale,
+    utStatus	(*visitGalilean)(const utUnit* unit, double scale,
 	const utUnit* underlyingUnit, double offset, void* arg); 
 
     /*
      * Visits a timestamp-unit.  A timestamp-unit has an underlying unit of time
-     * and a time-origin.
+     * and an encoded time-origin.
      *
      * Arguments:
      *	unit		Pointer to the timestamp-unit.
      *	timeUnit	Pointer to the underlying unit of time.
-     *	year		The year of the time-origin.
-     *	month		The month of the time-origin (January = 1).
-     *	day		The day of the time-origin (first day of month = 1).
-     *	hour		The hour of the time-origin (midnight = 0).
-     *	minute		The minute of the time-origin.
-     *	second		The second of the time-orgin.
-     *	resolution	The resolution of the time-origin in seconds.
+     *  origin          Encoded origin of the timestamp-unit.
      *	arg		Client pointer passed to utAcceptVisitor().
      * Returns:
      *	UT_SUCCESS	Success.
      *	else		Failure.
      */
-    enum utStatus	(*visitTimestamp)(const utUnit* unit,
-	const utUnit* timeUnit, int year, int month, int day, int hour,
-	int minute, double second, double resolution, void* arg); 
+    utStatus	(*visitTimestamp)(const utUnit* unit,
+	const utUnit* timeUnit, double origin, void* arg); 
 
     /*
      * Visits a logarithmic-unit.  A logarithmic-unit has a logarithmic base and
@@ -128,8 +125,8 @@ typedef struct {
      *	UT_SUCCESS	Success.
      *	else		Failure.
      */
-    enum utStatus	(*visitLogarithmic)(const utUnit* unit, double logE,
-	const utUnit* reference, void*); 
+    utStatus	(*visitLogarithmic)(const utUnit* unit, double logE,
+	const utUnit* reference, void* arg); 
 } utVisitor;
 
 
@@ -151,17 +148,18 @@ extern "C" {
  * that a client will obtain a unit-system.
  *
  * Arguments:
- *	path	The pathname of the XML file.
+ *	path	The pathname of the XML file or NULL.  If NULL, then the value
+ *		of the environment variable UDUNITS2_XML_PATH is used.
  * Returns:
  *	NULL	Failure.  "utGetStatus()" will be
- *		    UT_NULL_ARG	"path" is NULL.
+ *		    UT_NULL_ARG	"path" is NULL and UDUNITS2_XML_PATH is unset.
  *		    UT_OS	Operating-system error.  See "errno".
  *		    UT_XML	XML parse error.
  *	else	Pointer to the unit-system defined by "path".
  */
 utSystem*
 utReadXml(
-    const char* const	path);
+    const char*	path);
 
 
 /*
@@ -174,7 +172,7 @@ utReadXml(
  *	else	Pointer to a new unit system.
  */
 utSystem*
-utNewSystem();
+utNewSystem(void);
 
 
 /*
@@ -281,7 +279,7 @@ utGetUnitBySymbol(
  *			belongs is set to a different unit.
  *	UT_SUCCESS	Success.
  */
-enum utStatus
+utStatus
 utSetSecond(
     utUnit* const	second);
 
@@ -307,7 +305,7 @@ utSetSecond(
  *	UT_EXISTS	"name" already maps to a different value.
  *	UT_OS		Operating-system failure.  See "errno".
  */
-enum utStatus
+utStatus
 utAddNamePrefix(
     utSystem* const	system,
     const char* const	name,
@@ -330,7 +328,7 @@ utAddNamePrefix(
  *	UT_EXISTS	"symbol" already maps to a different value.
  *	UT_OS		Operating-system failure.  See "errno".
  */
-enum utStatus
+utStatus
 utAddSymbolPrefix(
     utSystem* const	system,
     const char* const	symbol,
@@ -350,7 +348,7 @@ utAddSymbolPrefix(
  *	system	Pointer to the unit-system to which to add the new base-unit.
  * Returns:
  *	NULL	Failure.  "utGetStatus()" will be
- *		    UT_NULL_ARG		"system" or "name" is NULL.
+ *		    UT_NULL_ARG		"system" is NULL.
  *		    UT_OS		Operating-system error.  See "errno".
  *	else	Pointer to the new base-unit.  The pointer should be passed to
  *		utFree() when the unit is no longer needed by the client (the
@@ -452,7 +450,7 @@ utGetName(
  *	UT_EXISTS	"name" already maps to a different unit.
  *	UT_SUCCESS	Success.
  */
-enum utStatus
+utStatus
 utMapNameToUnit(
     const char* const	name,
     utUnit* const	unit);
@@ -469,7 +467,7 @@ utMapNameToUnit(
  *	UT_SUCCESS	Success.
  *	UT_NULL_ARG	"system" or "name" is NULL.
  */
-enum utStatus
+utStatus
 utUnmapName(
     utSystem*		system,
     const char* const	name);
@@ -491,7 +489,7 @@ utUnmapName(
  *	UT_OS		Operating-system error.  See "errno".
  *	UT_EXISTS	"unit" already maps to a name.
  */
-enum utStatus
+utStatus
 utMapUnitToName(
     utUnit* const	unit,
     const char* const	name,
@@ -509,7 +507,7 @@ utMapUnitToName(
  *	UT_NULL_ARG	"unit" is NULL.
  *	UT_SUCCESS	Success.
  */
-enum utStatus
+utStatus
 utUnmapUnitToName(
     utUnit* const	unit,
     utEncoding		encoding);
@@ -554,7 +552,7 @@ utGetSymbol(
  *	UT_EXISTS	"symbol" already maps to a different unit.
  *	UT_SUCCESS	Success.
  */
-enum utStatus
+utStatus
 utMapSymbolToUnit(
     const char* const	symbol,
     utUnit* const	unit);
@@ -571,7 +569,7 @@ utMapSymbolToUnit(
  *	UT_SUCCESS	Success.
  *	UT_NULL_ARG	"system" or "symbol" is NULL.
  */
-enum utStatus
+utStatus
 utUnmapSymbol(
     utSystem*		system,
     const char* const	symbol);
@@ -592,7 +590,7 @@ utUnmapSymbol(
  *	UT_OS		Operating-system error.  See "errno".
  *	UT_EXISTS	"unit" already maps to a symbol.
  */
-enum utStatus
+utStatus
 utMapUnitToSymbol(
     utUnit*		unit,
     const char* const	symbol,
@@ -611,14 +609,14 @@ utMapUnitToSymbol(
  *	UT_SUCCESS	Success.
  *	UT_NULL_ARG	"unit" is NULL.
  */
-enum utStatus
+utStatus
 utUnmapUnitToSymbol(
     utUnit* const	unit,
     utEncoding		encoding);
 
 
 /******************************************************************************
- * Getting Information on a Unit:
+ * Getting Information about a Unit:
  ******************************************************************************/
 
 
@@ -793,53 +791,7 @@ utOffset(
  * e.g.,
  *	const utUnit*	second = ...
  *	const utUnit*	secondsSinceTheEpoch =
- *	    utOffsetByTime(second, 1970, 1, 1, 0, 0, 0.0);
- *
- * "utSetSecond()" must be called before the first call to this function.
- *
- * NOTE: Such units were created to be analogous to, for example, the degree
- * celsius -- but for time.  I've come to believe, however, that creating
- * support for such units was a mistake because users try to use such units in
- * ways for which they were not designed.  Please be careful about using such
- * units.
- *
- * Arguments:
- *	unit	Pointer to the time-unit to be made relative to a time-origin.
- *	year	The year of the origin.
- *	month	The month of the origin.
- *	day	The day of the origin.
- *	hour	The hour of the origin.
- *	minute	The minute of the origin.
- *	second	The second of the origin.
- * Returns:
- *	NULL	Failure.  "utGetStatus()" will be
- *		    UT_NULL_ARG		"unit" is NULL.
- *		    UT_OS		Operating-system error.  See "errno".
- *		    UT_MEANINGLESS	Creation of a timestamp unit based on
- *					"unit" is not meaningful.
- *		    UT_NO_SECOND	The associated unit-system doesn't
- *					contain a second unit.  See
- *					utSetSecond().
- *	else	Pointer to the resulting unit.  The pointer should be passed
- *		to utFree() when the unit is no longer needed by the client.
- */
-utUnit*
-utOffsetByTime(
-    utUnit* const	unit,
-    const int		year,
-    const int		month,
-    const int		day,
-    const int		hour,
-    const int		minute,
-    const double	second);
-
-
-/*
- * Returns a unit equivalent to another unit relative to a particular time.
- * e.g.,
- *	const utUnit*	second = ...
- *	const utUnit*	secondsSinceUdunitsOrigin =
- *	    utOffsetByScalarTime(second, 0.0);
+ *	    utOffsetByTime(second, utEncodeTime(1970, 1, 1, 0, 0, 0.0));
  *
  * Arguments:
  *	unit	Pointer to the time-unit to be made relative to a time-origin.
@@ -857,7 +809,7 @@ utOffsetByTime(
  *		to utFree() when the unit is no longer needed by the client.
  */
 utUnit*
-utOffsetByScalarTime(
+utOffsetByTime(
     utUnit* const	unit,
     const double	origin);
 
@@ -1044,23 +996,18 @@ utGetParseLength(void);
 
 
 /*
- * Returns a string with leading and trailing whitespace removed.  The returned
- * string should be freed when it is no longer needed.
+ * Removes leading and trailing whitespace from a string.
  *
  * Arguments:
- *	string		NUL-terminated string.  May be freed upon return.
+ *	string		NUL-terminated string.  Will be modified if it contains
+ *                      whitespace..
  *	encoding	The character-encoding of "string".
  * Returns:
- *	NULL		Failure.  "utStatus" will be:
- *			    UT_OS	Operating-system failure.  See "errno".
- *	else		Pointer to the string with leading and trailing
- *			whitespace removed.  The pointer should be passed to
- *			free() when the string is no longer needed by the
- *			client.
+ *      "string", with all leading and trailing whitespace removed.
  */
 char*
 utTrim(
-    const char* const	string,
+    char* const	        string,
     const utEncoding	encoding);
 
 
@@ -1091,7 +1038,7 @@ utTrim(
  *			UT_LATIN1 and UT_UTF8 are mutually exclusive: they may
  *			not both be specified.
  * Returns:
- *	-1		Failure:  "utStatus()" will be
+ *	-1		Failure:  "utGetStatus()" will be
  *			    UT_NULL_ARG		"unit" or "buf" is NULL
  *			    UT_BAD_VALUE	Both UT_LATIN1 and UT_UTF8
  *						specified.
@@ -1121,7 +1068,7 @@ utFormat(
  *	UT_VISIT_ERROR	A error occurred in "visitor" while visiting "unit".
  *	UT_SUCCESS	Success.
  */
-enum utStatus
+utStatus
 utAcceptVisitor(
     const utUnit* const		unit,
     const utVisitor* const	visitor,
@@ -1192,6 +1139,32 @@ utEncodeTime(
     const double	second);
 
 
+/*
+ * Decodes a time from a double-precision value.
+ *
+ * Arguments:
+ *      value           The value to be decoded.
+ *      year            Pointer to the variable to be set to the year.
+ *      month           Pointer to the variable to be set to the month.
+ *      day             Pointer to the variable to be set to the day.
+ *      hour            Pointer to the variable to be set to the hour.
+ *      minute          Pointer to the variable to be set to the minute.
+ *      second          Pointer to the variable to be set to the second.
+ *      resolution      Pointer to the variable to be set to the resolution
+ *                      of the decoded time in seconds.
+ */
+void
+utDecodeTime(
+    double	value,
+    int		*year,
+    int		*month,
+    int		*day,
+    int		*hour,
+    int		*minute,
+    double	*second,
+    double	*resolution);
+
+
 /******************************************************************************
  * Error Handling:
  ******************************************************************************/
@@ -1217,7 +1190,7 @@ utEncodeTime(
  *   UT_XML		XML parsing error
  *   UT_INTERNAL	Internal, assertion-type failure. Shouldn't occur.
  */
-enum utStatus
+utStatus
 utGetStatus(void);
 
 
@@ -1230,7 +1203,7 @@ utGetStatus(void);
  */
 void
 utSetStatus(
-    enum utStatus	status);
+    utStatus	status);
 
 
 /*

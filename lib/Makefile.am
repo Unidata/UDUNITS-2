@@ -7,10 +7,15 @@ libudunits2_la_SOURCES = core.c converter.c formatter.c \
     systemMap.c systemMap.h \
     prefix.c \
     parser.y \
+    status.c \
     xml.c \
     error.c \
     utFreeSystem.c
 BUILT_SOURCES = parser.c scanner.c
+info_TEXINFOS = udunits2lib.texi
+AM_MAKEINFOHTMLFLAGS = --no-split
+libudunits2_la_CPPFLAGS = -DUDUNITS2_XML_PATH='"@datadir@/SI.xml"' $(CPPFLAGS)
+
 lex_prefix = ut_
 LEX_OUTPUT_ROOT = lex.$(lex_prefix)
 LFLAGS = -d -P$(lex_prefix)

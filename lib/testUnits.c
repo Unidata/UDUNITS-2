@@ -28,6 +28,7 @@ static utUnit*		rankine;
 static utUnit*		celsius;
 static utUnit*		fahrenheit;
 static utUnit*		watt;
+static utUnit*		cubicMeter;
 static utUnit*		cubicMicron;
 static utUnit*		BZ;
 static utUnit*		dBZ;
@@ -108,7 +109,8 @@ test_utNewBaseUnit(void)
     second = utNewBaseUnit(unitSystem);
     CU_ASSERT_PTR_NOT_NULL(second);
 
-    CU_ASSERT_PTR_NULL(utOffsetByTime(second, 1970, 1, 1, 0, 0, 0));
+    CU_ASSERT_PTR_NULL(utOffsetByTime(second,
+        utEncodeTime(1970, 1, 1, 0, 0, 0)));
     CU_ASSERT_EQUAL(utGetStatus(), UT_NO_SECOND);
 
     CU_ASSERT_EQUAL(utSetSecond(second), UT_SUCCESS);
@@ -744,6 +746,7 @@ test_utLog(void)
     CU_ASSERT_PTR_NULL(unit);
     CU_ASSERT_EQUAL(utGetStatus(), UT_BAD_VALUE);
 
+    cubicMeter = utRaise(meter, 3);
     cubicMicron = utRaise(utScale(1e-6, meter), 3);
     CU_ASSERT_PTR_NOT_NULL(cubicMicron);
 
@@ -906,6 +909,7 @@ test_utAreConvertible(void)
     CU_ASSERT_EQUAL(utAreConvertible(radian, radian), 1);
     CU_ASSERT_EQUAL(utAreConvertible(radian, meter), 0);
     CU_ASSERT_EQUAL(utAreConvertible(cubicMicron, cubicMicron), 1);
+    CU_ASSERT_EQUAL(utAreConvertible(cubicMicron, cubicMeter), 1);
     CU_ASSERT_EQUAL(utAreConvertible(watt, watt), 1);
     CU_ASSERT_EQUAL(utAreConvertible(watt, cubicMicron), 0);
     CU_ASSERT_EQUAL(utAreConvertible(cubicMicron, watt), 0);
@@ -1138,6 +1142,11 @@ test_utGetConverter(void)
     CU_ASSERT_TRUE(areCloseDoubles(doubles[0], 100));
     cvFree(converter);
 
+    converter = utGetConverter(cubicMeter, dBZ);
+    CU_ASSERT_PTR_NOT_NULL(converter);
+    CU_ASSERT_TRUE(areCloseDoubles(cvConvertDouble(converter, 1e-18), 0.0));
+    cvFree(converter);
+
     converter = utGetConverter(cubicMicron, dBZ);
     CU_ASSERT_PTR_NOT_NULL(converter);
     CU_ASSERT_TRUE(areCloseDoubles(cvConvertDouble(converter, 1000), 30.0));
@@ -1248,7 +1257,8 @@ test_utOffsetByTime(void)
     float		floats[2];
     utUnit*		unit;
 
-    secondsSinceTheEpoch = utOffsetByTime(second, 1970, 1, 1, 0, 0, 0);
+    secondsSinceTheEpoch =
+        utOffsetByTime(second, utEncodeTime(1970, 1, 1, 0, 0, 0));
     CU_ASSERT_PTR_NOT_NULL(secondsSinceTheEpoch);
     nchar = utFormat(secondsSinceTheEpoch, buf, sizeof(buf)-1, asciiSymbolDef);
     CU_ASSERT_TRUE_FATAL(nchar > 0);
@@ -1256,7 +1266,8 @@ test_utOffsetByTime(void)
     buf[nchar] = 0;
     CU_ASSERT_STRING_EQUAL(buf, "s @ 19700101T000000.0000000 UTC");
 
-    minutesSinceTheMillenium = utOffsetByTime(minute, 2001, 1, 1, 0, 0, 0);
+    minutesSinceTheMillenium =
+        utOffsetByTime(minute, utEncodeTime(2001, 1, 1, 0, 0, 0));
     CU_ASSERT_PTR_NOT_NULL(minutesSinceTheMillenium);
 
     nchar = utFormat(secondsSinceTheEpoch, buf, sizeof(buf)-1, asciiNameDef);
@@ -1294,7 +1305,7 @@ test_utOffsetByTime(void)
 
     day = utScale(86400, second);
     CU_ASSERT_PTR_NOT_NULL_FATAL(day);
-    daysSinceTheEpoch = utOffsetByTime(day, 1970, 1, 1, 0, 0, 0);
+    daysSinceTheEpoch = utOffsetByTime(day, utEncodeTime(1970, 1, 1, 0, 0, 0));
     utFree(day);
     CU_ASSERT_PTR_NOT_NULL_FATAL(daysSinceTheEpoch);
     nchar = utFormat(daysSinceTheEpoch, buf, sizeof(buf)-1, asciiSymbolDef);
@@ -1359,10 +1370,7 @@ test_utOffsetByTime(void)
 
     utFree(daysSinceTheEpoch);
 
-    CU_ASSERT_PTR_NULL(utOffsetByTime(NULL, 0, 0, 0, 0, 0, 0));
-    CU_ASSERT_EQUAL(utGetStatus(), UT_NULL_ARG);
-
-    CU_ASSERT_PTR_NULL(utOffsetByScalarTime(NULL, 0));
+    CU_ASSERT_PTR_NULL(utOffsetByTime(NULL, utEncodeTime(0, 0, 0, 0, 0, 0)));
     CU_ASSERT_EQUAL(utGetStatus(), UT_NULL_ARG);
 }
 
@@ -1576,13 +1584,17 @@ test_parsing(void)
     CU_ASSERT_EQUAL(utCompare(unit, dBZ), 0);
     utFree(unit);
 
-    spec = utTrim(" (K/1.8) @ 459.67 ", UT_ASCII);
-    unit = utParse(unitSystem, spec, UT_ASCII);
-    CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(utGetParseLength(), strlen(spec));
-    CU_ASSERT_EQUAL(utCompare(unit, fahrenheit), 0);
-    utFree(unit);
-    free(spec);
+    {
+        char    buf[] = " (K/1.8) @ 459.67 ";
+
+        (void)utTrim(buf, UT_ASCII);
+
+        unit = utParse(unitSystem, buf, UT_ASCII);
+        CU_ASSERT_PTR_NOT_NULL(unit);
+        CU_ASSERT_EQUAL(utGetParseLength(), strlen(buf));
+        CU_ASSERT_EQUAL(utCompare(unit, fahrenheit), 0);
+        utFree(unit);
+    }
 
     spec = "1";
     unit = utParse(unitSystem, spec, UT_ASCII);

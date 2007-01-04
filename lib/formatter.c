@@ -68,8 +68,6 @@ utf8PrintProduct(
 
 static utVisitor	formatter;
 
-extern enum utStatus	utStatus;
-
 
 /*
  * Returns a name for a unit.
@@ -157,11 +155,11 @@ format(
 
     if (unit == NULL) {
 	utHandleErrorMessage("format(): NULL unit argument");
-	utStatus = UT_NULL_ARG;
+	utSetStatus(UT_NULL_ARG);
     }
     else if (buf == NULL) {
 	utHandleErrorMessage("format(): NULL buffer argument");
-	utStatus = UT_BAD_BUF;
+	utSetStatus(UT_BAD_BUF);
     }
     else {
 	FormatPar	formatPar;
@@ -234,7 +232,7 @@ printBasic(
  *	else		Success.  Number of characters formatted, excluding any
  *			trailing NUL.
  */
-static enum utStatus
+static utStatus
 formatBasic(
     const utUnit* const	unit,
     void*		arg)
@@ -409,7 +407,7 @@ utf8PrintProduct(
 		     */
 		    static const char*	exponentStrings[10] = {
 			"\xe2\x81\xb0",	/* 0 */
-			"\xc2\xb1",	/* 1 */
+			"\xc2\xb9",	/* 1 */
 			"\xc2\xb2",	/* 2 */
 			"\xc2\xb3",	/* 3 */
 			"\xe2\x81\xb4",	/* 4 */
@@ -729,7 +727,7 @@ latin1PrintProduct(
  *	-1		Failure.  See errno.
  *	else		Success.  Number of bytes printed.
  */
-static enum utStatus
+static utStatus
 formatProduct(
     const utUnit* const		unit,
     const int			count,
@@ -852,7 +850,7 @@ printGalilean(
  *	-1		Failure.  See errno.
  *	else		Success.  Number of bytes printed.
  */
-static enum utStatus
+static utStatus
 formatGalilean(
     const utUnit* const	unit,
     const double	scale,
@@ -984,33 +982,31 @@ printTimestamp(
  * Arguments:
  *	unit		Pointer to the timestamp-unit to be formatted.
  *	underlyingUnit	Pointer to the unit that underlies "unit".
- *	year		The year of the origin.
- *	month		The month of the origin (1 through 12).
- *	day		The day of the origin (1 through 32).
- *	hour		The hour of the origin (0 through 23).
- *	minute		The minute of the origin (0 through 59).
- *	second		The second of the origin (0 through 60).
- *	resolution	The resolution of the origin in seconds.
+ *      origin          The encoded origin of the timestamp-unit.
  *	arg		Pointer to the formatting parameters.
  * Returns:
  *	-1		Failure.  See errno.
  *	else		Success.  Number of bytes printed.
  */
-static enum utStatus
+static utStatus
 formatTimestamp(
     const utUnit* const	unit,
     const utUnit* const	underlyingUnit,
-    const int		year,
-    const int		month,
-    const int		day,
-    const int		hour,
-    const int		minute,
-    const double	second,
-    const double	resolution,
+    const double        origin,
     void*		arg)
 {
-    FormatPar*	formatPar = (FormatPar*)arg;
-    int		nchar;
+    FormatPar*  	formatPar = (FormatPar*)arg;
+    int 		nchar;
+    int		        year;
+    int		        month;
+    int		        day;
+    int		        hour;
+    int		        minute;
+    double      	second;
+    double              resolution;
+
+    utDecodeTime(origin, &year, &month, &day, &hour, &minute, &second,
+        &resolution);
 
     if (formatPar->getDefinition) {
 	nchar = printTimestamp(underlyingUnit, year, month, day, hour, minute,
@@ -1114,7 +1110,7 @@ printLogarithmic(
  *	UT_VISIT_ERROR	Failure.
  *	UT_SUCCESS	Success.
  */
-static enum utStatus
+static utStatus
 formatLogarithmic(
     const utUnit* const	unit,
     const double	logE,
@@ -1191,7 +1187,7 @@ static utVisitor	formatter = {
  *			UT_LATIN1 and UT_UTF8 are mutually exclusive: they may
  *			not both be specified.
  * Returns:
- *	-1		Failure:  "utStatus()" will be
+ *	-1		Failure:  "utGetStatus()" will be
  *			    UT_NULL_ARG		"unit" or "buf" is NULL
  *			    UT_BAD_VALUE	Both UT_LATIN1 and UT_UTF8
  *						specified.
@@ -1215,21 +1211,21 @@ utFormat(
 
     if (unit == NULL || buf == NULL) {
 	utHandleErrorMessage("NULL argument");
-	utStatus = UT_NULL_ARG;
+	utSetStatus(UT_NULL_ARG);
     }
     else if ((encoding & UT_LATIN1) && (encoding & UT_UTF8)) {
 	utHandleErrorMessage("Both UT_LATIN1 and UT_UTF8 specified");
-	utStatus = UT_BAD_VALUE;
+	utSetStatus(UT_BAD_VALUE);
     }
     else {
 	nchar = format(unit, buf, size, useNames, getDefinition, encoding, 0);
 
 	if (nchar < 0) {
 	    utHandleErrorMessage("Couldn't format unit");
-	    utStatus = UT_CANT_FORMAT;
+	    utSetStatus(UT_CANT_FORMAT);
 	}
 	else {
-	    utStatus = UT_SUCCESS;
+	    utSetStatus(UT_SUCCESS);
 	}
     }
 

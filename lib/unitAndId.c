@@ -1,7 +1,7 @@
 /*
  * Searchable unit-and-identifier tree.
  *
- * $Id: unitAndId.c,v 1.4 2006/12/21 20:52:37 steve Exp $
+ * $Id: unitAndId.c,v 1.5 2007/01/04 17:13:01 steve Exp $
  */
 
 /*LINTLIBRARY*/
@@ -18,15 +18,13 @@
 #include "unitAndId.h"
 #include "udunits2.h"
 
-extern enum utStatus	utStatus;
-
 
 /*
  * Arguments:
  *	unit	The unit.  May be freed upon return.
  *	id	The identifier (name or symbol).  May be freed upon return.
  * Returns:
- *	NULL	Failure.  "utStatus" will be
+ *	NULL	Failure.  "utGetStatus()" will be
  *		    UT_NULL_ARG	"unit" or "id" is NULL.
  *		    UT_OS	Operating-system failure.  See "errno".
  *	else	Pointer to the new unit-and-identifier.
@@ -40,7 +38,7 @@ uaiNew(
 
     if (id == NULL || unit == NULL) {
 	utHandleErrorMessage("uaiNew(): NULL argument");
-	utStatus = UT_NULL_ARG;
+	utSetStatus(UT_NULL_ARG);
     }
     else {
 	entry = malloc(sizeof(UnitAndId));
@@ -49,7 +47,7 @@ uaiNew(
 	    utHandleErrorMessage(strerror(errno));
 	    utHandleErrorMessage("Couldn't allocate %lu-byte data-structure",
 		sizeof(UnitAndId));
-	    utStatus = UT_OS;
+	    utSetStatus(UT_OS);
 	}
 	else {
 	    entry->id = strdup(id);
@@ -57,18 +55,18 @@ uaiNew(
 	    if (entry->id == NULL) {
 		utHandleErrorMessage(strerror(errno));
 		utHandleErrorMessage("Couldn't duplicate identifier");
-		utStatus = UT_OS;
+		utSetStatus(UT_OS);
 	    }
 	    else {
 		entry->unit = utClone(unit);
 
 		if (entry->unit == NULL) {
-		    assert(utStatus != UT_SUCCESS);
+		    assert(utGetStatus() != UT_SUCCESS);
 		    free(entry->id);
 		}
 	    }
 
-	    if (utStatus != UT_SUCCESS) {
+	    if (utGetStatus() != UT_SUCCESS) {
 		free(entry);
 		entry = NULL;
 	    }
