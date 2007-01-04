@@ -1,6 +1,6 @@
 %{
 /*
- * $Id: parser.y,v 1.7 2007/01/04 17:13:01 steve Exp $
+ * $Id: parser.y,v 1.8 2007/01/04 17:26:55 steve Exp $
  *
  * yacc(1)-based parser for decoding formatted unit specifications.
  */
@@ -48,6 +48,7 @@ utTrim(
     const char*		whiteSpace;
     char*		start;
     char*		stop;
+    size_t              len;
 
     whiteSpace =
 	encoding == UT_LATIN1
@@ -60,8 +61,11 @@ utTrim(
 	 if (strchr(whiteSpace, stop[-1]) == NULL)
 	    break;
 
-    (void)memmove(string, start, stop - start);
-    *stop = 0;
+    len = stop - start;
+
+    (void)memmove(string, start, len);
+
+    string[len] = 0;
 
     utSetStatus(UT_SUCCESS);
 
