@@ -31,4 +31,4 @@ SUFFIXES = .c .l
 	$(LINT.c) $(AM_CPPFLAGS) -c $<
 
 .c.i:
-	$(CPP) $(CPPFLAGS) $< >$@
+	$(CPP) $(AM_CPPFLAGS) $(CPPFLAGS) $< >$@

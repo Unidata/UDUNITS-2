@@ -8,6 +8,20 @@ AC_CONFIG_SRCDIR([lib/converter.c])
 AM_INIT_AUTOMAKE([foreign subdir-objects])
 AC_CONFIG_HEADER([config.h])
 
+CFLAGS_COVERAGE=''
+LIBS_COVERAGE=''
+AC_ARG_ENABLE([coverage],
+[  --enable-coverage       Turn on code-coverage support],
+[case "${enableval}" in
+  yes) CFLAGS_COVERAGE='--coverage'
+       LIBS_COVERAGE=-lgcov
+       coverage_enabled=true;;
+  no) ;;
+  *) AC_MSG_ERROR([bad value ${enableval} for --enable-coverage]) ;;
+esac])
+AC_SUBST(CFLAGS_COVERAGE)
+AC_SUBST(LIBS_COVERAGE)
+
 AC_ARG_ENABLE([debug],
 [  --enable-debug          Turn on debugging support],
 [case "${enableval}" in
@@ -18,11 +32,21 @@ AC_ARG_ENABLE([debug],
     CFLAGS="${CFLAGS:+$CFLAGS }-O"
     debug=false ;;
   *) AC_MSG_ERROR([bad value ${enableval} for --enable-debug]) ;;
-esac],[debug=false])
+esac],
+[if test "$coverage_enabled" = true; then
+    CFLAGS="${CFLAGS:+$CFLAGS }-g"
+    debug=true
+else
+    debug=false
+fi
+])
 AM_CONDITIONAL([DEBUG], [test x$debug = xtrue])
 
-# Ensure that the CFLAGS default is "-O" and not "-g" or "-g -O2"
-CFLAGS=${CFLAGS--O}
+# Ensure that compilation is optimized and with assertions disabled by default.
+if test x$debug \!= xtrue; then
+    CFLAGS="-O${CFLAGS:+ $CFLAGS}"
+    CPPFLAGS="-DNDEBUG${CPPFLAGS:+ $CPPFLAGS}"
+fi
 
 # Checks for programs.
 AC_PROG_CC
@@ -41,18 +65,29 @@ AC_PROG_YACC
 AM_PROG_LEX
 
 # Checks for libraries.
-save_LIBS=$LIBS
-LIBS=
-AC_SEARCH_LIBS([CU_basic_run_tests], [cunit],
-[LD_CUNIT=$LIBS
-AC_SUBST(LD_CUNIT)
-LIBS=$save_LIBS
-cunit=true], [cunit=false])
-AM_CONDITIONAL([HAVE_CUNIT], [test x$cunit = xtrue])
 
 # Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS([float.h inttypes.h stddef.h stdlib.h string.h strings.h])
+
+# Check for CUNIT unit-testing package
+AC_MSG_NOTICE([Checking for CUNIT unit-testing package.])
+AC_CHECK_FILE([/opt/include/CUnit/CUnit.h],
+    [CPPFLAGS_CUNIT=-I/opt/include
+    AC_SUBST(CPPFLAGS_CUNIT)
+    AC_CHECK_FILE([/opt/lib/libcunit.so],
+	[LIBS_CUNIT='-L/opt/lib -lcunit'
+	AC_SUBST(LIBS_CUNIT)],
+	[AC_CHECK_FILE([/opt/lib/libcunit.a],
+	    [LIBS_CUNIT='-L/opt/lib -lcunit'
+	    AC_SUBST(LIBS_CUNIT)])])])
+if test "$CPPFLAGS_CUNIT" -a "$LIBS_CUNIT"; then
+    AC_MSG_NOTICE([CUNIT found.  Enabling unit-tests.])
+    AM_CONDITIONAL([HAVE_CUNIT], [true])
+else
+    AC_MSG_NOTICE([CUNIT not found.  Disabling unit-tests.])
+    AM_CONDITIONAL([HAVE_CUNIT], [false])
+fi
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -67,5 +102,6 @@ AC_PROG_LIBTOOL
 AC_CONFIG_FILES([Makefile
 		 expat/Makefile
                  lib/Makefile
+                 installdirs.texi
 		 udunits2/Makefile])
 AC_OUTPUT
