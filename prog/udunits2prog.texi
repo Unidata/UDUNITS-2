@@ -1,9 +1,10 @@
 \input texinfo  @c -*-texinfo-*-
 @c %**start of header
 @setfilename udunits2prog.info
-@settitle UDUNITS-2 C API Guide
+@settitle udunits2 Program Guide
 @c %**end of header
 @include ../installdirs.texi
+@include version.texi
 @copying
 Copyright @copyright{} 2007 University Corporation for Atmospheric Research
 
@@ -40,6 +41,8 @@ modification, or enhancement.
 This manual describes how to use the UDUNITS2 program.
 This program allows you to discover the definition of a unit
 as well as convert numeric values between compatible units.
+
+This manual was last updated on @value{UPDATED}.
 
 @insertcopying
 @end ifnottex
