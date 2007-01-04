@@ -59,6 +59,7 @@ This manual was last updated on @value{UPDATED}.
 * Why::                 What's a unit package good for?
 * Unit-Systems::        Explanation of unit-systems and how to get one
 * Parsing::             Converting strings into units
+* Syntax::              Syntax for string representation of units
 * Formatting::          Converting units into strings
 * Value Conversion::    Converting values between units
 * Prefixes::            Defining unit prefixes
@@ -628,7 +629,7 @@ You should call this function when you no longer need the converter.
 Use of @var{conv} upon return results in undefined behavior.
 @end deftypefun
 
-@node Parsing, Formatting, Value Conversion, Top
+@node Parsing, Syntax, Value Conversion, Top
 @chapter Parsing a String into a Unit
 @cindex parsing a string into a unit
 @cindex string, parsing into a unit
@@ -694,7 +695,171 @@ Removes all leading and trailing whitespace from the NUL-terminated string
 or trailing whitespace.
 @end deftypefun
 
-@node Formatting, Operations, Parsing, Top
+@node Syntax, Formatting, Parsing, Top
+@chapter Unit Syntax
+@cindex unit syntax
+@cindex syntax, unit
+
+For the most part, the UDUNITS-2 package follows the syntax for unit-strings
+promulgated by the US National Institute for Standards and Technology (NIST).
+Details, of which, can be found at @url{http://physics.nist.gov/cuu/Units/index.html}.
+The one general exception to this is the invention of a syntax for
+``offset''-units (e.g., the definition of the degree Celsius is ``K @@
+273.16'').
+
+Look at the @code{<def>} elements in @ref{Database,the units database}
+to see examples of string specifications of units.
+
+Here is the unit-syntax understood by the UDUNITS-2 package.  Words printed
+@emph{Thusly} indicate non-terminals; words printed THUSLY indicate terminals;
+and words printed <thusly> indicate lexical elements.
+
+@example
+@emph{Unit-Spec: one of}
+        nothing
+        @emph{Shift-Spec}
+
+@emph{Shift-Spec: one of}
+        @emph{Product-Spec}
+        @emph{Product-Spec} SHIFT REAL
+        @emph{Product-Spec} SHIFT INT
+        @emph{Product-Spec} SHIFT @emph{Timestamp}
+
+@emph{Product-Spec: one of}
+        @emph{Power-Spec}
+        @emph{Product-Spec} @emph{Power-Spec}
+        @emph{Product-Spec} MULTIPLY @emph{Power-Spec}
+        @emph{Product-Spec} DIVIDE @emph{Power-Spec}
+
+@emph{Power-Spec: one of}
+        @emph{Basic-Spec}
+        @emph{Basic-Spec} INT
+        @emph{Basic-Spec} EXPONENT
+        @emph{Basic-Spec} RAISE INT
+
+@emph{Basic-Spec: one of}
+        ID
+        "(" @emph{Shift-Spec} ")"
+        LOGREF @emph{Product_Spec} ")"
+        @emph{Number}
+
+@emph{Number: one of}
+        INT
+        REAL
+
+@emph{Timestamp: one of}
+        DATE
+        DATE CLOCK
+        DATE CLOCK CLOCK
+        DATE CLOCK INT
+        DATE CLOCK ID
+        TIMESTAMP
+        TIMESTAMP INT
+        TIMESTAMP ID
+
+SHIFT:
+        <space>* <shift_op> <space>*
+
+<shift_op>: one of
+        "@@"
+        "after"
+        "from"
+        "since"
+        "ref"
+
+REAL:
+        the usual floating-point format
+
+INT:
+        the usual integer format
+
+MULTIPLY: one of
+        "-"
+        "."
+        "*"
+        <space>+
+        <centered middot>
+
+DIVIDE:
+        <space>* <divide_op> <space>*
+
+<divide_op>: one of
+        per
+        PER
+        "/"
+
+EXPONENT:
+        ISO-8859-9 or UTF-8 encoded exponent characters
+
+RAISE: one of
+        "^"
+        "**"
+
+ID: one of
+        <id>
+        "%"
+        "'"
+        "\""
+        degree sign
+        greek mu character
+
+<id>:
+        <alpha> <alphanum>*
+
+<alpha>:
+        [A-Za-z_]
+        ISO-8859-1 alphabetic characters
+        non-breaking space
+
+<alphanum>: one of
+        <alpha>
+        <digit>
+
+<digit>:
+        [0-9]
+
+LOGREF:
+        <log> <space>* <logref>
+
+<log>: one of
+        "log"
+        "lg"
+        "ln"
+        "lb"
+
+<logref>:
+        "(" <space>* <re> ":"? <space>*
+
+DATE:
+        <year> "-" <month> ("-" <day>)?
+
+<year>:
+        [+-]?[0-9]@{1,4@}
+
+<month>:
+        "0"?[1-9]|1[0-2]
+
+<day>:
+        "0"?[1-9]|[1-2][0-9]|"30"|"31"
+
+CLOCK:
+        <hour> ":" <minute> (":" <second>)?
+
+TIMSTAMP:
+        <year> (<month> <day>?)? "T" <hour> (<minute> <second>?)?
+
+<hour>:
+        [+-]?[0-1]?[0-9]|2[0-3]
+
+<minute>:
+        [0-5]?[0-9]
+
+<second>:
+        (<minute>|60) (\.[0-9]*)?
+
+@end example
+
+@node Formatting, Operations, Syntax, Top
 @chapter Formatting a Unit into a String
 @cindex formatting a unit into a string
 @cindex unit, formatting into a string
