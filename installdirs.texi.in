@@ -1,0 +1,3 @@
+@set includedir @prefix@/include
+@set libdir @prefix@/lib
+@set datadir @prefix@/share
