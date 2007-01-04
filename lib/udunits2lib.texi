@@ -1,9 +1,10 @@
 \input texinfo  @c -*-texinfo-*-
 @c %**start of header
-@setfilename udunits2.info
+@setfilename udunits2lib.info
 @settitle The UDUNITS-2 C API Guide
 @c %**end of header
 @include ../installdirs.texi
+@include version.texi
 @syncodeindex fn cp
 @syncodeindex tp cp
 @copying
@@ -47,6 +48,8 @@ units.
 
 The library comes with an extensive database of units all referenced to the
 SI system of units.
+
+This manual was last updated on @value{UPDATED}.
 
 @insertcopying
 @end ifnottex
