@@ -28,7 +28,7 @@ LINT		= lint
 SUFFIXES = .c .l
 
 .c.ln:
-	$(LINT.c) $(AM_CPPFLAGS) -c $<
+	$(LINT.c) $(CPPFLAGS) -c $<
 
 .c.i:
-	$(CPP) $(AM_CPPFLAGS) $(CPPFLAGS) $< >$@
+	$(CPP) $(CPPFLAGS) $< >$@
