@@ -102,7 +102,7 @@ const char*    @ref{utGetName(),utGetName}(const utUnit* @var{unit}, @ref{utEnco
 const char*    @ref{utGetSymbol(),utGetSymbol}(const utUnit* @var{unit}, @ref{utEncoding} @var{encoding});
 @ref{utStatus}       @ref{utMapSymbolToUnit(),utMapSymbolToUnit}(const char* @var{symbol}, utUnit* @var{unit});
 @ref{utStatus}       @ref{utUnmapSymbol(),utUnmapSymbol}(utSystem* @var{system}, const char* @var{symbol});
-@ref{utStatus}       @ref{utMapUnitToSymbol(),utMapUnitToSymbol}(utUnit* @var{unit}, const char* @var{symbol},   @ref{utEncoding} @var{encoding});
+@ref{utStatus}       @ref{utMapUnitToSymbol(),utMapUnitToSymbol}(utUnit* @var{unit}, const char* @var{symbol}, @ref{utEncoding} @var{encoding});
 @ref{utStatus}       @ref{utUnmapUnitToSymbol(),utUnmapUnitToSymbol}(utUnit* @var{unit}, @ref{utEncoding} @var{encoding});
 int            @ref{utIsDimensionless(),utIsDimensionless}(utUnit* @var{unit});
 int            @ref{utSameSystem(),utSameSystem}(const utUnit* @var{unit1}, const utUnit* @var{unit2});
