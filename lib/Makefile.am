@@ -14,7 +14,9 @@ libudunits2_la_SOURCES = core.c converter.c formatter.c \
 BUILT_SOURCES = parser.c scanner.c
 info_TEXINFOS = udunits2lib.texi
 AM_MAKEINFOHTMLFLAGS = --no-split
-libudunits2_la_CPPFLAGS = -DUDUNITS2_XML_PATH='"@datadir@/SI.xml"' $(CPPFLAGS)
+libudunits2_la_CPPFLAGS = \
+	-DUDUNITS2_XML_PATH='"@datadir@/SI.xml"' \
+	-I$(top_srcdir)/expat
 
 lex_prefix = ut_
 LEX_OUTPUT_ROOT = lex.$(lex_prefix)
@@ -25,7 +27,6 @@ AM_LDFLAGS = @CFLAGS_COVERAGE@ @LIBS_COVERAGE@
 libudunits2_la_CFLAGS = @CFLAGS_COVERAGE@
 libudunits2_la_LIBADD = ../expat/libexpat.la
 include_HEADERS = udunits2.h converter.h
-AM_CPPFLAGS = -I$(top_srcdir)/expat
 EXTRA_DIST = SI.xml scanner.l scanner.c
 AM_YFLAGS = -t -p ut_
 
@@ -44,10 +45,10 @@ LINT		= lint
 SUFFIXES = .c .l
 
 .c.ln:
-	$(LINT.c) $(AM_CPPFLAGS) -c $<
+	$(LINT.c) $(libudunits2_la_CPPFLAGS) $(CPPFLAGS) -c $<
 
 .c.i:
-	$(CPP) $(CPPFLAGS) $< >$@
+	$(CPP) $(libudunits2_la_CPPFLAGS) $(CPPFLAGS) $< >$@
 
 .c.gcov:
 	gcov -o .libs/libudunits2_la-$<.o $<.c
