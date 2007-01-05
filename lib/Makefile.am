@@ -25,7 +25,7 @@ AM_LDFLAGS = @CFLAGS_COVERAGE@ @LIBS_COVERAGE@
 libudunits2_la_CFLAGS = @CFLAGS_COVERAGE@
 libudunits2_la_LIBADD = ../expat/libexpat.la
 include_HEADERS = udunits2.h converter.h
-AM_CPPFLAGS = -I$(top_srcdir)/expat/lib
+AM_CPPFLAGS = -I$(top_srcdir)/expat
 EXTRA_DIST = SI.xml scanner.l scanner.c
 AM_YFLAGS = -t -p ut_
 
