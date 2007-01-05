@@ -55,8 +55,7 @@ am__vpath_adj = case $$p in \
     *) f=$$p;; \
   esac;
 am__strip_dir = `echo $$p | sed -e 's|^.*/||'`;
-am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(infodir)" \
-	"$(DESTDIR)$(includedir)"
+am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)"
 libLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libudunits2_la_DEPENDENCIES = ../expat/libexpat.la
@@ -230,7 +229,10 @@ libudunits2_la_SOURCES = core.c converter.c formatter.c \
 BUILT_SOURCES = parser.c scanner.c
 info_TEXINFOS = udunits2lib.texi
 AM_MAKEINFOHTMLFLAGS = --no-split
-libudunits2_la_CPPFLAGS = -DUDUNITS2_XML_PATH='"@datadir@/SI.xml"' $(CPPFLAGS)
+libudunits2_la_CPPFLAGS = \
+	-DUDUNITS2_XML_PATH='"@datadir@/SI.xml"' \
+	-I$(top_srcdir)/expat
+
 lex_prefix = ut_
 LFLAGS = -d -P$(lex_prefix)
 LDADD = libudunits2.la @LIBS_CUNIT@ -lm @LIBS_COVERAGE@
@@ -238,7 +240,6 @@ AM_LDFLAGS = @CFLAGS_COVERAGE@ @LIBS_COVERAGE@
 libudunits2_la_CFLAGS = @CFLAGS_COVERAGE@
 libudunits2_la_LIBADD = ../expat/libexpat.la
 include_HEADERS = udunits2.h converter.h
-AM_CPPFLAGS = -I$(top_srcdir)/expat
 EXTRA_DIST = SI.xml scanner.l scanner.c
 AM_YFLAGS = -t -p ut_
 @HAVE_CUNIT_TRUE@testUnits_CPPFLAGS = @CPPFLAGS_CUNIT@
@@ -799,9 +800,9 @@ check-am: all-am
 	$(MAKE) $(AM_MAKEFLAGS) check-TESTS
 check: $(BUILT_SOURCES)
 	$(MAKE) $(AM_MAKEFLAGS) check-am
-all-am: Makefile $(INFO_DEPS) $(LTLIBRARIES) $(HEADERS)
+all-am: Makefile $(LTLIBRARIES) $(HEADERS)
 installdirs:
-	for dir in "$(DESTDIR)$(libdir)" "$(DESTDIR)$(infodir)" "$(DESTDIR)$(includedir)"; do \
+	for dir in "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)"; do \
 	  test -z "$$dir" || $(mkdir_p) "$$dir"; \
 	done
 install: $(BUILT_SOURCES)
@@ -855,7 +856,7 @@ info: info-am
 
 info-am: $(INFO_DEPS)
 
-install-data-am: install-includeHEADERS install-info-am
+install-data-am: install-includeHEADERS
 
 install-exec-am: install-libLTLIBRARIES
 
@@ -914,8 +915,7 @@ ps: ps-am
 
 ps-am: $(PSS)
 
-uninstall-am: uninstall-includeHEADERS uninstall-info-am \
-	uninstall-libLTLIBRARIES
+uninstall-am: uninstall-includeHEADERS uninstall-libLTLIBRARIES
 
 .PHONY: CTAGS GTAGS all all-am check check-TESTS check-am clean \
 	clean-checkPROGRAMS clean-generic clean-libLTLIBRARIES \
@@ -935,10 +935,10 @@ uninstall-am: uninstall-includeHEADERS uninstall-info-am \
 
 
 .c.ln:
-	$(LINT.c) $(AM_CPPFLAGS) -c $<
+	$(LINT.c) $(libudunits2_la_CPPFLAGS) $(CPPFLAGS) -c $<
 
 .c.i:
-	$(CPP) $(CPPFLAGS) $< >$@
+	$(CPP) $(libudunits2_la_CPPFLAGS) $(CPPFLAGS) $< >$@
 
 .c.gcov:
 	gcov -o .libs/libudunits2_la-$<.o $<.c
