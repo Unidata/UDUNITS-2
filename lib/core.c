@@ -25,7 +25,7 @@
  * This module is thread-compatible but not thread-safe: multi-thread access to
  * this module must be externally synchronized.
  *
- * $Id: core.c,v 1.6 2007/01/04 17:13:01 steve Exp $
+ * $Id: core.c,v 1.7 2007/01/12 15:50:34 steve Exp $
  */
 
 /*LINTLIBRARY*/
@@ -832,7 +832,7 @@ static UnitOps	productOps;
  *	indexes	Pointer to array of indexes of basic-units.  May be freed upon
  *		return.
  *	powers	Pointer to array of powers.  Client may free upon return.
- *	count	The number of elements in "indexes" and "powers".
+ *	count	The number of elements in "indexes" and "powers".  May be zero.
  * Returns:
  *	NULL	Failure.  "utGetStatus()" will be:
  *		    UT_OS	Operating-system error.  See "errno".
@@ -865,30 +865,38 @@ productNew(
 
 	if (commonInit(&productUnit->common, &productOps, system, PRODUCT)
 		== 0) {
-	    size_t	nbytes = sizeof(short)*count;
-	    short*	newIndexes = malloc(nbytes*2);
+            if (count == 0) {
+                productUnit->count = count;
+                productUnit->indexes = NULL;
+                productUnit->powers = NULL;
+                error = 0;
+            }
+            else {
+                size_t	nbytes = sizeof(short)*count;
+                short*	newIndexes = malloc(nbytes*2);
 
-	    if (count > 0 && newIndexes == NULL) {
-		utHandleErrorMessage(strerror(errno));
-		utHandleErrorMessage("productNew(): "
-		    "Couldn't allocate %d-element index array", count);
-		utSetStatus(UT_OS);
-	    }
-	    else {
-		short*	newPowers = newIndexes + count;
+                if (count > 0 && newIndexes == NULL) {
+                    utHandleErrorMessage(strerror(errno));
+                    utHandleErrorMessage("productNew(): "
+                        "Couldn't allocate %d-element index array", count);
+                    utSetStatus(UT_OS);
+                }
+                else {
+                    short*	newPowers = newIndexes + count;
 
-		productUnit->indexes = memcpy(newIndexes, indexes, nbytes);
-		productUnit->powers = memcpy(newPowers, powers, nbytes);
-		productUnit->count = count;
-		error = 0;
-	    }
-	}
+                    productUnit->count = count;
+                    productUnit->indexes = memcpy(newIndexes, indexes, nbytes);
+                    productUnit->powers = memcpy(newPowers, powers, nbytes);
+                    error = 0;
+                }
+	    }                           /* "count > 0" */
+	}                               /* "productUnit->common" initialized */
 
 	if (error) {
 	    free(productUnit);
 	    productUnit = NULL;
 	}
-    }				/* "productUnit" allocated */
+    }				        /* "productUnit" allocated */
 
     return productUnit;
 }
@@ -1134,26 +1142,32 @@ productRaise(
 
     product = &unit->product;
     count = product->count;
-    newPowers = malloc(sizeof(short)*count);
 
-    if (newPowers == NULL) {
-	utHandleErrorMessage(strerror(errno));
-	utHandleErrorMessage("productRaise(): "
-	    "Couldn't allocate %d-element powers-buffer", count);
-	utSetStatus(UT_OS);
+    if (count == 0) {
+        result = unit->common.system->one;
     }
     else {
-	const short* const	oldPowers = product->powers;
-	int			i;
+        newPowers = malloc(sizeof(short)*count);
 
-	for (i = 0; i < count; i++)
-	    newPowers[i] = (short)(oldPowers[i] * power);
+        if (newPowers == NULL) {
+            utHandleErrorMessage(strerror(errno));
+            utHandleErrorMessage("productRaise(): "
+                "Couldn't allocate %d-element powers-buffer", count);
+            utSetStatus(UT_OS);
+        }
+        else {
+            const short* const	oldPowers = product->powers;
+            int			i;
 
-	result = (utUnit*)productNew(unit->common.system,
-	    product->indexes, newPowers, count);
+            for (i = 0; i < count; i++)
+                newPowers[i] = (short)(oldPowers[i] * power);
 
-	free(newPowers);
-    }				/* "newPowers" allocated */
+            result = (utUnit*)productNew(unit->common.system,
+                product->indexes, newPowers, count);
+
+            free(newPowers);
+        }				/* "newPowers" allocated */
+    }				        /* "count > 0" */
 
     return result;
 }
@@ -1648,8 +1662,9 @@ galileanRaise(
     utUnit* const	unit,
     const int		power)
 {
-    utUnit*		result = NULL;	/* failure */
     GalileanUnit*	galilean;
+    utUnit*             tmp;
+    utUnit*             result = NULL;  /* failure */
 
     assert(unit != NULL);
     assert(IS_GALILEAN(unit));
@@ -1658,9 +1673,15 @@ galileanRaise(
     assert(power != 1);
 
     galilean = &unit->galilean;
+    tmp = RAISE(galilean->unit, power);
 
-    return galileanNew(pow(galilean->scale, power),
-	    RAISE(galilean->unit, power), 0);
+    if (tmp != NULL) {
+        result = galileanNew(pow(galilean->scale, power), tmp, 0);
+
+        utFree(tmp);
+    }
+
+    return result;
 }
 
 

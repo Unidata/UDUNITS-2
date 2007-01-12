@@ -1,7 +1,7 @@
 /*
  * Value converters for the udunits(3) library.
  *
- * $Id: converter.c,v 1.4 2007/01/04 17:13:01 steve Exp $
+ * $Id: converter.c,v 1.5 2007/01/12 15:50:34 steve Exp $
  */
 
 /*LINTLIBRARY*/
@@ -778,8 +778,6 @@ expGetExpression(
     const size_t		max,
     const char* const		variable)
 {
-    const int	isUnity = conv->exp.base == 1.0;
-
     return 
 	cvNeedsParentheses(variable)
 	    ? snprintf(buf, max, "pow(%g, (%s))", conv->exp.base, variable)

@@ -1,7 +1,7 @@
 /*
  * Identifier-to-unit map.
  *
- * $Id: idToUnitMap.c,v 1.5 2007/01/04 17:13:01 steve Exp $
+ * $Id: idToUnitMap.c,v 1.6 2007/01/12 15:50:34 steve Exp $
  */
 
 /*LINTLIBRARY*/
@@ -155,7 +155,6 @@ itumRemove(
     IdToUnitMap*	map,
     const char* const	id)
 {
-    utStatus		status;
     UnitAndId		targetEntry;
     UnitAndId**		treeEntry;
 
@@ -172,7 +171,7 @@ itumRemove(
 	uaiFree(uai);
     }
 
-    return status;
+    return UT_SUCCESS;
 }
 
 

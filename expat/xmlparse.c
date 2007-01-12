@@ -2,8 +2,6 @@
    See the file COPYING for copying permission.
 */
 
-#include <config.h>
-
 #include <stddef.h>
 #include <string.h>                     /* memset(), memcpy() */
 #include <assert.h>

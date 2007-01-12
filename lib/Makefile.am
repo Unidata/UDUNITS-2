@@ -1,4 +1,7 @@
 ## Process this file with automake to produce Makefile.in
+docdir = $(datadir)/../doc/udunits2
+htmldir = $(docdir)
+pdfdir = $(docdir)
 lib_LTLIBRARIES = libudunits2.la
 libudunits2_la_SOURCES = core.c converter.c formatter.c \
     idToUnitMap.c idToUnitMap.h \
@@ -12,7 +15,10 @@ libudunits2_la_SOURCES = core.c converter.c formatter.c \
     error.c \
     utFreeSystem.c
 BUILT_SOURCES = parser.c scanner.c
+data_DATA = SI.xml
 info_TEXINFOS = udunits2lib.texi
+html_DATA = udunits2lib.html
+pdf_DATA = udunits2lib.pdf
 AM_MAKEINFOHTMLFLAGS = --no-split
 libudunits2_la_CPPFLAGS = \
 	-DUDUNITS2_XML_PATH='"@datadir@/SI.xml"' \
@@ -25,9 +31,9 @@ LFLAGS = -d -P$(lex_prefix)
 LDADD = libudunits2.la @LIBS_CUNIT@ -lm @LIBS_COVERAGE@
 AM_LDFLAGS = @CFLAGS_COVERAGE@ @LIBS_COVERAGE@
 libudunits2_la_CFLAGS = @CFLAGS_COVERAGE@
-libudunits2_la_LIBADD = ../expat/libexpat.la
+libudunits2_la_LIBADD = ../expat/libexpat.la -lm
 include_HEADERS = udunits2.h converter.h
-EXTRA_DIST = SI.xml scanner.l scanner.c
+EXTRA_DIST = scanner.l scanner.c SI.xml udunits2lib.html udunits2lib.pdf
 AM_YFLAGS = -t -p ut_
 
 if HAVE_CUNIT
@@ -37,7 +43,7 @@ TESTS = testUnits
 endif
 
 MOSTLYCLEANFILES = lint.log *.ln *.i core core.[0-9]* *.gcov *.gcda *.gcno
-TAGS_FILES = parser.c
+TAGS_FILES = parser.c ../expat/*.c ../expat/*.h
 
 LINTFLAGS	= -u
 LINT		= lint

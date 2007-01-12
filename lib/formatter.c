@@ -1207,7 +1207,8 @@ utFormat(
     int			nchar = -1;	/* failure */
     const int		useNames = opts & UT_NAMES;
     const int		getDefinition = opts & UT_DEFINITION;
-    const unsigned	encoding = opts & (UT_ASCII | UT_LATIN1 | UT_UTF8);
+    const utEncoding	encoding =
+        (utEncoding)(opts & (unsigned)(UT_ASCII | UT_LATIN1 | UT_UTF8));
 
     if (unit == NULL || buf == NULL) {
 	utHandleErrorMessage("NULL argument");

@@ -1,4 +1,7 @@
 ## Process this file with automake to produce Makefile.in
+docdir = $(datadir)/../doc/udunits2
+htmldir = $(docdir)
+pdfdir = $(docdir)
 bin_PROGRAMS	= udunits2
 LDADD		= ../lib/libudunits2.la \
 		  -lm
@@ -9,6 +12,7 @@ MOSTLYCLEANFILES	= lint.log *.ln
 LINTFLAGS	= -u
 LINT		= lint
 TAGS_FILES      = ../lib/*.c ../lib/*.h
+EXTRA_DIST = udunits2prog.html udunits2prog.pdf
 
 .c.ln:
 	$(LINT.c) $(AM_CPPFLAGS) -c $<

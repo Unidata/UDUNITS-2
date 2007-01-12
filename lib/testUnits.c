@@ -982,7 +982,7 @@ test_utGetConverter(void)
 
     converter = utGetConverter(meter, kilometer);
     CU_ASSERT_PTR_NOT_NULL(converter);
-    CU_ASSERT_EQUAL(cvConvertDouble(converter, 1000.0), 1.0);
+    CU_ASSERT_TRUE(areCloseDoubles(cvConvertDouble(converter, 1000.0), 1.0));
     floats[0] = 0; floats[1] = 1000;
     CU_ASSERT_EQUAL(cvConvertFloats(converter, floats, 2, floats), floats);
     CU_ASSERT_EQUAL(floats[0], 0);

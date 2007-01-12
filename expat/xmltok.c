@@ -2,8 +2,6 @@
    See the file COPYING for copying permission.
 */
 
-#include <config.h>
-
 #include <stddef.h>
 
 #ifdef COMPILED_FROM_DSP

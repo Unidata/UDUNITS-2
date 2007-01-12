@@ -3,8 +3,13 @@
 @setfilename udunits2lib.info
 @settitle The UDUNITS-2 C API Guide
 @c %**end of header
+@set UPDATED $Header: /upc/share/CVS/udunits2/lib/udunits2lib.texi,v 1.5 2007/01/12 15:50:34 steve Exp $
+@set VERSION $Revision: 1.5 $
 @include ../installdirs.texi
-@include version.texi
+@dircategory Software libraries
+@direntry
+* UDUNITS-2: (udunits2lib).     The Unidata units library.
+@end direntry
 @syncodeindex fn cp
 @syncodeindex tp cp
 @copying
@@ -49,13 +54,13 @@ units.
 The library comes with an extensive database of units all referenced to the
 SI system of units.
 
-This manual was last updated on @value{UPDATED}.
+This manual is version @value{VERSION} and was last updated on @value{UPDATED}.
 
 @insertcopying
 @end ifnottex
 
 @menu
-* Synopsis::            Terse usage example
+* Synopsis::            Terse usage display
 * Why::                 What's a unit package good for?
 * Unit-Systems::        Explanation of unit-systems and how to get one
 * Parsing::             Converting strings into units
@@ -182,7 +187,7 @@ enabling the printing and storing of units in a human-readable form.
 @end enumerate
 While the above might seem to be trivial activities, their 
 general availability at the time might have helped prevent
-the @url{http://en.wikipedia.org/wiki/Mars_Climate_Orbiter,
+the @uref{http://en.wikipedia.org/wiki/Mars_Climate_Orbiter,
 Mars Climate Orbiter} fiasco.
 
 @anchor{unit-system}
@@ -199,7 +204,7 @@ base units.
 In the SI system of units, for example, the base units are the
 meter, kilogram, second, ampere, kelvin, mole, and candela.
 (For definitions of these base units, see
-@url{http://@/physics.nist.gov/@/cuu/@/Units/@/current.html}.)
+@uref{http://@/physics.nist.gov/@/cuu/@/Units/@/current.html}.)
 
 In the UDUNITS-2 package, every accessible unit belongs to one and only one
 unit-system.  It is not possible to convert numeric values between units
@@ -702,7 +707,7 @@ or trailing whitespace.
 
 For the most part, the UDUNITS-2 package follows the syntax for unit-strings
 promulgated by the US National Institute for Standards and Technology (NIST).
-Details, of which, can be found at @url{http://physics.nist.gov/cuu/Units/index.html}.
+Details, of which, can be found at @uref{http://physics.nist.gov/cuu/Units/index.html}.
 The one general exception to this is the invention of a syntax for
 ``offset''-units (e.g., the definition of the degree Celsius is ``K @@
 273.16'').
@@ -1671,13 +1676,13 @@ This enumeration has the following values:
 
 @table @code
 @item UT_ASCII
-@url{http://en.wikipedia.org/wiki/Ascii,US ASCII} character-set.
+@uref{http://en.wikipedia.org/wiki/Ascii,US ASCII} character-set.
 @item UT_ISO_8859_1
-The @url{http://en.wikipedia.org/wiki/Iso-8859-1,ISO-8859-1} character-set.
+The @uref{http://en.wikipedia.org/wiki/Iso-8859-1,ISO-8859-1} character-set.
 @item UT_LATIN1
 Synonym for @code{UT_ISO_8859_1}.
 @item UT_UTF8
-The @url{http://en.wikipedia.org/wiki/Utf-8,UTF-8} encoding of the Unicode
+The @uref{http://en.wikipedia.org/wiki/Utf-8,UTF-8} encoding of the Unicode
 character-set.
 @end table
 @end deftp

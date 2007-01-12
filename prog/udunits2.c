@@ -2,7 +2,7 @@
  * This program prints definitions of units of physical qantities and converts
  * values between such units.
  *
- * $Id: udunits2.c,v 1.1 2007/01/04 17:19:24 steve Exp $
+ * $Id: udunits2.c,v 1.2 2007/01/12 15:50:34 steve Exp $
  */
 
 #ifndef	_XOPEN_SOURCE
@@ -10,7 +10,6 @@
 #endif
 
 #include <errno.h>
-#include <libgen.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -23,7 +22,7 @@
 static int		_reveal;
 static int		_encodingSet;
 static utEncoding	_encoding;
-static const char*	_progname;
+static const char*	_progname = "udunits2";
 static const char*	_xmlPath;
 static utSystem*	_unitSystem;
 static char		_haveUnitSpec[_POSIX_MAX_INPUT+1];
@@ -60,8 +59,6 @@ decodeCommandLine(
 {
     int		c;
     int		success = 0;
-
-    _progname = basename(argv[0]);
 
     while ((c = getopt(argc, argv, "ALUhr")) != -1) {
 	switch (c) {
@@ -117,15 +114,7 @@ ensureXmlPathSet(void)
 	success = 1;
     }
     else {
-	_xmlPath = getenv("UDUNITS2_PATH");
-
-	if (_xmlPath != NULL) {
-	    success = 1;
-	}
-	else {
-	    (void)fprintf(stderr, "%s: XML database file not specified and "
-		"environment variable UDUNITS2_PATH not set\n", _progname);
-	}
+	(void)fprintf(stderr, "%s: Using default XML database\n", _progname);
     }
 
     return success;

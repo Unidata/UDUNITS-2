@@ -1,7 +1,7 @@
 /*
  * Unit-to-identifier map.
  *
- * $Id: unitToIdMap.c,v 1.5 2007/01/04 17:13:01 steve Exp $
+ * $Id: unitToIdMap.c,v 1.6 2007/01/12 15:50:34 steve Exp $
  */
 
 /*LINTLIBRARY*/
@@ -230,9 +230,8 @@ utimFree(
 
 	    while (*rootp != NULL) {
 		UnitAndId*	uai = **(UnitAndId***)rootp;
-		UnitAndId**	parent;
 
-		parent == tdelete(uai, rootp, compareUnits);
+		(void)tdelete(uai, rootp, compareUnits);
 		uaiFree(uai);
 	    }
 	}
