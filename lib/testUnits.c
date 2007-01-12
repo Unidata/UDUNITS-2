@@ -331,7 +331,6 @@ test_utOffset(void)
     utUnit*	dupKelvin;
     char	buf[80];
     int		nchar;
-    utUnit*	unit;
 
     celsius = utOffset(kelvin, 273.15);
     CU_ASSERT_EQUAL(utGetStatus(), UT_SUCCESS);
@@ -371,7 +370,7 @@ test_utOffset(void)
     CU_ASSERT_EQUAL(utGetSystem(kelvin), utGetSystem(dupKelvin));
     utFree(dupKelvin);
 
-    unit = utOffset(NULL, 5);
+    (void)utOffset(NULL, 5);
     CU_ASSERT_EQUAL(utGetStatus(), UT_NULL_ARG);
 }
 
@@ -1255,7 +1254,6 @@ test_utOffsetByTime(void)
     utUnit*		daysSinceTheEpoch;
     double		doubles[2];
     float		floats[2];
-    utUnit*		unit;
 
     secondsSinceTheEpoch =
         utOffsetByTime(second, utEncodeTime(1970, 1, 1, 0, 0, 0));
@@ -1406,8 +1404,6 @@ test_utSetEncoding(void)
 static void
 test_utCompare(void)
 {
-    int		cmp;
-
     CU_ASSERT_NOT_EQUAL(utCompare(kilogram, meter), 0);
     CU_ASSERT_NOT_EQUAL(utCompare(meter, radian), 0);
     CU_ASSERT_NOT_EQUAL(utCompare(radian, kelvin), 0);
