@@ -32,14 +32,17 @@ allremotechecks:
 	    $(MAKE) $$host.check </dev/null >$$host.log 2>&1 & \
 	    eval $${host}Pid="$$!"; \
 	done; \
+	status=0; \
 	for host in $$hosts; do \
 	    eval wait \$${$${host}Pid}; \
 	    stat=$$?; \
 	    if test $$stat -ne 0; then \
 		echo 1>&2 "Build on \"$$host\" exited with status $$stat.  " \
 		    "See file \"$$host.log\"."; \
+		status=$$(($$status+1)); \
 	    fi; \
-	done
+	done; \
+	exit $$status
 
 .PHONY:	allremotechecks remotecheck
 
