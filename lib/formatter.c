@@ -1040,8 +1040,7 @@ formatTimestamp(
  * Prints a logarithmic-unit.
  *
  * Arguments:
- *	logE		The logarithm of the natural number in the base of the
- *			logarithmic-unit (e.g., M_LOG10E for a "Bel" unit).
+ *      base            The base of the logarithm (e.g., 2, M_E, 10).
  *	reference	Pointer to the reference-level of the logarithmic-unit.
  *	buf		Pointer to the buffer into which to print the
  *			logarithmic-unit.
@@ -1058,7 +1057,7 @@ formatTimestamp(
  */
 static int
 printLogarithmic(
-    const double	logE,
+    const double	base,
     const utUnit* const	reference,
     char*		buf,
     const size_t	max,
@@ -1077,19 +1076,19 @@ printLogarithmic(
 	tmp[nchar] = 0;
 	amount = isalpha(tmp[0]) ? "1 " : "";
 
-	if (logE == 1) {
-	    nchar = snprintf(buf, max, "ln(re %s%s)", amount, tmp);
-	}
-	else if (logE == M_LOG2E) {
+	if (base == 2) {
 	    nchar = snprintf(buf, max, "lb(re %s%s)", amount, tmp);
 	}
-	else if (logE == M_LOG10E) {
+	else if (base == M_E) {
+	    nchar = snprintf(buf, max, "ln(re %s%s)", amount, tmp);
+	}
+	else if (base == 10) {
 	    nchar = snprintf(buf, max, "lg(re %s%s)", amount, tmp);
 	}
 	else {
 	    nchar = snprintf(buf, max,
 		addParens ? "(%.*g ln(re %s%s))" : "%.*g ln(re %s%s)",
-		DBL_DIG, logE, amount, tmp);
+		DBL_DIG, 1/log(base), amount, tmp);
 	}
     }					/* printed reference unit */
 
@@ -1102,8 +1101,7 @@ printLogarithmic(
  *
  * Arguments:
  *	unit		Pointer to the logarithmic-unit to be formatted.
- *	logE		The logarithm of the natural number in the base of
- *			"unit" (e.g., M_LOG10E for a "Bel" unit).
+ *      base            The base of the logarithm (e.g., 2, M_E, 10).
  *	reference	Pointer to the reference-level of "unit".
  *	arg		Pointer to the formatting parameters.
  * Returns:
@@ -1113,7 +1111,7 @@ printLogarithmic(
 static utStatus
 formatLogarithmic(
     const utUnit* const	unit,
-    const double	logE,
+    const double	base,
     const utUnit* const	reference,
     void*		arg)
 {
@@ -1121,7 +1119,7 @@ formatLogarithmic(
     int		nchar;
 
     if (formatPar->getDefinition) {
-	nchar = printLogarithmic(logE, reference, formatPar->buf,
+	nchar = printLogarithmic(base, reference, formatPar->buf,
 	    formatPar->size, formatPar->getId, formatPar->getDefinition,
 	    formatPar->encoding, formatPar->addParens);
     }
@@ -1130,7 +1128,7 @@ formatLogarithmic(
 
 	nchar = 
 	    id == NULL
-		? printLogarithmic(logE, reference, formatPar->buf,
+		? printLogarithmic(base, reference, formatPar->buf,
 		    formatPar->size, formatPar->getId, formatPar->getDefinition,
 		    formatPar->encoding, formatPar->addParens)
 		: snprintf(formatPar->buf, formatPar->size, "%s", id);

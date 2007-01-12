@@ -718,7 +718,7 @@ test_utRaise(void)
 static void
 test_utLog(void)
 {
-    utUnit*	bel_1_mW = utLog(M_LOG10E, utScale(0.001, watt));
+    utUnit*	bel_1_mW = utLog(10, utScale(0.001, watt));
     utUnit*	decibel_1_mW;
     utUnit*	unit;
     char	buf[80];
@@ -741,7 +741,7 @@ test_utLog(void)
     buf[nchar] = 0;
     CU_ASSERT_STRING_EQUAL(buf, "0.1 lg(re 0.001 kg.m2.s-3)");
 
-    unit = utLog(-M_LOG10E, utScale(0.001, watt));
+    unit = utLog(-10, utScale(0.001, watt));
     CU_ASSERT_PTR_NULL(unit);
     CU_ASSERT_EQUAL(utGetStatus(), UT_BAD_VALUE);
 
@@ -749,7 +749,7 @@ test_utLog(void)
     cubicMicron = utRaise(utScale(1e-6, meter), 3);
     CU_ASSERT_PTR_NOT_NULL(cubicMicron);
 
-    BZ = utLog(M_LOG10E, cubicMicron);
+    BZ = utLog(10, cubicMicron);
     CU_ASSERT_PTR_NOT_NULL(BZ);
     CU_ASSERT_EQUAL(utIsDimensionless(BZ), 1);
 
@@ -780,9 +780,9 @@ test_utLog(void)
     utFree(decibel_1_mW);
     utFree(unit);
 
-    CU_ASSERT_PTR_NULL(utLog(1, NULL));
+    CU_ASSERT_PTR_NULL(utLog(2, NULL));
     CU_ASSERT_EQUAL(utGetStatus(), UT_NULL_ARG);
-    CU_ASSERT_PTR_NULL(utLog(0, meter));
+    CU_ASSERT_PTR_NULL(utLog(1, meter));
     CU_ASSERT_EQUAL(utGetStatus(), UT_BAD_VALUE);
 
     CU_ASSERT_PTR_NULL(utMultiply(dBZ, meter));

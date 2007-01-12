@@ -1,7 +1,7 @@
 /*
  * Value converters for the udunits(3) library.
  *
- * $Id: converter.c,v 1.5 2007/01/12 15:50:34 steve Exp $
+ * $Id: converter.c,v 1.6 2007/01/12 20:08:15 steve Exp $
  */
 
 /*LINTLIBRARY*/
@@ -83,8 +83,8 @@ union cvConverter {
 #define IS_RECIPROCAL(conv)	((conv)->ops == &reciprocalOps)
 #define IS_SCALE(conv)		((conv)->ops == &scaleOps)
 #define IS_OFFSET(conv)		((conv)->ops == &offsetOps)
-#define CV_IS_GALILEAN(conv)	((conv)->ops == &galileanOps)
-#define CV_IS_LOG(conv)		((conv)->ops == &logOps)
+#define IS_GALILEAN(conv)	((conv)->ops == &galileanOps)
+#define IS_LOG(conv)		((conv)->ops == &logOps)
 
 
 static void
@@ -603,7 +603,15 @@ static cvConverter*
 cvLogClone(
     cvConverter* const	conv)
 {
-    return cvGetLog(conv->log.logE);
+    return
+        cvGetLog(
+            conv->log.logE == M_LOG2E
+                ? 2
+                : conv->log.logE == 1
+                    ? M_E
+                    : conv->log.logE == M_LOG10E
+                        ? 10
+                        : exp(conv->log.logE));
 }
 
 
@@ -1058,20 +1066,20 @@ cvGetGalilean(
  * cvFree().
  *
  * Arguments:
- *	logE		The logarithm of "e" in the base of the desired 
- *			logarithm.  Must be positive.
+ *	base		The logarithmic base (e.g., 2, M_E, 10).  Must be
+ *                      greater than one.
  * Returns:
- *	NULL		"logE" is invalid or necessary memory couldn't be
+ *	NULL		"base" is invalid or necessary memory couldn't be
  *			allocated.
  *	else		A logarithmic converter corresponding to the inputs.
  */
 cvConverter*
 cvGetLog(
-    const double	logE)
+    const double	base)
 {
     cvConverter*	conv;
 
-    if (logE <= 0) {
+    if (base <= 1) {
 	conv = NULL;
     }
     else {
@@ -1079,7 +1087,14 @@ cvGetLog(
 
 	if (conv != NULL) {
 	    conv->ops = &logOps;
-	    conv->log.logE = logE;
+	    conv->log.logE = 
+                base == 2
+                    ? M_LOG2E
+                    : base == M_E
+                        ? 1
+                        : base == 10
+                            ? M_LOG10E
+                            : 1/log(base);
 	}
     }
 
@@ -1170,7 +1185,7 @@ cvCombine(
 	    else if (IS_OFFSET(second)) {
 		conv = cvGetGalilean(first->scale.value, second->offset.value);
 	    }
-	    else if (CV_IS_GALILEAN(second)) {
+	    else if (IS_GALILEAN(second)) {
 		conv = cvGetGalilean(
 		    first->scale.value * second->galilean.slope, 
 		    second->galilean.intercept);
@@ -1184,13 +1199,13 @@ cvCombine(
 	    else if (IS_OFFSET(second)) {
 		conv = cvGetOffset(first->offset.value + second->offset.value);
 	    }
-	    else if (CV_IS_GALILEAN(second)) {
+	    else if (IS_GALILEAN(second)) {
 		conv = cvGetGalilean(second->galilean.slope, 
 		    first->offset.value * second->galilean.slope +
 			second->galilean.intercept);
 	    }
 	}
-	else if (CV_IS_GALILEAN(first)) {
+	else if (IS_GALILEAN(first)) {
 	    if (IS_SCALE(second)) {
 		conv = cvGetGalilean(
 		    second->scale.value * first->galilean.slope,
@@ -1200,7 +1215,7 @@ cvCombine(
 		conv = cvGetGalilean(first->galilean.slope,
 		    first->galilean.intercept + second->offset.value);
 	    }
-	    else if (CV_IS_GALILEAN(second)) {
+	    else if (IS_GALILEAN(second)) {
 		conv = cvGetGalilean(
 		    second->galilean.slope * first->galilean.slope,
 		    second->galilean.slope * first->galilean.intercept +
@@ -1212,16 +1227,31 @@ cvCombine(
 	    /*
 	     * General case: create a composite converter.
 	     */
-	    cvConverter*	tmp = malloc(sizeof(CompositeConverter));
+	    cvConverter*	c1 = CV_CLONE(first);
+            int                 error = 1;
 
-	    if (tmp != NULL) {
-		tmp->ops = &compositeOps;
-		tmp->composite.first = CV_CLONE(first);
-		tmp->composite.second = CV_CLONE(second);
-		conv = tmp;
-	    }
-	}
-    }
+            if (c1 != NULL) {
+                cvConverter*	c2 = CV_CLONE(second);
+
+                if (c2 != NULL) {
+                    conv = malloc(sizeof(CompositeConverter));
+
+                    if (conv != NULL) {
+                        conv->composite.ops = &compositeOps;
+                        conv->composite.first = c1;
+                        conv->composite.second = c2;
+                        error = 0;
+                    }                   /* "conv" allocated */
+
+                    if (error)
+                        cvFree(c2);
+                }                       /* "c2" allocated */
+
+                if (error)
+                    cvFree(c1);
+            }                           /* "c1" allocated */
+	}                               /* "conv != NULL" */
+    }                                   /* "first" & "second" not trivial */
 
     return conv;
 }

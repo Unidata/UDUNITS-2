@@ -117,15 +117,14 @@ typedef struct {
      *
      * Arguments:
      *	unit		Pointer to the logarithmic-unit.
-     *	logE		Logarithm of the natural number in the logarithmic base.
-     *			NB: <math.h> contains M_LOG2E and M_LOG10E.
+     *  base            The logarithmic base (e.g., 2, M_E, 10).
      *	reference	Pointer to the unit that specifies the reference level.
      *	arg		Client pointer passed to utAcceptVisitor().
      * Returns:
      *	UT_SUCCESS	Success.
      *	else		Failure.
      */
-    utStatus	(*visitLogarithmic)(const utUnit* unit, double logE,
+    utStatus	(*visitLogarithmic)(const utUnit* unit, double base,
 	const utUnit* reference, void* arg); 
 } utVisitor;
 
@@ -906,13 +905,11 @@ utRaise(
  * reference level.  For example, the following creates a decibel unit with a
  * one milliwatt reference level:
  *
- *     #include <math.h>		// for M_LOG10E
- *     ...
  *     const utUnit* watt = ...;
  *     const utUnit* milliWatt = utScale(0.001, watt);
  *
  *     if (milliWatt != NULL) {
- *         const utUnit* bel_1_mW = utLog(M_LOG10E, milliWatt);
+ *         const utUnit* bel_1_mW = utLog(10.0, milliWatt);
  *
  *         if (bel_1_mW != NULL) {
  *             const utUnit* decibel_1_mW = utScale(0.1, bel_1_mW);
@@ -929,12 +926,12 @@ utRaise(
  *     }				// "milliWatt" allocated
  *
  * Arguments:
- *	logE		The logarithm of "e" in the logarithmic base.  Must
- *			be positive.  Use the macros defined in <math.h>.
+ *	base		The logarithmic base (e.g., 2, M_E, 10).  Must be
+ *                      greater than one.  "M_E" is defined in <math.h>.
  *	reference	Pointer to the reference value as a unit.
  * Returns:
  *	NULL		Failure.  "utGetStatus()" will be:
- *			    UT_BAD_VALUE	"logE" is invalid.
+ *			    UT_BAD_VALUE	"base" is invalid.
  *			    UT_NULL_ARG		"reference" is NULL.
  *			    UT_OS		Operating-system error. See
  *						"errno".
@@ -944,7 +941,7 @@ utRaise(
  */
 utUnit*
 utLog(
-    const double	logE,
+    const double	base,
     utUnit* const	reference);
 
 

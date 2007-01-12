@@ -1,5 +1,5 @@
 /*
- * $Id: converter.h,v 1.5 2007/01/04 17:13:01 steve Exp $
+ * $Id: converter.h,v 1.6 2007/01/12 20:08:15 steve Exp $
  *
  * Public header-file for the Unidata units(3) library.
  */
@@ -81,16 +81,16 @@ cvGetGalilean(
  * When finished with the converter, the client should pass the converter to
  * cvFree().
  * ARGUMENTS:
- *	logE		The logarithm of "e" in the base of the desired 
- *			logarithm.  Must be positive.
+ *	base		The logarithmic base (e.g., 2, M_E, 10).  Must be
+ *                      greater than one.
  * RETURNS:
- *	NULL		The logarithm of "e" is not positive or necessary
+ *	NULL		"base" is not greater than one or necessary
  *			memory couldn't be allocated.
  *	else		A logarithmic converter corresponding to the inputs.
  */
 cvConverter*
 cvGetLog(
-    const double	logE);
+    const double	base);
 
 /*
  * Returns an exponential converter (i.e., y = pow(b, x) in some base "b").

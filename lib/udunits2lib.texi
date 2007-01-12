@@ -52,7 +52,7 @@ units.
 The library comes with an extensive database of units all referenced to the
 SI system of units.
 
-CVS keywords: $Date: 2007/01/12 16:01:20 $, Revision: 1.3 $
+CVS keywords: $Date: 2007/01/12 20:08:15 $, Revision: 1.3 $
 
 @insertcopying
 @end ifnottex
@@ -119,7 +119,7 @@ utUnit*        @ref{utMultiply(),utMultiply}(utUnit* @var{unit1}, utUnit* @var{u
 utUnit*        @ref{utInvert(),utInvert}(utUnit* @var{unit});
 utUnit*        @ref{utDivide}(utUnit* @var{numer}, utUnit* @var{denom});
 utUnit*        @ref{utRaise(),utRaise}(utUnit* @var{unit}, int @var{power});
-utUnit*        @ref{utLog(),utLog}(double @var{logE}, utUnit* @var{reference});
+utUnit*        @ref{utLog(),utLog}(double @var{base}, utUnit* @var{reference});
 utUnit*        @ref{utParse(),utParse}(utSystem* @var{system}, const char* @var{string}, @ref{utEncoding} @var{encoding});
 size_t         @ref{utGetParseLength(),utGetParseLength}(void);
 char*          @ref{utTrim(),utTrim}(char* @var{string}, @ref{utEncoding} @var{encoding});
@@ -1072,30 +1072,26 @@ Operating-system error. See @code{errno} for the reason.
 @end deftypefun
 
 @anchor{utLog()}
-@deftypefun @code{utUnit*} utLog @code{(double @var{logE}, utUnit* @var{reference})}
+@deftypefun @code{utUnit*} utLog @code{(double @var{base}, utUnit* @var{reference})}
 Returns the logarithmic unit corresponding to the logarithmic base
-determined by @var{logE}, which is the logarithm of the natural number
-in the desired base, and a reference level specified as the unit
-@var{reference}.
+@var{base} and a reference level specified as the unit @var{reference}.
 For example, the following creates a decibel unit with a
 one milliwatt reference level:
 @example
-     #include <math.h>          /* for M_LOG10E */
-     ...
-         const utUnit* milliWatt = ...;
-         const utUnit* bel_1_mW = utLog(M_LOG10E, milliWatt);
+     const utUnit* milliWatt = ...;
+     const utUnit* bel_1_mW = utLog(10.0, milliWatt);
 
-         if (bel_1_mW != NULL) @{
-             const utUnit* decibel_1_mW = @ref{utScale(),utScale}(0.1, bel_1_mW);
+     if (bel_1_mW != NULL) @{
+         const utUnit* decibel_1_mW = @ref{utScale(),utScale}(0.1, bel_1_mW);
 
-             @ref{utFree(),utFree}(bel_1_mW);   /* no longer needed */
+         @ref{utFree(),utFree}(bel_1_mW);   /* no longer needed */
 
-             if (decibel_1_mW != NULL) @{
-                 /* Have decibel unit with 1 mW reference */
-                 ...
-                 @ref{utFree(),utFree}(decibel_1_mW);
-             @}                 /* "decibel_1_mW" allocated */
-         @}
+         if (decibel_1_mW != NULL) @{
+             /* Have decibel unit with 1 mW reference */
+             ...
+             @ref{utFree(),utFree}(decibel_1_mW);
+         @}                 /* "decibel_1_mW" allocated */
+     @}
 @end example
 You should pass the returned pointer to @code{utFree()} when you
 no longer need the unit.
@@ -1111,7 +1107,7 @@ Also, @code{@ref{utGetStatus()}} will return one of the following:
 @item UT_OS
 Operating-system error. See @code{errno} for the reason.
 @item UT_BAD_VALUE
-@var{logE} is invalid (e.g., it must be positive).
+@var{base} is invalid (e.g., it must be greater than one).
 @end table
 @end deftypefun
 
@@ -1236,9 +1232,9 @@ Visits the timestamp-unit @var{unit}.
 The timestamp-unit has the underlying unit of time @var{timeUnit}
 and the @code{@ref{utEncodeTime()}}-encoded time-origin @var{origin}.
 This function returns @code{@ref{utStatus,UT_SUCCESS}} on and only on success.
-@item @ref{utStatus} (*visitLogarithmic)(const utUnit* @var{unit}, double @var{logE}, const utUnit* @var{reference}, void* @var{arg}); 
+@item @ref{utStatus} (*visitLogarithmic)(const utUnit* @var{unit}, double @var{base}, const utUnit* @var{reference}, void* @var{arg}); 
 Visits the logarithmic-unit @var{unit}.
-The logarithmic-unit has the logarithmic base denoted by @var{logE} and
+The logarithmic-unit has the logarithmic base @var{base} and
 the reference-level is specified by the unit @var{reference}.
 This function returns @code{@ref{utStatus,UT_SUCCESS}} on and only on success.
 @end table

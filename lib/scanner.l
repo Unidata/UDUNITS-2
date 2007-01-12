@@ -1,7 +1,7 @@
 /*
  * lex(1) specification for tokens for the Unidata units package, UDUNITS2.
  *
- * $Id: scanner.l,v 1.4 2007/01/04 17:13:01 steve Exp $
+ * $Id: scanner.l,v 1.5 2007/01/12 20:08:15 steve Exp $
  */
 
 %option noyywrap
@@ -311,17 +311,17 @@ logref			\({space}*[Rr][Ee](:{space})?{space}*
 }
 
 (log|lg){space}*{logref} {
-    yylval.rval = M_LOG10E;
+    yylval.rval = 10;
     return LOGREF;
 }
 
 ln{space}*{logref} {
-    yylval.rval = 1.0;
+    yylval.rval = M_E;
     return LOGREF;
 }
 
 lb{space}*{logref} {
-    yylval.rval = M_LOG2E;
+    yylval.rval = 2;
     return LOGREF;
 }
 
