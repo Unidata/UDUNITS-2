@@ -1,50 +1,85 @@
 ## Process this file with automake to produce Makefile.in
 SUBDIRS	= expat lib udunits2
+info_TEXINFOS = udunits2.texi
+AM_MAKEINFOHTMLFLAGS = --no-split
 # DISTCHECK_CONFIGURE_FLAGS = 
 
-remotecheck:    $(DIST_ARCHIVES)
+hostcheck:
 	-test -d /tmp/$(distdir) && \
 	    (chmod -R +w /tmp/$(distdir) && rm -rf /tmp/$(distdir))
 	gunzip -c $(DIST_ARCHIVES) | \
 	    (mkdir /tmp/$(distdir) && cd /tmp/$(distdir) && tar xf -)
 	cd /tmp/$(distdir)/$(distdir) && \
-	    eval ./configure --prefix=/tmp/$(distdir) --enable-debug $$MACS && \
-	    $(MAKE) all check install || exit 1; \
-	    $(MAKE) -i install-info; \
-	    $(MAKE) -i install-html; \
-	    $(MAKE) -i install-pdf; \
-	    $(MAKE) uninstall || exit 1;
-	rm -rf /tmp/$(distdir)
+	    eval ./configure --prefix=/tmp/$(distdir) --enable-debug \
+		$(SHARED_OPT) CC='$(CC)' && \
+	    $(MAKE) all check install install-info install-html install-pdf \
+		uninstall; \
+	    status=$$?; \
+	    cd /tmp && rm -rf /tmp/$(distdir); \
+	    exit $$status
 
-.remote.check:
-	(read shell && \
-	while IFS=':' read make macs; do \
-	    if echo $$make | grep -qv '^#'; then \
-		ssh $* \
-		    "$$shell \"cd $$PWD && MACS='$$macs' $$make remotecheck\"" \
-		    </dev/null || exit 1; \
+.host.check:
+	rm -f $*.results
+	IFS=':' read uname shell <$<; \
+	sed -n '2,$$p' $< | \
+	while IFS=':' read make cc; do \
+	    if ssh $* "$$shell \"cd $$PWD && $$make hostcheck MAKE="$$make" CC='$$cc'\"" </dev/null; then \
+		echo "$$make:$$cc::1" >>$*.results; \
+	    else \
+		echo $$make:$$cc::0 >>$*.results; \
+		if ssh $* "$$shell \"cd $$PWD && $$make hostcheck MAKE="$$make" CC='$$cc' SHARED_OPT=--disable-shared \"" </dev/null; then \
+		    echo $$make:$$cc:--disable-shared:1 >>$*.results; \
+		else \
+		    echo $$make:$$cc:--disable-shared:0 >>$*.results; \
+		fi; \
 	    fi; \
-	done) <$<
+	done
 
-allremotechecks:
-	hosts=`ls *.remote | sed 's/.remote//g'`; \
+hostchecks:	$(DIST_ARCHIVES)
+	rm -f $@
+	hosts=`ls *.host | sed 's/.host//'`; \
 	for host in $$hosts; do \
-	    $(MAKE) $$host.check </dev/null >$$host.log 2>&1 & \
-	    eval $${host}Pid="$$!"; \
-	done; \
+	    $(MAKE) $$host.check >$$host.log 2>&1 & pid="$$!"; \
+	    echo $$host $$pid >>$@; \
+	    echo "Building on $$host"; \
+	done
 	status=0; \
-	for host in $$hosts; do \
-	    eval wait \$${$${host}Pid}; \
+	while read host pid; do \
+	    echo "Waiting on $$host"; \
+	    wait $$pid; \
 	    stat=$$?; \
 	    if test $$stat -ne 0; then \
-		echo 1>&2 "Build on \"$$host\" exited with status $$stat.  " \
+		echo 1>&2 \
+		    "Build on \"$$host\" exited with status $$stat.  " \
 		    "See file \"$$host.log\"."; \
 		status=$$(($$status+1)); \
 	    fi; \
-	done; \
+	done <$@; \
 	exit $$status
 
-.PHONY:	allremotechecks remotecheck
+results.tab:
+	rm -f $@
+	ls *.results | sed 's/.results//' | \
+	while read host; do \
+	    IFS=':' read uname shell <$$host.host || break; \
+	    id=`ssh $$host "$$uname" </dev/null` || break; \
+	    sed -n "2,$$ s/^/$$host:$$id:/p" $$host.results || break; \
+	done >$@
+
+success.texi:	results.tab
+	awk -F: ' \
+	    BEGIN { \
+		print "@multitable {Linux 2.6.18-1.2257.fc5smp} {/opt/csw/gcc4/bin/gcc}"; \
+		print "@headitem O/S @tab Configure Option @tab Compiler"; \
+	    } \
+	    $$6 == 1 { \
+		print "@item" $$2 "@tab" $$5 "@tab" $$4; \
+	    } \
+	    END { \
+		print "@end multitable"; \
+	    }' results.tab >$@
+
+.PHONY:	hostchecks hostcheck results.tab
 
 ## The following entries are necessary to stop make(1)s that don't
 ## understand the .PHONY target from trying to create the given files.
