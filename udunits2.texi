@@ -1,0 +1,133 @@
+\input texinfo  @c -*-texinfo-*-
+@c %**start of header
+@setfilename udunits2.info
+@settitle UDUNITS-2 Manual
+@c %**end of header
+@dircategory Science
+@direntry
+* udunits2: (udunits2).     The Unidata units-conversion package.
+@end direntry
+@copying
+Copyright @copyright{} 2007 University Corporation for Atmospheric Research
+
+@quotation
+Permission to use, copy, modify, and distribute this software and its
+documentation for any purpose without fee is hereby granted, provided
+that the above copyright notice appears in all copies, that both that
+copyright notice and this permission notice appear in supporting
+documentation, and that the name of the University Corporation for
+Atmospheric Research (UCAR) not be used in advertising or publicity
+pertaining to distribution of the software without specific, written
+prior permission.  UCAR makes no representations about the suitability
+of this software for any purpose.  It is provided ``as is'' without
+express or implied warranty.  It is provided with no support and without
+obligation on the part of UCAR to assist in its use, correction,
+modification, or enhancement.
+@end quotation
+@end copying
+
+@titlepage
+@title The UDUNITS-2 Package
+@author Steven R. Emmerson
+
+@page
+@vskip 0pt plus 1filll
+@insertcopying
+@end titlepage
+
+@contents
+
+@ifnottex
+@node Top, Introduction, (dir), (dir)
+@top UDUNITS-2
+This manual introduces the UDUNITS-2 package, which contains
+a C library for units of physical quantities and a unit-definition
+and value-conversion utility.
+
+CVS keywords: $Date: 2007/01/16 20:57:05 $, Revision: 1.3 $
+
+@insertcopying
+@end ifnottex
+
+@menu
+* Introduction::        Introduction
+* Obtain::              Obtaining the package
+* Install::             Installing the package
+* Complete Index::      Complete index
+@end menu
+
+@node Introduction, Obtain, Top, Top
+@chapter Introduction
+@cindex Introduction
+
+The UDUNITS-2 package provides support for units of physical quantities.
+Its three main components are: 1) a C library for units of physical
+quantities; 2) a utility for obtaining the definition of a unit and for
+converting numeric values between compatible units; and 3) a extensive
+database of units.
+
+@node Obtain, Install, Introduction, Top
+@chapter Obtaining the Package
+@cindex obtaining the package
+
+Get the package from its home-page at
+@uref{http://www.unidata.ucar.edu/software/udunits/}
+and unpack it someplace convenient, e.g.,
+
+@example
+cd /tmp
+gunzip -c udunits-2.0.tar.gz | tar -xf -
+cd udunits-2.0
+@end example
+
+@node Install, Complete Index, Obtain, Top
+@chapter Installing the Package
+@cindex installing the package
+
+@menu
+* Short::        Short intallation instructions
+* Long::         Long installation instructions
+@end menu
+
+@node Short, Long, , Install
+@section Short Installation Instructions
+The following assumes that you are familiar with autoconf-based
+package-installation.
+If you're not, then follow the long instructions in the
+next section.
+
+@example
+./configure [--prefix=<dir>] [--disable-shared]
+make
+make check
+make install
+make install-info install-html install-pdf
+make clean
+@end example
+
+If you encounter problems, then follow the instructions in the
+next section.
+
+@node Long, , Short, Install
+@section Long Installation Instructions
+
+@enumerate
+@item
+If necessary, clean-up from a previous installation attempt with the
+command
+@example
+make distclean
+@end example
+
+@item
+Find your operating system and following table of successful 
+package installations:
+@include success.texi
+@end enumerate
+
+@node Complete Index, , Install, Top
+@unnumbered Index
+
+@printindex cp
+
+@bye
