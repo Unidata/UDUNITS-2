@@ -1,11 +1,11 @@
 \input texinfo  @c -*-texinfo-*-
 @c %**start of header
-@setfilename udunits2.info
+@setfilename udunits-2.info
 @settitle UDUNITS-2 Manual
 @c %**end of header
 @dircategory Science
 @direntry
-* udunits2: (udunits2).     The Unidata units-conversion package.
+* udunits-2: (udunits-2).  The Unidata package for units of physical quantities.
 @end direntry
 @copying
 Copyright @copyright{} 2007 University Corporation for Atmospheric Research
@@ -44,7 +44,7 @@ This manual introduces the UDUNITS-2 package, which contains
 a C library for units of physical quantities and a unit-definition
 and value-conversion utility.
 
-CVS keywords: $Date: 2007/01/16 20:57:05 $, Revision: 1.3 $
+CVS keywords: $Date: 2007/01/19 18:24:48 $, Revision: 1.3 $
 
 @insertcopying
 @end ifnottex
@@ -61,10 +61,12 @@ CVS keywords: $Date: 2007/01/16 20:57:05 $, Revision: 1.3 $
 @cindex Introduction
 
 The UDUNITS-2 package provides support for units of physical quantities.
-Its three main components are: 1) a C library for units of physical
-quantities; 2) a utility for obtaining the definition of a unit and for
-converting numeric values between compatible units; and 3) a extensive
-database of units.
+Its three main components are: 1) @ref{Top, , a C library, udunits2lib}
+for units of physical quantities;
+2) @ref{Top, , a utility, udunits2prog};
+for obtaining the definition of a unit and for
+converting numeric values between compatible units;
+and 3) an extensive database of units.
 
 @node Obtain, Install, Introduction, Top
 @chapter Obtaining the Package
@@ -77,7 +79,6 @@ and unpack it someplace convenient, e.g.,
 @example
 cd /tmp
 gunzip -c udunits-2.0.tar.gz | tar -xf -
-cd udunits-2.0
 @end example
 
 @node Install, Complete Index, Obtain, Top
@@ -97,7 +98,7 @@ If you're not, then follow the long instructions in the
 next section.
 
 @example
-./configure [--prefix=<dir>] [--disable-shared]
+./configure [--prefix=<dir>] [--disable-shared] [CC=...]
 make
 make check
 make install
@@ -113,6 +114,12 @@ next section.
 
 @enumerate
 @item
+Go to the top-level source-directory of the package, e.g.,
+@example
+cd udunits-2.0
+@end example
+
+@item
 If necessary, clean-up from a previous installation attempt with the
 command
 @example
@@ -120,9 +127,67 @@ make distclean
 @end example
 
 @item
-Find your operating system and following table of successful 
-package installations:
+In the following table of successful package installations,
+find your operating system and compiler and identify any
+required option for the @code{configure} script.
+@quotation
 @include success.texi
+@end quotation
+
+The option @code{--disable-shared} causes the build process to create
+a static library only.
+This is necessary if the @code{libtool} utility can't build a shared
+library using the given compiler.
+
+The following table shows the build environments that do not work ---
+so don't use them:
+@quotation
+@include failure.texi
+@end quotation
+
+@item
+Execute the @code{configure} script.
+Specify the installation prefix, the compiler from the
+previous step, and any required option.
+For example, if you are on an HP-UX system and want to use
+the @code{/bin/c89} compiler and install under @code{/opt},
+then the following command is appropriate:
+@example
+./configure --prefix=/opt --disable-shared CC=/bin/c89
+@end example
+
+If the installation prefix is not specified, then the default
+is to install under @code{/usr/local}.
+
+If the compiler isn't specified, then the default is to use
+@code{gcc}.
+
+@item
+Build the package with the command
+@example
+make
+@end example
+
+@item
+Install the library, header-files, units-database, and utility with
+the command
+@example
+make install
+@end example
+
+@item
+If desired, install the documentation with one or more of the commands
+@example
+make install-info
+make install-html
+make install-pdf
+@end example
+
+@item
+Clean up with the command
+@example
+make clean
+@end example
 @end enumerate
 
 @node Complete Index, , Install, Top
