@@ -1,7 +1,7 @@
 ## Process this file with automake to produce Makefile.in
-docdir = $(datadir)/../doc/udunits2
-htmldir = $(docdir)
-pdfdir = $(docdir)
+#docdir = $(datadir)/../doc/udunits2
+#htmldir = $(docdir)
+#pdfdir = $(docdir)
 bin_PROGRAMS	= udunits2
 LDADD		= ../lib/libudunits2.la \
 		  -lm

@@ -1598,7 +1598,13 @@
 		</aliases>
 	    </unit>
 	    <unit>
-		<def>4.184e9 J</def>
+		<def>4.184 MJ/kg</def>			<!-- by definition -->
+		<aliases>
+		    <name> <singular>TNT</singular> </name>
+		</aliases>
+	    </unit>
+	    <unit>
+		<def>4.184e9 J</def>			<!-- by definition -->
 		<aliases>
 		    <name>
 			<singular>ton_TNT</singular>

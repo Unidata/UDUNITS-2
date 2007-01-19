@@ -52,7 +52,7 @@ units.
 The library comes with an extensive database of units all referenced to the
 SI system of units.
 
-CVS keywords: $Date: 2007/01/12 20:08:15 $, Revision: 1.3 $
+CVS keywords: $Date: 2007/01/19 18:25:05 $, Revision: 1.3 $
 
 @insertcopying
 @end ifnottex
@@ -82,65 +82,68 @@ CVS keywords: $Date: 2007/01/12 20:08:15 $, Revision: 1.3 $
 Coding:
 @example
 #include <udunits2.h>
-
-utSystem*      @ref{utReadXml(),utReadXml}(const char* @var{path});
-utSystem*      @ref{utNewSystem(),utNewSystem}(void);
-void           @ref{utFreeSystem(),utFreeSystem}(utSystem* @var{system});
-utSystem*      @ref{utGetSystem(),utGetSystem}(const utUnit* @var{unit});
-utUnit*        @ref{utGetDimensionlessUnitOne(),utGetDimensionlessUnitOne}(utSystem* @var{system});
-utUnit*        @ref{utGetUnitByName(),utGetUnitByName}(utSystem* @var{system}, const char* @var{name});
-utUnit*        @ref{utGetUnitBySymbol(),utGetUnitBySymbol}(utSystem* @var{system}, const char* @var{symbol});
-@ref{utStatus}       @ref{utSetSecond(),utSetSecond}(utUnit* @var{second});
-@ref{utStatus}       @ref{utAddNamePrefix(),utAddNamePrefix}(utSystem* @var{system}, const char* @var{name}, double @var{value});
-@ref{utStatus}       @ref{utAddSymbolPrefix(),utAddSymbolPrefix}(utSystem* @var{system}, const char* @var{symbol}, double @var{value});
-utUnit*        @ref{utNewBaseUnit(),utNewBaseUnit}(utSystem* @var{system});
-utUnit*        @ref{utNewDimensionlessUnit(),utNewDimensionlessUnit}(utSystem* @var{system});
-utUnit*        @ref{utClone(),utClone}(const utUnit* @var{unit});
-void           @ref{utFree(),utFree}(utUnit* @var{unit});
-const char*    @ref{utGetName(),utGetName}(const utUnit* @var{unit}, @ref{utEncoding} @var{encoding});
-@ref{utStatus}       @ref{utMapNameToUnit(),utMapNameToUnit}(const char* @var{name}, utUnit* @var{unit});
-@ref{utStatus}       @ref{utUnmapName(),utUnmapName}(utSystem* @var{system}, const char* @var{name});
-@ref{utStatus}       @ref{utMapUnitToName(),utMapUnitToName}(utUnit* @var{unit}, const char* @var{name}, @ref{utEncoding} @var{encoding});
-@ref{utStatus}       @ref{utUnmapUnitToName(),utUnmapUnitToName}(utUnit* @var{unit}, @ref{utEncoding} @var{encoding});
-const char*    @ref{utGetSymbol(),utGetSymbol}(const utUnit* @var{unit}, @ref{utEncoding} @var{encoding});
-@ref{utStatus}       @ref{utMapSymbolToUnit(),utMapSymbolToUnit}(const char* @var{symbol}, utUnit* @var{unit});
-@ref{utStatus}       @ref{utUnmapSymbol(),utUnmapSymbol}(utSystem* @var{system}, const char* @var{symbol});
-@ref{utStatus}       @ref{utMapUnitToSymbol(),utMapUnitToSymbol}(utUnit* @var{unit}, const char* @var{symbol}, @ref{utEncoding} @var{encoding});
-@ref{utStatus}       @ref{utUnmapUnitToSymbol(),utUnmapUnitToSymbol}(utUnit* @var{unit}, @ref{utEncoding} @var{encoding});
-int            @ref{utIsDimensionless(),utIsDimensionless}(utUnit* @var{unit});
-int            @ref{utSameSystem(),utSameSystem}(const utUnit* @var{unit1}, const utUnit* @var{unit2});
-int            @ref{utCompare(),utCompare}(const utUnit* @var{unit1}, const utUnit* @var{unit2});
-int            @ref{utAreConvertible(),utAreConvertible}(utUnit* @var{unit1}, utUnit* @var{unit2});
-cvConverter*   @ref{utGetConverter(),utGetConverter}(utUnit* @var{from}, utUnit* @var{to});
-utUnit*        @ref{utScale(),utScale}(double @var{factor}, utUnit* @var{unit});
-utUnit*        @ref{utOffset(),utOffset}(utUnit* @var{unit}, double @var{offset});
-utUnit*        @ref{utOffsetByTime(),utOffsetByTime}(utUnit* @var{unit}, double @var{origin});
-utUnit*        @ref{utMultiply(),utMultiply}(utUnit* @var{unit1}, utUnit* @var{unit2});
-utUnit*        @ref{utInvert(),utInvert}(utUnit* @var{unit});
-utUnit*        @ref{utDivide}(utUnit* @var{numer}, utUnit* @var{denom});
-utUnit*        @ref{utRaise(),utRaise}(utUnit* @var{unit}, int @var{power});
-utUnit*        @ref{utLog(),utLog}(double @var{base}, utUnit* @var{reference});
-utUnit*        @ref{utParse(),utParse}(utSystem* @var{system}, const char* @var{string}, @ref{utEncoding} @var{encoding});
-size_t         @ref{utGetParseLength(),utGetParseLength}(void);
-char*          @ref{utTrim(),utTrim}(char* @var{string}, @ref{utEncoding} @var{encoding});
-int            @ref{utFormat(),utFormat}(const utUnit* @var{unit}, char* @var{buf}, size_t @var{size}, unsigned @var{opts});
-@ref{utStatus}       @ref{utAcceptVisitor(),utAcceptVisitor}(const utUnit* @var{unit}, const @ref{utVisitor}* @var{visitor}, void* @var{arg});
-double         @ref{utEncodeDate(),utEncodeDate}(int @var{year}, int @var{month}, int @var{day});
-double         @ref{utEncodeClock(),utEncodeClock}(int @var{hours}, int @var{minutes}, double @var{seconds});
-double         @ref{utEncodeTime(),utEncodeTime}(int @var{year}, int @var{month}, int @var{day}, int @var{hour}, int @var{minute}, double @var{second});
-void           @ref{utDecodeTime(),utDecodeTime}(double @var{value}, int* @var{year}, int* @var{month}, int* @var{day}, int* @var{hour}, int* @var{minute}, double* @var{second}, double* @var{resolution});
-@ref{utStatus}       @ref{utGetStatus(),utGetStatus}(void);
-void           @ref{utSetStatus(),utSetStatus}(@ref{utStatus} @var{status});
-int            @ref{utHandleErrorMessage(),utHandleErrorMessage}(const char* @var{fmt}, ...);
-@ref{utErrorMessageHandler} @ref{utSetErrorMessageHandler(),utSetErrorMessageHandler}(utErrorMessageHandler @var{handler});
-int            @ref{utWriteToStderr(),utWriteToStderr}(const char* @var{fmt}, va_list @var{args});
-int            @ref{utIgnore(),utIgnore}(const char* @var{fmt}, va_list @var{args});
-
-float          @ref{cvConvertFloat(),cvConvertFloat}(const cvConverter* @var{converter}, float @var{value});
-double         @ref{cvConvertDouble(),cvConvertDouble}(const cvConverter* @var{converter}, double @var{value});
-float*         @ref{cvConvertFloats(),cvConvertFloats}(const cvConverter* @var{converter}, const float* @var{in}, size_t @var{count}, float* @var{out});
-double*        @ref{cvConvertDoubles(),cvConvertDoubles}(const cvConverter* @var{converter}, const double* @var{const} in, @var{size_t} count, @var{double}* out);
-void           @ref{cvFree(),cvFree}(cvConverter* const @var{conv});
+@quotation
+@multitable {utErrorMessageHandler} {utGetDimensionlessUnitOne(}
+@item utSystem* @tab utReadXml(const char* @var{path});
+@item utSystem* @tab utNewSystem(void);
+@item void      @tab utFreeSystem(utSystem* @var{system});
+@item utSystem* @tab utGetSystem(const utUnit* @var{unit});
+@item utUnit*   @tab utGetDimensionlessUnitOne(utSystem* @var{system});
+@item utUnit*   @tab utGetUnitByName(utSystem* @var{system}, const char* @var{name});
+@item utUnit*   @tab utGetUnitBySymbol(utSystem* @var{system}, const char* @var{symbol});
+@item utStatus @tab  utSetSecond(utUnit* @var{second});
+@item utStatus @tab  utAddNamePrefix(utSystem* @var{system}, const char* @var{name}, double @var{value});
+@item utStatus @tab  utAddSymbolPrefix(utSystem* @var{system}, const char* @var{symbol}, double @var{value});
+@item utUnit*   @tab utNewBaseUnit(utSystem* @var{system});
+@item utUnit*   @tab utNewDimensionlessUnit(utSystem* @var{system});
+@item utUnit*   @tab utClone(const utUnit* @var{unit});
+@item void      @tab utFree(utUnit* @var{unit});
+@item const char* @tab utGetName(const utUnit* @var{unit}, utEncoding @var{encoding});
+@item utStatus @tab utMapNameToUnit(const char* @var{name}, utUnit* @var{unit});
+@item utStatus @tab utUnmapName(utSystem* @var{system}, const char* @var{name});
+@item utStatus @tab utMapUnitToName(utUnit* @var{unit}, const char* @var{name}, utEncoding @var{encoding});
+@item utStatus @tab utUnmapUnitToName(utUnit* @var{unit}, utEncoding @var{encoding});
+@item const char* @tab utGetSymbol(const utUnit* @var{unit}, utEncoding @var{encoding});
+@item utStatus @tab utMapSymbolToUnit(const char* @var{symbol}, utUnit* @var{unit});
+@item utStatus @tab utUnmapSymbol(utSystem* @var{system}, const char* @var{symbol});
+@item utStatus @tab utMapUnitToSymbol(utUnit* @var{unit}, const char* @var{symbol}, utEncoding @var{encoding});
+@item utStatus @tab utUnmapUnitToSymbol(utUnit* @var{unit}, utEncoding @var{encoding});
+@item int @tab utIsDimensionless(utUnit* @var{unit});
+@item int @tab utSameSystem(const utUnit* @var{unit1}, const utUnit* @var{unit2});
+@item int @tab utCompare(const utUnit* @var{unit1}, const utUnit* @var{unit2});
+@item int @tab utAreConvertible(utUnit* @var{unit1}, utUnit* @var{unit2});
+@item cvConverter* @tab utGetConverter(utUnit* @var{from}, utUnit* @var{to});
+@item utUnit* @tab utScale(double @var{factor}, utUnit* @var{unit});
+@item utUnit* @tab utOffset(utUnit* @var{unit}, double @var{offset});
+@item utUnit* @tab utOffsetByTime(utUnit* @var{unit}, double @var{origin});
+@item utUnit* @tab utMultiply(utUnit* @var{unit1}, utUnit* @var{unit2});
+@item utUnit* @tab utInvert(utUnit* @var{unit});
+@item utUnit* @tab utDivide(utUnit* @var{numer}, utUnit* @var{denom});
+@item utUnit* @tab utRaise(utUnit* @var{unit}, int @var{power});
+@item utUnit* @tab utLog(double @var{base}, utUnit* @var{reference});
+@item utUnit* @tab utParse(utSystem* @var{system}, const char* @var{string}, utEncoding @var{encoding});
+@item size_t  @tab utGetParseLength(void);
+@item char*   @tab utTrim(char* @var{string}, utEncoding @var{encoding});
+@item int @tab utFormat(const utUnit* @var{unit}, char* @var{buf}, size_t @var{size}, unsigned @var{opts});
+@item utStatus @tab utAcceptVisitor(const utUnit* @var{unit}, const utVisitor* @var{visitor}, void* @var{arg});
+@item double @tab utEncodeDate(int @var{year}, int @var{month}, int @var{day});
+@item double @tab utEncodeClock(int @var{hours}, int @var{minutes}, double @var{seconds});
+@item double @tab utEncodeTime(int @var{year}, int @var{month}, int @var{day}, int @var{hour}, int @var{minute}, double @var{second});
+@item void @tab utDecodeTime(double @var{value}, int* @var{year}, int* @var{month}, int* @var{day}, int* @var{hour}, int* @var{minute}, double* @var{second}, double* @var{resolution});
+@item utStatus @tab utGetStatus(void);
+@item void @tab utSetStatus(utStatus @var{status});
+@item int @tab utHandleErrorMessage(const char* @var{fmt}, ...);
+@item utErrorMessageHandler@tab utSetErrorMessageHandler(utErrorMessageHandler @var{handler});
+@item int @tab utWriteToStderr(const char* @var{fmt}, va_list @var{args});
+@item int @tab utIgnore(const char* @var{fmt}, va_list @var{args});
+@item 
+@item float @tab cvConvertFloat(const cvConverter* @var{converter}, float @var{value});
+@item double @tab cvConvertDouble(const cvConverter* @var{converter}, double @var{value});
+@item float* @tab cvConvertFloats(const cvConverter* @var{converter}, const float* @var{in}, size_t @var{count}, float* @var{out});
+@item double* @tab cvConvertDoubles(const cvConverter* @var{converter}, const double* @var{const} in, @var{size_t} count, @var{double}* out);
+@item void @tab cvFree(cvConverter* const @var{conv});
+@end multitable
+@end quotation
 @end example
 
 Compiling:

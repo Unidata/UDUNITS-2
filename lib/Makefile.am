@@ -1,7 +1,7 @@
 ## Process this file with automake to produce Makefile.in
-docdir = $(datadir)/../doc/udunits2
-htmldir = $(docdir)
-pdfdir = $(docdir)
+#docdir = $(datadir)/../doc/udunits2
+#htmldir = $(docdir)
+#pdfdir = $(docdir)
 lib_LTLIBRARIES = libudunits2.la
 libudunits2_la_SOURCES = core.c converter.c formatter.c \
     idToUnitMap.c idToUnitMap.h \

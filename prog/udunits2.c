@@ -2,7 +2,7 @@
  * This program prints definitions of units of physical qantities and converts
  * values between such units.
  *
- * $Id: udunits2.c,v 1.2 2007/01/12 15:50:34 steve Exp $
+ * $Id: udunits2.c,v 1.3 2007/01/19 18:25:10 steve Exp $
  */
 
 #ifndef	_XOPEN_SOURCE
@@ -108,16 +108,10 @@ decodeCommandLine(
 static int
 ensureXmlPathSet(void)
 {
-    int	success = 0;
-
-    if (_xmlPath != NULL) {
-	success = 1;
-    }
-    else {
+    if (_xmlPath == NULL)
 	(void)fprintf(stderr, "%s: Using default XML database\n", _progname);
-    }
 
-    return success;
+    return 1;
 }
 
 
