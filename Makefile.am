@@ -1,6 +1,7 @@
 ## Process this file with automake to produce Makefile.in
-SUBDIRS	= expat lib udunits2
-info_TEXINFOS = udunits2.texi
+SUBDIRS	= expat lib prog
+info_TEXINFOS = udunits-2.texi
+EXTRA_DIST = success.texi failure.texi
 AM_MAKEINFOHTMLFLAGS = --no-split
 # DISTCHECK_CONFIGURE_FLAGS = 
 
@@ -36,13 +37,13 @@ hostcheck:
 	done
 
 hostchecks:	$(DIST_ARCHIVES)
-	rm -f $@
+	rm -f $@ results.tab
 	hosts=`ls *.host | sed 's/.host//'`; \
 	for host in $$hosts; do \
 	    $(MAKE) $$host.check >$$host.log 2>&1 & pid="$$!"; \
 	    echo $$host $$pid >>$@; \
 	    echo "Building on $$host"; \
-	done
+	done; \
 	status=0; \
 	while read host pid; do \
 	    echo "Waiting on $$host"; \
@@ -63,26 +64,45 @@ results.tab:
 	while read host; do \
 	    IFS=':' read uname shell <$$host.host || break; \
 	    id=`ssh $$host "$$uname" </dev/null` || break; \
-	    sed -n "2,$$ s/^/$$host:$$id:/p" $$host.results || break; \
+	    sed -n "s/^/$$host:$$id:/p" $$host.results || break; \
 	done >$@
 
-success.texi:	results.tab
+success.texi:
+	sort -t : -k +2 results.tab | \
 	awk -F: ' \
 	    BEGIN { \
-		print "@multitable {Linux 2.6.18-1.2257.fc5smp} {/opt/csw/gcc4/bin/gcc}"; \
-		print "@headitem O/S @tab Configure Option @tab Compiler"; \
+		print "@multitable {Linux 2.6.18-1.2257.fc5smp} {/opt/csw/gcc4/bin/gcc} {--disable-shared}"; \
+		print "@headitem O/S @tab Compiler @tab @code{configure} Option"; \
 	    } \
 	    $$6 == 1 { \
-		print "@item" $$2 "@tab" $$5 "@tab" $$4; \
+		print "@item",$$2,"@tab",$$4,"@tab",$$5; \
 	    } \
 	    END { \
 		print "@end multitable"; \
-	    }' results.tab >$@
+	    }' >$@
 
-.PHONY:	hostchecks hostcheck results.tab
+failure.texi:
+	sort -t : -k +2 results.tab | \
+	awk -F: ' \
+	    BEGIN { \
+		print "@multitable {HP-UX B.11.00} {/opt/SUNWspro/bin/c99} {--disable-shared}"; \
+		print "@headitem O/S @tab Compiler @tab @code{configure} Option"; \
+	    } \
+	    $$6 == 0 { \
+		print "@item",$$2,"@tab",$$4,"@tab",$$5; \
+	    } \
+	    END { \
+		print "@end multitable"; \
+	    }' >$@
+
+udunits-2.info:	success.texi failure.texi
+udunits-2.html:	success.texi failure.texi
+udunits-2.pdf:	success.texi failure.texi
+
+.PHONY:	hostchecks hostcheck success.texi failure.texi
 
 ## The following entries are necessary to stop make(1)s that don't
 ## understand the .PHONY target from trying to create the given files.
-install-info-am:
-install-html-am:
-install-pdf-am:
+#install-info-am:
+#install-html-am:
+#install-pdf-am:
