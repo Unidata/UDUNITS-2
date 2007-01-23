@@ -52,7 +52,7 @@ units.
 The library comes with an extensive database of units all referenced to the
 SI system of units.
 
-CVS keywords: $Date: 2007/01/19 18:25:05 $, Revision: 1.3 $
+CVS keywords: $Date: 2007/01/23 00:18:17 $, Revision: 1.3 $
 
 @insertcopying
 @end ifnottex
@@ -238,10 +238,10 @@ unit-system are (in order of increasing difficulty):
 
 @itemize @bullet
 @item
-Obtain the default unit-system using @code{utReadXml(NULL)}.
+Obtain the default unit-system using @code{@ref{utReadXml(),utReadXml}(NULL)}.
 @item
 Copy and customize the unit database and then
-call @code{utReadXml()} with the pathname of the customized
+call @code{@ref{utReadXml()}} with the pathname of the customized
 database to obtain a customized unit-system.
 @item
 Same as either of the above but then adding new units to the unit-system using
@@ -1037,9 +1037,9 @@ Please be careful about using timestamp-units.
 @anchor{utInvert()}
 @deftypefun @code{utUnit*} utInvert @code{(utUnit* @var{unit})}
 Returns the inverse (i.e., reciprocal) of the unit @var{unit}.
-This convenience function is equal to @code{@ref{utRaise(),
-utRaise(unit, -1)}}.
-You should pass the returned pointer to @code{utFree()} when you
+This convenience function is equal to 
+@code{@ref{utRaise(),utRaise(@var{unit}@comma{}-1)}}.
+You should pass the returned pointer to @code{@ref{utFree()}} when you
 no longer need the unit.
 If an error occurs,
 then this function writes an error-message using
