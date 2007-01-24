@@ -52,7 +52,7 @@ units.
 The library comes with an extensive database of units all referenced to the
 SI system of units.
 
-CVS keywords: $Date: 2007/01/23 00:18:17 $, Revision: 1.3 $
+CVS keywords: $Date: 2007/01/24 00:33:10 $, Revision: 1.3 $
 
 @insertcopying
 @end ifnottex
@@ -713,8 +713,44 @@ The one general exception to this is the invention of a syntax for
 ``offset''-units (e.g., the definition of the degree Celsius is ``K @@
 273.16'').
 
-Look at the @code{<def>} elements in @ref{Database,the units database}
-to see examples of string specifications of units.
+@menu
+* Examples::  Examples of unit specifications
+* Grammar::   Formal unit grammar
+@end menu
+
+@node Examples, Grammar, , Syntax
+@section Unit Specification Examples
+@cindex unit specification examples
+@cindex examples, unit specification
+
+@quotation
+@multitable {Logarithmic} {(5 meter)/(30 second)} {lg(re mW)} {"lg" is base 10, "ln" is base e, and "lb" is base 2}
+@headitem Unit Type @tab Using Names @tab Using Symbols @tab Comment
+@item Simple @tab meter @tab m
+@item Raised @tab meter^2 @tab m2 @tab higher precedence than multiplying or
+dividing
+@item Product @tab newton meter @tab N.m
+@item Quotient @tab meter per second @tab m/s
+@item Scaled @tab 60 second @tab 60 s
+@item Prefixed @tab kilometer @tab km
+@item Offset @tab kelvin from 273.15 @tab K @@ 273.15 @tab lower
+precedence than multiplying or dividing
+@item Logarithmic @tab lg(re milliwatt) @tab lg(re mW) @tab "lg" is base 10, 
+"ln" is base e, and "lb" is base 2
+@item Grouped @tab (5 meter)/(30 second) @tab (5 m)/(30 s)
+@end multitable
+@end quotation
+
+You may also look at the @code{<def>} elements in @ref{Database,the
+units database} to see examples of string unit specifications.
+
+You may use the @code{@ref{Top, , udunits2, udunits2prog}} utility 
+to experiment with string unit specifications.
+
+@node Grammar, , Examples, Syntax
+@section Unit Grammar
+@cindex unit grammar
+@cindex grammar, unit
 
 Here is the unit-syntax understood by the UDUNITS-2 package.  Words printed
 @emph{Thusly} indicate non-terminals; words printed THUSLY indicate terminals;
