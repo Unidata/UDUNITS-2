@@ -52,7 +52,7 @@ units.
 The library comes with an extensive database of units all referenced to the
 SI system of units.
 
-CVS keywords: $Date: 2007/01/24 00:33:10 $, Revision: 1.3 $
+CVS keywords: $Date: 2007/01/24 00:35:11 $, Revision: 1.3 $
 
 @insertcopying
 @end ifnottex
@@ -725,7 +725,7 @@ The one general exception to this is the invention of a syntax for
 
 @quotation
 @multitable {Logarithmic} {(5 meter)/(30 second)} {lg(re mW)} {"lg" is base 10, "ln" is base e, and "lb" is base 2}
-@headitem Unit Type @tab Using Names @tab Using Symbols @tab Comment
+@headitem String Type @tab Using Names @tab Using Symbols @tab Comment
 @item Simple @tab meter @tab m
 @item Raised @tab meter^2 @tab m2 @tab higher precedence than multiplying or
 dividing
