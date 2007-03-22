@@ -116,6 +116,7 @@ AC_PROG_LIBTOOL
 AC_CONFIG_FILES([Makefile
 		 expat/Makefile
                  lib/Makefile
+                 lib/xmlTests/Makefile
                  installdirs.texi
 		 prog/Makefile])
 AC_OUTPUT

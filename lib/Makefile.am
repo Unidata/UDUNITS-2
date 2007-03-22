@@ -2,8 +2,9 @@
 #docdir = $(datadir)/../doc/udunits2
 #htmldir = $(docdir)
 #pdfdir = $(docdir)
+SUBDIRS	= xmlTests
 lib_LTLIBRARIES = libudunits2.la
-libudunits2_la_SOURCES = core.c converter.c formatter.c \
+libudunits2_la_SOURCES = unitcore.c converter.c formatter.c \
     idToUnitMap.c idToUnitMap.h \
     unitToIdMap.c unitToIdMap.h \
     unitAndId.c unitAndId.h \
@@ -69,7 +70,7 @@ coverage:	testUnits
 	./testUnits
 	rm -f *.gcov
 	gcov -o .libs/libudunits2_la-converter.o converter.c
-	gcov -o .libs/libudunits2_la-core.o core.c
+	gcov -o .libs/libudunits2_la-unitcore.o unitcore.c
 	gcov -o .libs/libudunits2_la-error.o error.c
 	gcov -o .libs/libudunits2_la-formatter.o formatter.c
 	gcov -o .libs/libudunits2_la-idToUnitMap.o idToUnitMap.c

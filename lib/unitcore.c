@@ -25,7 +25,7 @@
  * This module is thread-compatible but not thread-safe: multi-thread access to
  * this module must be externally synchronized.
  *
- * $Id: core.c,v 1.8 2007/01/12 20:08:15 steve Exp $
+ * $Id: unitcore.c,v 1.1 2007/03/22 23:43:21 steve Exp $
  */
 
 /*LINTLIBRARY*/

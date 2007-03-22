@@ -4,6 +4,7 @@
 
 
 #include <float.h>
+#include <glob.h>
 #include <math.h>
 #include <stdarg.h>
 #include <stdlib.h>
@@ -1652,14 +1653,67 @@ test_visitor(void)
 static void
 test_xml(void)
 {
-    utSystem*	xmlSystem;
-
-    utSetErrorMessageHandler(utWriteToStderr);
+    utSystem*           xmlSystem;
+    glob_t              files;
+    int                 status;
 
     chdir(getenv("srcdir"));
-    xmlSystem = utReadXml("SI.xml");
 
+    utSetErrorMessageHandler(utWriteToStderr);
+    xmlSystem = utReadXml("SI.xml");
     CU_ASSERT_PTR_NOT_NULL(xmlSystem);
+    utFreeSystem(xmlSystem);
+
+    utSetErrorMessageHandler(utIgnore);
+
+    xmlSystem = utReadXml(NULL);
+    if (xmlSystem == NULL) {
+        CU_ASSERT_EQUAL(utGetStatus(), UT_OPEN_DEFAULT);
+    }
+    else {
+        utFreeSystem(xmlSystem);
+    }
+
+    xmlSystem = utReadXml("xmlTests/noExist.xml");
+    CU_ASSERT_PTR_NULL(xmlSystem);
+    CU_ASSERT_EQUAL(utGetStatus(), UT_OPEN_ARG);
+
+    status = glob("xmlTests/*.xml", 0, NULL, &files);
+
+    if (status != 0 && status != GLOB_NOMATCH) {
+        CU_ASSERT_TRUE(0);
+    }
+    else {
+        size_t  i;
+
+        for (i = 0; i < files.gl_pathc; ++i) {
+            xmlSystem = utReadXml(files.gl_pathv[i]);
+
+            CU_ASSERT(xmlSystem == NULL);
+
+            if (xmlSystem == NULL) {
+                CU_ASSERT(utGetStatus() == UT_PARSE);
+
+                if (utGetStatus() != UT_PARSE)
+                    (void)fprintf(stderr, "File didn't fail: \"%s\"\n",
+                        files.gl_pathv[i]);
+            }
+            else {
+                (void)fprintf(stderr, "File didn't fail: \"%s\"\n",
+                    files.gl_pathv[i]);
+                utFreeSystem(xmlSystem);
+            }
+        }
+    }
+
+    globfree(&files);
+
+    /*
+     * Test again to ensure any persistent state doesn't interfere.
+     */
+    xmlSystem = utReadXml("SI.xml");
+    CU_ASSERT_PTR_NOT_NULL(xmlSystem);
+    utFreeSystem(xmlSystem);
 }
 
 

@@ -13,13 +13,13 @@
 		(<base/> | <dimensionless/> | <def>...</def>)
 		[<name [encoding="ascii"|"latin1"|"utf8"]>
 		    <singular>...</singular>
-		    [<plural>...</plural>]
+		    [<plural>...</plural> | <noplural/>]
 		</name>]
 		[<symbol [encoding="ascii"|"latin1"|"utf8"]>...</symbol>]*
 		[<aliases>
 		    [<name [encoding="ascii"|"latin1"|"utf8"]>
 			<singular>...</singular>
-			[<plural>...</plural>]
+                        [<plural>...</plural> | <noplural/>]
 		    </name>]*
 		    [<symbol [encoding="ascii"|"latin1"|"utf8"]>...</symbol>]*
 		</aliases>]
@@ -27,9 +27,9 @@
 	</unit-system>
 
     where:
-	*	denotes zero or more components
-	[...]	denotes an optional component
-	|	denotes alternative components
+	*	denotes zero or more of the previous entity
+	[...]	denotes an optional entity
+	|	denotes mutually-exclusive alternatives
 -->
 
 <unit-system>
@@ -339,7 +339,7 @@
 		units.  -->
 		<def>3.141592653589793238462643383279</def>
 		<aliases>
-		    <name><singular>pi</singular></name>
+		    <name><singular>pi</singular><noplural/></name>
 		    <symbol encoding="utf8">&#xe0;&#x97;&#x80;</symbol>
 		</aliases>
 	    </unit>
@@ -410,7 +410,7 @@
 		<aliases>
 		    <name> <singular>atomic_mass_unit</singular> </name>
 		    <name> <singular>atomicmassunit</singular> </name>
-		    <name> <singular>amu</singular> </name>
+		    <name> <singular>amu</singular><noplural/></name>
 		</aliases>
 	    </unit>
 
@@ -1124,7 +1124,7 @@
 		</aliases>
 	    </unit>
 	    <unit>
-		<def>log(re µm³)</def>
+		<def>lg(re µm³)</def>
 		<aliases> <symbol>BZ</symbol> </aliases>
 	    </unit>
 
@@ -1573,8 +1573,14 @@
 	    <unit>
 		<def>1.05505585262e3 J</def>		<!-- exact -->
 		<aliases>
-		    <name> <singular>IT_Btu</singular> </name>
-		    <name> <singular>Btu</singular> </name>
+		    <name>
+                        <singular>IT_Btu</singular>
+                        <plural>IT_Btus</plural>
+                    </name>
+		    <name>
+                        <singular>Btu</singular>
+                        <plural>Btus</plural>
+                    </name>
 		</aliases>
 	    </unit>
 	    <unit>
@@ -1600,7 +1606,7 @@
 	    <unit>
 		<def>4.184 MJ/kg</def>			<!-- by definition -->
 		<aliases>
-		    <name> <singular>TNT</singular> </name>
+		    <name> <singular>TNT</singular><noplural/></name>
 		</aliases>
 	    </unit>
 	    <unit>

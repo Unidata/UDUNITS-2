@@ -5,7 +5,8 @@ EXTRA_DIST = success.texi failure.texi
 AM_MAKEINFOHTMLFLAGS = --no-split
 # DISTCHECK_CONFIGURE_FLAGS = 
 
-hostcheck:
+# The following rule is executed on the remote system.
+hostcheck:	$(DIST_ARCHIVES)
 	-test -d /tmp/$(distdir) && \
 	    (chmod -R +w /tmp/$(distdir) && rm -rf /tmp/$(distdir))
 	gunzip -c $(DIST_ARCHIVES) | \
@@ -19,6 +20,7 @@ hostcheck:
 	    cd /tmp && rm -rf /tmp/$(distdir); \
 	    exit $$status
 
+# The following rule starts a build process on a remote system.
 .host.check:
 	rm -f $*.results
 	IFS=':' read uname shell <$<; \
@@ -35,12 +37,14 @@ hostcheck:
 		fi; \
 	    fi; \
 	done
+	touch redo-results
 
-hostchecks:	$(DIST_ARCHIVES)
+# The following rule starts multiple, parallel, asynchronous builds.
+hostchecks:	distcheck
 	rm -f $@ results.tab
 	hosts=`ls *.host | sed 's/.host//'`; \
 	for host in $$hosts; do \
-	    $(MAKE) $$host.check >$$host.log 2>&1 & pid="$$!"; \
+	    $(MAKE) -s $$host.check >$$host.log 2>&1 & pid="$$!"; \
 	    echo $$host $$pid >>$@; \
 	    echo "Building on $$host"; \
 	done; \
@@ -58,7 +62,7 @@ hostchecks:	$(DIST_ARCHIVES)
 	done <$@; \
 	exit $$status
 
-results.tab:
+results.tab:	redo-results
 	rm -f $@
 	ls *.results | sed 's/.results//' | \
 	while read host; do \
@@ -67,7 +71,7 @@ results.tab:
 	    sed -n "s/^/$$host:$$id:/p" $$host.results || break; \
 	done >$@
 
-success.texi:
+success.tab:	results.tab
 	sort -t : -k +2 results.tab | \
 	awk -F: ' \
 	    BEGIN { \
@@ -79,9 +83,9 @@ success.texi:
 	    } \
 	    END { \
 		print "@end multitable"; \
-	    }' >$@
+	    }' >success.texi
 
-failure.texi:
+failure.tab:	results.tab
 	sort -t : -k +2 results.tab | \
 	awk -F: ' \
 	    BEGIN { \
@@ -93,16 +97,14 @@ failure.texi:
 	    } \
 	    END { \
 		print "@end multitable"; \
-	    }' >$@
+	    }' >failure.texi
 
-udunits-2.info:	success.texi failure.texi
-udunits-2.html:	success.texi failure.texi
-udunits-2.pdf:	success.texi failure.texi
+remote-checks:	hostchecks success.tab failure.tab
 
-.PHONY:	hostchecks hostcheck success.texi failure.texi
+.PHONY:	hostchecks hostcheck remote-checks
 
 ## The following entries are necessary to stop make(1)s that don't
 ## understand the .PHONY target from trying to create the given files.
-#install-info-am:
-#install-html-am:
-#install-pdf-am:
+install-info-am:
+install-html-am:
+install-pdf-am:
