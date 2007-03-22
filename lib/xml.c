@@ -2,7 +2,7 @@
  * This module is thread-compatible but not thread-safe.  Multi-threaded
  * access must be externally synchronized.
  *
- * $Id: xml.c,v 1.4 2007/01/04 17:13:01 steve Exp $
+ * $Id: xml.c,v 1.5 2007/03/22 23:49:06 steve Exp $
  */
 
 /*LINTLIBRARY*/
@@ -26,24 +26,6 @@
 
 #define NAME_SIZE 128
 
-static const char*	_path;
-static int		prefixAdded;
-static utEncoding	xmlEncoding;
-static XML_Parser	parser = NULL;
-static utSystem*	unitSystem = NULL;
-static unsigned		skipDepth = 0;
-static char*		text = NULL;
-static size_t		nbytes = 0;
-static double		value = 0;
-static utEncoding	encoding = UT_ASCII;
-static utUnit*		unit = NULL;
-static int		isBase = 0;
-static int		isDimensionless = 0;
-static int		haveValue = 0;
-static int		pluralAdded = 0;
-static char		singular[NAME_SIZE];
-static int		singularSeen;
-
 typedef enum {
     INITIAL,
     UNIT_SYSTEM,
@@ -61,6 +43,23 @@ typedef enum {
 
 static ElementType	elementStack[6] = {INITIAL};
 static ElementType*	currElt = elementStack;
+static const char*	_path;
+static int		prefixAdded;
+static utEncoding	xmlEncoding;
+static XML_Parser	parser = NULL;
+static utSystem*	unitSystem = NULL;
+static unsigned		skipDepth = 0;
+static char*		text = NULL;
+static size_t		nbytes = 0;
+static double		value = 0;
+static utEncoding	encoding = UT_ASCII;
+static utUnit*		unit = NULL;
+static int		isBase = 0;
+static int		isDimensionless = 0;
+static int		haveValue = 0;
+static int		pluralNeeded = 1;
+static char		singular[NAME_SIZE];
+static int		singularSeen;
 
 
 static void
@@ -387,22 +386,20 @@ xmlMapIdToUnit(
 	int	nchar = utFormat(prev, buf, sizeof(buf),
 	    UT_ASCII | UT_DEFINITION | UT_NAMES);
 
-	if (nchar < 0)
-	    nchar = utFormat(prev, buf, sizeof(buf), UT_ASCII | UT_DEFINITION);
-
 	utHandleErrorMessage(
 	    "Duplicate definition for \"%s\" at \"%s\":%d", id, _path,
 	    XML_GetCurrentLineNumber(parser));
 
-	if (nchar < 0 || nchar >= sizeof(buf)) {
-	    utHandleErrorMessage("Previous definition remains in effect");
-	}
-	else {
+	if (nchar < 0)
+	    nchar = utFormat(prev, buf, sizeof(buf), UT_ASCII | UT_DEFINITION);
+
+	if (nchar >= 0 && nchar < sizeof(buf)) {
 	    buf[nchar] = 0;
 
-	    utHandleErrorMessage("Previous definition (%s) remains in effect",
-		buf);
+	    utHandleErrorMessage("Previous definition was \"%s\"", buf);
 	}
+
+        XML_StopParser(parser, 0);
     }
     else {
 	/*
@@ -428,15 +425,15 @@ xmlMapIdToUnit(
 
 		if (nchar < 0 || nchar >= sizeof(buf)) {
 		    utHandleErrorMessage("Definition of \"%s\" at \"%s\":%d "
-			"hides earlier one", id, _path,
+			"overrides prefixed-unit", id, _path,
 			XML_GetCurrentLineNumber(parser));
 		}
 		else {
 		    buf[nchar] = 0;
 
 		    utHandleErrorMessage("Definition of \"%s\" at \"%s\":%d "
-			"hides earlier one (%s)", id, _path,
-			XML_GetCurrentLineNumber(parser), buf);
+			"overrides prefixed-unit (%s)", id, _path,
+                        XML_GetCurrentLineNumber(parser), buf);
 		}
 	    }
 
@@ -499,7 +496,7 @@ startName(
 		XML_StopParser(parser, 0);
 	    }
 	    else {
-		pluralAdded = 0;
+		pluralNeeded  = 1;
 		singularSeen = 0;
 	    }
 	}
@@ -649,7 +646,7 @@ endName(
 	    utHandleErrorMessage("No <singular> element");
 	    XML_StopParser(parser, 0);
 	}
-	else if (!pluralAdded) {
+	else if (pluralNeeded) {
 	    if (singular[0] != 0) {
 		const char*	plural = formPlural(singular);
 
@@ -729,8 +726,8 @@ startPlural(
 	utHandleErrorMessage("Wrong place for <plural> element");
 	XML_StopParser(parser, 0);
     }
-    else if (pluralAdded) {
-	utHandleErrorMessage("<plural> element already seen");
+    else if (!pluralNeeded ) {
+	utHandleErrorMessage("<plural> or <noplural> element already seen");
 	XML_StopParser(parser, 0);
     }
     else {
@@ -764,10 +761,34 @@ endPlural(
 		mapNameAndUnit(newForm, encoding, unit, 0);
 	}
 
-	pluralAdded = 1;
+	pluralNeeded  = 0;
     }
 
     clearText();
+}
+
+
+static void
+startNoPlural(
+    void*		data,
+    const char**	atts)
+{
+    if (*currElt != NAME) {
+	utHandleErrorMessage("Wrong place for <noplural> element");
+	XML_StopParser(parser, 0);
+    }
+    else if (!pluralNeeded) {
+	utHandleErrorMessage("<plural> or <noplural> element already seen");
+	XML_StopParser(parser, 0);
+    }
+}
+
+
+static void
+endNoPlural(
+    void*		data)
+{
+    pluralNeeded  = 0;
 }
 
 
@@ -1137,6 +1158,16 @@ utReadXml(
 	    int	nbytes;
 
 	    _path = path;
+            currElt = elementStack;
+            prefixAdded = 0;
+            unitSystem = NULL;
+            skipDepth = 0;
+            encoding = UT_ASCII;
+            isBase = 0;
+            isDimensionless = 0;
+            haveValue = 0;
+            pluralNeeded = 1;
+            singularSeen = 0;
 
 	    XML_SetXmlDeclHandler(parser, declareXml);
 	    XML_SetElementHandler(parser, startElement, endElement);
@@ -1190,8 +1221,12 @@ utReadXml(
 	    }
 
 	    if (error) {
+                utStatus        status = utGetStatus();
+
 		utFreeSystem(unitSystem);
 		unitSystem = NULL;
+
+                utSetStatus(status);
 	    }
 	}				/* "parser" allocated */
 
