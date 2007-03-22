@@ -6,6 +6,8 @@ bin_PROGRAMS	= udunits2
 LDADD		= ../lib/libudunits2.la \
 		  -lm
 info_TEXINFOS = udunits2prog.texi
+html_DATA = udunits2prog.html
+pdf_DATA = udunits2prog.pdf
 AM_MAKEINFOHTMLFLAGS = --no-split
 AM_CPPFLAGS	= -I$(top_srcdir)/lib
 MOSTLYCLEANFILES	= lint.log *.ln
