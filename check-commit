@@ -1,20 +1,28 @@
-exec >$HOME/commit.log 2>&1
-hostname
-id
 echo pwd=`pwd`
 echo '$0'=\"$0\"
 for arg in "$@"; do
     echo arg=\"$arg\"
 done
-exit
 
 topSrcDir=`dirname $0`
 
 if cd $topSrcDir; then
-    if test -f remote-checks.pid; then
-	kill -- -`cat remote-checks.pid` 2>/dev/null
-    fi
+    if ln -s /dev/null /upc/share/CVS/udunits2/.check-commit-lock \
+	    2>/dev/null; then
+	if test -f remote-checks.pid; then
+	    kill -- -`cat remote-checks.pid` 2>/dev/null
+	fi
 
-    (sleep 30; make remote-checks; rm -f remote-checks.pid) &
-    echo $! >remote-checks.pid
+	(
+	    sleep 30
+	    make remote-checks 2>&1 | 
+		ssh zero mailx -s "UDUNITS-2 check-commit output" \
+		    $USER@unidata.ucar.edu
+	    rm -f remote-checks.pid /upc/share/CVS/udunits2/.check-commit-lock
+	) &
+	echo $! >remote-checks.pid
+    else
+	echo 1>&2 "Another person is committing"
+	false
+    fi
 fi
