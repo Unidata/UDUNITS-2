@@ -108,4 +108,3 @@ remote-checks:	hostchecks success.tab failure.tab
 install-info-am:
 install-html-am:
 install-pdf-am:
-
