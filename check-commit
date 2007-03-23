@@ -11,7 +11,7 @@ topSrcDir=`dirname $0`
 
 if cd $topSrcDir; then
     if test -f remote-checks.pid; then
-	kill `cat remote-checks.pid`
+	kill `cat remote-checks.pid` 2>/dev/null
     fi
 
     (sleep 10; echo done) &
