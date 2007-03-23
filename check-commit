@@ -1,0 +1,8 @@
+exec >$HOME/commit.log 2>&1
+hostname
+id
+echo pwd=`pwd`
+echo '$0'=\"$0\"
+for arg in "$@"; do
+    echo arg=\"$arg\"
+done
