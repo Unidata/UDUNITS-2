@@ -14,6 +14,6 @@ if cd $topSrcDir; then
 	kill `cat remote-checks.pid` 2>/dev/null
     fi
 
-    (sleep 10; echo done) &
+    (sleep 10; make remote-checks) &
     echo $! >remote-checks.pid
 fi
