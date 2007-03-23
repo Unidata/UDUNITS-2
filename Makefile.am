@@ -60,6 +60,7 @@ hostchecks:	distcheck
 		status=$$(($$status+1)); \
 	    fi; \
 	done <$@; \
+	echo "Done waiting"; \
 	exit $$status
 
 results.tab:	redo-results
