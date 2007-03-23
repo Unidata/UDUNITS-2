@@ -6,3 +6,14 @@ echo '$0'=\"$0\"
 for arg in "$@"; do
     echo arg=\"$arg\"
 done
+
+topSrcDir=`basename $0`
+
+if cd $topSrcDir; then
+    if test -f remote-checks.pid; then
+	kill `cat remote-checks.pid`
+    fi
+
+    (sleep 10; echo done) &
+    echo $! >remote-checks.pid
+fi
