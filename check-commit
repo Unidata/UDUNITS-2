@@ -7,7 +7,7 @@ for arg in "$@"; do
     echo arg=\"$arg\"
 done
 
-topSrcDir=`basename $0`
+topSrcDir=`dirname $0`
 
 if cd $topSrcDir; then
     if test -f remote-checks.pid; then
