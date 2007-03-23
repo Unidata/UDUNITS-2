@@ -6,6 +6,7 @@ echo '$0'=\"$0\"
 for arg in "$@"; do
     echo arg=\"$arg\"
 done
+exit
 
 topSrcDir=`dirname $0`
 
@@ -14,6 +15,6 @@ if cd $topSrcDir; then
 	kill -- -`cat remote-checks.pid` 2>/dev/null
     fi
 
-    (sleep 30; make remote-checks) &
+    (sleep 30; make remote-checks; rm -f remote-checks.pid) &
     echo $! >remote-checks.pid
 fi
