@@ -83,3 +83,4 @@ coverage:	testUnits
 	gcov -o .libs/libudunits2_la-xml.o xml.c
 
 parser.o: scanner.c
+
