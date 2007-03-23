@@ -89,7 +89,7 @@ failure.tab:	results.tab
 	sort -t : -k +2 results.tab | \
 	awk -F: ' \
 	    BEGIN { \
-		print "@multitable {HP-UX B.11.00} {/opt/SUNWspro/bin/c99} {--disable-shared}"; \
+		print "@multitable {Linux 2.6.18-1.2257.fc5smp} {/opt/SUNWspro/bin/c99} {--disable-shared}"; \
 		print "@headitem O/S @tab Compiler @tab @code{configure} Option"; \
 	    } \
 	    $$6 == 0 { \
@@ -108,3 +108,4 @@ remote-checks:	hostchecks success.tab failure.tab
 install-info-am:
 install-html-am:
 install-pdf-am:
+
