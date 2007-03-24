@@ -1,8 +1,10 @@
+#exec >$HOME/check-commit.log 2>&1
 echo pwd=`pwd`
 echo '$0'=\"$0\"
 for arg in "$@"; do
     echo arg=\"$arg\"
 done
+exit
 
 topSrcDir=`dirname $0`
 
@@ -14,11 +16,12 @@ if cd $topSrcDir; then
 	fi
 
 	(
+	    trap 'rm -f remote-checks.pid 
+		/upc/share/CVS/udunits2/.check-commit-lock' INT QUIT TERM EXIT
 	    sleep 30
 	    make remote-checks 2>&1 | 
-		ssh zero mailx -s "UDUNITS-2 check-commit output" \
+		ssh zero mailx -s 'UDUNITS-2 "make remote-checks" output' \
 		    $USER@unidata.ucar.edu
-	    rm -f remote-checks.pid /upc/share/CVS/udunits2/.check-commit-lock
 	) &
 	echo $! >remote-checks.pid
     else
@@ -26,3 +29,6 @@ if cd $topSrcDir; then
 	false
     fi
 fi
+
+cat $HOME/check-commit.log | 
+    ssh zero mailx -s "UDUNITS-2 check-commit output" $USER@unidata.ucar.edu
