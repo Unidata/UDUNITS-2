@@ -1,34 +1,24 @@
 #exec >$HOME/check-commit.log 2>&1
-echo pwd=`pwd`
-echo '$0'=\"$0\"
-for arg in "$@"; do
-    echo arg=\"$arg\"
-done
-exit
+#echo pwd=`pwd`
+#echo '$0'=\"$0\"
+#for arg in "$@"; do
+#    echo arg=\"$arg\"
+#done
 
 topSrcDir=`dirname $0`
 
 if cd $topSrcDir; then
-    if ln -s /dev/null /upc/share/CVS/udunits2/.check-commit-lock \
-	    2>/dev/null; then
-	if test -f remote-checks.pid; then
-	    kill -- -`cat remote-checks.pid` 2>/dev/null
-	fi
-
-	(
-	    trap 'rm -f remote-checks.pid 
-		/upc/share/CVS/udunits2/.check-commit-lock' INT QUIT TERM EXIT
-	    sleep 30
-	    make remote-checks 2>&1 | 
-		ssh zero mailx -s 'UDUNITS-2 "make remote-checks" output' \
-		    $USER@unidata.ucar.edu
-	) &
-	echo $! >remote-checks.pid
-    else
-	echo 1>&2 "Another person is committing"
-	false
+    if test -f remote-checks.pid; then
+	kill -- -`cat remote-checks.pid` 2>/dev/null
     fi
-fi
 
-cat $HOME/check-commit.log | 
-    ssh zero mailx -s "UDUNITS-2 check-commit output" $USER@unidata.ucar.edu
+    (
+	trap 'rm -f remote-checks.pid' HUP INT QUIT TERM EXIT
+	sleep 30
+	make remote-checks 2>&1 | 
+	    ssh zero mailx -s 'UDUNITS-2 "make remote-checks" output' \
+		$USER@unidata.ucar.edu
+    ) &
+
+    echo $! >remote-checks.pid
+fi
