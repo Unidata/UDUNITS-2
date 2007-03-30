@@ -1,7 +1,7 @@
 /*
  * Identifier-to-unit map.
  *
- * $Id: idToUnitMap.c,v 1.6 2007/01/12 15:50:34 steve Exp $
+ * $Id: idToUnitMap.c,v 1.7 2007/03/30 21:25:18 steve Exp $
  */
 
 /*LINTLIBRARY*/
@@ -349,7 +349,7 @@ utMapNameToUnit(
  *	UT_NULL_ARG	"system" or "name" is NULL.
  */
 utStatus
-utUnmapName(
+utUnmapNameToUnit(
     utSystem*		system,
     const char* const	name)
 {
@@ -397,7 +397,7 @@ utMapSymbolToUnit(
  *	UT_NULL_ARG	"system" or "symbol" is NULL.
  */
 utStatus
-utUnmapSymbol(
+utUnmapSymbolToUnit(
     utSystem*		system,
     const char* const	symbol)
 {

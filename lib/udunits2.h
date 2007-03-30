@@ -467,7 +467,7 @@ utMapNameToUnit(
  *	UT_NULL_ARG	"system" or "name" is NULL.
  */
 utStatus
-utUnmapName(
+utUnmapNameToUnit(
     utSystem*		system,
     const char* const	name);
 
@@ -569,7 +569,7 @@ utMapSymbolToUnit(
  *	UT_NULL_ARG	"system" or "symbol" is NULL.
  */
 utStatus
-utUnmapSymbol(
+utUnmapSymbolToUnit(
     utSystem*		system,
     const char* const	symbol);
 
