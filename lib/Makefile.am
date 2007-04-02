@@ -16,13 +16,13 @@ libudunits2_la_SOURCES = unitcore.c converter.c formatter.c \
     error.c \
     utFreeSystem.c
 BUILT_SOURCES = parser.c scanner.c
-data_DATA = SI.xml
+data_DATA = udunits2.xml
 info_TEXINFOS = udunits2lib.texi
 html_DATA = udunits2lib.html
 pdf_DATA = udunits2lib.pdf
 AM_MAKEINFOHTMLFLAGS = --no-split
 libudunits2_la_CPPFLAGS = \
-	-DDEFAULT_UDUNITS2_XML_PATH='"@datadir@/SI.xml"' \
+	-DDEFAULT_UDUNITS2_XML_PATH='"@datadir@/udunits2.xml"' \
 	-I$(top_srcdir)/expat
 
 lex_prefix = ut_
@@ -34,7 +34,7 @@ AM_LDFLAGS = @CFLAGS_COVERAGE@ @LIBS_COVERAGE@
 libudunits2_la_CFLAGS = @CFLAGS_COVERAGE@
 libudunits2_la_LIBADD = ../expat/libexpat.la -lm
 include_HEADERS = udunits2.h converter.h
-EXTRA_DIST = scanner.l scanner.c SI.xml udunits2lib.html udunits2lib.pdf
+EXTRA_DIST = scanner.l scanner.c udunits2.xml udunits2lib.html udunits2lib.pdf
 AM_YFLAGS = -t -p ut_
 
 if HAVE_CUNIT

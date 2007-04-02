@@ -1660,7 +1660,7 @@ test_xml(void)
     chdir(getenv("srcdir"));
 
     utSetErrorMessageHandler(utWriteToStderr);
-    xmlSystem = utReadXml("SI.xml");
+    xmlSystem = utReadXml("udunits2.xml");
     CU_ASSERT_PTR_NOT_NULL(xmlSystem);
     utFreeSystem(xmlSystem);
 
@@ -1711,7 +1711,7 @@ test_xml(void)
     /*
      * Test again to ensure any persistent state doesn't interfere.
      */
-    xmlSystem = utReadXml("SI.xml");
+    xmlSystem = utReadXml("udunits2.xml");
     CU_ASSERT_PTR_NOT_NULL(xmlSystem);
     utFreeSystem(xmlSystem);
 }

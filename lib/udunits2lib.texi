@@ -52,7 +52,7 @@ units.
 The library comes with an extensive database of units all referenced to the
 SI system of units.
 
-CVS keywords: $Date: 2007/03/30 21:25:18 $, Revision: 1.3 $
+CVS keywords: $Date: 2007/04/02 21:29:54 $, Revision: 1.3 $
 
 @insertcopying
 @end ifnottex
@@ -1687,8 +1687,8 @@ The database of units that comes with the UDUNITS-2 package is an
 XML-formatted file that is based on the SI system of units.
 It contains the names and symbols of most of the units that you will ever
 encounter.
-The pathname of the installed file was @code{@value{datadir}/SI.xml} when the
-package was installed.
+The pathname of the installed file was @code{@value{datadir}/udunits2.xml}
+when the package was installed.
 This is the default pathname that @code{@ref{utReadXml()}} uses.
 
 Naturally, because the database is a regular file, it can be edited
