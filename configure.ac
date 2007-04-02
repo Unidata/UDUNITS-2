@@ -107,7 +107,6 @@ AC_C_BIGENDIAN([byteorder=4321],[byteorder=1234])
 AC_DEFINE_UNQUOTED([BYTEORDER],[$byteorder], [Define to 4321 for big-endian and 1234 for little-endian])
 AC_DEFINE([XML_CONTEXT_BYTES], 1024, [Define to specify how much context to retain around the current parse point.])
 
-
 # Checks for library functions.
 AC_CHECK_FUNCS([floor memmove memset modf pow strcasecmp strdup strpbrk])
 

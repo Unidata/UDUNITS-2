@@ -2,7 +2,7 @@
  * This module is thread-compatible but not thread-safe.  Multi-threaded
  * access must be externally synchronized.
  *
- * $Id: xml.c,v 1.5 2007/03/22 23:49:06 steve Exp $
+ * $Id: xml.c,v 1.6 2007/04/02 21:23:28 steve Exp $
  */
 
 /*LINTLIBRARY*/
@@ -1131,7 +1131,7 @@ utReadXml(
 	    }
 	}
 	else {
-	    path = UDUNITS2_XML_PATH;
+	    path = DEFAULT_UDUNITS2_XML_PATH;
 	    fd = open(path, O_RDONLY);
 
 	    if (fd == -1) {

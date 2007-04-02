@@ -263,7 +263,7 @@ html_DATA = udunits2lib.html
 pdf_DATA = udunits2lib.pdf
 AM_MAKEINFOHTMLFLAGS = --no-split
 libudunits2_la_CPPFLAGS = \
-	-DUDUNITS2_XML_PATH='"@datadir@/SI.xml"' \
+	-DDEFAULT_UDUNITS2_XML_PATH='"@datadir@/SI.xml"' \
 	-I$(top_srcdir)/expat
 
 lex_prefix = ut_

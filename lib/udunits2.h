@@ -151,9 +151,19 @@ extern "C" {
  *		of the environment variable UDUNITS2_XML_PATH is used.
  * Returns:
  *	NULL	Failure.  "utGetStatus()" will be
- *		    UT_NULL_ARG	"path" is NULL and UDUNITS2_XML_PATH is unset.
- *		    UT_OS	Operating-system error.  See "errno".
- *		    UT_XML	XML parse error.
+ *		    UT_OPEN_ARG		"path" is non-NULL but file couldn't be
+ *					opened.  See "errno" for reason.
+ *		    UT_OPEN_ENV		"path" is NULL and environment variable
+ *					UDUNITS2_XML_PATH is set but file
+ *					couldn't be opened.  See "errno" for
+ *					reason.
+ *		    UT_OPEN_DEFAULT	"path" is NULL, environment variable
+ *					UDUNITS2_XML_PATH is unset, and the
+ *					installed, default, unit database
+ *					couldn't be opened.  See "errno" for
+ *					reason.
+ *		    UT_PARSE		Couldn't parse unit database.
+ *		    UT_OS		Operating-system error.  See "errno".
  *	else	Pointer to the unit-system defined by "path".
  */
 utSystem*
