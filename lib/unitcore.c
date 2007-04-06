@@ -25,7 +25,7 @@
  * This module is thread-compatible but not thread-safe: multi-thread access to
  * this module must be externally synchronized.
  *
- * $Id: unitcore.c,v 1.1 2007/03/22 23:43:21 steve Exp $
+ * $Id: unitcore.c,v 1.2 2007/04/06 20:22:14 steve Exp $
  */
 
 /*LINTLIBRARY*/
@@ -344,10 +344,10 @@ gregorianDateToJulianDay(year, month, day)
  *	The clock-time encoded as a scalar value.
  */
 double
-utEncodeClock(hours, minutes, seconds)
-    int		hours;
-    int		minutes;
-    double	seconds;
+utEncodeClock(
+    int		hours,
+    int		minutes,
+    double	seconds)
 {
     return (hours*60 + minutes)*60 + seconds;
 }
@@ -408,10 +408,10 @@ decompose(value, uncer, nbasis, basis, count)
  *	The date encoded as a scalar value.
  */
 double
-utEncodeDate(year, month, day)
-    int		year;
-    int		month;
-    int		day;
+utEncodeDate(
+    int		year,
+    int		month,
+    int		day)
 {
     if (juldayOrigin == 0)
 	juldayOrigin = gregorianDateToJulianDay(2001, 1, 1);

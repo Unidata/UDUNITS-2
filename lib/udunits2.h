@@ -147,8 +147,10 @@ extern "C" {
  * that a client will obtain a unit-system.
  *
  * Arguments:
- *	path	The pathname of the XML file or NULL.  If NULL, then the value
- *		of the environment variable UDUNITS2_XML_PATH is used.
+ *	path	The pathname of the XML file or NULL.  If NULL, then the
+ *		pathname specified by the environment variable UDUNITS2_XML_PATH
+ *		is used if set; otherwise, the compile-time pathname of the
+ *		installed, default, unit database is used.
  * Returns:
  *	NULL	Failure.  "utGetStatus()" will be
  *		    UT_OPEN_ARG		"path" is non-NULL but file couldn't be
@@ -223,7 +225,7 @@ utGetSystem(
  *		    UT_NULL_ARG	"system" is NULL.
  *	else	Pointer to the dimensionless-unit one associated with "system".
  *		While not necessary, the pointer may be passed to utFree()
- *		when the client no longer needs the unit.
+ *		when the unit is no longer needed by the client.
  */
 utUnit*
 utGetDimensionlessUnitOne(
@@ -357,7 +359,7 @@ utAddSymbolPrefix(
  *	system	Pointer to the unit-system to which to add the new base-unit.
  * Returns:
  *	NULL	Failure.  "utGetStatus()" will be
- *		    UT_NULL_ARG		"system" is NULL.
+ *		    UT_NULL_ARG		"system" or "name" is NULL.
  *		    UT_OS		Operating-system error.  See "errno".
  *	else	Pointer to the new base-unit.  The pointer should be passed to
  *		utFree() when the unit is no longer needed by the client (the
@@ -800,7 +802,7 @@ utOffset(
  * e.g.,
  *	const utUnit*	second = ...
  *	const utUnit*	secondsSinceTheEpoch =
- *	    utOffsetByTime(second, utEncodeTime(1970, 1, 1, 0, 0, 0.0));
+ *              utOffsetByTime(second, utEncodeTime(1970, 1, 1, 0, 0, 0.0));
  *
  * Arguments:
  *	unit	Pointer to the time-unit to be made relative to a time-origin.
@@ -990,10 +992,10 @@ utParse(
 
 
 /*
- * Returns the number of characters successfully parsed by utParse().  If
- * utParse() was successful, then the returned number will equal the length of
- * the string; otherwise, the returned number will be the 0-based index of the
- * character that caused the parse to fail.
+ * Returns the number of successfully parsed characters.  If utParse() was
+ * successful, then the returned number will equal the length of the string;
+ * otherwise, the returned number will be the 0-based index of the character
+ * that caused the parse to fail.
  *
  * Returns:
  *	The number of successfully parsed characters.
@@ -1178,24 +1180,8 @@ utDecodeTime(
 
 
 /*
- * Returns the status of the units module.  One of
- *   UT_SUCCESS		Success
- *   UT_NULL_ARG	An argument is NULL
- *   UT_BAD_ID		Identifier is NULL or empty
- *   UT_BAD_VALUE	Invalid numeric value
- *   UT_EXISTS		Unit, prefix, or identifier already exists
- *   UT_NO_UNIT		No such unit exists
- *   UT_OS		Operating-system error.  See "errno".
- *   UT_NOT_SAME_SYSTEM	The units belong to different unit-systems
- *   UT_MEANINGLESS	The operation on the unit(s) is meaningless
- *   UT_NO_SECOND	The unit-system doesn't have a unit named "second"
- *   UT_BAD_BUF		Character buffer argument is NULL
- *   UT_VISIT_ERROR	An error occurred while visiting a unit
- *   UT_CANT_FORMAT	A unit can't be formatted in the desired manner
- *   UT_SYNTAX		String unit representation contains syntax error
- *   UT_UNKNOWN		String unit representation contains unknown word
- *   UT_XML		XML parsing error
- *   UT_INTERNAL	Internal, assertion-type failure. Shouldn't occur.
+ * Returns the status of the last operation by the units module.  This function
+ * will not change the status.
  */
 utStatus
 utGetStatus(void);
