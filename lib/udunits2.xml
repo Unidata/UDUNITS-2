@@ -1850,10 +1850,11 @@
 	    </unit>
 	    <unit>
 		<def>lg(re 0.775 V)</def>       <!-- rms voltage -->
-		<aliases>
-                    <symbol>Bv</symbol>
-                    <symbol>Bu</symbol>
-                </aliases>
+		<aliases> <symbol>Bv</symbol> </aliases>
+	    </unit>
+	    <unit>
+		<def>lg(re 1 µV)</def>
+		<aliases> <symbol>BµV</symbol> </aliases>
 	    </unit>
 
 	<!-- Thermodynamic Temperature -->
