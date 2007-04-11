@@ -1,7 +1,7 @@
 /*
  * Value converters for the udunits(3) library.
  *
- * $Id: converter.c,v 1.6 2007/01/12 20:08:15 steve Exp $
+ * $Id: converter.c,v 1.7 2007/04/11 20:28:17 steve Exp $
  */
 
 /*LINTLIBRARY*/
@@ -19,16 +19,16 @@
 #include "converter.h"		/* this module's API */
 
 typedef struct {
-    cvConverter*	(*clone)(cvConverter*);
+    cv_converter*	(*clone)(cv_converter*);
     double		(*convertDouble)
-	(const cvConverter*, double);
+	(const cv_converter*, double);
     float*		(*convertFloats)
-	(const cvConverter*, const float*, size_t, float*);
+	(const cv_converter*, const float*, size_t, float*);
     double*		(*convertDoubles)
-	(const cvConverter*, const double*, size_t, double*);
+	(const cv_converter*, const double*, size_t, double*);
     int			(*getExpression)
-	(const cvConverter*, char* buf, size_t, const char*);
-    void		(*free)(cvConverter*);
+	(const cv_converter*, char* buf, size_t, const char*);
+    void		(*free)(cv_converter*);
 } ConverterOps;
 
 typedef struct {
@@ -63,11 +63,11 @@ typedef struct {
 
 typedef struct {
     ConverterOps*	ops;
-    cvConverter*	first;
-    cvConverter*	second;
+    cv_converter*	first;
+    cv_converter*	second;
 } CompositeConverter;
 
-union cvConverter {
+union cv_converter {
     ConverterOps*	ops;
     ScaleConverter	scale;
     OffsetConverter	offset;
@@ -89,14 +89,14 @@ union cvConverter {
 
 static void
 nonFree(
-    cvConverter* const conv)
+    cv_converter* const conv)
 {
 }
 
 
 static void
 cvSimpleFree(
-    cvConverter* const conv)
+    cv_converter* const conv)
 {
     free(conv);
 }
@@ -115,17 +115,17 @@ cvNeedsParentheses(
  * Trivial Converter:
  ******************************************************************************/
 
-static cvConverter*
+static cv_converter*
 trivialClone(
-    cvConverter* const	conv)
+    cv_converter* const	conv)
 {
-    return cvGetTrivial();
+    return cv_get_trivial();
 }
 
 
 static double
 trivialConvertDouble(
-    const cvConverter* const	conv,
+    const cv_converter* const	conv,
     const double		value)
 {
     return value;
@@ -134,7 +134,7 @@ trivialConvertDouble(
 
 static float*
 trivialConvertFloats(
-    const cvConverter* const	conv,
+    const cv_converter* const	conv,
     const float* const		in,
     const size_t		count,
     float* 			out)
@@ -152,7 +152,7 @@ trivialConvertFloats(
 
 static double*
 trivialConvertDoubles(
-    const cvConverter* const	conv,
+    const cv_converter* const	conv,
     const double* const		in,
     const size_t		count,
     double* 			out)
@@ -170,7 +170,7 @@ trivialConvertDoubles(
 
 static int
 trivialGetExpression(
-    const cvConverter* const	conv,
+    const cv_converter* const	conv,
     char* const			buf,
     const size_t		max,
     const char* const		variable)
@@ -187,23 +187,23 @@ static ConverterOps	trivialOps = {
     trivialGetExpression,
     nonFree};
 
-static cvConverter	trivialConverter = {&trivialOps};
+static cv_converter	trivialConverter = {&trivialOps};
 
 
 /*******************************************************************************
  * Reciprocal Converter:
  ******************************************************************************/
 
-static cvConverter*
+static cv_converter*
 reciprocalClone(
-    cvConverter* const	conv)
+    cv_converter* const	conv)
 {
-    return cvGetInverse();
+    return cv_get_inverse();
 }
 
 static double
 reciprocalConvertDouble(
-    const cvConverter* const	conv,
+    const cv_converter* const	conv,
     const double		value)
 {
     return 1.0 / value;
@@ -212,7 +212,7 @@ reciprocalConvertDouble(
 
 static float*
 reciprocalConvertFloats(
-    const cvConverter* const	conv,
+    const cv_converter* const	conv,
     const float* const		in,
     const size_t		count,
     float* 			out)
@@ -239,7 +239,7 @@ reciprocalConvertFloats(
 
 static double*
 reciprocalConvertDoubles(
-    const cvConverter* const	conv,
+    const cv_converter* const	conv,
     const double* const		in,
     const size_t		count,
     double* 			out)
@@ -266,7 +266,7 @@ reciprocalConvertDoubles(
 
 static int
 reciprocalGetExpression(
-    const cvConverter* const	conv,
+    const cv_converter* const	conv,
     char* const			buf,
     const size_t		max,
     const char* const		variable)
@@ -286,24 +286,24 @@ static ConverterOps	reciprocalOps = {
     reciprocalGetExpression,
     nonFree};
 
-static cvConverter	reciprocalConverter = {&reciprocalOps};
+static cv_converter	reciprocalConverter = {&reciprocalOps};
 
 
 /*******************************************************************************
  * Scale Converter:
  ******************************************************************************/
 
-static cvConverter*
+static cv_converter*
 scaleClone(
-    cvConverter* const	conv)
+    cv_converter* const	conv)
 {
-    return cvGetScale(conv->scale.value);
+    return cv_get_scale(conv->scale.value);
 }
 
 
 static double
 scaleConvertDouble(
-    const cvConverter* const	conv,
+    const cv_converter* const	conv,
     const double		value)
 {
     return conv->scale.value * value;
@@ -312,7 +312,7 @@ scaleConvertDouble(
 
 static float*
 scaleConvertFloats(
-    const cvConverter* const	conv,
+    const cv_converter* const	conv,
     const float* const		in,
     const size_t		count,
     float* 			out)
@@ -339,7 +339,7 @@ scaleConvertFloats(
 
 static double*
 scaleConvertDoubles(
-    const cvConverter* const	conv,
+    const cv_converter* const	conv,
     const double* const		in,
     const size_t		count,
     double* 			out)
@@ -366,7 +366,7 @@ scaleConvertDoubles(
 
 static int
 scaleGetExpression(
-    const cvConverter* const	conv,
+    const cv_converter* const	conv,
     char* const			buf,
     const size_t		max,
     const char* const		variable)
@@ -391,17 +391,17 @@ static ConverterOps	scaleOps = {
  * Offset Converter:
  ******************************************************************************/
 
-static cvConverter*
+static cv_converter*
 offsetClone(
-    cvConverter* const	conv)
+    cv_converter* const	conv)
 {
-    return cvGetOffset(conv->offset.value);
+    return cv_get_offset(conv->offset.value);
 }
 
 
 static double
 offsetConvertDouble(
-    const cvConverter* const	conv,
+    const cv_converter* const	conv,
     const double		value)
 {
     return conv->offset.value + value;
@@ -410,7 +410,7 @@ offsetConvertDouble(
 
 static float*
 offsetConvertFloats(
-    const cvConverter* const	conv,
+    const cv_converter* const	conv,
     const float* const		in,
     const size_t		count,
     float* 			out)
@@ -437,7 +437,7 @@ offsetConvertFloats(
 
 static double*
 offsetConvertDoubles(
-    const cvConverter* const	conv,
+    const cv_converter* const	conv,
     const double* const		in,
     const size_t		count,
     double* 			out)
@@ -464,7 +464,7 @@ offsetConvertDoubles(
 
 static int
 offsetGetExpression(
-    const cvConverter* const	conv,
+    const cv_converter* const	conv,
     char* const			buf,
     const size_t		max,
     const char* const		variable)
@@ -493,17 +493,17 @@ static ConverterOps	offsetOps = {
  * Galilean Converter:
  ******************************************************************************/
 
-static cvConverter*
+static cv_converter*
 cvGalileanClone(
-    cvConverter* const	conv)
+    cv_converter* const	conv)
 {
-    return cvGetGalilean(conv->galilean.slope, conv->galilean.intercept);
+    return cv_get_galilean(conv->galilean.slope, conv->galilean.intercept);
 }
 
 
 static double
 galileanConvertDouble(
-    const cvConverter* const	conv,
+    const cv_converter* const	conv,
     const double		value)
 {
     return conv->galilean.slope * value + conv->galilean.intercept;
@@ -512,7 +512,7 @@ galileanConvertDouble(
 
 static float*
 galileanConvertFloats(
-    const cvConverter* const	conv,
+    const cv_converter* const	conv,
     const float* const		in,
     const size_t		count,
     float* 			out)
@@ -541,7 +541,7 @@ galileanConvertFloats(
 
 static double*
 galileanConvertDoubles(
-    const cvConverter* const	conv,
+    const cv_converter* const	conv,
     const double* const		in,
     const size_t		count,
     double* 			out)
@@ -570,7 +570,7 @@ galileanConvertDoubles(
 
 static int
 galileanGetExpression(
-    const cvConverter* const	conv,
+    const cv_converter* const	conv,
     char* const			buf,
     const size_t		max,
     const char* const		variable)
@@ -599,12 +599,12 @@ static ConverterOps	galileanOps = {
  * Logarithmic Converter:
  ******************************************************************************/
 
-static cvConverter*
+static cv_converter*
 cvLogClone(
-    cvConverter* const	conv)
+    cv_converter* const	conv)
 {
     return
-        cvGetLog(
+        cv_get_log(
             conv->log.logE == M_LOG2E
                 ? 2
                 : conv->log.logE == 1
@@ -617,7 +617,7 @@ cvLogClone(
 
 static double
 logConvertDouble(
-    const cvConverter* const	conv,
+    const cv_converter* const	conv,
     const double		value)
 {
     return log(value) * conv->log.logE;
@@ -626,7 +626,7 @@ logConvertDouble(
 
 static float*
 logConvertFloats(
-    const cvConverter* const	conv,
+    const cv_converter* const	conv,
     const float* const		in,
     const size_t		count,
     float* 			out)
@@ -653,7 +653,7 @@ logConvertFloats(
 
 static double*
 logConvertDoubles(
-    const cvConverter* const	conv,
+    const cv_converter* const	conv,
     const double* const		in,
     const size_t		count,
     double* 			out)
@@ -680,7 +680,7 @@ logConvertDoubles(
 
 static int
 logGetExpression(
-    const cvConverter* const	conv,
+    const cv_converter* const	conv,
     char* const			buf,
     const size_t		max,
     const char* const		variable)
@@ -709,17 +709,17 @@ static ConverterOps	logOps = {
  * Exponential Converter:
  ******************************************************************************/
 
-static cvConverter*
+static cv_converter*
 expClone(
-    cvConverter* const	conv)
+    cv_converter* const	conv)
 {
-    return cvGetPow(conv->exp.base);
+    return cv_get_pow(conv->exp.base);
 }
 
 
 static double
 expConvertDouble(
-    const cvConverter* const	conv,
+    const cv_converter* const	conv,
     const double		value)
 {
     return pow(conv->exp.base, value);
@@ -727,7 +727,7 @@ expConvertDouble(
 
 static float*
 expConvertFloats(
-    const cvConverter* const	conv,
+    const cv_converter* const	conv,
     const float* const		in,
     const size_t		count,
     float* 			out)
@@ -754,7 +754,7 @@ expConvertFloats(
 
 static double*
 expConvertDoubles(
-    const cvConverter* const	conv,
+    const cv_converter* const	conv,
     const double* const		in,
     const size_t		count,
     double* 			out)
@@ -781,7 +781,7 @@ expConvertDoubles(
 
 static int
 expGetExpression(
-    const cvConverter* const	conv,
+    const cv_converter* const	conv,
     char* const			buf,
     const size_t		max,
     const char* const		variable)
@@ -806,28 +806,28 @@ static ConverterOps	expOps = {
  * Composite Converter:
  ******************************************************************************/
 
-static cvConverter*
+static cv_converter*
 compositeClone(
-    cvConverter* const	conv)
+    cv_converter* const	conv)
 {
-    return cvCombine(conv->composite.first, conv->composite.second);
+    return cv_combine(conv->composite.first, conv->composite.second);
 }
 
 
 static double
 compositeConvertDouble(
-    const cvConverter* const	conv,
+    const cv_converter* const	conv,
     const double		value)
 {
     return
-	cvConvertDouble(conv->composite.second,
-	    cvConvertDouble(((CompositeConverter*)conv)->first, value));
+	cv_convert_double(conv->composite.second,
+	    cv_convert_double(((CompositeConverter*)conv)->first, value));
 }
 
 
 static float*
 compositeConvertFloats(
-    const cvConverter* const	conv,
+    const cv_converter* const	conv,
     const float* const		in,
     const size_t		count,
     float* 			out)
@@ -837,9 +837,9 @@ compositeConvertFloats(
     }
     else {
 	out =
-	    cvConvertFloats(
+	    cv_convert_floats(
 		conv->composite.second,
-		cvConvertFloats(conv->composite.first, in, count, out),
+		cv_convert_floats(conv->composite.first, in, count, out),
 		count,
 		out);
     }
@@ -850,7 +850,7 @@ compositeConvertFloats(
 
 static double*
 compositeConvertDoubles(
-    const cvConverter* const	conv,
+    const cv_converter* const	conv,
     const double* const		in,
     const size_t		count,
     double* 			out)
@@ -860,9 +860,9 @@ compositeConvertDoubles(
     }
     else {
 	out = 
-	    cvConvertDoubles(
+	    cv_convert_doubles(
 		conv->composite.second,
-		cvConvertDoubles(conv->composite.first, in, count, out),
+		cv_convert_doubles(conv->composite.first, in, count, out),
 		count,
 		out);
     }
@@ -873,23 +873,23 @@ compositeConvertDoubles(
 
 static void
 compositeFree(
-    cvConverter* const	conv)
+    cv_converter* const	conv)
 {
-    cvFree(conv->composite.first);
-    cvFree(conv->composite.second);
+    cv_free(conv->composite.first);
+    cv_free(conv->composite.second);
     free(conv);
 }
 
 
 static int
 compositeGetExpression(
-    const cvConverter* const	conv,
+    const cv_converter* const	conv,
     char* const			buf,
     const size_t		max,
     const char* const		variable)
 {
     char	tmpBuf[132];
-    int		nchar = cvGetExpression(conv->composite.first, buf, max,
+    int		nchar = cv_get_expression(conv->composite.first, buf, max,
 	variable);
 
     if (nchar >= 0) {
@@ -904,7 +904,7 @@ compositeGetExpression(
 	    tmpBuf[sizeof(tmpBuf)-1] = 0;
 	}
 
-	nchar = cvGetExpression(conv->composite.second, buf, max, tmpBuf);
+	nchar = cv_get_expression(conv->composite.second, buf, max, tmpBuf);
     }
 
     return nchar;
@@ -927,13 +927,13 @@ static ConverterOps	compositeOps = {
 /*
  * Returns the trivial converter (i.e., y = x).
  * When finished with the converter, the client should pass the converter to
- * cvFree().
+ * cv_free().
  *
  * Returns:
  *	The trivial converter.
  */
-cvConverter*
-cvGetTrivial()
+cv_converter*
+cv_get_trivial()
 {
     return &trivialConverter;
 }
@@ -942,13 +942,13 @@ cvGetTrivial()
 /*
  * Returns the reciprocal converter (i.e., y = 1/x).
  * When finished with the converter, the client should pass the converter to
- * cvFree().
+ * cv_free().
  *
  * Returns:
  *	The reciprocal converter.
  */
-cvConverter*
-cvGetInverse()
+cv_converter*
+cv_get_inverse()
 {
     return &reciprocalConverter;
 }
@@ -957,7 +957,7 @@ cvGetInverse()
 /*
  * Returns a converter that multiplies values by a number (i.e., y = ax).
  * When finished with the converter, the client should pass the converter to
- * cvFree().
+ * cv_free().
  *
  * Arguments:
  *	slope	The number by which to multiply values.
@@ -965,11 +965,11 @@ cvGetInverse()
  *	NULL	Necessary memory couldn't be allocated.
  *	else	A converter that will multiply values by the given number.
  */
-cvConverter*
-cvGetScale(
+cv_converter*
+cv_get_scale(
     const double	slope)
 {
-    cvConverter*	conv;
+    cv_converter*	conv;
 
     if (slope == 1) {
 	conv = &trivialConverter;
@@ -990,7 +990,7 @@ cvGetScale(
 /*
  * Returns a converter that adds a number to values (i.e., y = x + b).
  * When finished with the converter, the client should pass the converter to
- * cvFree().
+ * cv_free().
  *
  * Arguments:
  *	offset	The number to be added.
@@ -998,11 +998,11 @@ cvGetScale(
  *	NULL	Necessary memory couldn't be allocated.
  *	else	A converter that adds the given number to values.
  */
-cvConverter*
-cvGetOffset(
+cv_converter*
+cv_get_offset(
     const double	offset)
 {
-    cvConverter*	conv;
+    cv_converter*	conv;
 
     if (offset == 0) {
 	conv = &trivialConverter;
@@ -1023,7 +1023,7 @@ cvGetOffset(
 /*
  * Returns a Galilean converter (i.e., y = ax + b).
  * When finished with the converter, the client should pass the converter to
- * cvFree().
+ * cv_free().
  *
  * Arguments:
  *	slope	The number by which to multiply values.
@@ -1032,21 +1032,21 @@ cvGetOffset(
  *	NULL	Necessary memory couldn't be allocated.
  *	else	A Galilean converter corresponding to the inputs.
  */
-cvConverter*
-cvGetGalilean(
+cv_converter*
+cv_get_galilean(
     const double	slope,
     const double	intercept)
 {
-    cvConverter*	conv;
+    cv_converter*	conv;
 
     if (slope == 1) {
-	conv = cvGetOffset(intercept);
+	conv = cv_get_offset(intercept);
     }
     else if (intercept == 0) {
-	conv = cvGetScale(slope);
+	conv = cv_get_scale(slope);
     }
     else {
-	cvConverter*	tmp = malloc(sizeof(GalileanConverter));
+	cv_converter*	tmp = malloc(sizeof(GalileanConverter));
 
 	if (tmp != NULL) {
 	    tmp->ops = &galileanOps;
@@ -1063,7 +1063,7 @@ cvGetGalilean(
 /*
  * Returns a logarithmic converter (i.e., y = log(x/x0) in some base).
  * When finished with the converter, the client should pass the converter to
- * cvFree().
+ * cv_free().
  *
  * Arguments:
  *	base		The logarithmic base (e.g., 2, M_E, 10).  Must be
@@ -1073,11 +1073,11 @@ cvGetGalilean(
  *			allocated.
  *	else		A logarithmic converter corresponding to the inputs.
  */
-cvConverter*
-cvGetLog(
+cv_converter*
+cv_get_log(
     const double	base)
 {
-    cvConverter*	conv;
+    cv_converter*	conv;
 
     if (base <= 1) {
 	conv = NULL;
@@ -1105,7 +1105,7 @@ cvGetLog(
 /*
  * Returns an exponential converter (i.e., y = pow(b, x) in some base "b").
  * When finished with the converter, the client should pass the converter to
- * cvFree().
+ * cv_free().
  *
  * Arguments:
  *	base		The desired base.  Must be positive.
@@ -1114,11 +1114,11 @@ cvGetLog(
  *			allocated.
  *	else		An exponential converter corresponding to the inputs.
  */
-cvConverter*
-cvGetPow(
+cv_converter*
+cv_get_pow(
     const double	base)
 {
-    cvConverter*	conv;
+    cv_converter*	conv;
 
     if (base <= 0) {
 	conv = NULL;
@@ -1142,9 +1142,9 @@ cvGetPow(
  * it is no longer needed.
  *
  * Arguments:
- *	first	The converter to be applied first.  May be passed to cvFree()
+ *	first	The converter to be applied first.  May be passed to cv_free()
  *		upon return.
- *	second	The converter to be applied second.  May be passed to cvFree()
+ *	second	The converter to be applied second.  May be passed to cv_free()
  *		upon return.
  * Returns:
  *	NULL	Either "first" or "second" is NULL or necessary memory couldn't
@@ -1154,12 +1154,12 @@ cvGetPow(
  *              converter, then the returned converter will be the other input
  *              converter.
  */
-cvConverter*
-cvCombine(
-    cvConverter* const	first,
-    cvConverter* const	second)
+cv_converter*
+cv_combine(
+    cv_converter* const	first,
+    cv_converter* const	second)
 {
-    cvConverter*	conv;
+    cv_converter*	conv;
 
     if (first == NULL || second == NULL) {
 	conv = NULL;
@@ -1175,48 +1175,48 @@ cvCombine(
 
 	if (IS_RECIPROCAL(first)) {
 	    if (IS_RECIPROCAL(second)) {
-		conv = cvGetTrivial();
+		conv = cv_get_trivial();
 	    }
 	}
 	else if (IS_SCALE(first)) {
 	    if (IS_SCALE(second)) {
-		conv = cvGetScale(first->scale.value * second->scale.value);
+		conv = cv_get_scale(first->scale.value * second->scale.value);
 	    }
 	    else if (IS_OFFSET(second)) {
-		conv = cvGetGalilean(first->scale.value, second->offset.value);
+		conv = cv_get_galilean(first->scale.value, second->offset.value);
 	    }
 	    else if (IS_GALILEAN(second)) {
-		conv = cvGetGalilean(
+		conv = cv_get_galilean(
 		    first->scale.value * second->galilean.slope, 
 		    second->galilean.intercept);
 	    }
 	}
 	else if (IS_OFFSET(first)) {
 	    if (IS_SCALE(second)) {
-		conv = cvGetGalilean(second->scale.value, 
+		conv = cv_get_galilean(second->scale.value, 
 		    first->offset.value * second->scale.value);
 	    }
 	    else if (IS_OFFSET(second)) {
-		conv = cvGetOffset(first->offset.value + second->offset.value);
+		conv = cv_get_offset(first->offset.value + second->offset.value);
 	    }
 	    else if (IS_GALILEAN(second)) {
-		conv = cvGetGalilean(second->galilean.slope, 
+		conv = cv_get_galilean(second->galilean.slope, 
 		    first->offset.value * second->galilean.slope +
 			second->galilean.intercept);
 	    }
 	}
 	else if (IS_GALILEAN(first)) {
 	    if (IS_SCALE(second)) {
-		conv = cvGetGalilean(
+		conv = cv_get_galilean(
 		    second->scale.value * first->galilean.slope,
 		    second->scale.value * first->galilean.intercept);
 	    }
 	    else if (IS_OFFSET(second)) {
-		conv = cvGetGalilean(first->galilean.slope,
+		conv = cv_get_galilean(first->galilean.slope,
 		    first->galilean.intercept + second->offset.value);
 	    }
 	    else if (IS_GALILEAN(second)) {
-		conv = cvGetGalilean(
+		conv = cv_get_galilean(
 		    second->galilean.slope * first->galilean.slope,
 		    second->galilean.slope * first->galilean.intercept +
 			second->galilean.intercept);
@@ -1227,11 +1227,11 @@ cvCombine(
 	    /*
 	     * General case: create a composite converter.
 	     */
-	    cvConverter*	c1 = CV_CLONE(first);
+	    cv_converter*	c1 = CV_CLONE(first);
             int                 error = 1;
 
             if (c1 != NULL) {
-                cvConverter*	c2 = CV_CLONE(second);
+                cv_converter*	c2 = CV_CLONE(second);
 
                 if (c2 != NULL) {
                     conv = malloc(sizeof(CompositeConverter));
@@ -1244,11 +1244,11 @@ cvCombine(
                     }                   /* "conv" allocated */
 
                     if (error)
-                        cvFree(c2);
+                        cv_free(c2);
                 }                       /* "c2" allocated */
 
                 if (error)
-                    cvFree(c1);
+                    cv_free(c1);
             }                           /* "c1" allocated */
 	}                               /* "conv != NULL" */
     }                                   /* "first" & "second" not trivial */
@@ -1266,10 +1266,10 @@ cvCombine(
  *		converter must have been returned by this module.
  */
 void
-cvFree(
-    cvConverter* const	conv)
+cv_free(
+    cv_converter* const	conv)
 {
-    conv->ops->free((cvConverter*)conv);
+    conv->ops->free((cv_converter*)conv);
 }
 
 
@@ -1283,8 +1283,8 @@ cvFree(
  *	The converted value.
  */
 float
-cvConvertFloat(
-    const cvConverter*	converter,
+cv_convert_float(
+    const cv_converter*	converter,
     const float		value)
 {
     return (float)converter->ops->convertDouble(converter, value);
@@ -1301,8 +1301,8 @@ cvConvertFloat(
  *	The converted value.
  */
 double
-cvConvertDouble(
-    const cvConverter*	converter,
+cv_convert_double(
+    const cv_converter*	converter,
     const double	value)
 {
     return converter->ops->convertDouble(converter, value);
@@ -1324,8 +1324,8 @@ cvConvertDouble(
  *	else		Pointer to the output array, "out".
  */
 float*
-cvConvertFloats(
-    const cvConverter*	converter,
+cv_convert_floats(
+    const cv_converter*	converter,
     const float* const	in,
     const size_t	count,
     float*		out)
@@ -1356,8 +1356,8 @@ cvConvertFloats(
  *	else		Pointer to the output array, "out".
  */
 double*
-cvConvertDoubles(
-    const cvConverter*	converter,
+cv_convert_doubles(
+    const cv_converter*	converter,
     const double* const	in,
     const size_t	count,
     double*		out)
@@ -1387,8 +1387,8 @@ cvConvertDoubles(
  *	else	The number of bytes formatted excluding the terminating null.
  */
 int
-cvGetExpression(
-    const cvConverter* const	conv,
+cv_get_expression(
+    const cv_converter* const	conv,
     char* const			buf,
     size_t			max,
     const char* const		variable)

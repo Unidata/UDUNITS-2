@@ -19,8 +19,8 @@
 #include "udunits2.h"
 #include "unitToIdMap.h"
 
-typedef const char*	(*IdGetter)(const utUnit*, utEncoding);
-typedef	int		(*ProductPrinter)(const utUnit* const*, const int*,
+typedef const char*	(*IdGetter)(const ut_unit*, ut_encoding);
+typedef	int		(*ProductPrinter)(const ut_unit* const*, const int*,
     int, char*, size_t, IdGetter);
 
 /*
@@ -32,7 +32,7 @@ typedef struct {
     char*		buf;
     size_t		size;
     int			getDefinition;
-    utEncoding		encoding;
+    ut_encoding		encoding;
     int			addParens;
     int			nchar;
 } FormatPar;
@@ -43,7 +43,7 @@ typedef struct {
 
 static int
 asciiPrintProduct(
-    const utUnit* const* const	basicUnits,
+    const ut_unit* const* const	basicUnits,
     const int* const		powers,
     const int			count,
     char* const			buf,
@@ -51,7 +51,7 @@ asciiPrintProduct(
     IdGetter			getId);
 static int
 latin1PrintProduct(
-    const utUnit* const* const	basicUnits,
+    const ut_unit* const* const	basicUnits,
     const int* const		powers,
     const int			count,
     char* const			buf,
@@ -59,14 +59,14 @@ latin1PrintProduct(
     IdGetter			getId);
 static int
 utf8PrintProduct(
-    const utUnit* const* const	basicUnits,
+    const ut_unit* const* const	basicUnits,
     const int* const		powers,
     const int			count,
     char* const			buf,
     const size_t		max,
     IdGetter			getId);
 
-static utVisitor	formatter;
+static ut_visitor	formatter;
 
 
 /*
@@ -81,15 +81,15 @@ static utVisitor	formatter;
  */
 static const char*
 getName(
-    const utUnit* const	unit,
-    const utEncoding	encoding)
+    const ut_unit* const	unit,
+    const ut_encoding	encoding)
 {
     const char*	name;
 
-    name = utGetName(unit, encoding);
+    name = ut_get_name(unit, encoding);
 
     if (name == NULL)
-	name = utGetName(unit, UT_ASCII);
+	name = ut_get_name(unit, UT_ASCII);
 
     return name;
 }
@@ -107,15 +107,15 @@ getName(
  */
 static const char*
 getSymbol(
-    const utUnit* const	unit,
-    const utEncoding	encoding)
+    const ut_unit* const	unit,
+    const ut_encoding	encoding)
 {
     const char*	symbol;
 
-    symbol = utGetSymbol(unit, encoding);
+    symbol = ut_get_symbol(unit, encoding);
 
     if (symbol == NULL)
-	symbol = utGetSymbol(unit, UT_ASCII);
+	symbol = ut_get_symbol(unit, UT_ASCII);
 
     return symbol;
 }
@@ -143,23 +143,23 @@ getSymbol(
  */
 static int
 format(
-    const utUnit* const	unit,
+    const ut_unit* const	unit,
     char*		buf,
     size_t		size,
     const int		useNames,
     const int		getDefinition,
-    utEncoding		encoding,
+    ut_encoding		encoding,
     const int		addParens)
 {
     int	nchar = -1;	/* failure */
 
     if (unit == NULL) {
-	utHandleErrorMessage("format(): NULL unit argument");
-	utSetStatus(UT_NULL_ARG);
+	ut_handle_error_message("format(): NULL unit argument");
+	ut_set_status(UT_NULL_ARG);
     }
     else if (buf == NULL) {
-	utHandleErrorMessage("format(): NULL buffer argument");
-	utSetStatus(UT_BAD_BUF);
+	ut_handle_error_message("format(): NULL buffer argument");
+	ut_set_status(UT_BAD_BUF);
     }
     else {
 	FormatPar	formatPar;
@@ -178,7 +178,7 @@ format(
 	formatPar.addParens = addParens;
 	formatPar.nchar = 0;
 
-	if (utAcceptVisitor(unit, &formatter, &formatPar) == UT_SUCCESS)
+	if (ut_accept_visitor(unit, &formatter, &formatPar) == UT_SUCCESS)
 	    nchar = formatPar.nchar;
     }
 
@@ -205,11 +205,11 @@ format(
  */
 static int
 printBasic(
-    const utUnit* const	unit,
+    const ut_unit* const	unit,
     char* const		buf,
     size_t		max,
     IdGetter		getId,
-    utEncoding		encoding)
+    ut_encoding		encoding)
 {
     const char* const	id = getId(unit, encoding);
 
@@ -232,9 +232,9 @@ printBasic(
  *	else		Success.  Number of characters formatted, excluding any
  *			trailing NUL.
  */
-static utStatus
+static ut_status
 formatBasic(
-    const utUnit* const	unit,
+    const ut_unit* const	unit,
     void*		arg)
 {
     FormatPar*	formatPar = (FormatPar*)arg;
@@ -269,7 +269,7 @@ formatBasic(
  */
 static int
 asciiPrintProduct(
-    const utUnit* const* const	basicUnits,
+    const ut_unit* const* const	basicUnits,
     const int* const		powers,
     const int			count,
     char* const			buf,
@@ -353,7 +353,7 @@ asciiPrintProduct(
  */
 static int
 utf8PrintProduct(
-    const utUnit* const* const	basicUnits,
+    const ut_unit* const* const	basicUnits,
     const int* const		powers,
     const int			count,
     char* const			buf,
@@ -558,7 +558,7 @@ static int
 latin1PrintBasics(
     char* const			buf,
     size_t			max,
-    const utUnit* const*	basicUnits,
+    const ut_unit* const*	basicUnits,
     const int* const		powers,
     const int* const		order,
     const int			count,
@@ -638,7 +638,7 @@ latin1PrintBasics(
  */
 static int
 latin1PrintProduct(
-    const utUnit* const* const	basicUnits,
+    const ut_unit* const* const	basicUnits,
     const int* const		powers,
     const int			count,
     char* const			buf,
@@ -727,11 +727,11 @@ latin1PrintProduct(
  *	-1		Failure.  See errno.
  *	else		Success.  Number of bytes printed.
  */
-static utStatus
+static ut_status
 formatProduct(
-    const utUnit* const		unit,
+    const ut_unit* const		unit,
     const int			count,
-    const utUnit* const* const	basicUnits,
+    const ut_unit* const* const	basicUnits,
     const int* const		powers,
     void*			arg)
 {
@@ -785,13 +785,13 @@ formatProduct(
 static int
 printGalilean(
     double		scale,
-    const utUnit* const	unit,
+    const ut_unit* const	unit,
     double		offset,
     char* const		buf,
     const size_t	max,
     IdGetter		getId,
     const int		getDefinition,
-    const utEncoding	encoding,
+    const ut_encoding	encoding,
     const int		addParens)
 {
     int			n;
@@ -850,11 +850,11 @@ printGalilean(
  *	-1		Failure.  See errno.
  *	else		Success.  Number of bytes printed.
  */
-static utStatus
+static ut_status
 formatGalilean(
-    const utUnit* const	unit,
+    const ut_unit* const	unit,
     const double	scale,
-    const utUnit* const	underlyingUnit,
+    const ut_unit* const	underlyingUnit,
     double		offset,
     void*		arg)
 {
@@ -914,7 +914,7 @@ formatGalilean(
  */
 static int
 printTimestamp(
-    const utUnit* const	underlyingUnit,
+    const ut_unit* const	underlyingUnit,
     const int		year,
     const int		month,
     const int		day,
@@ -926,7 +926,7 @@ printTimestamp(
     const size_t	max,
     IdGetter		getId,
     const int		getDefinition,
-    const utEncoding	encoding,
+    const ut_encoding	encoding,
     const int		addParens)
 {
     int		n;
@@ -988,10 +988,10 @@ printTimestamp(
  *	-1		Failure.  See errno.
  *	else		Success.  Number of bytes printed.
  */
-static utStatus
+static ut_status
 formatTimestamp(
-    const utUnit* const	unit,
-    const utUnit* const	underlyingUnit,
+    const ut_unit* const	unit,
+    const ut_unit* const	underlyingUnit,
     const double        origin,
     void*		arg)
 {
@@ -1005,7 +1005,7 @@ formatTimestamp(
     double      	second;
     double              resolution;
 
-    utDecodeTime(origin, &year, &month, &day, &hour, &minute, &second,
+    ut_decode_time(origin, &year, &month, &day, &hour, &minute, &second,
         &resolution);
 
     if (formatPar->getDefinition) {
@@ -1058,12 +1058,12 @@ formatTimestamp(
 static int
 printLogarithmic(
     const double	base,
-    const utUnit* const	reference,
+    const ut_unit* const	reference,
     char*		buf,
     const size_t	max,
     IdGetter		getId,
     const int		getDefinition,
-    const utEncoding	encoding,
+    const ut_encoding	encoding,
     const int		addParens)
 {
     char	tmp[512];
@@ -1108,11 +1108,11 @@ printLogarithmic(
  *	UT_VISIT_ERROR	Failure.
  *	UT_SUCCESS	Success.
  */
-static utStatus
+static ut_status
 formatLogarithmic(
-    const utUnit* const	unit,
+    const ut_unit* const	unit,
     const double	base,
-    const utUnit* const	reference,
+    const ut_unit* const	reference,
     void*		arg)
 {
     FormatPar*	formatPar = (FormatPar*)arg;
@@ -1144,7 +1144,7 @@ formatLogarithmic(
  * This module as a unit-visitor:
  ******************************************************************************/
 
-static utVisitor	formatter = {
+static ut_visitor	formatter = {
     formatBasic,
     formatProduct,
     formatGalilean,
@@ -1185,7 +1185,7 @@ static utVisitor	formatter = {
  *			UT_LATIN1 and UT_UTF8 are mutually exclusive: they may
  *			not both be specified.
  * Returns:
- *	-1		Failure:  "utGetStatus()" will be
+ *	-1		Failure:  "ut_get_status()" will be
  *			    UT_NULL_ARG		"unit" or "buf" is NULL
  *			    UT_BAD_VALUE	Both UT_LATIN1 and UT_UTF8
  *						specified.
@@ -1196,8 +1196,8 @@ static utVisitor	formatter = {
  *			buffer is too small to have a terminating NUL character.
  */
 int
-utFormat(
-    const utUnit* const	unit,
+ut_format(
+    const ut_unit* const	unit,
     char*		buf,
     size_t		size,
     unsigned		opts)
@@ -1205,26 +1205,26 @@ utFormat(
     int			nchar = -1;	/* failure */
     const int		useNames = opts & UT_NAMES;
     const int		getDefinition = opts & UT_DEFINITION;
-    const utEncoding	encoding =
-        (utEncoding)(opts & (unsigned)(UT_ASCII | UT_LATIN1 | UT_UTF8));
+    const ut_encoding	encoding =
+        (ut_encoding)(opts & (unsigned)(UT_ASCII | UT_LATIN1 | UT_UTF8));
 
     if (unit == NULL || buf == NULL) {
-	utHandleErrorMessage("NULL argument");
-	utSetStatus(UT_NULL_ARG);
+	ut_handle_error_message("NULL argument");
+	ut_set_status(UT_NULL_ARG);
     }
     else if ((encoding & UT_LATIN1) && (encoding & UT_UTF8)) {
-	utHandleErrorMessage("Both UT_LATIN1 and UT_UTF8 specified");
-	utSetStatus(UT_BAD_VALUE);
+	ut_handle_error_message("Both UT_LATIN1 and UT_UTF8 specified");
+	ut_set_status(UT_BAD_VALUE);
     }
     else {
 	nchar = format(unit, buf, size, useNames, getDefinition, encoding, 0);
 
 	if (nchar < 0) {
-	    utHandleErrorMessage("Couldn't format unit");
-	    utSetStatus(UT_CANT_FORMAT);
+	    ut_handle_error_message("Couldn't format unit");
+	    ut_set_status(UT_CANT_FORMAT);
 	}
 	else {
-	    utSetStatus(UT_SUCCESS);
+	    ut_set_status(UT_SUCCESS);
 	}
     }
 

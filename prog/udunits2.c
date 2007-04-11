@@ -2,7 +2,7 @@
  * This program prints definitions of units of physical qantities and converts
  * values between such units.
  *
- * $Id: udunits2.c,v 1.3 2007/01/19 18:25:10 steve Exp $
+ * $Id: udunits2.c,v 1.4 2007/04/11 20:28:27 steve Exp $
  */
 
 #ifndef	_XOPEN_SOURCE
@@ -21,15 +21,15 @@
 
 static int		_reveal;
 static int		_encodingSet;
-static utEncoding	_encoding;
+static ut_encoding	_encoding;
 static const char*	_progname = "udunits2";
 static const char*	_xmlPath;
-static utSystem*	_unitSystem;
+static ut_system*	_unitSystem;
 static char		_haveUnitSpec[_POSIX_MAX_INPUT+1];
 static char		_wantSpec[_POSIX_MAX_INPUT+1];
 static double           _haveNumber;
-static utUnit*		_haveUnit;
-static utUnit*		_wantUnit;
+static ut_unit*		_haveUnit;
+static ut_unit*		_wantUnit;
 static int		_wantDefinition;
 static int		_formattingOptions = UT_DEFINITION;
 static int		_exitStatus = EXIT_FAILURE;
@@ -182,11 +182,11 @@ readXmlDatabase(void)
     int		success = 0;
 
     if (!_reveal)
-	utSetErrorMessageHandler(utIgnore);
+	ut_set_error_message_handler(ut_ignore);
 
-    _unitSystem = utReadXml(_xmlPath);
+    _unitSystem = ut_read_xml(_xmlPath);
 
-    utSetErrorMessageHandler(utWriteToStderr);
+    ut_set_error_message_handler(ut_write_to_stderr);
 
     if (_unitSystem != NULL) {
 	success = 1;
@@ -227,7 +227,7 @@ getSpec(
 	/*
 	 * Trim any whitespace from the specification.
 	 */
-	(void)utTrim(spec, _encoding);
+	(void)ut_trim(spec, _encoding);
 
         nbytes = strlen(spec);
     }
@@ -251,11 +251,11 @@ getInputValue(void)
 	if (nbytes > 0) {
             int         n = sscanf(buf, "%lg %s", &_haveNumber, _haveUnitSpec);
 
-	    utFree(_haveUnit);
+	    ut_free(_haveUnit);
 
             if (n == 1) {
                 _haveUnitSpec[0] = 0;
-                _haveUnit = utGetDimensionlessUnitOne(_unitSystem);
+                _haveUnit = ut_get_dimensionless_unit_one(_unitSystem);
             }
             else if (n != EOF) {
                 if (n == 0) {
@@ -263,7 +263,7 @@ getInputValue(void)
                     (void)strcpy(_haveUnitSpec, buf);
                 }
 
-                _haveUnit = utParse(_unitSystem, _haveUnitSpec, _encoding);
+                _haveUnit = ut_parse(_unitSystem, _haveUnitSpec, _encoding);
 
                 if (_haveUnit == NULL) {
                     (void)fprintf(stderr, "%s: Don't recognize \"%s\"\n",
@@ -301,9 +301,9 @@ getOutputRequest(void)
 
 	_wantDefinition = 0;
 
-	utFree(_wantUnit);
+	ut_free(_wantUnit);
 
-	_wantUnit = utParse(_unitSystem, _wantSpec, _encoding);
+	_wantUnit = ut_parse(_unitSystem, _wantSpec, _encoding);
 
 	if (_wantUnit == NULL) {
 	    (void)fprintf(stderr, "%s: Don't recognize \"%s\"\n",
@@ -329,14 +329,14 @@ handleRequest(void)
 	    if (_wantDefinition) {
                 char	buf[256];
                 int	nbytes;
-                utUnit* scaledUnit = utScale(_haveNumber, _haveUnit);
+                ut_unit* scaledUnit = ut_scale(_haveNumber, _haveUnit);
 
                 if (scaledUnit == NULL) {
                     (void)fprintf(stderr, "%s: Couldn't compute %g \"%s\"\n",
                         _progname, _haveNumber, _haveUnitSpec);
                 }
                 else {
-                    nbytes = utFormat(scaledUnit, buf, sizeof(buf),
+                    nbytes = ut_format(scaledUnit, buf, sizeof(buf),
                         _formattingOptions);
 
                     if (nbytes >= sizeof(buf)) {
@@ -350,12 +350,12 @@ handleRequest(void)
                     }
                 }
 	    }
-	    else if (!utAreConvertible(_wantUnit, _haveUnit)) {
+	    else if (!ut_are_convertible(_wantUnit, _haveUnit)) {
 		(void)fprintf(stderr, "%s: Units are not convertible\n",
 		    _progname);
 	    }
 	    else {
-		cvConverter*	conv = utGetConverter(_haveUnit, _wantUnit);
+		cv_converter*	conv = ut_get_converter(_haveUnit, _wantUnit);
 
 		if (conv == NULL) {
 		    (void)fprintf(stderr, "%s: Couldn't get unit converter\n",
@@ -374,7 +374,7 @@ handleRequest(void)
 			    ? "    %g %s = %g (%s)\n"
 			    : "    %g %s = %g %s\n",
 			_haveNumber, _haveUnitSpec,
-			cvConvertDouble(conv, _haveNumber), _wantSpec);
+			cv_convert_double(conv, _haveNumber), _wantSpec);
 
                     (void)sprintf(haveExp,
                         strpbrk(_haveUnitSpec, whiteSpace) ||
@@ -383,7 +383,7 @@ handleRequest(void)
                             : "(x/%s)",
                         _haveUnitSpec);
 
-                    n = cvGetExpression(conv, exp, sizeof(exp), haveExp);
+                    n = cv_get_expression(conv, exp, sizeof(exp), haveExp);
 
                     if (n >= 0)
                         (void)printf(
@@ -393,7 +393,7 @@ handleRequest(void)
                                 :  "    x/%s = %*s\n",
                         _wantSpec, n, exp);
 
-                    cvFree(conv);
+                    cv_free(conv);
 		}
 	    }
 

@@ -1,6 +1,6 @@
 %{
 /*
- * $Id: parser.y,v 1.8 2007/01/04 17:26:55 steve Exp $
+ * $Id: parser.y,v 1.9 2007/04/11 20:28:17 steve Exp $
  *
  * yacc(1)-based parser for decoding formatted unit specifications.
  */
@@ -20,10 +20,10 @@
 
 #include "udunits2.h"
 
-static utUnit*		finalUnit;	/* fully-parsed specification */
-static utSystem*	unitSystem;	/* The unit-system to use */
+static ut_unit*		finalUnit;	/* fully-parsed specification */
+static ut_system*	unitSystem;	/* The unit-system to use */
 static char*		errorMessage;	/* last error-message */
-static utEncoding	_encoding;	/* encoding of string to be parsed */
+static ut_encoding	_encoding;	/* encoding of string to be parsed */
 static int		_restartScanner;	/* restart scanner? */
 static size_t		_nchar;		/* number of parsed characters */
 
@@ -39,9 +39,9 @@ static size_t		_nchar;		/* number of parsed characters */
  *      "string"
  */
 char*
-utTrim(
+ut_trim(
     char* const	        string,
-    const utEncoding	encoding)
+    const ut_encoding	encoding)
 {
     static const char*	asciiSpace = " \t\n\r\f\v";
     static const char*	latin1Space = " \t\n\r\f\v\xa0";	/* add NBSP */
@@ -67,14 +67,14 @@ utTrim(
 
     string[len] = 0;
 
-    utSetStatus(UT_SUCCESS);
+    ut_set_status(UT_SUCCESS);
 
     return start;
 }
 
 
 /*
- * Returns the number of successfully parsed characters.  If utParse() was
+ * Returns the number of successfully parsed characters.  If ut_parse() was
  * successful, then the returned number will equal the length of the string;
  * otherwise, the returned number will be the 0-based index of the character
  * that caused the parse to fail.
@@ -83,7 +83,7 @@ utTrim(
  *	The number of successfully parsed characters.
  */
 size_t
-utGetParseLength(void)
+ut_get_parse_length(void)
 {
     return _nchar;
 }
@@ -93,7 +93,7 @@ utGetParseLength(void)
  *  YACC error routine:
  */
 void
-ut_error(
+uterror(
     char        	*s)
 {
     static char*	nomem = "ut_error(): out of memory";
@@ -110,7 +110,7 @@ ut_error(
 
 %union {
     char*	id;			/* identifier */
-    utUnit*	unit;			/* "unit" structure */
+    ut_unit*	unit;			/* "unit" structure */
     double	rval;			/* floating-point numerical value */
     long	ival;			/* integer numerical value */
 }
@@ -140,7 +140,7 @@ ut_error(
 %%
 
 unit_spec:      /* nothing */ {
-		    finalUnit = utGetDimensionlessUnitOne(unitSystem);
+		    finalUnit = ut_get_dimensionless_unit_one(unitSystem);
 		    YYACCEPT;
 		} |
 		shift_exp {
@@ -148,7 +148,7 @@ unit_spec:      /* nothing */ {
 		    YYACCEPT;
 		} |
 		error {
-		    utSetStatus(UT_SYNTAX);
+		    ut_set_status(UT_SYNTAX);
 		    YYABORT;
 		}
 		;
@@ -157,25 +157,25 @@ shift_exp:	product_exp {
 		    $$ = $1;
 		} |
 		product_exp SHIFT REAL {
-		    $$ = utOffset($1, $3);
+		    $$ = ut_offset($1, $3);
 
-		    utFree($1);
+		    ut_free($1);
 
 		    if ($$ == NULL)
 			YYABORT;
 		} |
 		product_exp SHIFT INT {
-		    $$ = utOffset($1, $3);
+		    $$ = ut_offset($1, $3);
 
-		    utFree($1);
+		    ut_free($1);
 
 		    if ($$ == NULL)
 			YYABORT;
 		} |
 		product_exp SHIFT timestamp {
-		    $$ = utOffsetByTime($1, $3);
+		    $$ = ut_offset_by_time($1, $3);
 
-		    utFree($1);
+		    ut_free($1);
 
 		    if ($$ == NULL)
 			YYABORT;
@@ -186,28 +186,28 @@ product_exp:	power_exp {
 		    $$ = $1;
 		} |
 		product_exp power_exp	{
-		    $$ = utMultiply($1, $2);
+		    $$ = ut_multiply($1, $2);
 
-		    utFree($1);
-		    utFree($2);
+		    ut_free($1);
+		    ut_free($2);
 
 		    if ($$ == NULL)
 			YYABORT;
 		} |
 		product_exp MULTIPLY power_exp	{
-		     $$ = utMultiply($1, $3);
+		     $$ = ut_multiply($1, $3);
 
-		    utFree($1);
-		    utFree($3);
+		    ut_free($1);
+		    ut_free($3);
 
 		    if ($$ == NULL)
 			YYABORT;
 		} |
 		product_exp DIVIDE power_exp	{
-		     $$ = utDivide($1, $3);
+		     $$ = ut_divide($1, $3);
 
-		    utFree($1);
-		    utFree($3);
+		    ut_free($1);
+		    ut_free($3);
 
 		    if ($$ == NULL)
 			YYABORT;
@@ -218,25 +218,25 @@ power_exp:	basic_exp {
 		    $$ = $1;
 		} |
 		basic_exp INT {
-		    $$ = utRaise($1, $2);
+		    $$ = ut_raise($1, $2);
 
-		    utFree($1);
+		    ut_free($1);
 
 		    if ($$ == NULL)
 			YYABORT;
 		} |
 		basic_exp EXPONENT {
-		    $$ = utRaise($1, $2);
+		    $$ = ut_raise($1, $2);
 
-		    utFree($1);
+		    ut_free($1);
 
 		    if ($$ == NULL)
 			YYABORT;
 		} |
 		basic_exp RAISE INT {
-		    $$ = utRaise($1, $3);
+		    $$ = ut_raise($1, $3);
 
-		    utFree($1);
+		    ut_free($1);
 
 		    if ($$ == NULL)
 			YYABORT;
@@ -245,7 +245,7 @@ power_exp:	basic_exp {
 
 basic_exp:	ID {
 		    double	prefix = 1;
-		    utUnit*	unit = NULL;
+		    ut_unit*	unit = NULL;
 		    char*	cp = $1;
 		    int		symbolPrefixSeen = 0;
 
@@ -253,12 +253,12 @@ basic_exp:	ID {
 			size_t	nchar;
 			double	value;
 
-			unit = utGetUnitByName(unitSystem, cp);
+			unit = ut_get_unit_by_name(unitSystem, cp);
 
 			if (unit != NULL)
 			    break;
 
-			unit = utGetUnitBySymbol(unitSystem, cp);
+			unit = ut_get_unit_by_symbol(unitSystem, cp);
 
 			if (unit != NULL)
 			    break;
@@ -280,13 +280,13 @@ basic_exp:	ID {
 		    free($1);
 
 		    if (unit == NULL) {
-			utSetStatus(UT_UNKNOWN);
+			ut_set_status(UT_UNKNOWN);
 			YYABORT;
 		    }
 
-		    $$ = utScale(prefix, unit);
+		    $$ = ut_scale(prefix, unit);
 
-		    utFree(unit);
+		    ut_free(unit);
 
 		    if ($$ == NULL)
 			YYABORT;
@@ -295,15 +295,15 @@ basic_exp:	ID {
 		    $$ = $2;
 		} |
 		LOGREF product_exp ')' {
-		    $$ = utLog($1, $2);
+		    $$ = ut_log($1, $2);
 
-		    utFree($2);
+		    ut_free($2);
 
 		    if ($$ == NULL)
 			YYABORT;
 		} |
 		number {
-		    $$ = utScale($1, utGetDimensionlessUnitOne(unitSystem));
+		    $$ = ut_scale($1, ut_get_dimensionless_unit_one(unitSystem));
 		}
 		;
 
@@ -325,14 +325,14 @@ timestamp:	DATE {
 		    $$ = $1 + ($2 - $3);
 		} |
 		DATE CLOCK INT {
-		    $$ = $1 + ($2 - utEncodeClock($3/60, $3%60, 0));
+		    $$ = $1 + ($2 - ut_encode_clock($3/60, $3%60, 0));
 		} |
 		DATE CLOCK ID {
 		    int	error = 0;
 
 		    if (strcasecmp($3, "UTC") != 0 &&
 			    strcasecmp($3, "GMT") != 0) {
-			utSetStatus(UT_UNKNOWN);
+			ut_set_status(UT_UNKNOWN);
 			error = 1;
 		    }
 
@@ -352,14 +352,14 @@ timestamp:	DATE {
 		    $$ = $1 - $2;
 		} |
 		TIMESTAMP INT {
-		    $$ = $1 - utEncodeClock($2/60, $2%60, 0);
+		    $$ = $1 - ut_encode_clock($2/60, $2%60, 0);
 		} |
 		TIMESTAMP ID {
 		    int	error = 0;
 
 		    if (strcasecmp($2, "UTC") != 0 &&
 			    strcasecmp($2, "GMT") != 0) {
-			utSetStatus(UT_UNKNOWN);
+			ut_set_status(UT_UNKNOWN);
 			error = 1;
 		    }
 
@@ -376,42 +376,42 @@ timestamp:	DATE {
 
 %%
 
-#define yymaxdepth	ut_maxdepth
-#define yylval		ut_lval
-#define yychar		ut_char
-#define yypact		ut_pact
-#define yyr1		ut_r1
-#define yyr2		ut_r2
-#define yydef		ut_def
-#define yychk		ut_chk
-#define yypgo		ut_pgo
-#define yyact		ut_act
-#define yyexca		ut_exca
-#define yyerrflag	ut_errflag
-#define yynerrs		ut_nerrs
-#define yyps		ut_ps
-#define yypv		ut_pv
-#define yys		ut_s
-#define yy_yys		ut_yys
-#define yystate		ut_state
-#define yytmp		ut_tmp
-#define yyv		ut_v
-#define yy_yyv		ut_yyv
-#define yyval		ut_val
-#define yylloc		ut_lloc
-#define yyreds		ut_reds
-#define yytoks		ut_toks
-#define yylhs		ut_yylhs
-#define yylen		ut_yylen
-#define yydefred	ut_yydefred
-#define yydgoto		ut_yydgoto
-#define yysindex	ut_yysindex
-#define yyrindex	ut_yyrindex
-#define yygindex	ut_yygindex
-#define yytable		ut_yytable
-#define yycheck		ut_yycheck
-#define yyname		ut_yyname
-#define yyrule		ut_yyrule
+#define yymaxdepth	utmaxdepth
+#define yylval		utlval
+#define yychar		utchar
+#define yypact		utpact
+#define yyr1		utr1
+#define yyr2		utr2
+#define yydef		utdef
+#define yychk		utchk
+#define yypgo		utpgo
+#define yyact		utact
+#define yyexca		utexca
+#define yyerrflag	uterrflag
+#define yynerrs		utnerrs
+#define yyps		utps
+#define yypv		utpv
+#define yys		uts
+#define yy_yys		utyys
+#define yystate		utstate
+#define yytmp		uttmp
+#define yyv		utv
+#define yy_yyv		utyyv
+#define yyval		utval
+#define yylloc		utlloc
+#define yyreds		utreds
+#define yytoks		uttoks
+#define yylhs		utyylhs
+#define yylen		utyylen
+#define yydefred	utyydefred
+#define yydgoto		utyydgoto
+#define yysindex	utyysindex
+#define yyrindex	utyyrindex
+#define yygindex	utyygindex
+#define yytable		utyytable
+#define yycheck		utyycheck
+#define yyname		utyyname
+#define yyrule		utyyrule
 
 #include "scanner.c"
 
@@ -425,10 +425,10 @@ timestamp:	DATE {
  *			occur.
  *	string		The string to be parsed (e.g., "millimeters").  There
  *			should be no leading or trailing whitespace in the
- *			string.  See utTrim().
+ *			string.  See ut_trim().
  *	encoding	The encoding of "string".
  * Returns:
- *	NULL		Failure.  "utGetStatus()" will be one of
+ *	NULL		Failure.  "ut_get_status()" will be one of
  *			    UT_NULL_ARG		"system" or "string" is NULL.
  *			    UT_SYNTAX		"string" contained a syntax
  *						error.
@@ -438,35 +438,35 @@ timestamp:	DATE {
  *						"errno".
  *	else		Pointer to the unit corresponding to "string".
  */
-utUnit*
-utParse(
-    utSystem* const	system,
+ut_unit*
+ut_parse(
+    ut_system* const	system,
     const char* const	string,
-    const utEncoding	encoding)
+    const ut_encoding	encoding)
 {
-    utUnit*	unit = NULL;		/* failure */
+    ut_unit*	unit = NULL;		/* failure */
 
     if (system == NULL || string == NULL) {
-	utSetStatus(UT_NULL_ARG);
+	ut_set_status(UT_NULL_ARG);
     }
     else {
 	YY_BUFFER_STATE	buf;
 
-	ut_restart((FILE*)NULL);
+	utrestart((FILE*)NULL);
 
-	buf = ut__scan_string(string);
+	buf = ut_scan_string(string);
 	unitSystem = system;
 	_encoding = encoding;
 	_restartScanner = 1;
 
 #if YYDEBUG
-	ut_debug = 0;
-	ut__flex_debug = 0;
+	utdebug = 0;
+	ut_flex_debug = 0;
 #endif
 
 	finalUnit = NULL;
 
-	if (ut_parse() == 0) {
+	if (utparse() == 0) {
 	    int	n = yy_c_buf_p  - buf->yy_ch_buf;
 
 	    if (n >= strlen(string)) {
@@ -476,7 +476,7 @@ utParse(
 		/*
 		 * Parsing terminated before the end of the string.
 		 */
-		utFree(finalUnit);
+		ut_free(finalUnit);
 
 		/*
 		 * The number of characters parsed is adjusted because
@@ -488,7 +488,7 @@ utParse(
 	    _nchar = n;
 	}
 
-	ut__delete_buffer(buf);
+	ut_delete_buffer(buf);
     }
 
     return unit;

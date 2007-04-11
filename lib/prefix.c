@@ -1,7 +1,7 @@
 /*
  * Module for handling unit prefixes -- both names and symbols.
  *
- * $Id: prefix.c,v 1.5 2007/01/04 17:13:01 steve Exp $
+ * $Id: prefix.c,v 1.6 2007/04/11 20:28:17 steve Exp $
  */
 
 /*LINTLIBRARY*/
@@ -48,10 +48,10 @@ pseNew(
     PrefixSearchEntry*	entry = malloc(sizeof(PrefixSearchEntry));
 
     if (entry == NULL) {
-	utHandleErrorMessage(strerror(errno));
-	utHandleErrorMessage("Couldn't allocate %lu-byte prefix-search-entry",
+	ut_handle_error_message(strerror(errno));
+	ut_handle_error_message("Couldn't allocate %lu-byte prefix-search-entry",
 	    sizeof(PrefixSearchEntry));
-	utSetStatus(UT_OS);
+	ut_set_status(UT_OS);
     }
     else {
 	entry->character = character;
@@ -257,15 +257,15 @@ ptvmFind(
  *	UT_EXISTS	"prefix" already maps to a different value.
  *	UT_OS		Operating-system failure.  See "errno".
  */
-static utStatus
+static ut_status
 addPrefix(
-    utSystem* const	system,
+    ut_system* const	system,
     const char* const	prefix,
     const double	value,
     SystemMap** const	systemMap,
     int			(*compare)(const void*, const void*))
 {
-    utStatus		status;
+    ut_status		status;
 
     if (system == NULL) {
 	status = UT_NULL_ARG;
@@ -334,16 +334,16 @@ addPrefix(
  *	UT_EXISTS	"name" already maps to a different value.
  *	UT_OS		Operating-system failure.  See "errno".
  */
-utStatus
-utAddNamePrefix(
-    utSystem* const	system,
+ut_status
+ut_add_name_prefix(
+    ut_system* const	system,
     const char* const	name,
     const double	value)
 {
-    utSetStatus(addPrefix(system, name, value, &systemToNameToValue,
+    ut_set_status(addPrefix(system, name, value, &systemToNameToValue,
 	pseInsensitiveCompare));
 
-    return utGetStatus();
+    return ut_get_status();
 }
 
 
@@ -363,16 +363,16 @@ utAddNamePrefix(
  *	UT_EXISTS	"symbol" already maps to a different value.
  *	UT_OS		Operating-system failure.  See "errno".
  */
-utStatus
-utAddSymbolPrefix(
-    utSystem* const	system,
+ut_status
+ut_add_symbol_prefix(
+    ut_system* const	system,
     const char* const	symbol,
     const double	value)
 {
-    utSetStatus(addPrefix(system, symbol, value, &systemToSymbolToValue,
+    ut_set_status(addPrefix(system, symbol, value, &systemToSymbolToValue,
 	pseSensitiveCompare));
 
-    return utGetStatus();
+    return ut_get_status();
 }
 
 
@@ -402,15 +402,15 @@ utAddSymbolPrefix(
  *	UT_UNKNOWN	No prefix found in the prefix-to-value map associated
  *			with "system".
  */
-static utStatus
+static ut_status
 findPrefix(
-    utSystem* const	system,
+    ut_system* const	system,
     SystemMap* const	systemMap,
     const char* const	string,
     double* const	value,
     size_t* const	len)
 {
-    utStatus		status;
+    ut_status		status;
 
     if (system == NULL) {
 	status = UT_NULL_ARG;
@@ -467,9 +467,9 @@ findPrefix(
  *	UT_UNKNOWN	A name-prefix was not discovered.
  *	UT_SUCCESS	Success.  "*value" and "*len" will be set if non-NULL.
  */
-utStatus
+ut_status
 utGetPrefixByName(
-    utSystem* const	system,
+    ut_system* const	system,
     const char* const	string,
     double* const	value,
     size_t* const	len)
@@ -497,9 +497,9 @@ utGetPrefixByName(
  *	UT_UNKNOWN	A symbol-prefix was not discovered.
  *	UT_SUCCESS	Success.  "*value" and "*len" will be set if non-NULL.
  */
-utStatus
+ut_status
 utGetPrefixBySymbol(
-    utSystem* const	system,
+    ut_system* const	system,
     const char* const	string,
     double* const	value,
     size_t* const	len)

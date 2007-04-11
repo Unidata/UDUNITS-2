@@ -1,7 +1,7 @@
 /*
  * Searchable unit-and-identifier tree.
  *
- * $Id: unitAndId.c,v 1.5 2007/01/04 17:13:01 steve Exp $
+ * $Id: unitAndId.c,v 1.6 2007/04/11 20:28:18 steve Exp $
  */
 
 /*LINTLIBRARY*/
@@ -24,49 +24,49 @@
  *	unit	The unit.  May be freed upon return.
  *	id	The identifier (name or symbol).  May be freed upon return.
  * Returns:
- *	NULL	Failure.  "utGetStatus()" will be
+ *	NULL	Failure.  "ut_get_status()" will be
  *		    UT_NULL_ARG	"unit" or "id" is NULL.
  *		    UT_OS	Operating-system failure.  See "errno".
  *	else	Pointer to the new unit-and-identifier.
  */
 UnitAndId*
 uaiNew(
-    const utUnit* const	unit,
+    const ut_unit* const	unit,
     const char* const	id)
 {
     UnitAndId*	entry = NULL;		/* failure */
 
     if (id == NULL || unit == NULL) {
-	utHandleErrorMessage("uaiNew(): NULL argument");
-	utSetStatus(UT_NULL_ARG);
+	ut_handle_error_message("uaiNew(): NULL argument");
+	ut_set_status(UT_NULL_ARG);
     }
     else {
 	entry = malloc(sizeof(UnitAndId));
 
 	if (entry == NULL) {
-	    utHandleErrorMessage(strerror(errno));
-	    utHandleErrorMessage("Couldn't allocate %lu-byte data-structure",
+	    ut_handle_error_message(strerror(errno));
+	    ut_handle_error_message("Couldn't allocate %lu-byte data-structure",
 		sizeof(UnitAndId));
-	    utSetStatus(UT_OS);
+	    ut_set_status(UT_OS);
 	}
 	else {
 	    entry->id = strdup(id);
 
 	    if (entry->id == NULL) {
-		utHandleErrorMessage(strerror(errno));
-		utHandleErrorMessage("Couldn't duplicate identifier");
-		utSetStatus(UT_OS);
+		ut_handle_error_message(strerror(errno));
+		ut_handle_error_message("Couldn't duplicate identifier");
+		ut_set_status(UT_OS);
 	    }
 	    else {
-		entry->unit = utClone(unit);
+		entry->unit = ut_clone(unit);
 
 		if (entry->unit == NULL) {
-		    assert(utGetStatus() != UT_SUCCESS);
+		    assert(ut_get_status() != UT_SUCCESS);
 		    free(entry->id);
 		}
 	    }
 
-	    if (utGetStatus() != UT_SUCCESS) {
+	    if (ut_get_status() != UT_SUCCESS) {
 		free(entry);
 		entry = NULL;
 	    }
@@ -89,7 +89,7 @@ uaiFree(
 {
     if (entry != NULL) {
 	free(entry->id);
-	utFree(entry->unit);
+	ut_free(entry->unit);
 	free(entry);
     }
 }

@@ -16,27 +16,27 @@
 #include "udunits2.h"
 
 
-static utSystem*	unitSystem;
-static utUnit*		kilogram;
-static utUnit*		meter;
-static utUnit*		radian;
-static utUnit*		kelvin;
-static utUnit*		second;
-static utUnit*		minute;
-static utUnit*		kilometer;
-static utUnit*		micron;
-static utUnit*		rankine;
-static utUnit*		celsius;
-static utUnit*		fahrenheit;
-static utUnit*		watt;
-static utUnit*		cubicMeter;
-static utUnit*		cubicMicron;
-static utUnit*		BZ;
-static utUnit*		dBZ;
-static utUnit*		secondsSinceTheEpoch;
-static utUnit*		minutesSinceTheMillenium;
-static utUnit*		hertz;
-static utUnit*		megahertz;
+static ut_system*	unitSystem;
+static ut_unit*		kilogram;
+static ut_unit*		meter;
+static ut_unit*		radian;
+static ut_unit*		kelvin;
+static ut_unit*		second;
+static ut_unit*		minute;
+static ut_unit*		kilometer;
+static ut_unit*		micron;
+static ut_unit*		rankine;
+static ut_unit*		celsius;
+static ut_unit*		fahrenheit;
+static ut_unit*		watt;
+static ut_unit*		cubicMeter;
+static ut_unit*		cubicMicron;
+static ut_unit*		BZ;
+static ut_unit*		dBZ;
+static ut_unit*		secondsSinceTheEpoch;
+static ut_unit*		minutesSinceTheMillenium;
+static ut_unit*		hertz;
+static ut_unit*		megahertz;
 
 static unsigned		asciiName = UT_ASCII | UT_NAMES;
 static unsigned		asciiNameDef = UT_ASCII | UT_NAMES | UT_DEFINITION;
@@ -49,7 +49,7 @@ static int
 setup(
     void)
 {
-    unitSystem = utNewSystem();
+    unitSystem = ut_new_system();
 
     return unitSystem == NULL ? -1 : 0;
 }
@@ -59,7 +59,7 @@ static int
 teardown(
     void)
 {
-    utFreeSystem(unitSystem);
+    ut_free_system(unitSystem);
 
     return 0;
 }
@@ -68,171 +68,171 @@ teardown(
 static void
 test_unitSystem(void)
 {
-    utSystem*	system = utNewSystem();
-    utUnit*	unit;
+    ut_system*	system = ut_new_system();
+    ut_unit*	unit;
 
     CU_ASSERT_PTR_NOT_NULL(system);
-    utSetStatus(UT_SUCCESS);
-    unit = utNewBaseUnit(system);
+    ut_set_status(UT_SUCCESS);
+    unit = ut_new_base_unit(system);
     CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(utMapUnitToName(unit, "name", UT_ASCII), UT_SUCCESS);
-    utFreeSystem(system);
-    CU_ASSERT_EQUAL(utGetStatus(), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_map_unit_to_name(unit, "name", UT_ASCII), UT_SUCCESS);
+    ut_free_system(system);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
 }
 
 
 static void
 test_utNewBaseUnit(void)
 {
-    kilogram = utNewBaseUnit(unitSystem);
+    kilogram = ut_new_base_unit(unitSystem);
     CU_ASSERT_PTR_NOT_NULL(kilogram);
-    CU_ASSERT_EQUAL(utMapUnitToName(kilogram, "kilogram", UT_ASCII),
+    CU_ASSERT_EQUAL(ut_map_unit_to_name(kilogram, "kilogram", UT_ASCII),
 	UT_SUCCESS);
-    CU_ASSERT_EQUAL(utMapUnitToSymbol(kilogram, "kg", UT_ASCII), UT_SUCCESS);
-    CU_ASSERT_EQUAL(utMapSymbolToUnit("kg", kilogram), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_map_unit_to_symbol(kilogram, "kg", UT_ASCII), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_map_symbol_to_unit("kg", kilogram), UT_SUCCESS);
 
-    meter = utNewBaseUnit(unitSystem);
+    meter = ut_new_base_unit(unitSystem);
     CU_ASSERT_PTR_NOT_NULL(meter);
-    CU_ASSERT_EQUAL(utMapNameToUnit("meter", meter), UT_SUCCESS);
-    CU_ASSERT_EQUAL(utMapUnitToName(meter, "meter", UT_ASCII), UT_SUCCESS);
-    CU_ASSERT_EQUAL(utMapUnitToSymbol(meter, "m", UT_ASCII), UT_SUCCESS);
-    CU_ASSERT_EQUAL(utMapSymbolToUnit("m", meter), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_map_name_to_unit("meter", meter), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_map_unit_to_name(meter, "meter", UT_ASCII), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_map_unit_to_symbol(meter, "m", UT_ASCII), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_map_symbol_to_unit("m", meter), UT_SUCCESS);
 
-    kelvin = utNewBaseUnit(unitSystem);
+    kelvin = ut_new_base_unit(unitSystem);
     CU_ASSERT_PTR_NOT_NULL(kelvin);
-    CU_ASSERT_EQUAL(utMapUnitToName(kelvin, "kelvin", UT_ASCII), UT_SUCCESS);
-    CU_ASSERT_EQUAL(utMapNameToUnit("kelvin", kelvin), UT_SUCCESS);
-    CU_ASSERT_EQUAL(utMapUnitToSymbol(kelvin, "K", UT_ASCII), UT_SUCCESS);
-    CU_ASSERT_EQUAL(utMapSymbolToUnit("K", kelvin), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_map_unit_to_name(kelvin, "kelvin", UT_ASCII), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_map_name_to_unit("kelvin", kelvin), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_map_unit_to_symbol(kelvin, "K", UT_ASCII), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_map_symbol_to_unit("K", kelvin), UT_SUCCESS);
 
-    CU_ASSERT_EQUAL(utMapUnitToName(kilogram, "dummy", UT_ASCII), UT_EXISTS);
+    CU_ASSERT_EQUAL(ut_map_unit_to_name(kilogram, "dummy", UT_ASCII), UT_EXISTS);
 
-    second = utNewBaseUnit(unitSystem);
+    second = ut_new_base_unit(unitSystem);
     CU_ASSERT_PTR_NOT_NULL(second);
 
-    CU_ASSERT_PTR_NULL(utOffsetByTime(second,
-        utEncodeTime(1970, 1, 1, 0, 0, 0)));
-    CU_ASSERT_EQUAL(utGetStatus(), UT_NO_SECOND);
+    CU_ASSERT_PTR_NULL(ut_offset_by_time(second,
+        ut_encode_time(1970, 1, 1, 0, 0, 0)));
+    CU_ASSERT_EQUAL(ut_get_status(), UT_NO_SECOND);
 
-    CU_ASSERT_EQUAL(utSetSecond(second), UT_SUCCESS);
-    CU_ASSERT_EQUAL(utSetSecond(NULL), UT_NULL_ARG);
-    CU_ASSERT_EQUAL(utMapUnitToName(second, "second", UT_ASCII), UT_SUCCESS);
-    CU_ASSERT_EQUAL(utMapNameToUnit("second", second), UT_SUCCESS);
-    CU_ASSERT_EQUAL(utMapUnitToSymbol(second, "s", UT_ASCII), UT_SUCCESS);
-    CU_ASSERT_EQUAL(utMapSymbolToUnit("s", second), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_set_second(second), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_set_second(NULL), UT_NULL_ARG);
+    CU_ASSERT_EQUAL(ut_map_unit_to_name(second, "second", UT_ASCII), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_map_name_to_unit("second", second), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_map_unit_to_symbol(second, "s", UT_ASCII), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_map_symbol_to_unit("s", second), UT_SUCCESS);
 
-    CU_ASSERT_PTR_NULL(utNewBaseUnit(NULL));
-    CU_ASSERT_EQUAL(utGetStatus(), UT_NULL_ARG);
+    CU_ASSERT_PTR_NULL(ut_new_base_unit(NULL));
+    CU_ASSERT_EQUAL(ut_get_status(), UT_NULL_ARG);
 
-    CU_ASSERT_EQUAL(utMapUnitToName(kilogram, "Ångström", UT_UTF8), UT_BAD_ID);
+    CU_ASSERT_EQUAL(ut_map_unit_to_name(kilogram, "Ångström", UT_UTF8), UT_BAD_ID);
 
-    CU_ASSERT_EQUAL(utSetSecond(second), UT_SUCCESS);
-    CU_ASSERT_EQUAL(utSetSecond(meter), UT_EXISTS);
-    CU_ASSERT_EQUAL(utSetSecond(NULL), UT_NULL_ARG);
+    CU_ASSERT_EQUAL(ut_set_second(second), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_set_second(meter), UT_EXISTS);
+    CU_ASSERT_EQUAL(ut_set_second(NULL), UT_NULL_ARG);
 }
 
 
 static void
 test_utNewDimensionlessUnit(void)
 {
-    radian = utNewDimensionlessUnit(unitSystem);
+    radian = ut_new_dimensionless_unit(unitSystem);
     CU_ASSERT_PTR_NOT_NULL(radian);
-    CU_ASSERT_EQUAL(utMapUnitToName(radian, "radian", UT_ASCII), UT_SUCCESS);
-    CU_ASSERT_EQUAL(utMapNameToUnit("radian", radian), UT_SUCCESS);
-    CU_ASSERT_EQUAL(utMapUnitToSymbol(radian, "rad", UT_ASCII), UT_SUCCESS);
-    CU_ASSERT_EQUAL(utMapSymbolToUnit("rad", radian), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_map_unit_to_name(radian, "radian", UT_ASCII), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_map_name_to_unit("radian", radian), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_map_unit_to_symbol(radian, "rad", UT_ASCII), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_map_symbol_to_unit("rad", radian), UT_SUCCESS);
 
-    CU_ASSERT_EQUAL(utMapUnitToName(radian, "dummy", UT_ASCII), UT_EXISTS);
+    CU_ASSERT_EQUAL(ut_map_unit_to_name(radian, "dummy", UT_ASCII), UT_EXISTS);
 
-    CU_ASSERT_EQUAL(utMapUnitToSymbol(radian, "f", UT_ASCII), UT_EXISTS);
-    CU_ASSERT_EQUAL(utMapUnitToSymbol(NULL, "f", UT_ASCII), UT_NULL_ARG);
+    CU_ASSERT_EQUAL(ut_map_unit_to_symbol(radian, "f", UT_ASCII), UT_EXISTS);
+    CU_ASSERT_EQUAL(ut_map_unit_to_symbol(NULL, "f", UT_ASCII), UT_NULL_ARG);
 
-    CU_ASSERT_EQUAL(utMapUnitToName(radian, "Ångström", UT_UTF8), UT_BAD_ID);
+    CU_ASSERT_EQUAL(ut_map_unit_to_name(radian, "Ångström", UT_UTF8), UT_BAD_ID);
 }
 
 
 static void
 test_utGetUnitByName(void)
 {
-    utUnit*	altMeter = utGetUnitByName(unitSystem, "meter");
+    ut_unit*	altMeter = ut_get_unit_by_name(unitSystem, "meter");
 
     CU_ASSERT_PTR_NOT_NULL(altMeter);
-    CU_ASSERT_EQUAL(utCompare(altMeter, meter), 0);
+    CU_ASSERT_EQUAL(ut_compare(altMeter, meter), 0);
 
-    CU_ASSERT_PTR_NULL(utGetUnitByName(unitSystem, NULL));
-    CU_ASSERT_EQUAL(utGetStatus(), UT_BAD_ID);
+    CU_ASSERT_PTR_NULL(ut_get_unit_by_name(unitSystem, NULL));
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ID);
 
-    CU_ASSERT_PTR_NULL(utGetUnitByName(unitSystem, "foo"));
-    CU_ASSERT_EQUAL(utGetStatus(), UT_SUCCESS);
+    CU_ASSERT_PTR_NULL(ut_get_unit_by_name(unitSystem, "foo"));
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
 }
 
 
 static void
 test_utGetUnitBySymbol(void)
 {
-    utUnit*	altMeter = utGetUnitBySymbol(unitSystem, "m");
+    ut_unit*	altMeter = ut_get_unit_by_symbol(unitSystem, "m");
 
     CU_ASSERT_PTR_NOT_NULL(altMeter);
-    CU_ASSERT_EQUAL(utCompare(altMeter, meter), 0);
+    CU_ASSERT_EQUAL(ut_compare(altMeter, meter), 0);
 
-    CU_ASSERT_PTR_NULL(utGetUnitBySymbol(unitSystem, NULL));
-    CU_ASSERT_EQUAL(utGetStatus(), UT_BAD_ID);
+    CU_ASSERT_PTR_NULL(ut_get_unit_by_symbol(unitSystem, NULL));
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ID);
 
-    CU_ASSERT_PTR_NULL(utGetUnitBySymbol(unitSystem, "M"));
-    CU_ASSERT_EQUAL(utGetStatus(), UT_SUCCESS);
+    CU_ASSERT_PTR_NULL(ut_get_unit_by_symbol(unitSystem, "M"));
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
 }
 
 
 static void
 test_utAddNamePrefix(void)
 {
-    CU_ASSERT_EQUAL(utAddNamePrefix(unitSystem, "mega", 1e6), UT_SUCCESS);
-    CU_ASSERT_EQUAL(utAddNamePrefix(unitSystem, "mega", 1e6), UT_SUCCESS);
-    CU_ASSERT_EQUAL(utAddNamePrefix(unitSystem, "MEGA", 1e6), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_add_name_prefix(unitSystem, "mega", 1e6), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_add_name_prefix(unitSystem, "mega", 1e6), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_add_name_prefix(unitSystem, "MEGA", 1e6), UT_SUCCESS);
 
-    CU_ASSERT_EQUAL(utAddNamePrefix(unitSystem, "mega", 1e5), UT_EXISTS);
-    CU_ASSERT_EQUAL(utAddNamePrefix(unitSystem, "MEGA", 1e5), UT_EXISTS);
-    CU_ASSERT_EQUAL(utAddNamePrefix(NULL, "foo", 1), UT_NULL_ARG);
-    CU_ASSERT_EQUAL(utAddNamePrefix(unitSystem, "", 2), UT_BAD_ID);
-    CU_ASSERT_EQUAL(utAddNamePrefix(unitSystem, NULL, 3), UT_BAD_ID);
-    CU_ASSERT_EQUAL(utAddNamePrefix(unitSystem, "foo", 0), UT_BAD_VALUE);
+    CU_ASSERT_EQUAL(ut_add_name_prefix(unitSystem, "mega", 1e5), UT_EXISTS);
+    CU_ASSERT_EQUAL(ut_add_name_prefix(unitSystem, "MEGA", 1e5), UT_EXISTS);
+    CU_ASSERT_EQUAL(ut_add_name_prefix(NULL, "foo", 1), UT_NULL_ARG);
+    CU_ASSERT_EQUAL(ut_add_name_prefix(unitSystem, "", 2), UT_BAD_ID);
+    CU_ASSERT_EQUAL(ut_add_name_prefix(unitSystem, NULL, 3), UT_BAD_ID);
+    CU_ASSERT_EQUAL(ut_add_name_prefix(unitSystem, "foo", 0), UT_BAD_VALUE);
 }
 
 
 static void
 test_utAddSymbolPrefix(void)
 {
-    CU_ASSERT_EQUAL(utAddSymbolPrefix(unitSystem, "M", 1e6), UT_SUCCESS);
-    CU_ASSERT_EQUAL(utAddSymbolPrefix(unitSystem, "M", 1e6), UT_SUCCESS);
-    CU_ASSERT_EQUAL(utAddSymbolPrefix(unitSystem, "u", 1e-6), UT_SUCCESS);
-    CU_ASSERT_EQUAL(utAddSymbolPrefix(unitSystem, "µ", 1e-6), UT_SUCCESS);
-    CU_ASSERT_EQUAL(utAddSymbolPrefix(unitSystem, "k", 1e3), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_add_symbol_prefix(unitSystem, "M", 1e6), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_add_symbol_prefix(unitSystem, "M", 1e6), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_add_symbol_prefix(unitSystem, "u", 1e-6), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_add_symbol_prefix(unitSystem, "µ", 1e-6), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_add_symbol_prefix(unitSystem, "k", 1e3), UT_SUCCESS);
 
-    CU_ASSERT_EQUAL(utAddSymbolPrefix(unitSystem, "M", 1e5), UT_EXISTS);
-    CU_ASSERT_EQUAL(utAddSymbolPrefix(NULL, "foo", 1), UT_NULL_ARG);
-    CU_ASSERT_EQUAL(utAddSymbolPrefix(unitSystem, "", 2), UT_BAD_ID);
-    CU_ASSERT_EQUAL(utAddSymbolPrefix(unitSystem, NULL, 3), UT_BAD_ID);
-    CU_ASSERT_EQUAL(utAddSymbolPrefix(unitSystem, "f", 0), UT_BAD_VALUE);
+    CU_ASSERT_EQUAL(ut_add_symbol_prefix(unitSystem, "M", 1e5), UT_EXISTS);
+    CU_ASSERT_EQUAL(ut_add_symbol_prefix(NULL, "foo", 1), UT_NULL_ARG);
+    CU_ASSERT_EQUAL(ut_add_symbol_prefix(unitSystem, "", 2), UT_BAD_ID);
+    CU_ASSERT_EQUAL(ut_add_symbol_prefix(unitSystem, NULL, 3), UT_BAD_ID);
+    CU_ASSERT_EQUAL(ut_add_symbol_prefix(unitSystem, "f", 0), UT_BAD_VALUE);
 }
 
 
 static void
 test_utMapNameToUnit(void)
 {
-    utUnit*	metre;
+    ut_unit*	metre;
 
-    CU_ASSERT_PTR_NULL(utGetUnitByName(unitSystem, "metre"));
+    CU_ASSERT_PTR_NULL(ut_get_unit_by_name(unitSystem, "metre"));
 
-    CU_ASSERT_EQUAL(utMapNameToUnit("metre", meter), UT_SUCCESS);
-    CU_ASSERT_EQUAL(utMapNameToUnit("metre", meter), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_map_name_to_unit("metre", meter), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_map_name_to_unit("metre", meter), UT_SUCCESS);
 
-    CU_ASSERT_EQUAL(utMapNameToUnit("metre", second), UT_EXISTS);
-    CU_ASSERT_EQUAL(utMapNameToUnit("metre", NULL), UT_NULL_ARG);
+    CU_ASSERT_EQUAL(ut_map_name_to_unit("metre", second), UT_EXISTS);
+    CU_ASSERT_EQUAL(ut_map_name_to_unit("metre", NULL), UT_NULL_ARG);
 
-    metre = utGetUnitByName(unitSystem, "metre");
+    metre = ut_get_unit_by_name(unitSystem, "metre");
     CU_ASSERT_PTR_NOT_NULL(metre);
-    CU_ASSERT_EQUAL(utCompare(metre, meter), 0);
-    utFree(metre);
+    CU_ASSERT_EQUAL(ut_compare(metre, meter), 0);
+    ut_free(metre);
 }
 
 
@@ -240,16 +240,16 @@ static void
 test_utToString(void)
 {
     char	buf[80];
-    int		nchar = utFormat(meter, buf, sizeof(buf)-1, asciiSymbolDef);
+    int		nchar = ut_format(meter, buf, sizeof(buf)-1, asciiSymbolDef);
     int		n;
 
     CU_ASSERT_EQUAL(nchar, 1);
     CU_ASSERT_STRING_EQUAL(buf, "m");
 
-    nchar = utFormat(meter, buf, sizeof(buf)-1, asciiName);
+    nchar = ut_format(meter, buf, sizeof(buf)-1, asciiName);
     CU_ASSERT_STRING_EQUAL(buf, "meter");
 
-    n = utFormat(celsius, buf, sizeof(buf)-1, asciiName);
+    n = ut_format(celsius, buf, sizeof(buf)-1, asciiName);
     CU_ASSERT_TRUE(n > 0);
     CU_ASSERT_STRING_EQUAL(buf, "degrees_celsius");
 }
@@ -258,70 +258,70 @@ test_utToString(void)
 static void
 test_utScale(void)
 {
-    utUnit*	metre;
+    ut_unit*	metre;
     char	buf[80];
     int		nchar;
 
-    kilometer = utScale(1000, meter);
-    CU_ASSERT_EQUAL(utGetStatus(), UT_SUCCESS);
+    kilometer = ut_scale(1000, meter);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
     CU_ASSERT_PTR_NOT_NULL(kilometer);
-    CU_ASSERT_EQUAL(utGetSystem(meter), utGetSystem(kilometer));
-    CU_ASSERT_NOT_EQUAL(utCompare(meter, kilometer), 0);
+    CU_ASSERT_EQUAL(ut_get_system(meter), ut_get_system(kilometer));
+    CU_ASSERT_NOT_EQUAL(ut_compare(meter, kilometer), 0);
 
-    nchar = utFormat(kilometer, buf, sizeof(buf)-1, asciiSymbolDef);
+    nchar = ut_format(kilometer, buf, sizeof(buf)-1, asciiSymbolDef);
     CU_ASSERT_TRUE_FATAL(nchar > 0);
     CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
     buf[nchar] = 0;
     CU_ASSERT_STRING_EQUAL(buf, "1000 m");
 
-    nchar = utFormat(kilometer, buf, sizeof(buf)-1, asciiNameDef);
+    nchar = ut_format(kilometer, buf, sizeof(buf)-1, asciiNameDef);
     CU_ASSERT_TRUE_FATAL(nchar > 0);
     CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
     buf[nchar] = 0;
     CU_ASSERT_STRING_EQUAL(buf, "1000 meter");
 
-    micron = utScale(1e-6, meter);
-    CU_ASSERT_EQUAL(utGetStatus(), UT_SUCCESS);
+    micron = ut_scale(1e-6, meter);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
     CU_ASSERT_PTR_NOT_NULL(micron);
-    CU_ASSERT_EQUAL(utGetSystem(meter), utGetSystem(micron));
-    CU_ASSERT_NOT_EQUAL(utCompare(meter, micron), 0);
+    CU_ASSERT_EQUAL(ut_get_system(meter), ut_get_system(micron));
+    CU_ASSERT_NOT_EQUAL(ut_compare(meter, micron), 0);
 
-    metre = utScale(1, meter);
-    CU_ASSERT_EQUAL(utGetStatus(), UT_SUCCESS);
+    metre = ut_scale(1, meter);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
     CU_ASSERT_PTR_NOT_NULL(metre);
-    CU_ASSERT_EQUAL(utGetSystem(meter), utGetSystem(metre));
-    CU_ASSERT_EQUAL(utCompare(meter, metre), 0);
-    utFree(metre);
+    CU_ASSERT_EQUAL(ut_get_system(meter), ut_get_system(metre));
+    CU_ASSERT_EQUAL(ut_compare(meter, metre), 0);
+    ut_free(metre);
 
-    minute = utScale(60, second);
-    CU_ASSERT_EQUAL(utGetStatus(), UT_SUCCESS);
+    minute = ut_scale(60, second);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
     CU_ASSERT_PTR_NOT_NULL(minute);
-    nchar = utFormat(minute, buf, sizeof(buf)-1, asciiSymbolDef);
+    nchar = ut_format(minute, buf, sizeof(buf)-1, asciiSymbolDef);
     CU_ASSERT_TRUE_FATAL(nchar > 0);
     CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
     buf[nchar] = 0;
     CU_ASSERT_STRING_EQUAL(buf, "60 s");
 
-    nchar = utFormat(minute, buf, sizeof(buf)-1, asciiNameDef);
+    nchar = ut_format(minute, buf, sizeof(buf)-1, asciiNameDef);
     CU_ASSERT_TRUE_FATAL(nchar > 0);
     CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
     buf[nchar] = 0;
     CU_ASSERT_STRING_EQUAL(buf, "60 second");
 
-    metre = utScale(1/1000., kilometer);
-    CU_ASSERT_EQUAL(utGetStatus(), UT_SUCCESS);
+    metre = ut_scale(1/1000., kilometer);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
     CU_ASSERT_PTR_NOT_NULL(metre);
-    CU_ASSERT_EQUAL(utGetSystem(meter), utGetSystem(metre));
-    utFree(metre);
+    CU_ASSERT_EQUAL(ut_get_system(meter), ut_get_system(metre));
+    ut_free(metre);
 
-    CU_ASSERT_PTR_NULL(utScale(0, meter));
-    CU_ASSERT_EQUAL(utGetStatus(), UT_BAD_VALUE);
+    CU_ASSERT_PTR_NULL(ut_scale(0, meter));
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_VALUE);
 
-    CU_ASSERT_PTR_NULL(utScale(0, NULL));
-    CU_ASSERT_EQUAL(utGetStatus(), UT_NULL_ARG);
+    CU_ASSERT_PTR_NULL(ut_scale(0, NULL));
+    CU_ASSERT_EQUAL(ut_get_status(), UT_NULL_ARG);
 
-    rankine = utScale(1/1.8, kelvin);
-    CU_ASSERT_EQUAL(utGetStatus(), UT_SUCCESS);
+    rankine = ut_scale(1/1.8, kelvin);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
     CU_ASSERT_PTR_NOT_NULL(rankine);
 }
 
@@ -329,469 +329,469 @@ test_utScale(void)
 static void
 test_utOffset(void)
 {
-    utUnit*	dupKelvin;
+    ut_unit*	dupKelvin;
     char	buf[80];
     int		nchar;
 
-    celsius = utOffset(kelvin, 273.15);
-    CU_ASSERT_EQUAL(utGetStatus(), UT_SUCCESS);
+    celsius = ut_offset(kelvin, 273.15);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
     CU_ASSERT_PTR_NOT_NULL(celsius);
-    CU_ASSERT_EQUAL(utGetSystem(kelvin), utGetSystem(celsius));
-    CU_ASSERT_NOT_EQUAL(utCompare(kelvin, celsius), 0);
+    CU_ASSERT_EQUAL(ut_get_system(kelvin), ut_get_system(celsius));
+    CU_ASSERT_NOT_EQUAL(ut_compare(kelvin, celsius), 0);
 
-    fahrenheit = utOffset(rankine, 459.67);
-    CU_ASSERT_EQUAL(utGetStatus(), UT_SUCCESS);
+    fahrenheit = ut_offset(rankine, 459.67);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
     CU_ASSERT_PTR_NOT_NULL(fahrenheit);
-    CU_ASSERT_EQUAL(utGetSystem(rankine), utGetSystem(fahrenheit));
-    CU_ASSERT_NOT_EQUAL(utCompare(rankine, fahrenheit), 0);
-    CU_ASSERT_EQUAL(utMapNameToUnit("degrees_fahrenheit", fahrenheit),
+    CU_ASSERT_EQUAL(ut_get_system(rankine), ut_get_system(fahrenheit));
+    CU_ASSERT_NOT_EQUAL(ut_compare(rankine, fahrenheit), 0);
+    CU_ASSERT_EQUAL(ut_map_name_to_unit("degrees_fahrenheit", fahrenheit),
 	UT_SUCCESS);
 
-    nchar = utFormat(celsius, buf, sizeof(buf)-1, asciiSymbolDef);
+    nchar = ut_format(celsius, buf, sizeof(buf)-1, asciiSymbolDef);
     CU_ASSERT_TRUE_FATAL(nchar > 0);
     CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
     buf[nchar] = 0;
     CU_ASSERT_STRING_EQUAL(buf, "K @ 273.15");
 
-    nchar = utFormat(celsius, buf, sizeof(buf)-1, asciiNameDef);
+    nchar = ut_format(celsius, buf, sizeof(buf)-1, asciiNameDef);
     CU_ASSERT_TRUE_FATAL(nchar > 0);
     CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
     buf[nchar] = 0;
     CU_ASSERT_STRING_EQUAL(buf, "kelvin from 273.15");
 
-    dupKelvin = utOffset(kelvin, 0);
-    CU_ASSERT_EQUAL(utGetStatus(), UT_SUCCESS);
+    dupKelvin = ut_offset(kelvin, 0);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
     CU_ASSERT_PTR_NOT_NULL(dupKelvin);
-    CU_ASSERT_EQUAL(utGetSystem(kelvin), utGetSystem(dupKelvin));
-    CU_ASSERT_EQUAL(utCompare(kelvin, dupKelvin), 0);
+    CU_ASSERT_EQUAL(ut_get_system(kelvin), ut_get_system(dupKelvin));
+    CU_ASSERT_EQUAL(ut_compare(kelvin, dupKelvin), 0);
 
-    dupKelvin = utOffset(celsius, -273.15);
-    CU_ASSERT_EQUAL(utGetStatus(), UT_SUCCESS);
+    dupKelvin = ut_offset(celsius, -273.15);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
     CU_ASSERT_PTR_NOT_NULL(dupKelvin);
-    CU_ASSERT_EQUAL(utGetSystem(kelvin), utGetSystem(dupKelvin));
-    utFree(dupKelvin);
+    CU_ASSERT_EQUAL(ut_get_system(kelvin), ut_get_system(dupKelvin));
+    ut_free(dupKelvin);
 
-    (void)utOffset(NULL, 5);
-    CU_ASSERT_EQUAL(utGetStatus(), UT_NULL_ARG);
+    (void)ut_offset(NULL, 5);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_NULL_ARG);
 }
 
 
 static void
 test_utMapUnitToName(void)
 {
-    utUnit*	metre;
+    ut_unit*	metre;
 
-    CU_ASSERT_EQUAL(utMapUnitToName(meter, "metre", UT_ASCII), UT_EXISTS);
+    CU_ASSERT_EQUAL(ut_map_unit_to_name(meter, "metre", UT_ASCII), UT_EXISTS);
 
-    CU_ASSERT_EQUAL(utMapNameToUnit("metre", second), UT_EXISTS);
-    CU_ASSERT_EQUAL(utMapNameToUnit("metre", NULL), UT_NULL_ARG);
+    CU_ASSERT_EQUAL(ut_map_name_to_unit("metre", second), UT_EXISTS);
+    CU_ASSERT_EQUAL(ut_map_name_to_unit("metre", NULL), UT_NULL_ARG);
 
-    metre = utGetUnitByName(unitSystem, "metre");
+    metre = ut_get_unit_by_name(unitSystem, "metre");
     CU_ASSERT_PTR_NOT_NULL(metre);
-    CU_ASSERT_EQUAL(utCompare(metre, meter), 0);
+    CU_ASSERT_EQUAL(ut_compare(metre, meter), 0);
 
-    CU_ASSERT_EQUAL(utMapUnitToName(celsius, "degrees_celsius", UT_ASCII),
+    CU_ASSERT_EQUAL(ut_map_unit_to_name(celsius, "degrees_celsius", UT_ASCII),
 	UT_SUCCESS);
 
-    utFree(metre);
+    ut_free(metre);
 }
 
 
 static void
 test_utGetName(void)
 {
-    CU_ASSERT_STRING_EQUAL(utGetName(meter, UT_ASCII), "meter");
-    CU_ASSERT_STRING_EQUAL(utGetName(celsius, UT_ASCII), "degrees_celsius");
-    CU_ASSERT_STRING_EQUAL(utGetName(kilogram, UT_ASCII), "kilogram");
-    CU_ASSERT_STRING_EQUAL(utGetName(kelvin, UT_ASCII), "kelvin");
-    CU_ASSERT_STRING_EQUAL(utGetName(second, UT_ASCII), "second");
-    CU_ASSERT_STRING_EQUAL(utGetName(radian, UT_ASCII), "radian");
+    CU_ASSERT_STRING_EQUAL(ut_get_name(meter, UT_ASCII), "meter");
+    CU_ASSERT_STRING_EQUAL(ut_get_name(celsius, UT_ASCII), "degrees_celsius");
+    CU_ASSERT_STRING_EQUAL(ut_get_name(kilogram, UT_ASCII), "kilogram");
+    CU_ASSERT_STRING_EQUAL(ut_get_name(kelvin, UT_ASCII), "kelvin");
+    CU_ASSERT_STRING_EQUAL(ut_get_name(second, UT_ASCII), "second");
+    CU_ASSERT_STRING_EQUAL(ut_get_name(radian, UT_ASCII), "radian");
 }
 
 
 static void
 test_utGetSymbol(void)
 {
-    CU_ASSERT_STRING_EQUAL(utGetSymbol(kilogram, UT_ASCII), "kg");
-    CU_ASSERT_STRING_EQUAL(utGetSymbol(meter, UT_ASCII), "m");
-    CU_ASSERT_STRING_EQUAL(utGetSymbol(kelvin, UT_ASCII), "K");
-    CU_ASSERT_STRING_EQUAL(utGetSymbol(second, UT_ASCII), "s");
-    CU_ASSERT_STRING_EQUAL(utGetSymbol(radian, UT_ASCII), "rad");
-    CU_ASSERT_STRING_EQUAL(utGetSymbol(hertz, UT_ASCII), "Hz");
+    CU_ASSERT_STRING_EQUAL(ut_get_symbol(kilogram, UT_ASCII), "kg");
+    CU_ASSERT_STRING_EQUAL(ut_get_symbol(meter, UT_ASCII), "m");
+    CU_ASSERT_STRING_EQUAL(ut_get_symbol(kelvin, UT_ASCII), "K");
+    CU_ASSERT_STRING_EQUAL(ut_get_symbol(second, UT_ASCII), "s");
+    CU_ASSERT_STRING_EQUAL(ut_get_symbol(radian, UT_ASCII), "rad");
+    CU_ASSERT_STRING_EQUAL(ut_get_symbol(hertz, UT_ASCII), "Hz");
 }
 
 
 static void
 test_utMultiply(void)
 {
-    utUnit*	squareMeter;
-    utUnit*	meterSecond;
-    utUnit*	meterCelsius;
-    utUnit*	meterRadian;
-    utUnit*	kilometerMinute;
-    utUnit*	unit;
+    ut_unit*	squareMeter;
+    ut_unit*	meterSecond;
+    ut_unit*	meterCelsius;
+    ut_unit*	meterRadian;
+    ut_unit*	kilometerMinute;
+    ut_unit*	unit;
     char	buf[80];
     int		nchar;
 
-    squareMeter = utMultiply(meter, meter);
+    squareMeter = ut_multiply(meter, meter);
     CU_ASSERT_PTR_NOT_NULL(squareMeter);
-    CU_ASSERT_EQUAL(utGetStatus(), UT_SUCCESS);
-    nchar = utFormat(squareMeter, buf, sizeof(buf)-1, asciiSymbolDef);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
+    nchar = ut_format(squareMeter, buf, sizeof(buf)-1, asciiSymbolDef);
     CU_ASSERT_TRUE_FATAL(nchar > 0);
     CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
     buf[nchar] = 0;
     CU_ASSERT_STRING_EQUAL(buf, "m2");
 
-    nchar = utFormat(squareMeter, buf, sizeof(buf)-1, asciiNameDef);
+    nchar = ut_format(squareMeter, buf, sizeof(buf)-1, asciiNameDef);
     CU_ASSERT_TRUE_FATAL(nchar > 0);
     CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
     buf[nchar] = 0;
     CU_ASSERT_STRING_EQUAL(buf, "meter^2");
 
-    meterSecond = utMultiply(meter, second);
+    meterSecond = ut_multiply(meter, second);
     CU_ASSERT_PTR_NOT_NULL(meterSecond);
-    CU_ASSERT_EQUAL(utGetStatus(), UT_SUCCESS);
-    nchar = utFormat(meterSecond, buf, sizeof(buf)-1, asciiSymbolDef);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
+    nchar = ut_format(meterSecond, buf, sizeof(buf)-1, asciiSymbolDef);
     CU_ASSERT_TRUE_FATAL(nchar > 0);
     CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
     buf[nchar] = 0;
     CU_ASSERT_STRING_EQUAL(buf, "m.s");
 
-    nchar = utFormat(meterSecond, buf, sizeof(buf)-1, asciiNameDef);
+    nchar = ut_format(meterSecond, buf, sizeof(buf)-1, asciiNameDef);
     CU_ASSERT_TRUE_FATAL(nchar > 0);
     CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
     buf[nchar] = 0;
     CU_ASSERT_STRING_EQUAL(buf, "meter-second");
 
-    meterCelsius = utMultiply(meter, celsius);
+    meterCelsius = ut_multiply(meter, celsius);
     CU_ASSERT_PTR_NOT_NULL(meterCelsius);
-    CU_ASSERT_EQUAL(utGetStatus(), UT_SUCCESS);
-    nchar = utFormat(meterCelsius, buf, sizeof(buf)-1, asciiSymbolDef);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
+    nchar = ut_format(meterCelsius, buf, sizeof(buf)-1, asciiSymbolDef);
     CU_ASSERT_TRUE_FATAL(nchar > 0);
     CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
     buf[nchar] = 0;
     CU_ASSERT_STRING_EQUAL(buf, "m.K");
 
-    meterRadian = utMultiply(meter, radian);
+    meterRadian = ut_multiply(meter, radian);
     CU_ASSERT_PTR_NOT_NULL(meterRadian);
-    CU_ASSERT_EQUAL(utGetStatus(), UT_SUCCESS);
-    nchar = utFormat(meterRadian, buf, sizeof(buf)-1, asciiSymbolDef);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
+    nchar = ut_format(meterRadian, buf, sizeof(buf)-1, asciiSymbolDef);
     CU_ASSERT_TRUE_FATAL(nchar > 0);
     CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
     buf[nchar] = 0;
     CU_ASSERT_STRING_EQUAL(buf, "m.rad");
 
-    kilometerMinute = utMultiply(kilometer, minute);
+    kilometerMinute = ut_multiply(kilometer, minute);
     CU_ASSERT_PTR_NOT_NULL(kilometerMinute);
-    CU_ASSERT_EQUAL(utGetStatus(), UT_SUCCESS);
-    nchar = utFormat(kilometerMinute, buf, sizeof(buf)-1, asciiSymbolDef);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
+    nchar = ut_format(kilometerMinute, buf, sizeof(buf)-1, asciiSymbolDef);
     CU_ASSERT_TRUE_FATAL(nchar > 0);
     CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
     buf[nchar] = 0;
     CU_ASSERT_STRING_EQUAL(buf, "60000 m.s");
 
-    nchar = utFormat(kilometerMinute, buf, sizeof(buf)-1, asciiNameDef);
+    nchar = ut_format(kilometerMinute, buf, sizeof(buf)-1, asciiNameDef);
     CU_ASSERT_TRUE_FATAL(nchar > 0);
     CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
     buf[nchar] = 0;
     CU_ASSERT_STRING_EQUAL(buf, "60000 meter-second");
 
-    unit = utMultiply(secondsSinceTheEpoch, meter);
+    unit = ut_multiply(secondsSinceTheEpoch, meter);
     CU_ASSERT_PTR_NOT_NULL(unit);
-    utFree(unit);
+    ut_free(unit);
 
-    utFree(squareMeter);
-    utFree(meterSecond);
-    utFree(meterCelsius);
-    utFree(meterRadian);
-    utFree(kilometerMinute);
+    ut_free(squareMeter);
+    ut_free(meterSecond);
+    ut_free(meterCelsius);
+    ut_free(meterRadian);
+    ut_free(kilometerMinute);
 
-    CU_ASSERT_PTR_NULL(utMultiply(NULL, meter));
-    CU_ASSERT_PTR_NULL(utMultiply(meter, NULL));
+    CU_ASSERT_PTR_NULL(ut_multiply(NULL, meter));
+    CU_ASSERT_PTR_NULL(ut_multiply(meter, NULL));
 }
 
 
 static void
 test_utInvert(void)
 {
-    utUnit*	inverseMeter;
-    utUnit*	inverseMinute;
-    utUnit*	inverseCelsius;
-    utUnit*	inverseRadian;
-    utUnit*	inverseMeterSecond;
+    ut_unit*	inverseMeter;
+    ut_unit*	inverseMinute;
+    ut_unit*	inverseCelsius;
+    ut_unit*	inverseRadian;
+    ut_unit*	inverseMeterSecond;
     char	buf[80];
     int		nchar;
 
-    inverseMeter = utInvert(meter);
+    inverseMeter = ut_invert(meter);
     CU_ASSERT_PTR_NOT_NULL(inverseMeter);
-    CU_ASSERT_EQUAL(utGetStatus(), UT_SUCCESS);
-    nchar = utFormat(inverseMeter, buf, sizeof(buf)-1, asciiSymbolDef);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
+    nchar = ut_format(inverseMeter, buf, sizeof(buf)-1, asciiSymbolDef);
     CU_ASSERT_TRUE_FATAL(nchar > 0);
     CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
     buf[nchar] = 0;
     CU_ASSERT_STRING_EQUAL(buf, "m-1");
 
-    inverseMinute = utInvert(minute);
+    inverseMinute = ut_invert(minute);
     CU_ASSERT_PTR_NOT_NULL(inverseMinute);
-    CU_ASSERT_EQUAL(utGetStatus(), UT_SUCCESS);
-    nchar = utFormat(inverseMinute, buf, sizeof(buf)-1, asciiSymbolDef);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
+    nchar = ut_format(inverseMinute, buf, sizeof(buf)-1, asciiSymbolDef);
     CU_ASSERT_TRUE_FATAL(nchar > 0);
     CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
     buf[nchar] = 0;
     CU_ASSERT_STRING_EQUAL(buf, "0.0166666666666667 s-1");
 
-    inverseRadian = utInvert(radian);
+    inverseRadian = ut_invert(radian);
     CU_ASSERT_PTR_NOT_NULL(inverseRadian);
-    CU_ASSERT_EQUAL(utGetStatus(), UT_SUCCESS);
-    nchar = utFormat(inverseRadian, buf, sizeof(buf)-1, asciiSymbolDef);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
+    nchar = ut_format(inverseRadian, buf, sizeof(buf)-1, asciiSymbolDef);
     CU_ASSERT_TRUE_FATAL(nchar > 0);
     CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
     buf[nchar] = 0;
     CU_ASSERT_STRING_EQUAL(buf, "rad-1");
 
-    inverseCelsius = utInvert(celsius);
+    inverseCelsius = ut_invert(celsius);
     CU_ASSERT_PTR_NOT_NULL(inverseCelsius);
-    CU_ASSERT_EQUAL(utGetStatus(), UT_SUCCESS);
-    nchar = utFormat(inverseCelsius, buf, sizeof(buf)-1, asciiSymbolDef);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
+    nchar = ut_format(inverseCelsius, buf, sizeof(buf)-1, asciiSymbolDef);
     CU_ASSERT_TRUE_FATAL(nchar > 0);
     CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
     buf[nchar] = 0;
     CU_ASSERT_STRING_EQUAL(buf, "K-1");
 
-    inverseMeterSecond = utInvert(utMultiply(meter, second));
+    inverseMeterSecond = ut_invert(ut_multiply(meter, second));
     CU_ASSERT_PTR_NOT_NULL(inverseMeterSecond);
-    CU_ASSERT_EQUAL(utGetStatus(), UT_SUCCESS);
-    nchar = utFormat(inverseMeterSecond, buf, sizeof(buf)-1, asciiSymbolDef);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
+    nchar = ut_format(inverseMeterSecond, buf, sizeof(buf)-1, asciiSymbolDef);
     CU_ASSERT_TRUE_FATAL(nchar > 0);
     CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
     buf[nchar] = 0;
     CU_ASSERT_STRING_EQUAL(buf, "m-1.s-1");
 
-    utFree(inverseMeter);
-    utFree(inverseMinute);
-    utFree(inverseCelsius);
-    utFree(inverseRadian);
-    utFree(inverseMeterSecond);
+    ut_free(inverseMeter);
+    ut_free(inverseMinute);
+    ut_free(inverseCelsius);
+    ut_free(inverseRadian);
+    ut_free(inverseMeterSecond);
 
-    hertz = utInvert(second);
+    hertz = ut_invert(second);
     CU_ASSERT_PTR_NOT_NULL(hertz);
-    CU_ASSERT_EQUAL(utGetStatus(), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
 
-    CU_ASSERT_EQUAL(utMapUnitToName(hertz, "hertz", UT_ASCII), UT_SUCCESS);
-    CU_ASSERT_EQUAL(utMapNameToUnit("hertz", hertz), UT_SUCCESS);
-    CU_ASSERT_EQUAL(utMapUnitToSymbol(hertz, "Hz", UT_ASCII), UT_SUCCESS);
-    CU_ASSERT_EQUAL(utMapSymbolToUnit("Hz", hertz), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_map_unit_to_name(hertz, "hertz", UT_ASCII), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_map_name_to_unit("hertz", hertz), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_map_unit_to_symbol(hertz, "Hz", UT_ASCII), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_map_symbol_to_unit("Hz", hertz), UT_SUCCESS);
 
-    megahertz = utScale(1e6, utInvert(second));
+    megahertz = ut_scale(1e6, ut_invert(second));
     CU_ASSERT_PTR_NOT_NULL(megahertz);
-    CU_ASSERT_EQUAL(utGetStatus(), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
 }
 
 
 static void
 test_utDivide(void)
 {
-    utUnit*	meterPerSecond;
-    utUnit*	kilometerPerMinute;
-    utUnit*	celsiusPerMeter;
-    utUnit*	meterPerCelsius;
+    ut_unit*	meterPerSecond;
+    ut_unit*	kilometerPerMinute;
+    ut_unit*	celsiusPerMeter;
+    ut_unit*	meterPerCelsius;
     char	buf[80];
     int		nchar;
 
-    meterPerSecond = utDivide(meter, second);
+    meterPerSecond = ut_divide(meter, second);
     CU_ASSERT_PTR_NOT_NULL(meterPerSecond);
-    CU_ASSERT_EQUAL(utGetStatus(), UT_SUCCESS);
-    nchar = utFormat(meterPerSecond, buf, sizeof(buf)-1, asciiSymbolDef);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
+    nchar = ut_format(meterPerSecond, buf, sizeof(buf)-1, asciiSymbolDef);
     CU_ASSERT_TRUE_FATAL(nchar > 0);
     CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
     buf[nchar] = 0;
     CU_ASSERT_STRING_EQUAL(buf, "m.s-1");
 
-    kilometerPerMinute = utDivide(kilometer, minute);
+    kilometerPerMinute = ut_divide(kilometer, minute);
     CU_ASSERT_PTR_NOT_NULL(kilometerPerMinute);
-    CU_ASSERT_EQUAL(utGetStatus(), UT_SUCCESS);
-    nchar = utFormat(kilometerPerMinute, buf, sizeof(buf)-1, asciiSymbolDef);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
+    nchar = ut_format(kilometerPerMinute, buf, sizeof(buf)-1, asciiSymbolDef);
     CU_ASSERT_TRUE_FATAL(nchar > 0);
     CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
     buf[nchar] = 0;
     CU_ASSERT_STRING_EQUAL(buf, "16.6666666666667 m.s-1");
 
-    celsiusPerMeter = utDivide(celsius, meter);
+    celsiusPerMeter = ut_divide(celsius, meter);
     CU_ASSERT_PTR_NOT_NULL(celsiusPerMeter);
-    CU_ASSERT_EQUAL(utGetStatus(), UT_SUCCESS);
-    nchar = utFormat(celsiusPerMeter, buf, sizeof(buf)-1, asciiSymbolDef);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
+    nchar = ut_format(celsiusPerMeter, buf, sizeof(buf)-1, asciiSymbolDef);
     CU_ASSERT_TRUE_FATAL(nchar > 0);
     CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
     buf[nchar] = 0;
     CU_ASSERT_STRING_EQUAL(buf, "m-1.K");
 
-    meterPerCelsius = utDivide(meter, celsius);
+    meterPerCelsius = ut_divide(meter, celsius);
     CU_ASSERT_PTR_NOT_NULL(meterPerCelsius);
-    CU_ASSERT_EQUAL(utGetStatus(), UT_SUCCESS);
-    nchar = utFormat(meterPerCelsius, buf, sizeof(buf)-1, asciiSymbolDef);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
+    nchar = ut_format(meterPerCelsius, buf, sizeof(buf)-1, asciiSymbolDef);
     CU_ASSERT_TRUE_FATAL(nchar > 0);
     CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
     buf[nchar] = 0;
     CU_ASSERT_STRING_EQUAL(buf, "m.K-1");
 
-    watt = utDivide(utMultiply(kilogram, utRaise(utDivide(meter, second), 2)),
+    watt = ut_divide(ut_multiply(kilogram, ut_raise(ut_divide(meter, second), 2)),
 	second);
     CU_ASSERT_PTR_NOT_NULL(watt);
-    CU_ASSERT_EQUAL(utGetStatus(), UT_SUCCESS);
-    nchar = utFormat(watt, buf, sizeof(buf)-1, asciiSymbolDef);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
+    nchar = ut_format(watt, buf, sizeof(buf)-1, asciiSymbolDef);
     CU_ASSERT_TRUE_FATAL(nchar > 0);
     CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
     buf[nchar] = 0;
     CU_ASSERT_STRING_EQUAL(buf, "kg.m2.s-3");
 
-    utFree(meterPerSecond);
-    utFree(kilometerPerMinute);
-    utFree(celsiusPerMeter);
-    utFree(meterPerCelsius);
+    ut_free(meterPerSecond);
+    ut_free(kilometerPerMinute);
+    ut_free(celsiusPerMeter);
+    ut_free(meterPerCelsius);
 
-    CU_ASSERT_PTR_NULL(utDivide(NULL, meter));
-    CU_ASSERT_PTR_NULL(utDivide(meter, NULL));
+    CU_ASSERT_PTR_NULL(ut_divide(NULL, meter));
+    CU_ASSERT_PTR_NULL(ut_divide(meter, NULL));
 }
 
 
 static void
 test_utRaise(void)
 {
-    utUnit*	perCubicMeter;
-    utUnit*	celsiusCubed;
-    utUnit*	kilometersSquaredPerMinuteSquared;
-    utUnit*	unit;
+    ut_unit*	perCubicMeter;
+    ut_unit*	celsiusCubed;
+    ut_unit*	kilometersSquaredPerMinuteSquared;
+    ut_unit*	unit;
     char	buf[80];
     int		nchar;
 
-    perCubicMeter = utRaise(meter, -3);
+    perCubicMeter = ut_raise(meter, -3);
     CU_ASSERT_PTR_NOT_NULL(perCubicMeter);
-    CU_ASSERT_EQUAL(utGetStatus(), UT_SUCCESS);
-    nchar = utFormat(perCubicMeter, buf, sizeof(buf)-1, asciiSymbolDef);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
+    nchar = ut_format(perCubicMeter, buf, sizeof(buf)-1, asciiSymbolDef);
     CU_ASSERT_TRUE_FATAL(nchar > 0);
     CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
     buf[nchar] = 0;
     CU_ASSERT_STRING_EQUAL(buf, "m-3");
 
-    celsiusCubed = utRaise(celsius, 3);
+    celsiusCubed = ut_raise(celsius, 3);
     CU_ASSERT_PTR_NOT_NULL(celsiusCubed);
-    CU_ASSERT_EQUAL(utGetStatus(), UT_SUCCESS);
-    nchar = utFormat(celsiusCubed, buf, sizeof(buf)-1, asciiSymbolDef);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
+    nchar = ut_format(celsiusCubed, buf, sizeof(buf)-1, asciiSymbolDef);
     CU_ASSERT_TRUE_FATAL(nchar > 0);
     CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
     buf[nchar] = 0;
     CU_ASSERT_STRING_EQUAL(buf, "K3");
 
     kilometersSquaredPerMinuteSquared =
-	utRaise(utDivide(minute, kilometer), -2);
+	ut_raise(ut_divide(minute, kilometer), -2);
     CU_ASSERT_PTR_NOT_NULL(kilometersSquaredPerMinuteSquared);
-    CU_ASSERT_EQUAL(utGetStatus(), UT_SUCCESS);
-    nchar = utFormat(kilometersSquaredPerMinuteSquared, buf,
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
+    nchar = ut_format(kilometersSquaredPerMinuteSquared, buf,
 	sizeof(buf)-1, asciiSymbolDef);
     CU_ASSERT_TRUE_FATAL(nchar > 0);
     CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
     buf[nchar] = 0;
     CU_ASSERT_STRING_EQUAL(buf, "277.777777777778 m2.s-2");
 
-    utFree(perCubicMeter);
-    utFree(celsiusCubed);
-    utFree(kilometersSquaredPerMinuteSquared);
+    ut_free(perCubicMeter);
+    ut_free(celsiusCubed);
+    ut_free(kilometersSquaredPerMinuteSquared);
 
-    unit = utRaise(meter, 0);
+    unit = ut_raise(meter, 0);
     CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(utCompare(unit, utGetDimensionlessUnitOne(unitSystem)), 0);
-    utFree(unit);
+    CU_ASSERT_EQUAL(ut_compare(unit, ut_get_dimensionless_unit_one(unitSystem)), 0);
+    ut_free(unit);
 
-    unit = utRaise(meter, 1);
+    unit = ut_raise(meter, 1);
     CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(utCompare(unit, meter), 0);
-    utFree(unit);
+    CU_ASSERT_EQUAL(ut_compare(unit, meter), 0);
+    ut_free(unit);
 
-    unit = utRaise(secondsSinceTheEpoch, 2);
+    unit = ut_raise(secondsSinceTheEpoch, 2);
     CU_ASSERT_PTR_NOT_NULL(unit);
-    utFree(unit);
+    ut_free(unit);
 
-    CU_ASSERT_PTR_NULL(utRaise(dBZ, 2));
-    CU_ASSERT_PTR_NULL(utRaise(NULL, 2));
+    CU_ASSERT_PTR_NULL(ut_raise(dBZ, 2));
+    CU_ASSERT_PTR_NULL(ut_raise(NULL, 2));
 }
 
 
 static void
 test_utLog(void)
 {
-    utUnit*	bel_1_mW = utLog(10, utScale(0.001, watt));
-    utUnit*	decibel_1_mW;
-    utUnit*	unit;
+    ut_unit*	bel_1_mW = ut_log(10, ut_scale(0.001, watt));
+    ut_unit*	decibel_1_mW;
+    ut_unit*	unit;
     char	buf[80];
     int		nchar;
 
     CU_ASSERT_PTR_NOT_NULL(bel_1_mW);
-    CU_ASSERT_EQUAL(utGetStatus(), UT_SUCCESS);
-    nchar = utFormat(bel_1_mW, buf, sizeof(buf)-1, asciiSymbolDef);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
+    nchar = ut_format(bel_1_mW, buf, sizeof(buf)-1, asciiSymbolDef);
     CU_ASSERT_TRUE_FATAL(nchar > 0);
     CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
     buf[nchar] = 0;
     CU_ASSERT_STRING_EQUAL(buf, "lg(re 0.001 kg.m2.s-3)");
 
-    decibel_1_mW = utScale(0.1, bel_1_mW);
+    decibel_1_mW = ut_scale(0.1, bel_1_mW);
     CU_ASSERT_PTR_NOT_NULL(decibel_1_mW);
-    CU_ASSERT_EQUAL(utGetStatus(), UT_SUCCESS);
-    nchar = utFormat(decibel_1_mW, buf, sizeof(buf)-1, asciiSymbolDef);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
+    nchar = ut_format(decibel_1_mW, buf, sizeof(buf)-1, asciiSymbolDef);
     CU_ASSERT_TRUE_FATAL(nchar > 0);
     CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
     buf[nchar] = 0;
     CU_ASSERT_STRING_EQUAL(buf, "0.1 lg(re 0.001 kg.m2.s-3)");
 
-    unit = utLog(-10, utScale(0.001, watt));
+    unit = ut_log(-10, ut_scale(0.001, watt));
     CU_ASSERT_PTR_NULL(unit);
-    CU_ASSERT_EQUAL(utGetStatus(), UT_BAD_VALUE);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_VALUE);
 
-    cubicMeter = utRaise(meter, 3);
-    cubicMicron = utRaise(utScale(1e-6, meter), 3);
+    cubicMeter = ut_raise(meter, 3);
+    cubicMicron = ut_raise(ut_scale(1e-6, meter), 3);
     CU_ASSERT_PTR_NOT_NULL(cubicMicron);
 
-    BZ = utLog(10, cubicMicron);
+    BZ = ut_log(10, cubicMicron);
     CU_ASSERT_PTR_NOT_NULL(BZ);
-    CU_ASSERT_EQUAL(utIsDimensionless(BZ), 1);
+    CU_ASSERT_EQUAL(ut_is_dimensionless(BZ), 1);
 
-    CU_ASSERT_PTR_NULL(utRaise(BZ, 2));
-    CU_ASSERT_EQUAL(utGetStatus(), UT_MEANINGLESS);
+    CU_ASSERT_PTR_NULL(ut_raise(BZ, 2));
+    CU_ASSERT_EQUAL(ut_get_status(), UT_MEANINGLESS);
 
-    dBZ = utScale(0.1, BZ);
+    dBZ = ut_scale(0.1, BZ);
     CU_ASSERT_PTR_NOT_NULL(dBZ);
-    CU_ASSERT_EQUAL(utGetStatus(), UT_SUCCESS);
-    nchar = utFormat(dBZ, buf, sizeof(buf)-1, asciiSymbolDef);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
+    nchar = ut_format(dBZ, buf, sizeof(buf)-1, asciiSymbolDef);
     CU_ASSERT_TRUE_FATAL(nchar > 0);
     CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
     buf[nchar] = 0;
     CU_ASSERT_STRING_EQUAL(buf, "0.1 lg(re 1e-18 m3)");
-    CU_ASSERT_EQUAL(utMapSymbolToUnit("dBZ", dBZ), UT_SUCCESS);
-    CU_ASSERT_EQUAL(utMapSymbolToUnit("dBZ", dBZ), UT_SUCCESS);
-    CU_ASSERT_EQUAL(utMapSymbolToUnit("dBZ", meter), UT_EXISTS);
+    CU_ASSERT_EQUAL(ut_map_symbol_to_unit("dBZ", dBZ), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_map_symbol_to_unit("dBZ", dBZ), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_map_symbol_to_unit("dBZ", meter), UT_EXISTS);
     {
-	utUnit*	unit = utGetUnitBySymbol(unitSystem, "dBZ");
+	ut_unit*	unit = ut_get_unit_by_symbol(unitSystem, "dBZ");
 
 	CU_ASSERT_PTR_NOT_NULL(unit);
-	CU_ASSERT_EQUAL(utCompare(unit, dBZ), 0);
+	CU_ASSERT_EQUAL(ut_compare(unit, dBZ), 0);
 
-	CU_ASSERT_PTR_NULL(utGetUnitBySymbol(unitSystem, "DBZ"));
+	CU_ASSERT_PTR_NULL(ut_get_unit_by_symbol(unitSystem, "DBZ"));
     }
 
-    utFree(bel_1_mW);
-    utFree(decibel_1_mW);
-    utFree(unit);
+    ut_free(bel_1_mW);
+    ut_free(decibel_1_mW);
+    ut_free(unit);
 
-    CU_ASSERT_PTR_NULL(utLog(2, NULL));
-    CU_ASSERT_EQUAL(utGetStatus(), UT_NULL_ARG);
-    CU_ASSERT_PTR_NULL(utLog(1, meter));
-    CU_ASSERT_EQUAL(utGetStatus(), UT_BAD_VALUE);
+    CU_ASSERT_PTR_NULL(ut_log(2, NULL));
+    CU_ASSERT_EQUAL(ut_get_status(), UT_NULL_ARG);
+    CU_ASSERT_PTR_NULL(ut_log(1, meter));
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_VALUE);
 
-    CU_ASSERT_PTR_NULL(utMultiply(dBZ, meter));
-    unit = utMultiply(dBZ, radian);
+    CU_ASSERT_PTR_NULL(ut_multiply(dBZ, meter));
+    unit = ut_multiply(dBZ, radian);
     CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(utCompare(unit, dBZ), 0);
-    utFree(unit);
-    CU_ASSERT_PTR_NULL(utMultiply(dBZ, dBZ));
+    CU_ASSERT_EQUAL(ut_compare(unit, dBZ), 0);
+    ut_free(unit);
+    CU_ASSERT_PTR_NULL(ut_multiply(dBZ, dBZ));
 }
 
 
@@ -834,414 +834,414 @@ areCloseDoubles(
 static void
 test_utGetDimensionlessUnitOne(void)
 {
-    CU_ASSERT_PTR_NOT_NULL(utGetDimensionlessUnitOne(unitSystem));
-    CU_ASSERT_PTR_NULL(utGetDimensionlessUnitOne(NULL));
+    CU_ASSERT_PTR_NOT_NULL(ut_get_dimensionless_unit_one(unitSystem));
+    CU_ASSERT_PTR_NULL(ut_get_dimensionless_unit_one(NULL));
 }
 
 
 static void
 test_utGetSystem(void)
 {
-    CU_ASSERT_PTR_NOT_NULL(utGetSystem(meter));
-    CU_ASSERT_PTR_NULL(utGetSystem(NULL));
+    CU_ASSERT_PTR_NOT_NULL(ut_get_system(meter));
+    CU_ASSERT_PTR_NULL(ut_get_system(NULL));
 }
 
 
 static void
 test_utSameSystem(void)
 {
-    utSystem*	system;
+    ut_system*	system;
 
-    CU_ASSERT_EQUAL(utSameSystem(meter, kilogram), 1);
+    CU_ASSERT_EQUAL(ut_same_system(meter, kilogram), 1);
 
-    CU_ASSERT_EQUAL(utSameSystem(NULL, kilogram), 0);
-    CU_ASSERT_EQUAL(utGetStatus(), UT_NULL_ARG);
-    CU_ASSERT_EQUAL(utSameSystem(kilogram, NULL), 0);
-    CU_ASSERT_EQUAL(utGetStatus(), UT_NULL_ARG);
+    CU_ASSERT_EQUAL(ut_same_system(NULL, kilogram), 0);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_NULL_ARG);
+    CU_ASSERT_EQUAL(ut_same_system(kilogram, NULL), 0);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_NULL_ARG);
 
-    system = utNewSystem();
+    system = ut_new_system();
     CU_ASSERT_PTR_NOT_NULL(system);
 
-    CU_ASSERT_EQUAL(utSameSystem(meter, utGetDimensionlessUnitOne(system)), 0);
+    CU_ASSERT_EQUAL(ut_same_system(meter, ut_get_dimensionless_unit_one(system)), 0);
 
-    utFreeSystem(system);
+    ut_free_system(system);
 }
 
 
 static void
 test_utIsDimensionless(void)
 {
-    utUnit*	unit;
+    ut_unit*	unit;
 
-    CU_ASSERT_EQUAL(utIsDimensionless(meter), 0);
-    CU_ASSERT_EQUAL(utIsDimensionless(radian), 1);
-    CU_ASSERT_EQUAL(utIsDimensionless(secondsSinceTheEpoch), 0);
-    CU_ASSERT_EQUAL(utIsDimensionless(NULL), 0);
-    CU_ASSERT_EQUAL(utGetStatus(), UT_NULL_ARG);
+    CU_ASSERT_EQUAL(ut_is_dimensionless(meter), 0);
+    CU_ASSERT_EQUAL(ut_is_dimensionless(radian), 1);
+    CU_ASSERT_EQUAL(ut_is_dimensionless(secondsSinceTheEpoch), 0);
+    CU_ASSERT_EQUAL(ut_is_dimensionless(NULL), 0);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_NULL_ARG);
 
-    unit = utRaise(radian, 2);
-    CU_ASSERT_EQUAL(utIsDimensionless(unit), 1);
-    utFree(unit);
+    unit = ut_raise(radian, 2);
+    CU_ASSERT_EQUAL(ut_is_dimensionless(unit), 1);
+    ut_free(unit);
 }
 
 
 static void
 test_utClone(void)
 {
-    utUnit*	unit;
+    ut_unit*	unit;
 
-    unit = utClone(secondsSinceTheEpoch);
+    unit = ut_clone(secondsSinceTheEpoch);
     CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(utAreConvertible(unit, secondsSinceTheEpoch), 1);
-    utFree(unit);
+    CU_ASSERT_EQUAL(ut_are_convertible(unit, secondsSinceTheEpoch), 1);
+    ut_free(unit);
 
-    CU_ASSERT_PTR_NULL(utClone(NULL));
-    CU_ASSERT_EQUAL(utGetStatus(), UT_NULL_ARG);
+    CU_ASSERT_PTR_NULL(ut_clone(NULL));
+    CU_ASSERT_EQUAL(ut_get_status(), UT_NULL_ARG);
 }
 
 
 static void
 test_utAreConvertible(void)
 {
-    utUnit*	unit;
+    ut_unit*	unit;
 
-    CU_ASSERT_EQUAL(utAreConvertible(meter, meter), 1);
-    CU_ASSERT_EQUAL(utAreConvertible(radian, radian), 1);
-    CU_ASSERT_EQUAL(utAreConvertible(radian, meter), 0);
-    CU_ASSERT_EQUAL(utAreConvertible(cubicMicron, cubicMicron), 1);
-    CU_ASSERT_EQUAL(utAreConvertible(cubicMicron, cubicMeter), 1);
-    CU_ASSERT_EQUAL(utAreConvertible(watt, watt), 1);
-    CU_ASSERT_EQUAL(utAreConvertible(watt, cubicMicron), 0);
-    CU_ASSERT_EQUAL(utAreConvertible(cubicMicron, watt), 0);
-    CU_ASSERT_EQUAL(utAreConvertible(secondsSinceTheEpoch,
+    CU_ASSERT_EQUAL(ut_are_convertible(meter, meter), 1);
+    CU_ASSERT_EQUAL(ut_are_convertible(radian, radian), 1);
+    CU_ASSERT_EQUAL(ut_are_convertible(radian, meter), 0);
+    CU_ASSERT_EQUAL(ut_are_convertible(cubicMicron, cubicMicron), 1);
+    CU_ASSERT_EQUAL(ut_are_convertible(cubicMicron, cubicMeter), 1);
+    CU_ASSERT_EQUAL(ut_are_convertible(watt, watt), 1);
+    CU_ASSERT_EQUAL(ut_are_convertible(watt, cubicMicron), 0);
+    CU_ASSERT_EQUAL(ut_are_convertible(cubicMicron, watt), 0);
+    CU_ASSERT_EQUAL(ut_are_convertible(secondsSinceTheEpoch,
 	secondsSinceTheEpoch), 1);
-    CU_ASSERT_EQUAL(utAreConvertible(secondsSinceTheEpoch, second), 0);
+    CU_ASSERT_EQUAL(ut_are_convertible(secondsSinceTheEpoch, second), 0);
 
-    unit = utRaise(radian, 2);
-    CU_ASSERT_EQUAL(utAreConvertible(radian, unit), 1);
-    utFree(unit);
+    unit = ut_raise(radian, 2);
+    CU_ASSERT_EQUAL(ut_are_convertible(radian, unit), 1);
+    ut_free(unit);
 
-    CU_ASSERT_EQUAL(utAreConvertible(NULL, meter), 0);
-    CU_ASSERT_EQUAL(utGetStatus(), UT_NULL_ARG);
+    CU_ASSERT_EQUAL(ut_are_convertible(NULL, meter), 0);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_NULL_ARG);
 }
 
 
 static void
 test_utGetConverter(void)
 {
-    cvConverter*	converter = utGetConverter(meter, meter);
+    cv_converter*	converter = ut_get_converter(meter, meter);
     double		doubles[2];
     float		floats[2];
 
     CU_ASSERT_PTR_NOT_NULL(converter);
-    CU_ASSERT_EQUAL(cvConvertDouble(converter, 1.0), 1.0);
+    CU_ASSERT_EQUAL(cv_convert_double(converter, 1.0), 1.0);
     floats[0] = 1; floats[1] = 2;
-    CU_ASSERT_EQUAL(cvConvertFloats(converter, floats, 2, floats), floats);
+    CU_ASSERT_EQUAL(cv_convert_floats(converter, floats, 2, floats), floats);
     CU_ASSERT_EQUAL(floats[0], 1);
     CU_ASSERT_EQUAL(floats[1], 2);
     doubles[0] = 1; doubles[1] = 2;
-    CU_ASSERT_EQUAL(cvConvertDoubles(converter, doubles, 2, doubles), doubles);
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles, 2, doubles), doubles);
     CU_ASSERT_EQUAL(doubles[0], 1);
     CU_ASSERT_EQUAL(doubles[1], 2);
-    CU_ASSERT_EQUAL(cvConvertFloats(converter, floats, 1, floats+1), floats+1);
+    CU_ASSERT_EQUAL(cv_convert_floats(converter, floats, 1, floats+1), floats+1);
     CU_ASSERT_EQUAL(floats[1], 1);
-    CU_ASSERT_EQUAL(cvConvertDoubles(converter, doubles, 1, doubles+1),
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles, 1, doubles+1),
 	doubles+1);
     CU_ASSERT_EQUAL(doubles[1], 1);
     floats[0] = 1; floats[1] = 2;
-    CU_ASSERT_EQUAL(cvConvertFloats(converter, floats+1, 1, floats), floats);
+    CU_ASSERT_EQUAL(cv_convert_floats(converter, floats+1, 1, floats), floats);
     CU_ASSERT_EQUAL(floats[0], 2);
     doubles[0] = 1; doubles[1] = 2;
-    CU_ASSERT_EQUAL(cvConvertDoubles(converter, doubles+1, 1, doubles),
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles+1, 1, doubles),
 	doubles);
     CU_ASSERT_EQUAL(doubles[0], 2);
-    cvFree(converter);
+    cv_free(converter);
 
-    converter = utGetConverter(radian, radian);
+    converter = ut_get_converter(radian, radian);
     CU_ASSERT_PTR_NOT_NULL(converter);
-    CU_ASSERT_EQUAL(cvConvertDouble(converter, 1.0), 1.0);
-    cvFree(converter);
+    CU_ASSERT_EQUAL(cv_convert_double(converter, 1.0), 1.0);
+    cv_free(converter);
 
-    converter = utGetConverter(meter, radian);
+    converter = ut_get_converter(meter, radian);
     CU_ASSERT_PTR_NULL(converter);
-    converter = utGetConverter(meter, kelvin);
+    converter = ut_get_converter(meter, kelvin);
     CU_ASSERT_PTR_NULL(converter);
-    converter = utGetConverter(meter, celsius);
+    converter = ut_get_converter(meter, celsius);
     CU_ASSERT_PTR_NULL(converter);
-    converter = utGetConverter(meter, fahrenheit);
+    converter = ut_get_converter(meter, fahrenheit);
     CU_ASSERT_PTR_NULL(converter);
-    converter = utGetConverter(meter, dBZ);
+    converter = ut_get_converter(meter, dBZ);
     CU_ASSERT_PTR_NULL(converter);
-    converter = utGetConverter(dBZ, radian);
+    converter = ut_get_converter(dBZ, radian);
     CU_ASSERT_PTR_NULL(converter);
 
-    converter = utGetConverter(kilometer, kilometer);
+    converter = ut_get_converter(kilometer, kilometer);
     CU_ASSERT_PTR_NOT_NULL(converter);
-    CU_ASSERT_EQUAL(cvConvertDouble(converter, 1.0), 1.0);
-    cvFree(converter);
+    CU_ASSERT_EQUAL(cv_convert_double(converter, 1.0), 1.0);
+    cv_free(converter);
 
-    converter = utGetConverter(meter, kilometer);
+    converter = ut_get_converter(meter, kilometer);
     CU_ASSERT_PTR_NOT_NULL(converter);
-    CU_ASSERT_TRUE(areCloseDoubles(cvConvertDouble(converter, 1000.0), 1.0));
+    CU_ASSERT_TRUE(areCloseDoubles(cv_convert_double(converter, 1000.0), 1.0));
     floats[0] = 0; floats[1] = 1000;
-    CU_ASSERT_EQUAL(cvConvertFloats(converter, floats, 2, floats), floats);
+    CU_ASSERT_EQUAL(cv_convert_floats(converter, floats, 2, floats), floats);
     CU_ASSERT_EQUAL(floats[0], 0);
     CU_ASSERT_EQUAL(floats[1], 1);
     doubles[0] = 0; doubles[1] = 1000;
-    CU_ASSERT_EQUAL(cvConvertDoubles(converter, doubles, 2, doubles), doubles);
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles, 2, doubles), doubles);
     CU_ASSERT_EQUAL(doubles[0], 0);
     CU_ASSERT_EQUAL(doubles[1], 1);
     floats[0] = 0; floats[1] = 1000;
-    CU_ASSERT_EQUAL(cvConvertFloats(converter, floats, 1, floats+1), floats+1);
+    CU_ASSERT_EQUAL(cv_convert_floats(converter, floats, 1, floats+1), floats+1);
     CU_ASSERT_EQUAL(floats[1], 0);
     doubles[0] = 0; doubles[1] = 1000;
-    CU_ASSERT_EQUAL(cvConvertDoubles(converter, doubles, 1, doubles+1), 
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles, 1, doubles+1), 
 	doubles+1);
     CU_ASSERT_EQUAL(doubles[1], 0);
     floats[0] = 0; floats[1] = 1000;
-    CU_ASSERT_EQUAL(cvConvertFloats(converter, floats+1, 1, floats), floats);
+    CU_ASSERT_EQUAL(cv_convert_floats(converter, floats+1, 1, floats), floats);
     CU_ASSERT_EQUAL(floats[0], 1);
     doubles[0] = 0; doubles[1] = 1000;
-    CU_ASSERT_EQUAL(cvConvertDoubles(converter, doubles+1, 1, doubles), 
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles+1, 1, doubles), 
 	doubles);
     CU_ASSERT_EQUAL(doubles[0], 1);
-    cvFree(converter);
+    cv_free(converter);
 
-    converter = utGetConverter(kilometer, meter);
+    converter = ut_get_converter(kilometer, meter);
     CU_ASSERT_PTR_NOT_NULL(converter);
-    CU_ASSERT_EQUAL(cvConvertDouble(converter, 1.0), 1000.0);
+    CU_ASSERT_EQUAL(cv_convert_double(converter, 1.0), 1000.0);
     floats[0] = 0; floats[1] = 1;
-    CU_ASSERT_EQUAL(cvConvertFloats(converter, floats, 2, floats), floats);
+    CU_ASSERT_EQUAL(cv_convert_floats(converter, floats, 2, floats), floats);
     CU_ASSERT_EQUAL(floats[0], 0);
     CU_ASSERT_EQUAL(floats[1], 1000);
     doubles[0] = 0; doubles[1] = 1;
-    CU_ASSERT_EQUAL(cvConvertDoubles(converter, doubles, 2, doubles), doubles);
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles, 2, doubles), doubles);
     CU_ASSERT_EQUAL(doubles[0], 0);
     CU_ASSERT_EQUAL(doubles[1], 1000);
     floats[0] = 0; floats[1] = 1;
-    CU_ASSERT_EQUAL(cvConvertFloats(converter, floats, 1, floats+1), floats+1);
+    CU_ASSERT_EQUAL(cv_convert_floats(converter, floats, 1, floats+1), floats+1);
     CU_ASSERT_EQUAL(floats[1], 0);
     doubles[0] = 0; doubles[1] = 1;
-    CU_ASSERT_EQUAL(cvConvertDoubles(converter, doubles, 1, doubles+1), 
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles, 1, doubles+1), 
 	doubles+1);
     CU_ASSERT_EQUAL(doubles[1], 0);
     floats[0] = 0; floats[1] = 1;
-    CU_ASSERT_EQUAL(cvConvertFloats(converter, floats+1, 1, floats), floats);
+    CU_ASSERT_EQUAL(cv_convert_floats(converter, floats+1, 1, floats), floats);
     CU_ASSERT_EQUAL(floats[0], 1000);
     doubles[0] = 0; doubles[1] = 1;
-    CU_ASSERT_EQUAL(cvConvertDoubles(converter, doubles+1, 1, doubles), 
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles+1, 1, doubles), 
 	doubles);
     CU_ASSERT_EQUAL(doubles[0], 1000);
-    cvFree(converter);
+    cv_free(converter);
 
-    converter = utGetConverter(kelvin, celsius);
+    converter = ut_get_converter(kelvin, celsius);
     CU_ASSERT_PTR_NOT_NULL(converter);
-    CU_ASSERT_EQUAL(cvConvertDouble(converter, 273.15), 0.0);
+    CU_ASSERT_EQUAL(cv_convert_double(converter, 273.15), 0.0);
     floats[0] = 0; floats[1] = 273.15;
-    CU_ASSERT_EQUAL(cvConvertFloats(converter, floats, 2, floats), floats);
+    CU_ASSERT_EQUAL(cv_convert_floats(converter, floats, 2, floats), floats);
     CU_ASSERT_TRUE(areCloseFloats(floats[0], -273.15));
     CU_ASSERT_TRUE(areCloseFloats(floats[1], 0));
     doubles[0] = 0; doubles[1] = 273.15;
-    CU_ASSERT_EQUAL(cvConvertDoubles(converter, doubles, 2, doubles), doubles);
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles, 2, doubles), doubles);
     CU_ASSERT_EQUAL(doubles[0], -273.15);
     CU_ASSERT_EQUAL(doubles[1], 0);
     floats[0] = 0; floats[1] = 273.15;
-    CU_ASSERT_EQUAL(cvConvertFloats(converter, floats, 1, floats+1), floats+1);
+    CU_ASSERT_EQUAL(cv_convert_floats(converter, floats, 1, floats+1), floats+1);
     CU_ASSERT_TRUE(areCloseFloats(floats[1], -273.15));
     doubles[0] = 0; doubles[1] = 273.15;
-    CU_ASSERT_EQUAL(cvConvertDoubles(converter, doubles, 1, doubles+1), 
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles, 1, doubles+1), 
 	doubles+1);
     CU_ASSERT_EQUAL(doubles[1], -273.15);
     floats[0] = 0; floats[1] = 273.15;
-    CU_ASSERT_EQUAL(cvConvertFloats(converter, floats+1, 1, floats), floats);
+    CU_ASSERT_EQUAL(cv_convert_floats(converter, floats+1, 1, floats), floats);
     CU_ASSERT_TRUE(areCloseFloats(floats[0], 0));
     doubles[0] = 0; doubles[1] = 273.15;
-    CU_ASSERT_EQUAL(cvConvertDoubles(converter, doubles+1, 1, doubles), 
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles+1, 1, doubles), 
 	doubles);
     CU_ASSERT_EQUAL(doubles[0], 0);
-    cvFree(converter);
+    cv_free(converter);
 
-    converter = utGetConverter(celsius, kelvin);
+    converter = ut_get_converter(celsius, kelvin);
     CU_ASSERT_PTR_NOT_NULL(converter);
-    CU_ASSERT_EQUAL(cvConvertDouble(converter, 0.0), 273.15);
+    CU_ASSERT_EQUAL(cv_convert_double(converter, 0.0), 273.15);
     floats[0] = 0; floats[1] = -273.15;
-    CU_ASSERT_EQUAL(cvConvertFloats(converter, floats, 2, floats), floats);
+    CU_ASSERT_EQUAL(cv_convert_floats(converter, floats, 2, floats), floats);
     CU_ASSERT_TRUE(areCloseFloats(floats[0], 273.15));
     CU_ASSERT_TRUE(areCloseFloats(floats[1], 0));
     doubles[0] = 0; doubles[1] = -273.15;
-    CU_ASSERT_EQUAL(cvConvertDoubles(converter, doubles, 2, doubles), doubles);
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles, 2, doubles), doubles);
     CU_ASSERT_EQUAL(doubles[0], 273.15);
     CU_ASSERT_EQUAL(doubles[1], 0);
     floats[0] = 0; floats[1] = -273.15;
-    CU_ASSERT_EQUAL(cvConvertFloats(converter, floats, 1, floats+1), floats+1);
+    CU_ASSERT_EQUAL(cv_convert_floats(converter, floats, 1, floats+1), floats+1);
     CU_ASSERT_TRUE(areCloseFloats(floats[1], 273.15));
     doubles[0] = 0; doubles[1] = -273.15;
-    CU_ASSERT_EQUAL(cvConvertDoubles(converter, doubles, 1, doubles+1), 
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles, 1, doubles+1), 
 	doubles+1);
     CU_ASSERT_EQUAL(doubles[1], 273.15);
     floats[0] = 0; floats[1] = -273.15;
-    CU_ASSERT_EQUAL(cvConvertFloats(converter, floats+1, 1, floats), floats);
+    CU_ASSERT_EQUAL(cv_convert_floats(converter, floats+1, 1, floats), floats);
     CU_ASSERT_TRUE(areCloseFloats(floats[0], 0));
     doubles[0] = 0; doubles[1] = -273.15;
-    CU_ASSERT_EQUAL(cvConvertDoubles(converter, doubles+1, 1, doubles), 
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles+1, 1, doubles), 
 	doubles);
     CU_ASSERT_EQUAL(doubles[0], 0);
-    cvFree(converter);
+    cv_free(converter);
 
-    converter = utGetConverter(celsius, fahrenheit);
+    converter = ut_get_converter(celsius, fahrenheit);
     CU_ASSERT_PTR_NOT_NULL(converter);
-    CU_ASSERT_TRUE(areCloseDoubles(cvConvertDouble(converter, 0.0), 32));
+    CU_ASSERT_TRUE(areCloseDoubles(cv_convert_double(converter, 0.0), 32));
     floats[0] = 0; floats[1] = 100;
-    CU_ASSERT_EQUAL(cvConvertFloats(converter, floats, 2, floats), floats);
+    CU_ASSERT_EQUAL(cv_convert_floats(converter, floats, 2, floats), floats);
     CU_ASSERT_TRUE(areCloseFloats(floats[0], 32));
     CU_ASSERT_TRUE(areCloseFloats(floats[1], 212));
     doubles[0] = 0; doubles[1] = 100;
-    CU_ASSERT_EQUAL(cvConvertDoubles(converter, doubles, 2, doubles), doubles);
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles, 2, doubles), doubles);
     CU_ASSERT_TRUE(areCloseDoubles(doubles[0], 32));
     CU_ASSERT_TRUE(areCloseDoubles(doubles[1], 212));
     floats[0] = 0; floats[1] = 100;
-    CU_ASSERT_EQUAL(cvConvertFloats(converter, floats, 1, floats+1), floats+1);
+    CU_ASSERT_EQUAL(cv_convert_floats(converter, floats, 1, floats+1), floats+1);
     CU_ASSERT_TRUE(areCloseFloats(floats[1], 32));
     doubles[0] = 0; doubles[1] = 100;
-    CU_ASSERT_EQUAL(cvConvertDoubles(converter, doubles, 1, doubles+1), 
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles, 1, doubles+1), 
 	doubles+1);
     CU_ASSERT_TRUE(areCloseDoubles(doubles[1], 32));
     floats[0] = 0; floats[1] = 100;
-    CU_ASSERT_EQUAL(cvConvertFloats(converter, floats+1, 1, floats), floats);
+    CU_ASSERT_EQUAL(cv_convert_floats(converter, floats+1, 1, floats), floats);
     CU_ASSERT_TRUE(areCloseFloats(floats[0], 212));
     doubles[0] = 0; doubles[1] = 100;
-    CU_ASSERT_EQUAL(cvConvertDoubles(converter, doubles+1, 1, doubles), 
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles+1, 1, doubles), 
 	doubles);
     CU_ASSERT_TRUE(areCloseDoubles(doubles[0], 212));
-    cvFree(converter);
+    cv_free(converter);
 
-    converter = utGetConverter(fahrenheit, celsius);
+    converter = ut_get_converter(fahrenheit, celsius);
     CU_ASSERT_PTR_NOT_NULL(converter);
-    CU_ASSERT_TRUE(areCloseDoubles(cvConvertDouble(converter, 32.0), 0.0));
+    CU_ASSERT_TRUE(areCloseDoubles(cv_convert_double(converter, 32.0), 0.0));
     floats[0] = 32; floats[1] = 212;
-    CU_ASSERT_EQUAL(cvConvertFloats(converter, floats, 2, floats), floats);
+    CU_ASSERT_EQUAL(cv_convert_floats(converter, floats, 2, floats), floats);
     CU_ASSERT_TRUE(areCloseFloats(floats[0], 0));
     CU_ASSERT_TRUE(areCloseFloats(floats[1], 100));
     doubles[0] = 32; doubles[1] = 212;
-    CU_ASSERT_EQUAL(cvConvertDoubles(converter, doubles, 2, doubles), doubles);
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles, 2, doubles), doubles);
     CU_ASSERT_TRUE(areCloseDoubles(doubles[0], 0));
     CU_ASSERT_TRUE(areCloseDoubles(doubles[1], 100));
     floats[0] = 32; floats[1] = 212;
-    CU_ASSERT_EQUAL(cvConvertFloats(converter, floats, 1, floats+1), floats+1);
+    CU_ASSERT_EQUAL(cv_convert_floats(converter, floats, 1, floats+1), floats+1);
     CU_ASSERT_TRUE(areCloseFloats(floats[1], 0));
     doubles[0] = 32; doubles[1] = 212;
-    CU_ASSERT_EQUAL(cvConvertDoubles(converter, doubles, 1, doubles+1), 
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles, 1, doubles+1), 
 	doubles+1);
     CU_ASSERT_TRUE(areCloseDoubles(doubles[1], 0));
     floats[0] = 32; floats[1] = 212;
-    CU_ASSERT_EQUAL(cvConvertFloats(converter, floats+1, 1, floats), floats);
+    CU_ASSERT_EQUAL(cv_convert_floats(converter, floats+1, 1, floats), floats);
     CU_ASSERT_TRUE(areCloseFloats(floats[0], 100));
     doubles[0] = 32; doubles[1] = 212;
-    CU_ASSERT_EQUAL(cvConvertDoubles(converter, doubles+1, 1, doubles), 
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles+1, 1, doubles), 
 	doubles);
     CU_ASSERT_TRUE(areCloseDoubles(doubles[0], 100));
-    cvFree(converter);
+    cv_free(converter);
 
-    converter = utGetConverter(cubicMeter, dBZ);
+    converter = ut_get_converter(cubicMeter, dBZ);
     CU_ASSERT_PTR_NOT_NULL(converter);
-    CU_ASSERT_TRUE(areCloseDoubles(cvConvertDouble(converter, 1e-18), 0.0));
-    cvFree(converter);
+    CU_ASSERT_TRUE(areCloseDoubles(cv_convert_double(converter, 1e-18), 0.0));
+    cv_free(converter);
 
-    converter = utGetConverter(cubicMicron, dBZ);
+    converter = ut_get_converter(cubicMicron, dBZ);
     CU_ASSERT_PTR_NOT_NULL(converter);
-    CU_ASSERT_TRUE(areCloseDoubles(cvConvertDouble(converter, 1000), 30.0));
+    CU_ASSERT_TRUE(areCloseDoubles(cv_convert_double(converter, 1000), 30.0));
     floats[0] = 10; floats[1] = 1000;
-    CU_ASSERT_EQUAL(cvConvertFloats(converter, floats, 2, floats), floats);
+    CU_ASSERT_EQUAL(cv_convert_floats(converter, floats, 2, floats), floats);
     CU_ASSERT_TRUE(areCloseFloats(floats[0], 10));
     CU_ASSERT_TRUE(areCloseFloats(floats[1], 30));
     doubles[0] = 10; doubles[1] = 1000;
-    CU_ASSERT_EQUAL(cvConvertDoubles(converter, doubles, 2, doubles), doubles);
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles, 2, doubles), doubles);
     CU_ASSERT_TRUE(areCloseDoubles(doubles[0], 10));
     CU_ASSERT_TRUE(areCloseDoubles(doubles[1], 30));
     floats[0] = 10; floats[1] = 1000;
-    CU_ASSERT_EQUAL(cvConvertFloats(converter, floats, 1, floats+1), floats+1);
+    CU_ASSERT_EQUAL(cv_convert_floats(converter, floats, 1, floats+1), floats+1);
     CU_ASSERT_TRUE(areCloseFloats(floats[1], 10));
     doubles[0] = 10; doubles[1] = 1000;
-    CU_ASSERT_EQUAL(cvConvertDoubles(converter, doubles, 1, doubles+1), 
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles, 1, doubles+1), 
 	doubles+1);
     CU_ASSERT_TRUE(areCloseDoubles(doubles[1], 10));
     floats[0] = 10; floats[1] = 1000;
-    CU_ASSERT_EQUAL(cvConvertFloats(converter, floats+1, 1, floats), floats);
+    CU_ASSERT_EQUAL(cv_convert_floats(converter, floats+1, 1, floats), floats);
     CU_ASSERT_TRUE(areCloseFloats(floats[0], 30));
     doubles[0] = 10; doubles[1] = 1000;
-    CU_ASSERT_EQUAL(cvConvertDoubles(converter, doubles+1, 1, doubles), 
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles+1, 1, doubles), 
 	doubles);
     CU_ASSERT_TRUE(areCloseDoubles(doubles[0], 30));
-    cvFree(converter);
+    cv_free(converter);
 
-    converter = utGetConverter(dBZ, cubicMicron);
+    converter = ut_get_converter(dBZ, cubicMicron);
     CU_ASSERT_PTR_NOT_NULL(converter);
-    CU_ASSERT_TRUE(areCloseFloats(cvConvertFloat(converter, 10), 10.0));
-    CU_ASSERT_TRUE(areCloseFloats(cvConvertFloat(converter, 30), 1000.0));
-    CU_ASSERT_TRUE(areCloseDoubles(cvConvertDouble(converter, 10), 10.0));
-    CU_ASSERT_TRUE(areCloseDoubles(cvConvertDouble(converter, 30), 1000.0));
+    CU_ASSERT_TRUE(areCloseFloats(cv_convert_float(converter, 10), 10.0));
+    CU_ASSERT_TRUE(areCloseFloats(cv_convert_float(converter, 30), 1000.0));
+    CU_ASSERT_TRUE(areCloseDoubles(cv_convert_double(converter, 10), 10.0));
+    CU_ASSERT_TRUE(areCloseDoubles(cv_convert_double(converter, 30), 1000.0));
     floats[0] = 10; floats[1] = 30;
-    CU_ASSERT_EQUAL(cvConvertFloats(converter, floats, 2, floats), floats);
+    CU_ASSERT_EQUAL(cv_convert_floats(converter, floats, 2, floats), floats);
     CU_ASSERT_TRUE(areCloseFloats(floats[0], 10));
     CU_ASSERT_TRUE(areCloseFloats(floats[1], 1000));
     doubles[0] = 10; doubles[1] = 30;
-    CU_ASSERT_EQUAL(cvConvertDoubles(converter, doubles, 2, doubles), doubles);
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles, 2, doubles), doubles);
     CU_ASSERT_TRUE(areCloseDoubles(doubles[0], 10));
     CU_ASSERT_TRUE(areCloseDoubles(doubles[1], 1000));
     floats[0] = 10; floats[1] = 30;
-    CU_ASSERT_EQUAL(cvConvertFloats(converter, floats, 1, floats+1), floats+1);
+    CU_ASSERT_EQUAL(cv_convert_floats(converter, floats, 1, floats+1), floats+1);
     CU_ASSERT_TRUE(areCloseFloats(floats[1], 10));
     doubles[0] = 10; doubles[1] = 30;
-    CU_ASSERT_EQUAL(cvConvertDoubles(converter, doubles, 1, doubles+1), 
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles, 1, doubles+1), 
 	doubles+1);
     CU_ASSERT_TRUE(areCloseDoubles(doubles[1], 10));
     floats[0] = 10; floats[1] = 30;
-    CU_ASSERT_EQUAL(cvConvertFloats(converter, floats+1, 1, floats), floats);
+    CU_ASSERT_EQUAL(cv_convert_floats(converter, floats+1, 1, floats), floats);
     CU_ASSERT_TRUE(areCloseFloats(floats[0], 1000));
     doubles[0] = 10; doubles[1] = 30;
-    CU_ASSERT_EQUAL(cvConvertDoubles(converter, doubles+1, 1, doubles), 
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles+1, 1, doubles), 
 	doubles);
     CU_ASSERT_TRUE(areCloseDoubles(doubles[0], 1000));
-    cvFree(converter);
+    cv_free(converter);
 
-    converter = utGetConverter(second, hertz);
+    converter = ut_get_converter(second, hertz);
     CU_ASSERT_PTR_NOT_NULL(converter);
-    CU_ASSERT_TRUE(areCloseFloats(cvConvertFloat(converter, 1.0), 1.0));
-    CU_ASSERT_TRUE(areCloseFloats(cvConvertFloat(converter, 5.0), 1/5.0));
-    CU_ASSERT_TRUE(areCloseDoubles(cvConvertDouble(converter, 1.0), 1.0));
-    CU_ASSERT_TRUE(areCloseDoubles(cvConvertDouble(converter, 5.0), 1/5.0));
+    CU_ASSERT_TRUE(areCloseFloats(cv_convert_float(converter, 1.0), 1.0));
+    CU_ASSERT_TRUE(areCloseFloats(cv_convert_float(converter, 5.0), 1/5.0));
+    CU_ASSERT_TRUE(areCloseDoubles(cv_convert_double(converter, 1.0), 1.0));
+    CU_ASSERT_TRUE(areCloseDoubles(cv_convert_double(converter, 5.0), 1/5.0));
     floats[0] = 1; floats[1] = 5;
-    CU_ASSERT_EQUAL(cvConvertFloats(converter, floats, 2, floats), floats);
+    CU_ASSERT_EQUAL(cv_convert_floats(converter, floats, 2, floats), floats);
     CU_ASSERT_TRUE(areCloseFloats(floats[0], 1.0));
     CU_ASSERT_TRUE(areCloseFloats(floats[1], 1.0/5));
     doubles[0] = 1; doubles[1] = 5;
-    CU_ASSERT_EQUAL(cvConvertDoubles(converter, doubles, 2, doubles), doubles);
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles, 2, doubles), doubles);
     CU_ASSERT_TRUE(areCloseDoubles(doubles[0], 1));
     CU_ASSERT_TRUE(areCloseDoubles(doubles[1], 1.0/5));
-    cvFree(converter);
+    cv_free(converter);
 
-    converter = utGetConverter(second, megahertz);
+    converter = ut_get_converter(second, megahertz);
     CU_ASSERT_PTR_NOT_NULL(converter);
-    CU_ASSERT_TRUE(areCloseFloats(cvConvertFloat(converter, 1), 1e-6));
-    CU_ASSERT_TRUE(areCloseFloats(cvConvertFloat(converter, 1e-6), 1.0));
-    CU_ASSERT_TRUE(areCloseDoubles(cvConvertDouble(converter, 1), 1e-6));
-    CU_ASSERT_TRUE(areCloseDoubles(cvConvertDouble(converter, 1e-6), 1.0));
+    CU_ASSERT_TRUE(areCloseFloats(cv_convert_float(converter, 1), 1e-6));
+    CU_ASSERT_TRUE(areCloseFloats(cv_convert_float(converter, 1e-6), 1.0));
+    CU_ASSERT_TRUE(areCloseDoubles(cv_convert_double(converter, 1), 1e-6));
+    CU_ASSERT_TRUE(areCloseDoubles(cv_convert_double(converter, 1e-6), 1.0));
     floats[0] = 1; floats[1] = 1e-6;
-    CU_ASSERT_EQUAL(cvConvertFloats(converter, floats, 2, floats), floats);
+    CU_ASSERT_EQUAL(cv_convert_floats(converter, floats, 2, floats), floats);
     CU_ASSERT_TRUE(areCloseFloats(floats[0], 1e-6));
     CU_ASSERT_TRUE(areCloseFloats(floats[1], 1));
     doubles[0] = 1; doubles[1] = 1e-6;
-    CU_ASSERT_EQUAL(cvConvertDoubles(converter, doubles, 2, doubles), doubles);
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles, 2, doubles), doubles);
     CU_ASSERT_TRUE(areCloseDoubles(doubles[0], 1e-6));
     CU_ASSERT_TRUE(areCloseDoubles(doubles[1], 1));
-    cvFree(converter);
+    cv_free(converter);
 
-    converter = utGetConverter(secondsSinceTheEpoch, minutesSinceTheMillenium);
+    converter = ut_get_converter(secondsSinceTheEpoch, minutesSinceTheMillenium);
     CU_ASSERT_PTR_NOT_NULL(converter);
-    cvFree(converter);
+    cv_free(converter);
 
-    CU_ASSERT_PTR_NULL(utGetConverter(NULL, meter));
-    CU_ASSERT_PTR_NULL(utGetConverter(meter, NULL));
+    CU_ASSERT_PTR_NULL(ut_get_converter(NULL, meter));
+    CU_ASSERT_PTR_NULL(ut_get_converter(meter, NULL));
 }
 
 
@@ -1250,127 +1250,127 @@ test_utOffsetByTime(void)
 {
     char		buf[80];
     int			nchar;
-    cvConverter*	converter;
-    utUnit*		day;
-    utUnit*		daysSinceTheEpoch;
+    cv_converter*	converter;
+    ut_unit*		day;
+    ut_unit*		daysSinceTheEpoch;
     double		doubles[2];
     float		floats[2];
 
     secondsSinceTheEpoch =
-        utOffsetByTime(second, utEncodeTime(1970, 1, 1, 0, 0, 0));
+        ut_offset_by_time(second, ut_encode_time(1970, 1, 1, 0, 0, 0));
     CU_ASSERT_PTR_NOT_NULL(secondsSinceTheEpoch);
-    nchar = utFormat(secondsSinceTheEpoch, buf, sizeof(buf)-1, asciiSymbolDef);
+    nchar = ut_format(secondsSinceTheEpoch, buf, sizeof(buf)-1, asciiSymbolDef);
     CU_ASSERT_TRUE_FATAL(nchar > 0);
     CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
     buf[nchar] = 0;
     CU_ASSERT_STRING_EQUAL(buf, "s @ 19700101T000000.0000000 UTC");
 
     minutesSinceTheMillenium =
-        utOffsetByTime(minute, utEncodeTime(2001, 1, 1, 0, 0, 0));
+        ut_offset_by_time(minute, ut_encode_time(2001, 1, 1, 0, 0, 0));
     CU_ASSERT_PTR_NOT_NULL(minutesSinceTheMillenium);
 
-    nchar = utFormat(secondsSinceTheEpoch, buf, sizeof(buf)-1, asciiNameDef);
+    nchar = ut_format(secondsSinceTheEpoch, buf, sizeof(buf)-1, asciiNameDef);
     CU_ASSERT_TRUE_FATAL(nchar > 0);
     CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
     buf[nchar] = 0;
     CU_ASSERT_STRING_EQUAL(buf, "second since 1970-01-01 00:00:00.0000000 UTC");
 
-    converter = utGetConverter(secondsSinceTheEpoch, secondsSinceTheEpoch);
+    converter = ut_get_converter(secondsSinceTheEpoch, secondsSinceTheEpoch);
     CU_ASSERT_PTR_NOT_NULL(converter);
-    CU_ASSERT_TRUE(areCloseDoubles(cvConvertDouble(converter, 1000), 1000));
+    CU_ASSERT_TRUE(areCloseDoubles(cv_convert_double(converter, 1000), 1000));
     floats[0] = 0; floats[1] = 1000;
-    CU_ASSERT_EQUAL(cvConvertFloats(converter, floats, 2, floats), floats);
+    CU_ASSERT_EQUAL(cv_convert_floats(converter, floats, 2, floats), floats);
     CU_ASSERT_TRUE(areCloseFloats(floats[0], 0));
     CU_ASSERT_TRUE(areCloseFloats(floats[1], 1000));
     doubles[0] = 0; doubles[1] = 1000;
-    CU_ASSERT_EQUAL(cvConvertDoubles(converter, doubles, 2, doubles), doubles);
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles, 2, doubles), doubles);
     CU_ASSERT_TRUE(areCloseDoubles(doubles[0], 0));
     CU_ASSERT_TRUE(areCloseDoubles(doubles[1], 1000));
     floats[0] = 0; floats[1] = 1000;
-    CU_ASSERT_EQUAL(cvConvertFloats(converter, floats, 1, floats+1), floats+1);
+    CU_ASSERT_EQUAL(cv_convert_floats(converter, floats, 1, floats+1), floats+1);
     CU_ASSERT_TRUE(areCloseFloats(floats[1], 0));
     doubles[0] = 0; doubles[1] = 1000;
-    CU_ASSERT_EQUAL(cvConvertDoubles(converter, doubles, 1, doubles+1), 
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles, 1, doubles+1), 
 	doubles+1);
     CU_ASSERT_TRUE(areCloseDoubles(doubles[1], 0));
     floats[0] = 0; floats[1] = 1000;
-    CU_ASSERT_EQUAL(cvConvertFloats(converter, floats+1, 1, floats), floats);
+    CU_ASSERT_EQUAL(cv_convert_floats(converter, floats+1, 1, floats), floats);
     CU_ASSERT_TRUE(areCloseFloats(floats[0], 1000));
     doubles[0] = 0; doubles[1] = 1000;
-    CU_ASSERT_EQUAL(cvConvertDoubles(converter, doubles+1, 1, doubles), 
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles+1, 1, doubles), 
 	doubles);
     CU_ASSERT_TRUE(areCloseDoubles(doubles[0], 1000));
-    cvFree(converter);
+    cv_free(converter);
 
-    day = utScale(86400, second);
+    day = ut_scale(86400, second);
     CU_ASSERT_PTR_NOT_NULL_FATAL(day);
-    daysSinceTheEpoch = utOffsetByTime(day, utEncodeTime(1970, 1, 1, 0, 0, 0));
-    utFree(day);
+    daysSinceTheEpoch = ut_offset_by_time(day, ut_encode_time(1970, 1, 1, 0, 0, 0));
+    ut_free(day);
     CU_ASSERT_PTR_NOT_NULL_FATAL(daysSinceTheEpoch);
-    nchar = utFormat(daysSinceTheEpoch, buf, sizeof(buf)-1, asciiSymbolDef);
+    nchar = ut_format(daysSinceTheEpoch, buf, sizeof(buf)-1, asciiSymbolDef);
     CU_ASSERT_TRUE_FATAL(nchar > 0);
     CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
     buf[nchar] = 0;
     CU_ASSERT_STRING_EQUAL(buf, "(86400 s) @ 19700101T000000.0000000 UTC");
 
-    converter = utGetConverter(secondsSinceTheEpoch, daysSinceTheEpoch);
+    converter = ut_get_converter(secondsSinceTheEpoch, daysSinceTheEpoch);
     CU_ASSERT_PTR_NOT_NULL(converter);
-    CU_ASSERT_TRUE(areCloseDoubles(cvConvertDouble(converter, 86400), 1));
+    CU_ASSERT_TRUE(areCloseDoubles(cv_convert_double(converter, 86400), 1));
     floats[0] = 0; floats[1] = 86400;
-    CU_ASSERT_EQUAL(cvConvertFloats(converter, floats, 2, floats), floats);
+    CU_ASSERT_EQUAL(cv_convert_floats(converter, floats, 2, floats), floats);
     CU_ASSERT_TRUE(areCloseFloats(floats[0], 0));
     CU_ASSERT_TRUE(areCloseFloats(floats[1], 1));
     doubles[0] = 0; doubles[1] = 86400;
-    CU_ASSERT_EQUAL(cvConvertDoubles(converter, doubles, 2, doubles), doubles);
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles, 2, doubles), doubles);
     CU_ASSERT_TRUE(areCloseDoubles(doubles[0], 0));
     CU_ASSERT_TRUE(areCloseDoubles(doubles[1], 1));
     floats[0] = 0; floats[1] = 86400;
-    CU_ASSERT_EQUAL(cvConvertFloats(converter, floats, 1, floats+1), floats+1);
+    CU_ASSERT_EQUAL(cv_convert_floats(converter, floats, 1, floats+1), floats+1);
     CU_ASSERT_TRUE(areCloseFloats(floats[1], 0));
     doubles[0] = 0; doubles[1] = 86400;
-    CU_ASSERT_EQUAL(cvConvertDoubles(converter, doubles, 1, doubles+1), 
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles, 1, doubles+1), 
 	doubles+1);
     CU_ASSERT_TRUE(areCloseDoubles(doubles[1], 0));
     floats[0] = 0; floats[1] = 86400;
-    CU_ASSERT_EQUAL(cvConvertFloats(converter, floats+1, 1, floats), floats);
+    CU_ASSERT_EQUAL(cv_convert_floats(converter, floats+1, 1, floats), floats);
     CU_ASSERT_TRUE(areCloseFloats(floats[0], 1));
     doubles[0] = 0; doubles[1] = 86400;
-    CU_ASSERT_EQUAL(cvConvertDoubles(converter, doubles+1, 1, doubles), 
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles+1, 1, doubles), 
 	doubles);
     CU_ASSERT_TRUE(areCloseDoubles(doubles[0], 1));
-    cvFree(converter);
+    cv_free(converter);
 
-    converter = utGetConverter(daysSinceTheEpoch, secondsSinceTheEpoch);
+    converter = ut_get_converter(daysSinceTheEpoch, secondsSinceTheEpoch);
     CU_ASSERT_PTR_NOT_NULL(converter);
-    CU_ASSERT_TRUE(areCloseDoubles(cvConvertDouble(converter, 1), 86400));
+    CU_ASSERT_TRUE(areCloseDoubles(cv_convert_double(converter, 1), 86400));
     floats[0] = 0; floats[1] = 1;
-    CU_ASSERT_EQUAL(cvConvertFloats(converter, floats, 2, floats), floats);
+    CU_ASSERT_EQUAL(cv_convert_floats(converter, floats, 2, floats), floats);
     CU_ASSERT_TRUE(areCloseFloats(floats[0], 0));
     CU_ASSERT_TRUE(areCloseFloats(floats[1], 86400));
     doubles[0] = 0; doubles[1] = 1;
-    CU_ASSERT_EQUAL(cvConvertDoubles(converter, doubles, 2, doubles), doubles);
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles, 2, doubles), doubles);
     CU_ASSERT_TRUE(areCloseDoubles(doubles[0], 0));
     CU_ASSERT_TRUE(areCloseDoubles(doubles[1], 86400));
     floats[0] = 0; floats[1] = 1;
-    CU_ASSERT_EQUAL(cvConvertFloats(converter, floats, 1, floats+1), floats+1);
+    CU_ASSERT_EQUAL(cv_convert_floats(converter, floats, 1, floats+1), floats+1);
     CU_ASSERT_TRUE(areCloseFloats(floats[1], 0));
     doubles[0] = 0; doubles[1] = 1;
-    CU_ASSERT_EQUAL(cvConvertDoubles(converter, doubles, 1, doubles+1), 
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles, 1, doubles+1), 
 	doubles+1);
     CU_ASSERT_TRUE(areCloseDoubles(doubles[1], 0));
     floats[0] = 0; floats[1] = 1;
-    CU_ASSERT_EQUAL(cvConvertFloats(converter, floats+1, 1, floats), floats);
+    CU_ASSERT_EQUAL(cv_convert_floats(converter, floats+1, 1, floats), floats);
     CU_ASSERT_TRUE(areCloseFloats(floats[0], 86400));
     doubles[0] = 0; doubles[1] = 1;
-    CU_ASSERT_EQUAL(cvConvertDoubles(converter, doubles+1, 1, doubles), 
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles+1, 1, doubles), 
 	doubles);
     CU_ASSERT_TRUE(areCloseDoubles(doubles[0], 86400));
-    cvFree(converter);
+    cv_free(converter);
 
-    utFree(daysSinceTheEpoch);
+    ut_free(daysSinceTheEpoch);
 
-    CU_ASSERT_PTR_NULL(utOffsetByTime(NULL, utEncodeTime(0, 0, 0, 0, 0, 0)));
-    CU_ASSERT_EQUAL(utGetStatus(), UT_NULL_ARG);
+    CU_ASSERT_PTR_NULL(ut_offset_by_time(NULL, ut_encode_time(0, 0, 0, 0, 0, 0)));
+    CU_ASSERT_EQUAL(ut_get_status(), UT_NULL_ARG);
 }
 
 
@@ -1381,19 +1381,19 @@ test_utSetEncoding(void)
     char		buf[80];
     int			nchar;
 
-    nchar = utFormat(watt, buf, sizeof(buf)-1, asciiSymbolDef);
+    nchar = ut_format(watt, buf, sizeof(buf)-1, asciiSymbolDef);
     CU_ASSERT_TRUE_FATAL(nchar > 0);
     CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
     buf[nchar] = 0;
     CU_ASSERT_STRING_EQUAL(buf, "kg.m2.s-3");
 
-    nchar = utFormat(watt, buf, sizeof(buf)-1, latin1SymbolDef);
+    nchar = ut_format(watt, buf, sizeof(buf)-1, latin1SymbolDef);
     CU_ASSERT_TRUE_FATAL(nchar > 0);
     CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
     buf[nchar] = 0;
     CU_ASSERT_STRING_EQUAL(buf, "m\xb2\xb7kg/s\xb3");
 
-    nchar = utFormat(watt, buf, sizeof(buf)-1, utf8SymbolDef);
+    nchar = ut_format(watt, buf, sizeof(buf)-1, utf8SymbolDef);
     CU_ASSERT_TRUE_FATAL(nchar > 0);
     CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
     buf[nchar] = 0;
@@ -1405,278 +1405,278 @@ test_utSetEncoding(void)
 static void
 test_utCompare(void)
 {
-    CU_ASSERT_NOT_EQUAL(utCompare(kilogram, meter), 0);
-    CU_ASSERT_NOT_EQUAL(utCompare(meter, radian), 0);
-    CU_ASSERT_NOT_EQUAL(utCompare(radian, kelvin), 0);
-    CU_ASSERT_NOT_EQUAL(utCompare(kelvin, second), 0);
-    CU_ASSERT_NOT_EQUAL(utCompare(second, minute), 0);
-    CU_ASSERT_NOT_EQUAL(utCompare(minute, kilometer), 0);
-    CU_ASSERT_NOT_EQUAL(utCompare(kilometer, rankine), 0);
-    CU_ASSERT_NOT_EQUAL(utCompare(rankine, celsius), 0);
-    CU_ASSERT_NOT_EQUAL(utCompare(celsius, fahrenheit), 0);
-    CU_ASSERT_NOT_EQUAL(utCompare(fahrenheit, watt), 0);
-    CU_ASSERT_NOT_EQUAL(utCompare(watt, cubicMicron), 0);
-    CU_ASSERT_NOT_EQUAL(utCompare(BZ, cubicMicron), 0);
-    CU_ASSERT_NOT_EQUAL(utCompare(cubicMicron, dBZ), 0);
-    CU_ASSERT_NOT_EQUAL(utCompare(dBZ, secondsSinceTheEpoch), 0);
-    CU_ASSERT_NOT_EQUAL(utCompare(secondsSinceTheEpoch, hertz), 0);
-    CU_ASSERT_NOT_EQUAL(utCompare(hertz, megahertz), 0);
-    CU_ASSERT_NOT_EQUAL(utCompare(megahertz, kilogram), 0);
-    CU_ASSERT_NOT_EQUAL(utCompare(dBZ, meter), 0);
+    CU_ASSERT_NOT_EQUAL(ut_compare(kilogram, meter), 0);
+    CU_ASSERT_NOT_EQUAL(ut_compare(meter, radian), 0);
+    CU_ASSERT_NOT_EQUAL(ut_compare(radian, kelvin), 0);
+    CU_ASSERT_NOT_EQUAL(ut_compare(kelvin, second), 0);
+    CU_ASSERT_NOT_EQUAL(ut_compare(second, minute), 0);
+    CU_ASSERT_NOT_EQUAL(ut_compare(minute, kilometer), 0);
+    CU_ASSERT_NOT_EQUAL(ut_compare(kilometer, rankine), 0);
+    CU_ASSERT_NOT_EQUAL(ut_compare(rankine, celsius), 0);
+    CU_ASSERT_NOT_EQUAL(ut_compare(celsius, fahrenheit), 0);
+    CU_ASSERT_NOT_EQUAL(ut_compare(fahrenheit, watt), 0);
+    CU_ASSERT_NOT_EQUAL(ut_compare(watt, cubicMicron), 0);
+    CU_ASSERT_NOT_EQUAL(ut_compare(BZ, cubicMicron), 0);
+    CU_ASSERT_NOT_EQUAL(ut_compare(cubicMicron, dBZ), 0);
+    CU_ASSERT_NOT_EQUAL(ut_compare(dBZ, secondsSinceTheEpoch), 0);
+    CU_ASSERT_NOT_EQUAL(ut_compare(secondsSinceTheEpoch, hertz), 0);
+    CU_ASSERT_NOT_EQUAL(ut_compare(hertz, megahertz), 0);
+    CU_ASSERT_NOT_EQUAL(ut_compare(megahertz, kilogram), 0);
+    CU_ASSERT_NOT_EQUAL(ut_compare(dBZ, meter), 0);
 
-    CU_ASSERT_EQUAL(utCompare(NULL, meter), -1);
-    CU_ASSERT_EQUAL(utCompare(NULL, NULL), 0);
-    CU_ASSERT_EQUAL(utCompare(meter, NULL), 1);
+    CU_ASSERT_EQUAL(ut_compare(NULL, meter), -1);
+    CU_ASSERT_EQUAL(ut_compare(NULL, NULL), 0);
+    CU_ASSERT_EQUAL(ut_compare(meter, NULL), 1);
 }
 
 
 static void
 test_parsing(void)
 {
-    utUnit*	unit;
+    ut_unit*	unit;
     char*	spec;
 
     spec = "m";
-    unit = utParse(unitSystem, spec, UT_ASCII);
+    unit = ut_parse(unitSystem, spec, UT_ASCII);
     CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(utGetParseLength(), strlen(spec));
-    CU_ASSERT_EQUAL(utCompare(unit, meter), 0);
-    utFree(unit);
+    CU_ASSERT_EQUAL(ut_get_parse_length(), strlen(spec));
+    CU_ASSERT_EQUAL(ut_compare(unit, meter), 0);
+    ut_free(unit);
 
     spec = "kg.m";
-    unit = utParse(unitSystem, spec, UT_ASCII);
+    unit = ut_parse(unitSystem, spec, UT_ASCII);
     CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(utGetParseLength(), strlen(spec));
-    utFree(unit);
+    CU_ASSERT_EQUAL(ut_get_parse_length(), strlen(spec));
+    ut_free(unit);
 
     spec = "kg m";
-    unit = utParse(unitSystem, spec, UT_ASCII);
+    unit = ut_parse(unitSystem, spec, UT_ASCII);
     CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(utGetParseLength(), strlen(spec));
-    utFree(unit);
+    CU_ASSERT_EQUAL(ut_get_parse_length(), strlen(spec));
+    ut_free(unit);
 
     spec = "1/s";
-    unit = utParse(unitSystem, spec, UT_ASCII);
+    unit = ut_parse(unitSystem, spec, UT_ASCII);
     CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(utGetParseLength(), strlen(spec));
-    CU_ASSERT_EQUAL(utCompare(unit, hertz), 0);
-    utFree(unit);
+    CU_ASSERT_EQUAL(ut_get_parse_length(), strlen(spec));
+    CU_ASSERT_EQUAL(ut_compare(unit, hertz), 0);
+    ut_free(unit);
 
     spec = "kg.m2.s-3";
-    unit = utParse(unitSystem, spec, UT_ASCII);
+    unit = ut_parse(unitSystem, spec, UT_ASCII);
     CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(utGetParseLength(), strlen(spec));
-    CU_ASSERT_EQUAL(utCompare(unit, watt), 0);
-    utFree(unit);
+    CU_ASSERT_EQUAL(ut_get_parse_length(), strlen(spec));
+    CU_ASSERT_EQUAL(ut_compare(unit, watt), 0);
+    ut_free(unit);
 
     spec = "kg.m2/s3";
-    unit = utParse(unitSystem, spec, UT_ASCII);
+    unit = ut_parse(unitSystem, spec, UT_ASCII);
     CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(utGetParseLength(), strlen(spec));
-    CU_ASSERT_EQUAL(utCompare(unit, watt), 0);
-    utFree(unit);
+    CU_ASSERT_EQUAL(ut_get_parse_length(), strlen(spec));
+    CU_ASSERT_EQUAL(ut_compare(unit, watt), 0);
+    ut_free(unit);
 
     spec = "s-3.m2.kg";
-    unit = utParse(unitSystem, spec, UT_ASCII);
+    unit = ut_parse(unitSystem, spec, UT_ASCII);
     CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(utGetParseLength(), strlen(spec));
-    CU_ASSERT_EQUAL(utCompare(unit, watt), 0);
-    utFree(unit);
+    CU_ASSERT_EQUAL(ut_get_parse_length(), strlen(spec));
+    CU_ASSERT_EQUAL(ut_compare(unit, watt), 0);
+    ut_free(unit);
 
     spec = "(kg.m2/s3)";
-    unit = utParse(unitSystem, spec, UT_ASCII);
+    unit = ut_parse(unitSystem, spec, UT_ASCII);
     CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(utGetParseLength(), strlen(spec));
-    CU_ASSERT_EQUAL(utCompare(unit, watt), 0);
-    utFree(unit);
+    CU_ASSERT_EQUAL(ut_get_parse_length(), strlen(spec));
+    CU_ASSERT_EQUAL(ut_compare(unit, watt), 0);
+    ut_free(unit);
 
     spec = "(kg.m2/s3)^1";
-    unit = utParse(unitSystem, spec, UT_ASCII);
+    unit = ut_parse(unitSystem, spec, UT_ASCII);
     CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(utGetParseLength(), strlen(spec));
-    CU_ASSERT_EQUAL(utCompare(unit, watt), 0);
-    utFree(unit);
+    CU_ASSERT_EQUAL(ut_get_parse_length(), strlen(spec));
+    CU_ASSERT_EQUAL(ut_compare(unit, watt), 0);
+    ut_free(unit);
 
     spec = "kg.(m/s)^2.s-1";
-    unit = utParse(unitSystem, spec, UT_ASCII);
+    unit = ut_parse(unitSystem, spec, UT_ASCII);
     CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(utGetParseLength(), strlen(spec));
-    CU_ASSERT_EQUAL(utCompare(unit, watt), 0);
-    utFree(unit);
+    CU_ASSERT_EQUAL(ut_get_parse_length(), strlen(spec));
+    CU_ASSERT_EQUAL(ut_compare(unit, watt), 0);
+    ut_free(unit);
 
     spec = "1000 m";
-    unit = utParse(unitSystem, spec, UT_ASCII);
+    unit = ut_parse(unitSystem, spec, UT_ASCII);
     CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(utGetParseLength(), strlen(spec));
-    CU_ASSERT_EQUAL(utCompare(unit, kilometer), 0);
-    utFree(unit);
+    CU_ASSERT_EQUAL(ut_get_parse_length(), strlen(spec));
+    CU_ASSERT_EQUAL(ut_compare(unit, kilometer), 0);
+    ut_free(unit);
 
     spec = "(1000)(m)";
-    unit = utParse(unitSystem, spec, UT_ASCII);
+    unit = ut_parse(unitSystem, spec, UT_ASCII);
     CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(utGetParseLength(), strlen(spec));
-    CU_ASSERT_EQUAL(utCompare(unit, kilometer), 0);
-    utFree(unit);
+    CU_ASSERT_EQUAL(ut_get_parse_length(), strlen(spec));
+    CU_ASSERT_EQUAL(ut_compare(unit, kilometer), 0);
+    ut_free(unit);
 
     spec = "(K/1.8) @ 459.67";
-    unit = utParse(unitSystem, spec, UT_ASCII);
+    unit = ut_parse(unitSystem, spec, UT_ASCII);
     CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(utGetParseLength(), strlen(spec));
-    CU_ASSERT_EQUAL(utCompare(unit, fahrenheit), 0);
-    utFree(unit);
+    CU_ASSERT_EQUAL(ut_get_parse_length(), strlen(spec));
+    CU_ASSERT_EQUAL(ut_compare(unit, fahrenheit), 0);
+    ut_free(unit);
 
     spec = "METER";
-    unit = utParse(unitSystem, spec, UT_ASCII);
+    unit = ut_parse(unitSystem, spec, UT_ASCII);
     CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(utGetParseLength(), strlen(spec));
-    CU_ASSERT_EQUAL(utCompare(unit, meter), 0);
-    utFree(unit);
+    CU_ASSERT_EQUAL(ut_get_parse_length(), strlen(spec));
+    CU_ASSERT_EQUAL(ut_compare(unit, meter), 0);
+    ut_free(unit);
 
     spec = "s@19700101T000000 UTC";
-    unit = utParse(unitSystem, spec, UT_ASCII);
+    unit = ut_parse(unitSystem, spec, UT_ASCII);
     CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(utGetParseLength(), strlen(spec));
-    CU_ASSERT_EQUAL(utCompare(unit, secondsSinceTheEpoch), 0);
-    utFree(unit);
+    CU_ASSERT_EQUAL(ut_get_parse_length(), strlen(spec));
+    CU_ASSERT_EQUAL(ut_compare(unit, secondsSinceTheEpoch), 0);
+    ut_free(unit);
 
     spec = "s @ 19700101T000000";
-    unit = utParse(unitSystem, spec, UT_ASCII);
+    unit = ut_parse(unitSystem, spec, UT_ASCII);
     CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(utGetParseLength(), strlen(spec));
-    CU_ASSERT_EQUAL(utCompare(unit, secondsSinceTheEpoch), 0);
-    utFree(unit);
+    CU_ASSERT_EQUAL(ut_get_parse_length(), strlen(spec));
+    CU_ASSERT_EQUAL(ut_compare(unit, secondsSinceTheEpoch), 0);
+    ut_free(unit);
 
     spec = "s @ 1970-01-01 00:00:00";
-    unit = utParse(unitSystem, spec, UT_ASCII);
+    unit = ut_parse(unitSystem, spec, UT_ASCII);
     CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(utGetParseLength(), strlen(spec));
-    CU_ASSERT_EQUAL(utCompare(unit, secondsSinceTheEpoch), 0);
-    utFree(unit);
+    CU_ASSERT_EQUAL(ut_get_parse_length(), strlen(spec));
+    CU_ASSERT_EQUAL(ut_compare(unit, secondsSinceTheEpoch), 0);
+    ut_free(unit);
 
     spec = "kg·m²/s³";
-    unit = utParse(unitSystem, spec, UT_LATIN1);
+    unit = ut_parse(unitSystem, spec, UT_LATIN1);
     CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(utGetParseLength(), strlen(spec));
-    CU_ASSERT_EQUAL(utCompare(unit, watt), 0);
-    utFree(unit);
+    CU_ASSERT_EQUAL(ut_get_parse_length(), strlen(spec));
+    CU_ASSERT_EQUAL(ut_compare(unit, watt), 0);
+    ut_free(unit);
 
     spec = "(kg)(m)^2/(s)^3";
-    unit = utParse(unitSystem, spec, UT_ASCII);
+    unit = ut_parse(unitSystem, spec, UT_ASCII);
     CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(utGetParseLength(), strlen(spec));
-    CU_ASSERT_EQUAL(utCompare(unit, watt), 0);
-    utFree(unit);
+    CU_ASSERT_EQUAL(ut_get_parse_length(), strlen(spec));
+    CU_ASSERT_EQUAL(ut_compare(unit, watt), 0);
+    ut_free(unit);
 
     spec = "kg\xc2\xb7m\xc2\xb2/s\xc2\xb3";
-    unit = utParse(unitSystem, spec, UT_UTF8);
+    unit = ut_parse(unitSystem, spec, UT_UTF8);
     CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(utGetParseLength(), strlen(spec));
-    CU_ASSERT_EQUAL(utCompare(unit, watt), 0);
-    utFree(unit);
+    CU_ASSERT_EQUAL(ut_get_parse_length(), strlen(spec));
+    CU_ASSERT_EQUAL(ut_compare(unit, watt), 0);
+    ut_free(unit);
 
     spec = "0.1 lg(re (1e-6 m)^3)";
-    unit = utParse(unitSystem, spec, UT_ASCII);
+    unit = ut_parse(unitSystem, spec, UT_ASCII);
     CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(utGetParseLength(), strlen(spec));
-    CU_ASSERT_EQUAL(utCompare(unit, dBZ), 0);
-    utFree(unit);
+    CU_ASSERT_EQUAL(ut_get_parse_length(), strlen(spec));
+    CU_ASSERT_EQUAL(ut_compare(unit, dBZ), 0);
+    ut_free(unit);
 
     {
         char    buf[] = " (K/1.8) @ 459.67 ";
 
-        (void)utTrim(buf, UT_ASCII);
+        (void)ut_trim(buf, UT_ASCII);
 
-        unit = utParse(unitSystem, buf, UT_ASCII);
+        unit = ut_parse(unitSystem, buf, UT_ASCII);
         CU_ASSERT_PTR_NOT_NULL(unit);
-        CU_ASSERT_EQUAL(utGetParseLength(), strlen(buf));
-        CU_ASSERT_EQUAL(utCompare(unit, fahrenheit), 0);
-        utFree(unit);
+        CU_ASSERT_EQUAL(ut_get_parse_length(), strlen(buf));
+        CU_ASSERT_EQUAL(ut_compare(unit, fahrenheit), 0);
+        ut_free(unit);
     }
 
     spec = "1";
-    unit = utParse(unitSystem, spec, UT_ASCII);
+    unit = ut_parse(unitSystem, spec, UT_ASCII);
     CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(utGetParseLength(), strlen(spec));
-    CU_ASSERT_EQUAL(utCompare(utGetDimensionlessUnitOne(unitSystem), unit), 0);
-    utFree(unit);
+    CU_ASSERT_EQUAL(ut_get_parse_length(), strlen(spec));
+    CU_ASSERT_EQUAL(ut_compare(ut_get_dimensionless_unit_one(unitSystem), unit), 0);
+    ut_free(unit);
 
     spec = "3.141592653589793238462643383279";
-    unit = utParse(unitSystem, spec, UT_ASCII);
+    unit = ut_parse(unitSystem, spec, UT_ASCII);
     CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(utGetParseLength(), strlen(spec));
-    utFree(unit);
+    CU_ASSERT_EQUAL(ut_get_parse_length(), strlen(spec));
+    ut_free(unit);
 
     spec = "";
-    unit = utParse(unitSystem, spec, UT_ASCII);
+    unit = ut_parse(unitSystem, spec, UT_ASCII);
     CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(utGetParseLength(), strlen(spec));
-    CU_ASSERT_EQUAL(utCompare(utGetDimensionlessUnitOne(unitSystem), unit), 0);
-    utFree(unit);
+    CU_ASSERT_EQUAL(ut_get_parse_length(), strlen(spec));
+    CU_ASSERT_EQUAL(ut_compare(ut_get_dimensionless_unit_one(unitSystem), unit), 0);
+    ut_free(unit);
 
     spec = "km";
-    unit = utParse(unitSystem, spec, UT_ASCII);
+    unit = ut_parse(unitSystem, spec, UT_ASCII);
     CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(utGetParseLength(), strlen(spec));
-    CU_ASSERT_EQUAL(utCompare(kilometer, unit), 0);
-    utFree(unit);
+    CU_ASSERT_EQUAL(ut_get_parse_length(), strlen(spec));
+    CU_ASSERT_EQUAL(ut_compare(kilometer, unit), 0);
+    ut_free(unit);
 
     spec = "µm";
-    unit = utParse(unitSystem, spec, UT_LATIN1);
+    unit = ut_parse(unitSystem, spec, UT_LATIN1);
     CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(utGetParseLength(), strlen(spec));
-    CU_ASSERT_EQUAL(utCompare(unit, micron), 0);
-    utFree(unit);
+    CU_ASSERT_EQUAL(ut_get_parse_length(), strlen(spec));
+    CU_ASSERT_EQUAL(ut_compare(unit, micron), 0);
+    ut_free(unit);
 
     spec = "µmegaHz";
-    unit = utParse(unitSystem, spec, UT_LATIN1);
+    unit = ut_parse(unitSystem, spec, UT_LATIN1);
     CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(utGetParseLength(), strlen(spec));
-    CU_ASSERT_EQUAL(utCompare(unit, hertz), 0);
-    utFree(unit);
+    CU_ASSERT_EQUAL(ut_get_parse_length(), strlen(spec));
+    CU_ASSERT_EQUAL(ut_compare(unit, hertz), 0);
+    ut_free(unit);
 
     spec = "MeGaµHertz";
-    unit = utParse(unitSystem, spec, UT_LATIN1);
+    unit = ut_parse(unitSystem, spec, UT_LATIN1);
     CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(utGetParseLength(), strlen(spec));
-    CU_ASSERT_EQUAL(utCompare(unit, hertz), 0);
-    utFree(unit);
+    CU_ASSERT_EQUAL(ut_get_parse_length(), strlen(spec));
+    CU_ASSERT_EQUAL(ut_compare(unit, hertz), 0);
+    ut_free(unit);
 }
 
 
 static void
 test_visitor(void)
 {
-    CU_ASSERT_EQUAL(utAcceptVisitor(NULL, NULL, NULL), UT_NULL_ARG);
+    CU_ASSERT_EQUAL(ut_accept_visitor(NULL, NULL, NULL), UT_NULL_ARG);
 }
 
 
 static void
 test_xml(void)
 {
-    utSystem*           xmlSystem;
+    ut_system*           xmlSystem;
     glob_t              files;
     int                 status;
 
     chdir(getenv("srcdir"));
 
-    utSetErrorMessageHandler(utWriteToStderr);
-    xmlSystem = utReadXml("udunits2.xml");
+    ut_set_error_message_handler(ut_write_to_stderr);
+    xmlSystem = ut_read_xml("udunits2.xml");
     CU_ASSERT_PTR_NOT_NULL(xmlSystem);
-    utFreeSystem(xmlSystem);
+    ut_free_system(xmlSystem);
 
-    utSetErrorMessageHandler(utIgnore);
+    ut_set_error_message_handler(ut_ignore);
 
-    xmlSystem = utReadXml(NULL);
+    xmlSystem = ut_read_xml(NULL);
     if (xmlSystem == NULL) {
-        CU_ASSERT_EQUAL(utGetStatus(), UT_OPEN_DEFAULT);
+        CU_ASSERT_EQUAL(ut_get_status(), UT_OPEN_DEFAULT);
     }
     else {
-        utFreeSystem(xmlSystem);
+        ut_free_system(xmlSystem);
     }
 
-    xmlSystem = utReadXml("xmlTests/noExist.xml");
+    xmlSystem = ut_read_xml("xmlTests/noExist.xml");
     CU_ASSERT_PTR_NULL(xmlSystem);
-    CU_ASSERT_EQUAL(utGetStatus(), UT_OPEN_ARG);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_OPEN_ARG);
 
     status = glob("xmlTests/*.xml", 0, NULL, &files);
 
@@ -1687,21 +1687,21 @@ test_xml(void)
         size_t  i;
 
         for (i = 0; i < files.gl_pathc; ++i) {
-            xmlSystem = utReadXml(files.gl_pathv[i]);
+            xmlSystem = ut_read_xml(files.gl_pathv[i]);
 
             CU_ASSERT(xmlSystem == NULL);
 
             if (xmlSystem == NULL) {
-                CU_ASSERT(utGetStatus() == UT_PARSE);
+                CU_ASSERT(ut_get_status() == UT_PARSE);
 
-                if (utGetStatus() != UT_PARSE)
+                if (ut_get_status() != UT_PARSE)
                     (void)fprintf(stderr, "File didn't fail: \"%s\"\n",
                         files.gl_pathv[i]);
             }
             else {
                 (void)fprintf(stderr, "File didn't fail: \"%s\"\n",
                     files.gl_pathv[i]);
-                utFreeSystem(xmlSystem);
+                ut_free_system(xmlSystem);
             }
         }
     }
@@ -1711,9 +1711,9 @@ test_xml(void)
     /*
      * Test again to ensure any persistent state doesn't interfere.
      */
-    xmlSystem = utReadXml("udunits2.xml");
+    xmlSystem = ut_read_xml("udunits2.xml");
     CU_ASSERT_PTR_NOT_NULL(xmlSystem);
-    utFreeSystem(xmlSystem);
+    ut_free_system(xmlSystem);
 }
 
 
@@ -1763,7 +1763,7 @@ main(
 	    /*
 	    */
 
-	    utSetErrorMessageHandler(utIgnore);
+	    ut_set_error_message_handler(ut_ignore);
 
 	    if (CU_basic_run_tests() == CUE_SUCCESS) {
 		if (CU_get_number_of_tests_failed() == 0)

@@ -1,7 +1,7 @@
 /*
  * lex(1) specification for tokens for the Unidata units package, UDUNITS2.
  *
- * $Id: scanner.l,v 1.5 2007/01/12 20:08:15 steve Exp $
+ * $Id: scanner.l,v 1.6 2007/04/11 20:28:17 steve Exp $
  */
 
 %option noyywrap
@@ -226,7 +226,7 @@ logref			\({space}*[Rr][Ee](:{space})?{space}*
 
     (void) sscanf((char*)yytext, "%d-%d-%d", &year, &month, &day);
 
-    yylval.rval	= utEncodeDate(year, month, day);
+    yylval.rval	= ut_encode_date(year, month, day);
 
     BEGIN(initial_condition);
     return DATE;
@@ -239,7 +239,7 @@ logref			\({space}*[Rr][Ee](:{space})?{space}*
 
     (void) sscanf((char*)yytext, "%d:%d:%lf", &hour, &minute, &second);
 
-    yylval.rval	= utEncodeClock(hour, minute, second);
+    yylval.rval	= ut_encode_clock(hour, minute, second);
 
     BEGIN(initial_condition);
     return CLOCK;
@@ -256,7 +256,7 @@ logref			\({space}*[Rr][Ee](:{space})?{space}*
     (void) sscanf((char*)yytext, "%4d%2d%2dT%2d%2d%lf", &year, &month, &day,
 	&hour, &minute, &second);
 
-    yylval.rval	= utEncodeTime(year, month, day, hour, minute, second);
+    yylval.rval	= ut_encode_time(year, month, day, hour, minute, second);
 
     BEGIN(initial_condition);
     return TIMESTAMP;

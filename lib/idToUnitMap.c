@@ -1,7 +1,7 @@
 /*
  * Identifier-to-unit map.
  *
- * $Id: idToUnitMap.c,v 1.7 2007/03/30 21:25:18 steve Exp $
+ * $Id: idToUnitMap.c,v 1.8 2007/04/11 20:28:17 steve Exp $
  */
 
 /*LINTLIBRARY*/
@@ -100,13 +100,13 @@ itumFree(
  *	UT_EXISTS	"id" already maps to a different unit.
  *	UT_SUCCESS	Success.
  */
-static utStatus
+static ut_status
 itumAdd(
     IdToUnitMap*	map,
     const char* const	id,
-    utUnit* const	unit)
+    ut_unit* const	unit)
 {
-    utStatus		status;
+    ut_status		status;
     UnitAndId*		targetEntry;
 
     assert(map != NULL);
@@ -123,11 +123,11 @@ itumAdd(
 	    status = UT_OS;
 	}
 	else {
-	    if (utCompare((*treeEntry)->unit, unit) == 0) {
+	    if (ut_compare((*treeEntry)->unit, unit) == 0) {
 		status = UT_SUCCESS;
 	    }
 	    else {
-		utHandleErrorMessage(
+		ut_handle_error_message(
 		    "\"%s\" maps to existing but different unit", id);
 		status = UT_EXISTS;
 	    }
@@ -150,7 +150,7 @@ itumAdd(
  * Returns:
  *	UT_SUCCESS	Success.
  */
-static utStatus
+static ut_status
 itumRemove(
     IdToUnitMap*	map,
     const char* const	id)
@@ -223,14 +223,14 @@ itumFind(
  *	UT_OS		Operating-sytem failure.  See "errno".
  *	UT_SUCCESS	Success.
  */
-static utStatus
+static ut_status
 mapIdToUnit(
     SystemMap** const	systemMap,
     const char* const	id,
-    utUnit* const	unit,
+    ut_unit* const	unit,
     int			(*compare)(const void*, const void*))
 {
-    utStatus		status = UT_SUCCESS;
+    ut_status		status = UT_SUCCESS;
 
     if (id == NULL) {
 	status = UT_BAD_ID;
@@ -239,7 +239,7 @@ mapIdToUnit(
 	status = UT_NULL_ARG;
     }
     else {
-	utSystem*	system = utGetSystem(unit);
+	ut_system*	system = ut_get_system(unit);
 
 	if (*systemMap == NULL) {
 	    *systemMap = smNew();
@@ -286,13 +286,13 @@ mapIdToUnit(
  *	UT_NULL_ARG	"compare" is NULL.
  *	UT_SUCCESS	Success.
  */
-static utStatus
+static ut_status
 unmapId(
     SystemMap* const	systemMap,
     const char* const	id,
-    utSystem*		system)
+    ut_system*		system)
 {
-    utStatus		status;
+    ut_status		status;
 
     if (systemMap == NULL || id == NULL || system == NULL) {
 	status = UT_NULL_ARG;
@@ -325,21 +325,21 @@ unmapId(
  *	UT_EXISTS	"name" already maps to a different unit.
  *	UT_SUCCESS	Success.
  */
-utStatus
-utMapNameToUnit(
+ut_status
+ut_map_name_to_unit(
     const char* const	name,
-    utUnit* const	unit)
+    ut_unit* const	unit)
 {
-    utSetStatus(
+    ut_set_status(
 	mapIdToUnit(&systemToNameToUnit, name, unit, insensitiveCompare));
 
-    return utGetStatus();
+    return ut_get_status();
 }
 
 
 /*
  * Removes a mapping from a name to a unit.  After this function,
- * utGetUnitByName(system,name) will no longer return a unit.
+ * ut_get_unit_by_name(system,name) will no longer return a unit.
  *
  * Arguments:
  *	system		The unit-system to which the unit belongs.
@@ -348,14 +348,14 @@ utMapNameToUnit(
  *	UT_SUCCESS	Success.
  *	UT_NULL_ARG	"system" or "name" is NULL.
  */
-utStatus
-utUnmapNameToUnit(
-    utSystem*		system,
+ut_status
+ut_unmap_name_to_unit(
+    ut_system*		system,
     const char* const	name)
 {
-    utSetStatus(unmapId(systemToNameToUnit, name, system));
+    ut_set_status(unmapId(systemToNameToUnit, name, system));
 
-    return utGetStatus();
+    return ut_get_status();
 }
 
 
@@ -373,21 +373,21 @@ utUnmapNameToUnit(
  *	UT_EXISTS	"symbol" already maps to a different unit.
  *	UT_SUCCESS	Success.
  */
-utStatus
-utMapSymbolToUnit(
+ut_status
+ut_map_symbol_to_unit(
     const char* const	symbol,
-    utUnit* const	unit)
+    ut_unit* const	unit)
 {
-    utSetStatus(
+    ut_set_status(
 	mapIdToUnit(&systemToSymbolToUnit, symbol, unit, sensitiveCompare));
 
-    return utGetStatus();
+    return ut_get_status();
 }
 
 
 /*
  * Removes a mapping from a symbol to a unit.  After this function,
- * utGetUnitBySymbol(system,symbol) will no longer return a unit.
+ * ut_get_unit_by_symbol(system,symbol) will no longer return a unit.
  *
  * Arguments:
  *	system		The unit-system to which the unit belongs.
@@ -396,14 +396,14 @@ utMapSymbolToUnit(
  *	UT_SUCCESS	Success.
  *	UT_NULL_ARG	"system" or "symbol" is NULL.
  */
-utStatus
-utUnmapSymbolToUnit(
-    utSystem*		system,
+ut_status
+ut_unmap_symbol_to_unit(
+    ut_system*		system,
     const char* const	symbol)
 {
-    utSetStatus(unmapId(systemToSymbolToUnit, symbol, system));
+    ut_set_status(unmapId(systemToSymbolToUnit, symbol, system));
 
-    return utGetStatus();
+    return ut_get_status();
 }
 
 
@@ -416,27 +416,27 @@ utUnmapSymbolToUnit(
  *	system		Pointer to the unit-system.
  *	id		Pointer to the identifier.
  * Returns:
- *	NULL	Failure.  "utGetStatus()" will be:
+ *	NULL	Failure.  "ut_get_status()" will be:
  *		    UT_NULL_ARG	"system" is NULL.
  *		    UT_BAD_ID		"id" is NULL.
  *	else	Pointer to the unit in "system" with the identifier "id".
- *		Should be passed to utFree() when no longer needed.
+ *		Should be passed to ut_free() when no longer needed.
  */
-static utUnit*
+static ut_unit*
 getUnitById(
     SystemMap* const	systemMap,
-    utSystem* const	system,
+    ut_system* const	system,
     const char* const	id)
 {
-    utUnit*	unit = NULL;		/* failure */
+    ut_unit*	unit = NULL;		/* failure */
 
     if (system == NULL) {
-	utHandleErrorMessage("getUnitById(): NULL unit-system argument");
-	utSetStatus(UT_NULL_ARG);
+	ut_handle_error_message("getUnitById(): NULL unit-system argument");
+	ut_set_status(UT_NULL_ARG);
     }
     else if (id == NULL) {
-	utHandleErrorMessage("getUnitById(): NULL identifier argument");
-	utSetStatus(UT_BAD_ID);
+	ut_handle_error_message("getUnitById(): NULL identifier argument");
+	ut_set_status(UT_BAD_ID);
     }
     else if (systemMap != NULL) {
 	IdToUnitMap** const	idToUnit =
@@ -446,7 +446,7 @@ getUnitById(
 	    const UnitAndId*	uai = itumFind(*idToUnit, id);
 
 	    if (uai != NULL)
-		unit = utClone(uai->unit);
+		unit = ut_clone(uai->unit);
 	}
     }					/* valid arguments */
 
@@ -462,20 +462,20 @@ getUnitById(
  *	system	Pointer to the unit-system.
  *	name	Pointer to the name of the unit to be returned.
  * Returns:
- *	NULL	Failure.  "utGetStatus()" will be
+ *	NULL	Failure.  "ut_get_status()" will be
  *		    UT_SUCCESS		"name" doesn't map to a unit of
  *					"system".
  *		    UT_NULL_ARG		"system" or "name" is NULL.
  *	else	Pointer to the unit of the unit-system with the given name.
- *		The pointer should be passed to utFree() when the unit is
+ *		The pointer should be passed to ut_free() when the unit is
  *		no longer needed.
  */
-utUnit*
-utGetUnitByName(
-    utSystem* const	system,
+ut_unit*
+ut_get_unit_by_name(
+    ut_system* const	system,
     const char* const	name)
 {
-    utSetStatus(UT_SUCCESS);
+    ut_set_status(UT_SUCCESS);
 
     return getUnitById(systemToNameToUnit, system, name);
 }
@@ -490,20 +490,20 @@ utGetUnitByName(
  *	symbol		Pointer to the symbol associated with the unit to be
  *			returned.
  * Returns:
- *	NULL	Failure.  "utGetStatus()" will be
+ *	NULL	Failure.  "ut_get_status()" will be
  *		    UT_SUCCESS		"symbol" doesn't map to a unit of
  *					"system".
  *		    UT_NULL_ARG		"system" or "symbol" is NULL.
  *	else	Pointer to the unit in the unit-system with the given symbol.
- *		The pointer should be passed to utFree() when the unit is no
+ *		The pointer should be passed to ut_free() when the unit is no
  *		longer needed.
  */
-utUnit*
-utGetUnitBySymbol(
-    utSystem* const	system,
+ut_unit*
+ut_get_unit_by_symbol(
+    ut_system* const	system,
     const char* const	symbol)
 {
-    utSetStatus(UT_SUCCESS);
+    ut_set_status(UT_SUCCESS);
 
     return getUnitById(systemToSymbolToUnit, system, symbol);
 }
@@ -518,7 +518,7 @@ utGetUnitBySymbol(
  */
 void
 itumFreeSystem(
-    utSystem*	system)
+    ut_system*	system)
 {
     if (system != NULL) {
 	SystemMap*	systemMaps[2];

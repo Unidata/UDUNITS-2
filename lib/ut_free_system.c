@@ -1,5 +1,5 @@
 /*
- * $Id: utFreeSystem.c,v 1.1 2007/01/04 17:15:40 steve Exp $
+ * $Id: ut_free_system.c,v 1.1 2007/04/11 20:28:18 steve Exp $
  */
 
 /*LINTLIBRARY*/
@@ -12,7 +12,7 @@
 #include "idToUnitMap.h"
 #include "unitToIdMap.h"
 
-extern void coreFreeSystem(utSystem* system);
+extern void coreFreeSystem(ut_system* system);
 
 
 /*
@@ -24,8 +24,8 @@ extern void coreFreeSystem(utSystem* system);
  *			upon return results in undefined behavior.
  */
 void
-utFreeSystem(
-    utSystem*	system)
+ut_free_system(
+    ut_system*	system)
 {
     if (system != NULL) {
 	itumFreeSystem(system);

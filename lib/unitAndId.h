@@ -5,7 +5,7 @@
 
 typedef struct {
     char*	id;
-    utUnit*	unit;
+    ut_unit*	unit;
 } UnitAndId;
 
 #ifdef __cplusplus
@@ -26,7 +26,7 @@ extern "C" {
  */
 UnitAndId*
 uaiNew(
-    const utUnit* const	unit,
+    const ut_unit* const	unit,
     const char* const	id);
 
 

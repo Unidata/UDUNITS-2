@@ -15,7 +15,7 @@ extern "C" {
  */
 void
 utimFreeSystem(
-    utSystem*	system);
+    ut_system*	system);
 
 
 #ifdef __cplusplus

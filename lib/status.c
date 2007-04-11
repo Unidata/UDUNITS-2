@@ -10,15 +10,15 @@
 
 #include <udunits2.h>
 
-static utStatus		_status = UT_SUCCESS;
+static ut_status		_status = UT_SUCCESS;
 
 
 /*
  * Returns the status of the last operation by the units module.  This function
  * will not change the status.
  */
-utStatus
-utGetStatus()
+ut_status
+ut_get_status()
 {
     return _status;
 }
@@ -32,8 +32,8 @@ utGetStatus()
  *	status	The status of the units module.
  */
 void
-utSetStatus(
-    const utStatus	status)
+ut_set_status(
+    const ut_status	status)
 {
     _status = status;
 }

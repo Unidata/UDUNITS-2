@@ -1,5 +1,5 @@
 /*
- * $Id: converter.h,v 1.6 2007/01/12 20:08:15 steve Exp $
+ * $Id: converter.h,v 1.7 2007/04/11 20:28:17 steve Exp $
  *
  * Public header-file for the Unidata units(3) library.
  */
@@ -13,57 +13,57 @@
 extern "C" {
 #endif
 
-typedef union cvConverter	cvConverter;
+typedef union cv_converter	cv_converter;
 
 /*
  * Returns the trivial converter (i.e., y = x).
  * When finished with the converter, the client should pass the converter to
- * cvFree().
+ * cv_free().
  * RETURNS:
  *	The trivial converter.
  */
-cvConverter*
-cvGetTrivial(void);
+cv_converter*
+cv_get_trivial(void);
 
 /*
  * Returns the reciprocal converter (i.e., y = 1/x).
  * When finished with the converter, the client should pass the converter to
- * cvFree().
+ * cv_free().
  * RETURNS:
  *	The reciprocal converter.
  */
-cvConverter*
-cvGetInverse(void);
+cv_converter*
+cv_get_inverse(void);
 
 /*
  * Returns a scaling converter (i.e., y = ax).
  * When finished with the converter, the client should pass the converter to
- * cvFree().
+ * cv_free().
  * RETURNS:
  *	The scaling converter.
  */
-cvConverter*
-cvGetScale(
+cv_converter*
+cv_get_scale(
     const double	slope);
 
 /*
  * Returns a converter that adds a number to values (i.e., y = x + b).
  * When finished with the converter, the client should pass the converter to
- * cvFree().
+ * cv_free().
  * ARGUMENTS:
  *	intercept	The number to be added.
  * RETURNS:
  *	NULL	Necessary memory couldn't be allocated.
  *	else	A converter that adds the given number to values.
  */
-cvConverter*
-cvGetOffset(
+cv_converter*
+cv_get_offset(
     const double	intercept);
 
 /*
  * Returns a Galilean converter (i.e., y = ax + b).
  * When finished with the converter, the client should pass the converter to
- * cvFree().
+ * cv_free().
  * ARGUMENTS:
  *	slope		The number by which to multiply values.
  *	intercept	The number to be added.
@@ -71,15 +71,15 @@ cvGetOffset(
  *	NULL	Necessary memory couldn't be allocated.
  *	else	A Galilean converter corresponding to the inputs.
  */
-cvConverter*
-cvGetGalilean(
+cv_converter*
+cv_get_galilean(
     const double	slope,
     const double	intercept);
 
 /*
  * Returns a logarithmic converter (i.e., y = log(x) in some base).
  * When finished with the converter, the client should pass the converter to
- * cvFree().
+ * cv_free().
  * ARGUMENTS:
  *	base		The logarithmic base (e.g., 2, M_E, 10).  Must be
  *                      greater than one.
@@ -88,14 +88,14 @@ cvGetGalilean(
  *			memory couldn't be allocated.
  *	else		A logarithmic converter corresponding to the inputs.
  */
-cvConverter*
-cvGetLog(
+cv_converter*
+cv_get_log(
     const double	base);
 
 /*
  * Returns an exponential converter (i.e., y = pow(b, x) in some base "b").
  * When finished with the converter, the client should pass the converter to
- * cvFree().
+ * cv_free().
  *
  * Arguments:
  *	base		The desired base.  Must be positive.
@@ -104,8 +104,8 @@ cvGetLog(
  *			allocated.
  *	else		An exponential converter corresponding to the inputs.
  */
-cvConverter*
-cvGetPow(
+cv_converter*
+cv_get_pow(
     const double	base);
 
 /*
@@ -122,10 +122,10 @@ cvGetPow(
  *              converter, then the returned converter will be the other input
  *              converter.
  */
-cvConverter*
-cvCombine(
-    cvConverter* const	first,
-    cvConverter* const	second);
+cv_converter*
+cv_combine(
+    cv_converter* const	first,
+    cv_converter* const	second);
 
 /*
  * Frees resources associated with a converter.
@@ -133,8 +133,8 @@ cvCombine(
  *	conv	The converter to have its resources freed or NULL.
  */
 void
-cvFree(
-    cvConverter* const	conv);
+cv_free(
+    cv_converter* const	conv);
 
 /*
  * Converts a float.
@@ -145,8 +145,8 @@ cvFree(
  *	The converted value.
  */
 float
-cvConvertFloat(
-    const cvConverter*	converter,
+cv_convert_float(
+    const cv_converter*	converter,
     const float		value);
 
 /*
@@ -158,8 +158,8 @@ cvConvertFloat(
  *	The converted value.
  */
 double
-cvConvertDouble(
-    const cvConverter*	converter,
+cv_convert_double(
+    const cv_converter*	converter,
     const double	value);
 
 /*
@@ -175,8 +175,8 @@ cvConvertDouble(
  *	else	A pointer to the output array.
  */
 float*
-cvConvertFloats(
-    const cvConverter*	converter,
+cv_convert_floats(
+    const cv_converter*	converter,
     const float* const	in,
     const size_t	count,
     float*		out);
@@ -194,8 +194,8 @@ cvConvertFloats(
  *	else	A pointer to the output array.
  */
 double*
-cvConvertDoubles(
-    const cvConverter*	converter,
+cv_convert_doubles(
+    const cv_converter*	converter,
     const double* const	in,
     const size_t	count,
     double*		out);
@@ -213,8 +213,8 @@ cvConvertDoubles(
  *	else	The number of bytes formatted excluding the terminating null.
  */
 int
-cvGetExpression(
-    const cvConverter* const	conv,
+cv_get_expression(
+    const cv_converter* const	conv,
     char* const			buf,
     size_t			max,
     const char* const		variable);

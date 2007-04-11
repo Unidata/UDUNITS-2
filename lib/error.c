@@ -2,7 +2,7 @@
  * This module is thread-compatible but not thread-safe.  Multi-threaded
  * access must be externally synchronized.
  *
- * $Id: error.c,v 1.1 2007/01/04 17:15:40 steve Exp $
+ * $Id: error.c,v 1.2 2007/04/11 20:28:17 steve Exp $
  */
 
 /*LINTLIBRARY*/
@@ -30,7 +30,7 @@
  *		terminating NUL.
  */
 int
-utWriteToStderr(
+ut_write_to_stderr(
     const char* const	fmt,
     va_list		args)
 {
@@ -52,7 +52,7 @@ utWriteToStderr(
  *	0	Always.
  */
 int
-utIgnore(
+ut_ignore(
     const char* const	fmt,
     va_list		args)
 {
@@ -60,12 +60,12 @@ utIgnore(
 }
 
 
-static utErrorMessageHandler	errorMessageHandler = utWriteToStderr;
+static ut_error_message_handler	errorMessageHandler = ut_write_to_stderr;
 
 
 /*
  * Returns the previously-installed error-message handler and optionally
- * installs a new handler.  The initial handler is "utWriteToStderr()".
+ * installs a new handler.  The initial handler is "ut_write_to_stderr()".
  *
  * Arguments:
  *      handler		NULL or pointer to the error-message handler.  If NULL,
@@ -74,11 +74,11 @@ static utErrorMessageHandler	errorMessageHandler = utWriteToStderr;
  * Returns:
  *	Pointer to the previously-installed error-message handler.
  */
-utErrorMessageHandler
-utSetErrorMessageHandler(
-    utErrorMessageHandler	handler)
+ut_error_message_handler
+ut_set_error_message_handler(
+    ut_error_message_handler	handler)
 {
-    utErrorMessageHandler	prev = errorMessageHandler;
+    ut_error_message_handler	prev = errorMessageHandler;
 
     if (handler != NULL)
 	errorMessageHandler = handler;
@@ -99,7 +99,7 @@ utSetErrorMessageHandler(
  *		terminating NUL.
  */
 int
-utHandleErrorMessage(
+ut_handle_error_message(
     const char* const	fmt,
     ...)
 {

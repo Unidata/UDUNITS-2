@@ -3,7 +3,7 @@
  *
  * This module is thread-compatible but not thread-safe.
  *
- * $Id: systemMap.c,v 1.3 2006/12/21 20:52:37 steve Exp $
+ * $Id: systemMap.c,v 1.4 2007/04/11 20:28:17 steve Exp $
  */
 
 /*LINTLIBRARY*/
@@ -23,7 +23,7 @@ struct SystemMap {
 };
 
 typedef struct {
-    const utSystem*	system;
+    const ut_system*	system;
     void*		ptr;
 } Entry;
 
@@ -44,8 +44,8 @@ compareEntries(
     const void*	entry1,
     const void*	entry2)
 {
-    const utSystem* const	system1 = ((Entry*)entry1)->system;
-    const utSystem* const	system2 = ((Entry*)entry2)->system;
+    const ut_system* const	system1 = ((Entry*)entry1)->system;
+    const ut_system* const	system2 = ((Entry*)entry2)->system;
 
     return system1 < system2 ? -1 : system1 == system2 ? 0 : 1;
 }
