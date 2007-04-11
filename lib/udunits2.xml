@@ -1545,6 +1545,11 @@
 		    <name> <singular>barye</singular> </name>
 		</aliases>
 	    </unit>
+	    <unit>
+		<def>lg(re 20 µPa)</def>                <!-- sound pressure
+                                                          level -->
+		<aliases> <symbol>B_SPL</symbol> </aliases>
+	    </unit>
 
 	<!-- Viscosity -->
 	    <unit>
@@ -1693,6 +1698,14 @@
 		    </name>
 		</aliases>
 	    </unit>
+	    <unit>
+		<def>lg(re 1 W)</def>
+		<aliases> <symbol>BW</symbol> </aliases>
+	    </unit>
+	    <unit>
+		<def>lg(re 1 mW)</def>
+		<aliases> <symbol>Bm</symbol> </aliases>
+	    </unit>
 
 	<!-- Heat -->
 	    <unit>
@@ -1830,6 +1843,17 @@
 		<aliases>
 		    <name> <singular>unit_pole</singular> </name>
 		</aliases>
+	    </unit>
+	    <unit>
+		<def>lg(re 1 V)</def>
+		<aliases> <symbol>BV</symbol> </aliases>
+	    </unit>
+	    <unit>
+		<def>lg(re 0.775 V)</def>       <!-- rms voltage -->
+		<aliases>
+                    <symbol>Bv</symbol>
+                    <symbol>Bu</symbol>
+                </aliases>
 	    </unit>
 
 	<!-- Thermodynamic Temperature -->
