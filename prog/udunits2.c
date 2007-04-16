@@ -2,7 +2,7 @@
  * This program prints definitions of units of physical qantities and converts
  * values between such units.
  *
- * $Id: udunits2.c,v 1.5 2007/04/16 17:05:15 steve Exp $
+ * $Id: udunits2.c,v 1.6 2007/04/16 19:08:41 steve Exp $
  */
 
 #ifndef	_XOPEN_SOURCE
@@ -465,10 +465,8 @@ main(
 	if (ensureEncodingSet()) {
 	    if (ensureXmlPathSet()) {
 		if (readXmlDatabase()) {
-		    for (;;) {
-			if (!handleRequest())
-			    break;
-		    }
+		    while (handleRequest())
+			;		/* EMPTY */
 		}
 	    }
 	}
