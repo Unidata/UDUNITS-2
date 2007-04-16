@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 SUBDIRS	= expat lib prog
-info_TEXINFOS = udunits-2.texi
+info_TEXINFOS = udunits2.texi
 EXTRA_DIST = success.texi failure.texi
 AM_MAKEINFOHTMLFLAGS = --no-split
 # DISTCHECK_CONFIGURE_FLAGS = 
@@ -103,9 +103,3 @@ failure.tab:	results.tab
 remote-checks:	hostchecks success.tab failure.tab
 
 .PHONY:	hostchecks hostcheck remote-checks
-
-## The following entries are necessary to stop make(1)s that don't
-## understand the .PHONY target from trying to create the given files.
-install-info-am:
-install-html-am:
-install-pdf-am:
