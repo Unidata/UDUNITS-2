@@ -2,7 +2,7 @@
  * This program prints definitions of units of physical qantities and converts
  * values between such units.
  *
- * $Id: udunits2.c,v 1.4 2007/04/11 20:28:27 steve Exp $
+ * $Id: udunits2.c,v 1.5 2007/04/16 17:05:15 steve Exp $
  */
 
 #ifndef	_XOPEN_SOURCE
@@ -11,6 +11,8 @@
 
 #include <errno.h>
 #include <limits.h>
+#include <sys/types.h>
+#include <regex.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -119,30 +121,75 @@ static void
 setEncoding(
     char*	value)
 {
-    if (value != NULL) {
-	char*	cp;
+    typedef struct {
+	const char*	pattern;
+	ut_encoding	encoding;
+	regex_t		reg;
+    }			Entry;
 
-	for (cp = value; *cp != 0; ++cp) {
-	    if (isupper(*cp))
-		*cp = tolower(*cp);
+    static Entry	entries[] = {
+	{"^c$",			UT_ASCII},
+	{"^posix$",		UT_ASCII},
+	{"ascii",		UT_ASCII},
+	{"latin.?1[^0-9]",	UT_LATIN1},
+	{"8859.?1[^0-9]",	UT_LATIN1},
+	{"utf.?8[^0-9]",	UT_UTF8},
+    };
+    static int		initialized = 0;
+    static int		entryCount = sizeof(entries)/sizeof(entries[0]);
+
+    if (!initialized) {
+	int		status = 0;
+	int		i;
+
+	for (i = 0; i < entryCount; i++) {
+	    Entry*	entry = entries + i;
+	    regex_t*	reg = &entry->reg;
+	    const char*	pattern = entry->pattern;
+
+	    status = regcomp(reg, entries[i].pattern, REG_ICASE | REG_NOSUB);
+
+	    if (status != 0) {
+		char	buf[132];
+
+		(void)regerror(status, reg, buf, sizeof(buf));
+		(void)fprintf(stderr, "%s: Unable to compile regular "
+		    "expression \"%s\": %s\n", pattern, buf);
+
+		break;
+	    }
 	}
-	    
-	if (strstr(value, "ascii") != NULL ||
-		strcmp(value, "c") == 0 ||
-		strcmp(value, "posix") == 0) {
-	    _encoding = UT_ASCII;
-	    _encodingSet = 1;
+
+	if (status == 0)
+	    initialized = 1;
+    }
+
+    if (initialized) {
+	int	i;
+	int	status = 0;
+
+	for (i = 0; i < entryCount; i++) {
+	    Entry*	entry = entries + i;
+	    regex_t*	reg = &entry->reg;
+
+	    status = regexec(reg, value, 0, NULL, 0);
+
+	    if (status == 0)
+		break;
+
+	    if (status != REG_NOMATCH) {
+		char	buf[132];
+
+		(void)regerror(status, reg, buf, sizeof(buf));
+		(void)fprintf(stderr, "%s: Unable to execute regular "
+		    "expression \"%s\": %s\n", entry->pattern, buf);
+
+		break;
+	    }
 	}
-	else if (strstr(value, "latin1") != NULL ||
-		strstr(value, "latin-1") != NULL ||
-		strstr(value, "88591") != NULL ||
-		strstr(value, "8859-1") != NULL) {
-	    _encoding = UT_LATIN1;
-	    _encodingSet = 1;
-	}
-	else if (strstr(value, "utf8") != NULL ||
-		strstr(value, "utf-8") != NULL) {
-	    _encoding = UT_UTF8;
+
+	if (status == 0 && i < entryCount) {
+	    _encoding = entries[i].encoding;
 	    _encodingSet = 1;
 	}
     }
@@ -161,10 +208,14 @@ ensureEncodingSet()
 	    if (!_encodingSet) {
 		setEncoding(getenv("LANG"));
 
-		if (!_encodingSet)
+		if (!_encodingSet) {
 		    (void)fprintf(stderr, "%s: Character encoding not "
 			"specified and not settable from environment variables "
-			"LC_ALL, LC_CTYPE, or LANG\n", _progname);
+			"LC_ALL, LC_CTYPE, or LANG.  Assuming ASCII "
+			"encoding.\n", _progname);
+
+		    setEncoding("ASCII");
+		}
 	    }
 	}
     }
