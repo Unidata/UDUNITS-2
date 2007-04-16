@@ -2,6 +2,7 @@ exec >$HOME/check-commit.log 2>&1
 echo pwd=`pwd`
 echo '$0'=\"$0\"
 echo '$-'=\"$-\"
+echo '$$'=\"$$\"
 for arg in "$@"; do
     echo arg=\"$arg\"
 done
