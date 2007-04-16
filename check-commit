@@ -3,16 +3,19 @@ echo pwd=`pwd`
 echo '$0'=\"$0\"
 echo '$-'=\"$-\"
 echo '$$'=\"$$\"
+ps -O pgid -p $$
 for arg in "$@"; do
     echo arg=\"$arg\"
 done
+
+set -m
 
 topSrcDir=`dirname $0`
 
 if cd $topSrcDir; then
     if test -f remote-checks.pid; then
 	pid=`cat remote-checks.pid`
-	kill -- $pid 2>/dev/null
+	kill -- -$pid 2>/dev/null
 	wait $pid 2>/dev/null
     fi
 
