@@ -14,7 +14,7 @@ if cd $topSrcDir; then
 
     (
 	trap 'rm -f remote-checks.pid' HUP INT QUIT TERM EXIT
-	sleep 30
+	sleep 300
 	make remote-checks 2>&1 | ssh zero mailx \
 	    -s '"UDUNITS-2: \"make remote-checks\" output"' \
 	    $USER@unidata.ucar.edu
