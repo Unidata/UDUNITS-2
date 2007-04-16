@@ -1,9 +1,11 @@
-#exec >$HOME/check-commit.log 2>&1
-#echo pwd=`pwd`
-#echo '$0'=\"$0\"
-#for arg in "$@"; do
-#    echo arg=\"$arg\"
-#done
+exec >$HOME/check-commit.log 2>&1
+echo pwd=`pwd`
+echo '$0'=\"$0\"
+echo '$-'=\"$-\"
+for arg in "$@"; do
+    echo arg=\"$arg\"
+done
+exit
 
 topSrcDir=`dirname $0`
 
@@ -13,7 +15,8 @@ if cd $topSrcDir; then
     fi
 
     (
-	trap 'rm -f remote-checks.pid' HUP INT QUIT TERM EXIT
+	trap 'rm -f remote-checks.pid' EXIT
+	trap 'exit' HUP INT QUIT TERM
 	sleep 300
 	make remote-checks 2>&1 | ssh zero mailx \
 	    -s '"UDUNITS-2: \"make remote-checks\" output"' \
