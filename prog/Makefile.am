@@ -1,13 +1,10 @@
 ## Process this file with automake to produce Makefile.in
-#docdir = $(datadir)/../doc/udunits2
-#htmldir = $(docdir)
-#pdfdir = $(docdir)
 bin_PROGRAMS	= udunits2
 LDADD		= ../lib/libudunits2.la \
 		  -lm
 info_TEXINFOS = udunits2prog.texi
-html_DATA = udunits2prog.html
-pdf_DATA = udunits2prog.pdf
+#html_DATA = udunits2prog.html
+#pdf_DATA = udunits2prog.pdf
 AM_MAKEINFOHTMLFLAGS = --no-split
 AM_CPPFLAGS	= -I$(top_srcdir)/lib
 MOSTLYCLEANFILES	= lint.log *.ln

@@ -1,7 +1,4 @@
 ## Process this file with automake to produce Makefile.in
-#docdir = $(datadir)/../doc/udunits2
-#htmldir = $(docdir)
-#pdfdir = $(docdir)
 SUBDIRS	= xmlTests
 lib_LTLIBRARIES = libudunits2.la
 libudunits2_la_SOURCES = unitcore.c converter.c formatter.c \
@@ -18,8 +15,8 @@ libudunits2_la_SOURCES = unitcore.c converter.c formatter.c \
 BUILT_SOURCES = parser.c scanner.c
 data_DATA = udunits2.xml
 info_TEXINFOS = udunits2lib.texi
-html_DATA = udunits2lib.html
-pdf_DATA = udunits2lib.pdf
+#html_DATA = udunits2lib.html
+#pdf_DATA = udunits2lib.pdf
 AM_MAKEINFOHTMLFLAGS = --no-split
 libudunits2_la_CPPFLAGS = \
 	-DDEFAULT_UDUNITS2_XML_PATH='"@datadir@/udunits2.xml"' \
