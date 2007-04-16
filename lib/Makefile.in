@@ -235,10 +235,6 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-
-#docdir = $(datadir)/../doc/udunits2
-#htmldir = $(docdir)
-#pdfdir = $(docdir)
 SUBDIRS = xmlTests
 lib_LTLIBRARIES = libudunits2.la
 libudunits2_la_SOURCES = unitcore.c converter.c formatter.c \
