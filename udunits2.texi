@@ -1,6 +1,6 @@
 \input texinfo  @c -*-texinfo-*-
 @c %**start of header
-@setfilename udunits-2.info
+@setfilename udunits2.info
 @settitle UDUNITS-2 Manual
 @c %**end of header
 @dircategory Science
@@ -44,7 +44,7 @@ This manual introduces the UDUNITS-2 package, which contains
 a C library for units of physical quantities and a unit-definition
 and value-conversion utility.
 
-CVS keywords: $Date: 2007/04/02 21:29:48 $, Revision: 1.3 $
+CVS keywords: $Date: 2007/04/16 17:07:28 $, Revision: 1.3 $
 
 @insertcopying
 @end ifnottex
@@ -221,16 +221,16 @@ share/doc:
 udunits                 # Directory. Created if it doesn't exist
 
 share/doc/udunits:
-udunits-2.html          # HTML documentation on the unit package
+udunits2.html           # HTML documentation on the unit package
 udunits2lib.html        # HTML documentation on the unit library
 udunits2lib.pdf         # PDF documentation on the unit library
-udunits-2.pdf           # PDF documentation on the unit package
+udunits2.pdf            # PDF documentation on the unit package
 udunits2prog.html       # HTML documentation on the unit utility
 udunits2prog.pdf        # PDF documentation on the unit utility
 
 share/info:
 dir                     # Top-level "info" file.  Created if it doesn't exist
-udunits-2.info          # INFO documentation on the unit package
+udunits2.info           # INFO documentation on the unit package
 udunits2lib.info        # INFO documentation on the unit library
 udunits2prog.info       # INFO documentation on the unit utility
 @end example
