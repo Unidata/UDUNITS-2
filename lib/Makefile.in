@@ -53,9 +53,8 @@ am__vpath_adj = case $$p in \
     *) f=$$p;; \
   esac;
 am__strip_dir = `echo $$p | sed -e 's|^.*/||'`;
-am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(datadir)" \
-	"$(DESTDIR)$(htmldir)" "$(DESTDIR)$(pdfdir)" \
-	"$(DESTDIR)$(includedir)"
+am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(infodir)" \
+	"$(DESTDIR)$(datadir)" "$(DESTDIR)$(includedir)"
 libLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libudunits2_la_DEPENDENCIES = ../expat/libexpat.la
@@ -112,9 +111,7 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	installcheck-recursive installdirs-recursive pdf-recursive \
 	ps-recursive uninstall-recursive
 dataDATA_INSTALL = $(INSTALL_DATA)
-htmlDATA_INSTALL = $(INSTALL_DATA)
-pdfDATA_INSTALL = $(INSTALL_DATA)
-DATA = $(data_DATA) $(html_DATA) $(pdf_DATA)
+DATA = $(data_DATA)
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(include_HEADERS)
 RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
@@ -259,8 +256,8 @@ libudunits2_la_SOURCES = unitcore.c converter.c formatter.c \
 BUILT_SOURCES = parser.c scanner.c
 data_DATA = udunits2.xml
 info_TEXINFOS = udunits2lib.texi
-html_DATA = udunits2lib.html
-pdf_DATA = udunits2lib.pdf
+#html_DATA = udunits2lib.html
+#pdf_DATA = udunits2lib.pdf
 AM_MAKEINFOHTMLFLAGS = --no-split
 libudunits2_la_CPPFLAGS = \
 	-DDEFAULT_UDUNITS2_XML_PATH='"@datadir@/udunits2.xml"' \
@@ -671,40 +668,6 @@ uninstall-dataDATA:
 	  echo " rm -f '$(DESTDIR)$(datadir)/$$f'"; \
 	  rm -f "$(DESTDIR)$(datadir)/$$f"; \
 	done
-install-htmlDATA: $(html_DATA)
-	@$(NORMAL_INSTALL)
-	test -z "$(htmldir)" || $(MKDIR_P) "$(DESTDIR)$(htmldir)"
-	@list='$(html_DATA)'; for p in $$list; do \
-	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-	  f=$(am__strip_dir) \
-	  echo " $(htmlDATA_INSTALL) '$$d$$p' '$(DESTDIR)$(htmldir)/$$f'"; \
-	  $(htmlDATA_INSTALL) "$$d$$p" "$(DESTDIR)$(htmldir)/$$f"; \
-	done
-
-uninstall-htmlDATA:
-	@$(NORMAL_UNINSTALL)
-	@list='$(html_DATA)'; for p in $$list; do \
-	  f=$(am__strip_dir) \
-	  echo " rm -f '$(DESTDIR)$(htmldir)/$$f'"; \
-	  rm -f "$(DESTDIR)$(htmldir)/$$f"; \
-	done
-install-pdfDATA: $(pdf_DATA)
-	@$(NORMAL_INSTALL)
-	test -z "$(pdfdir)" || $(MKDIR_P) "$(DESTDIR)$(pdfdir)"
-	@list='$(pdf_DATA)'; for p in $$list; do \
-	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-	  f=$(am__strip_dir) \
-	  echo " $(pdfDATA_INSTALL) '$$d$$p' '$(DESTDIR)$(pdfdir)/$$f'"; \
-	  $(pdfDATA_INSTALL) "$$d$$p" "$(DESTDIR)$(pdfdir)/$$f"; \
-	done
-
-uninstall-pdfDATA:
-	@$(NORMAL_UNINSTALL)
-	@list='$(pdf_DATA)'; for p in $$list; do \
-	  f=$(am__strip_dir) \
-	  echo " rm -f '$(DESTDIR)$(pdfdir)/$$f'"; \
-	  rm -f "$(DESTDIR)$(pdfdir)/$$f"; \
-	done
 install-includeHEADERS: $(include_HEADERS)
 	@$(NORMAL_INSTALL)
 	test -z "$(includedir)" || $(MKDIR_P) "$(DESTDIR)$(includedir)"
@@ -978,10 +941,10 @@ check-am: all-am
 	$(MAKE) $(AM_MAKEFLAGS) check-TESTS
 check: $(BUILT_SOURCES)
 	$(MAKE) $(AM_MAKEFLAGS) check-recursive
-all-am: Makefile $(LTLIBRARIES) $(DATA) $(HEADERS)
+all-am: Makefile $(INFO_DEPS) $(LTLIBRARIES) $(DATA) $(HEADERS)
 installdirs: installdirs-recursive
 installdirs-am:
-	for dir in "$(DESTDIR)$(libdir)" "$(DESTDIR)$(datadir)" "$(DESTDIR)$(htmldir)" "$(DESTDIR)$(pdfdir)" "$(DESTDIR)$(includedir)"; do \
+	for dir in "$(DESTDIR)$(libdir)" "$(DESTDIR)$(infodir)" "$(DESTDIR)$(datadir)" "$(DESTDIR)$(includedir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: $(BUILT_SOURCES)
@@ -1035,8 +998,8 @@ info: info-recursive
 
 info-am: $(INFO_DEPS)
 
-install-data-am: install-dataDATA install-htmlDATA \
-	install-includeHEADERS install-pdfDATA
+install-data-am: install-dataDATA install-includeHEADERS \
+	install-info-am
 
 install-dvi: install-dvi-recursive
 
@@ -1147,9 +1110,8 @@ ps: ps-recursive
 ps-am: $(PSS)
 
 uninstall-am: uninstall-dataDATA uninstall-dvi-am uninstall-html-am \
-	uninstall-htmlDATA uninstall-includeHEADERS uninstall-info-am \
-	uninstall-libLTLIBRARIES uninstall-pdf-am uninstall-pdfDATA \
-	uninstall-ps-am
+	uninstall-includeHEADERS uninstall-info-am \
+	uninstall-libLTLIBRARIES uninstall-pdf-am uninstall-ps-am
 
 .MAKE: $(RECURSIVE_CLEAN_TARGETS) $(RECURSIVE_TARGETS) install-am \
 	install-strip
@@ -1162,19 +1124,17 @@ uninstall-am: uninstall-dataDATA uninstall-dvi-am uninstall-html-am \
 	distclean-tags distdir dvi dvi-am html html-am info info-am \
 	install install-am install-data install-data-am \
 	install-dataDATA install-dvi install-dvi-am install-exec \
-	install-exec-am install-html install-html-am install-htmlDATA \
+	install-exec-am install-html install-html-am \
 	install-includeHEADERS install-info install-info-am \
 	install-libLTLIBRARIES install-man install-pdf install-pdf-am \
-	install-pdfDATA install-ps install-ps-am install-strip \
-	installcheck installcheck-am installdirs installdirs-am \
-	maintainer-clean maintainer-clean-aminfo \
-	maintainer-clean-generic mostlyclean mostlyclean-aminfo \
-	mostlyclean-compile mostlyclean-generic mostlyclean-libtool \
-	pdf pdf-am ps ps-am tags tags-recursive uninstall uninstall-am \
-	uninstall-dataDATA uninstall-dvi-am uninstall-html-am \
-	uninstall-htmlDATA uninstall-includeHEADERS uninstall-info-am \
-	uninstall-libLTLIBRARIES uninstall-pdf-am uninstall-pdfDATA \
-	uninstall-ps-am
+	install-ps install-ps-am install-strip installcheck \
+	installcheck-am installdirs installdirs-am maintainer-clean \
+	maintainer-clean-aminfo maintainer-clean-generic mostlyclean \
+	mostlyclean-aminfo mostlyclean-compile mostlyclean-generic \
+	mostlyclean-libtool pdf pdf-am ps ps-am tags tags-recursive \
+	uninstall uninstall-am uninstall-dataDATA uninstall-dvi-am \
+	uninstall-html-am uninstall-includeHEADERS uninstall-info-am \
+	uninstall-libLTLIBRARIES uninstall-pdf-am uninstall-ps-am
 
 
 .c.ln:
