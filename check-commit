@@ -5,13 +5,14 @@ echo '$-'=\"$-\"
 for arg in "$@"; do
     echo arg=\"$arg\"
 done
-exit
 
 topSrcDir=`dirname $0`
 
 if cd $topSrcDir; then
     if test -f remote-checks.pid; then
-	kill -- -`cat remote-checks.pid` 2>/dev/null
+	pid=`cat remote-checks.pid`
+	kill -- -$pid 2>/dev/null
+	wait $pid 2>/dev/null
     fi
 
     (
