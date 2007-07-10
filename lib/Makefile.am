@@ -35,7 +35,17 @@ AM_LDFLAGS = @CFLAGS_COVERAGE@ @LIBS_COVERAGE@
 libudunits2_la_CFLAGS = @CFLAGS_COVERAGE@
 libudunits2_la_LIBADD = ../expat/libexpat.la -lm
 include_HEADERS = udunits2.h converter.h
-EXTRA_DIST = scanner.l scanner.c udunits2.xml udunits2lib.html udunits2lib.pdf
+EXTRA_DIST = \
+    scanner.l \
+    scanner.c \
+    udunits2.xml \
+    udunits2-accepted.xml \
+    udunits2-base.xml \
+    udunits2-common.xml \
+    udunits2-derived.xml \
+    udunits2-prefixes.xml
+    udunits2lib.html \
+    udunits2lib.pdf \
 AM_YFLAGS = -t -p ut
 
 if HAVE_CUNIT

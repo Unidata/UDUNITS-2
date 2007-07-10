@@ -270,8 +270,16 @@ AM_LDFLAGS = @CFLAGS_COVERAGE@ @LIBS_COVERAGE@
 libudunits2_la_CFLAGS = @CFLAGS_COVERAGE@
 libudunits2_la_LIBADD = ../expat/libexpat.la -lm
 include_HEADERS = udunits2.h converter.h
-EXTRA_DIST = scanner.l scanner.c udunits2.xml udunits2lib.html udunits2lib.pdf
-AM_YFLAGS = -t -p ut
+EXTRA_DIST = \
+    scanner.l \
+    scanner.c \
+    udunits2.xml \
+    udunits2-accepted.xml \
+    udunits2-base.xml \
+    udunits2-common.xml \
+    udunits2-derived.xml \
+    udunits2-prefixes.xml
+
 @HAVE_CUNIT_TRUE@testUnits_CPPFLAGS = @CPPFLAGS_CUNIT@
 MOSTLYCLEANFILES = lint.log *.ln *.i core core.[0-9]* *.gcov *.gcda *.gcno
 TAGS_FILES = parser.c ../expat/*.c ../expat/*.h
@@ -1135,6 +1143,9 @@ uninstall-am: uninstall-dataDATA uninstall-dvi-am uninstall-html-am \
 	uninstall-html-am uninstall-includeHEADERS uninstall-info-am \
 	uninstall-libLTLIBRARIES uninstall-pdf-am uninstall-ps-am
 
+    udunits2lib.html \
+    udunits2lib.pdf \
+AM_YFLAGS = -t -p ut
 
 .c.ln:
 	$(LINT.c) $(libudunits2_la_CPPFLAGS) $(CPPFLAGS) -c $<
