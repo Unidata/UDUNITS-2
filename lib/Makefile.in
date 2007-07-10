@@ -53,8 +53,8 @@ am__vpath_adj = case $$p in \
     *) f=$$p;; \
   esac;
 am__strip_dir = `echo $$p | sed -e 's|^.*/||'`;
-am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(infodir)" \
-	"$(DESTDIR)$(datadir)" "$(DESTDIR)$(includedir)"
+am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(datadir)" \
+	"$(DESTDIR)$(includedir)"
 libLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libudunits2_la_DEPENDENCIES = ../expat/libexpat.la
@@ -235,7 +235,7 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-SUBDIRS = xmlTests
+SUBDIRS = xmlFailure xmlSuccess
 lib_LTLIBRARIES = libudunits2.la
 libudunits2_la_SOURCES = unitcore.c converter.c formatter.c \
     idToUnitMap.c idToUnitMap.h \
@@ -250,15 +250,19 @@ libudunits2_la_SOURCES = unitcore.c converter.c formatter.c \
     ut_free_system.c
 
 BUILT_SOURCES = parser.c scanner.c
-data_DATA = udunits2.xml
+data_DATA = \
+    udunits2.xml \
+    udunits2-accepted.xml \
+    udunits2-base.xml \
+    udunits2-common.xml \
+    udunits2-derived.xml \
+    udunits2-prefixes.xml
+
 info_TEXINFOS = udunits2lib.texi
 #html_DATA = udunits2lib.html
 #pdf_DATA = udunits2lib.pdf
 AM_MAKEINFOHTMLFLAGS = --no-split
-libudunits2_la_CPPFLAGS = \
-	-DDEFAULT_UDUNITS2_XML_PATH='"@datadir@/udunits2.xml"' \
-	-I$(top_srcdir)/expat
-
+AM_CPPFLAGS = -DDEFAULT_UDUNITS2_XML_PATH='"$(datadir)/udunits2.xml"'
 lex_prefix = ut
 LFLAGS = -d -P$(lex_prefix)
 LDADD = libudunits2.la @LIBS_CUNIT@ -lm @LIBS_COVERAGE@
@@ -394,95 +398,95 @@ distclean-compile:
 @am__fastdepCC_FALSE@	$(LTCOMPILE) -c -o $@ $<
 
 libudunits2_la-unitcore.lo: unitcore.c
-@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libudunits2_la_CPPFLAGS) $(CPPFLAGS) $(libudunits2_la_CFLAGS) $(CFLAGS) -MT libudunits2_la-unitcore.lo -MD -MP -MF $(DEPDIR)/libudunits2_la-unitcore.Tpo -c -o libudunits2_la-unitcore.lo `test -f 'unitcore.c' || echo '$(srcdir)/'`unitcore.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libudunits2_la_CFLAGS) $(CFLAGS) -MT libudunits2_la-unitcore.lo -MD -MP -MF $(DEPDIR)/libudunits2_la-unitcore.Tpo -c -o libudunits2_la-unitcore.lo `test -f 'unitcore.c' || echo '$(srcdir)/'`unitcore.c
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libudunits2_la-unitcore.Tpo $(DEPDIR)/libudunits2_la-unitcore.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='unitcore.c' object='libudunits2_la-unitcore.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libudunits2_la_CPPFLAGS) $(CPPFLAGS) $(libudunits2_la_CFLAGS) $(CFLAGS) -c -o libudunits2_la-unitcore.lo `test -f 'unitcore.c' || echo '$(srcdir)/'`unitcore.c
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libudunits2_la_CFLAGS) $(CFLAGS) -c -o libudunits2_la-unitcore.lo `test -f 'unitcore.c' || echo '$(srcdir)/'`unitcore.c
 
 libudunits2_la-converter.lo: converter.c
-@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libudunits2_la_CPPFLAGS) $(CPPFLAGS) $(libudunits2_la_CFLAGS) $(CFLAGS) -MT libudunits2_la-converter.lo -MD -MP -MF $(DEPDIR)/libudunits2_la-converter.Tpo -c -o libudunits2_la-converter.lo `test -f 'converter.c' || echo '$(srcdir)/'`converter.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libudunits2_la_CFLAGS) $(CFLAGS) -MT libudunits2_la-converter.lo -MD -MP -MF $(DEPDIR)/libudunits2_la-converter.Tpo -c -o libudunits2_la-converter.lo `test -f 'converter.c' || echo '$(srcdir)/'`converter.c
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libudunits2_la-converter.Tpo $(DEPDIR)/libudunits2_la-converter.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='converter.c' object='libudunits2_la-converter.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libudunits2_la_CPPFLAGS) $(CPPFLAGS) $(libudunits2_la_CFLAGS) $(CFLAGS) -c -o libudunits2_la-converter.lo `test -f 'converter.c' || echo '$(srcdir)/'`converter.c
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libudunits2_la_CFLAGS) $(CFLAGS) -c -o libudunits2_la-converter.lo `test -f 'converter.c' || echo '$(srcdir)/'`converter.c
 
 libudunits2_la-formatter.lo: formatter.c
-@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libudunits2_la_CPPFLAGS) $(CPPFLAGS) $(libudunits2_la_CFLAGS) $(CFLAGS) -MT libudunits2_la-formatter.lo -MD -MP -MF $(DEPDIR)/libudunits2_la-formatter.Tpo -c -o libudunits2_la-formatter.lo `test -f 'formatter.c' || echo '$(srcdir)/'`formatter.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libudunits2_la_CFLAGS) $(CFLAGS) -MT libudunits2_la-formatter.lo -MD -MP -MF $(DEPDIR)/libudunits2_la-formatter.Tpo -c -o libudunits2_la-formatter.lo `test -f 'formatter.c' || echo '$(srcdir)/'`formatter.c
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libudunits2_la-formatter.Tpo $(DEPDIR)/libudunits2_la-formatter.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='formatter.c' object='libudunits2_la-formatter.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libudunits2_la_CPPFLAGS) $(CPPFLAGS) $(libudunits2_la_CFLAGS) $(CFLAGS) -c -o libudunits2_la-formatter.lo `test -f 'formatter.c' || echo '$(srcdir)/'`formatter.c
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libudunits2_la_CFLAGS) $(CFLAGS) -c -o libudunits2_la-formatter.lo `test -f 'formatter.c' || echo '$(srcdir)/'`formatter.c
 
 libudunits2_la-idToUnitMap.lo: idToUnitMap.c
-@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libudunits2_la_CPPFLAGS) $(CPPFLAGS) $(libudunits2_la_CFLAGS) $(CFLAGS) -MT libudunits2_la-idToUnitMap.lo -MD -MP -MF $(DEPDIR)/libudunits2_la-idToUnitMap.Tpo -c -o libudunits2_la-idToUnitMap.lo `test -f 'idToUnitMap.c' || echo '$(srcdir)/'`idToUnitMap.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libudunits2_la_CFLAGS) $(CFLAGS) -MT libudunits2_la-idToUnitMap.lo -MD -MP -MF $(DEPDIR)/libudunits2_la-idToUnitMap.Tpo -c -o libudunits2_la-idToUnitMap.lo `test -f 'idToUnitMap.c' || echo '$(srcdir)/'`idToUnitMap.c
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libudunits2_la-idToUnitMap.Tpo $(DEPDIR)/libudunits2_la-idToUnitMap.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='idToUnitMap.c' object='libudunits2_la-idToUnitMap.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libudunits2_la_CPPFLAGS) $(CPPFLAGS) $(libudunits2_la_CFLAGS) $(CFLAGS) -c -o libudunits2_la-idToUnitMap.lo `test -f 'idToUnitMap.c' || echo '$(srcdir)/'`idToUnitMap.c
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libudunits2_la_CFLAGS) $(CFLAGS) -c -o libudunits2_la-idToUnitMap.lo `test -f 'idToUnitMap.c' || echo '$(srcdir)/'`idToUnitMap.c
 
 libudunits2_la-unitToIdMap.lo: unitToIdMap.c
-@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libudunits2_la_CPPFLAGS) $(CPPFLAGS) $(libudunits2_la_CFLAGS) $(CFLAGS) -MT libudunits2_la-unitToIdMap.lo -MD -MP -MF $(DEPDIR)/libudunits2_la-unitToIdMap.Tpo -c -o libudunits2_la-unitToIdMap.lo `test -f 'unitToIdMap.c' || echo '$(srcdir)/'`unitToIdMap.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libudunits2_la_CFLAGS) $(CFLAGS) -MT libudunits2_la-unitToIdMap.lo -MD -MP -MF $(DEPDIR)/libudunits2_la-unitToIdMap.Tpo -c -o libudunits2_la-unitToIdMap.lo `test -f 'unitToIdMap.c' || echo '$(srcdir)/'`unitToIdMap.c
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libudunits2_la-unitToIdMap.Tpo $(DEPDIR)/libudunits2_la-unitToIdMap.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='unitToIdMap.c' object='libudunits2_la-unitToIdMap.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libudunits2_la_CPPFLAGS) $(CPPFLAGS) $(libudunits2_la_CFLAGS) $(CFLAGS) -c -o libudunits2_la-unitToIdMap.lo `test -f 'unitToIdMap.c' || echo '$(srcdir)/'`unitToIdMap.c
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libudunits2_la_CFLAGS) $(CFLAGS) -c -o libudunits2_la-unitToIdMap.lo `test -f 'unitToIdMap.c' || echo '$(srcdir)/'`unitToIdMap.c
 
 libudunits2_la-unitAndId.lo: unitAndId.c
-@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libudunits2_la_CPPFLAGS) $(CPPFLAGS) $(libudunits2_la_CFLAGS) $(CFLAGS) -MT libudunits2_la-unitAndId.lo -MD -MP -MF $(DEPDIR)/libudunits2_la-unitAndId.Tpo -c -o libudunits2_la-unitAndId.lo `test -f 'unitAndId.c' || echo '$(srcdir)/'`unitAndId.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libudunits2_la_CFLAGS) $(CFLAGS) -MT libudunits2_la-unitAndId.lo -MD -MP -MF $(DEPDIR)/libudunits2_la-unitAndId.Tpo -c -o libudunits2_la-unitAndId.lo `test -f 'unitAndId.c' || echo '$(srcdir)/'`unitAndId.c
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libudunits2_la-unitAndId.Tpo $(DEPDIR)/libudunits2_la-unitAndId.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='unitAndId.c' object='libudunits2_la-unitAndId.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libudunits2_la_CPPFLAGS) $(CPPFLAGS) $(libudunits2_la_CFLAGS) $(CFLAGS) -c -o libudunits2_la-unitAndId.lo `test -f 'unitAndId.c' || echo '$(srcdir)/'`unitAndId.c
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libudunits2_la_CFLAGS) $(CFLAGS) -c -o libudunits2_la-unitAndId.lo `test -f 'unitAndId.c' || echo '$(srcdir)/'`unitAndId.c
 
 libudunits2_la-systemMap.lo: systemMap.c
-@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libudunits2_la_CPPFLAGS) $(CPPFLAGS) $(libudunits2_la_CFLAGS) $(CFLAGS) -MT libudunits2_la-systemMap.lo -MD -MP -MF $(DEPDIR)/libudunits2_la-systemMap.Tpo -c -o libudunits2_la-systemMap.lo `test -f 'systemMap.c' || echo '$(srcdir)/'`systemMap.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libudunits2_la_CFLAGS) $(CFLAGS) -MT libudunits2_la-systemMap.lo -MD -MP -MF $(DEPDIR)/libudunits2_la-systemMap.Tpo -c -o libudunits2_la-systemMap.lo `test -f 'systemMap.c' || echo '$(srcdir)/'`systemMap.c
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libudunits2_la-systemMap.Tpo $(DEPDIR)/libudunits2_la-systemMap.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='systemMap.c' object='libudunits2_la-systemMap.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libudunits2_la_CPPFLAGS) $(CPPFLAGS) $(libudunits2_la_CFLAGS) $(CFLAGS) -c -o libudunits2_la-systemMap.lo `test -f 'systemMap.c' || echo '$(srcdir)/'`systemMap.c
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libudunits2_la_CFLAGS) $(CFLAGS) -c -o libudunits2_la-systemMap.lo `test -f 'systemMap.c' || echo '$(srcdir)/'`systemMap.c
 
 libudunits2_la-prefix.lo: prefix.c
-@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libudunits2_la_CPPFLAGS) $(CPPFLAGS) $(libudunits2_la_CFLAGS) $(CFLAGS) -MT libudunits2_la-prefix.lo -MD -MP -MF $(DEPDIR)/libudunits2_la-prefix.Tpo -c -o libudunits2_la-prefix.lo `test -f 'prefix.c' || echo '$(srcdir)/'`prefix.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libudunits2_la_CFLAGS) $(CFLAGS) -MT libudunits2_la-prefix.lo -MD -MP -MF $(DEPDIR)/libudunits2_la-prefix.Tpo -c -o libudunits2_la-prefix.lo `test -f 'prefix.c' || echo '$(srcdir)/'`prefix.c
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libudunits2_la-prefix.Tpo $(DEPDIR)/libudunits2_la-prefix.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='prefix.c' object='libudunits2_la-prefix.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libudunits2_la_CPPFLAGS) $(CPPFLAGS) $(libudunits2_la_CFLAGS) $(CFLAGS) -c -o libudunits2_la-prefix.lo `test -f 'prefix.c' || echo '$(srcdir)/'`prefix.c
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libudunits2_la_CFLAGS) $(CFLAGS) -c -o libudunits2_la-prefix.lo `test -f 'prefix.c' || echo '$(srcdir)/'`prefix.c
 
 libudunits2_la-parser.lo: parser.c
-@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libudunits2_la_CPPFLAGS) $(CPPFLAGS) $(libudunits2_la_CFLAGS) $(CFLAGS) -MT libudunits2_la-parser.lo -MD -MP -MF $(DEPDIR)/libudunits2_la-parser.Tpo -c -o libudunits2_la-parser.lo `test -f 'parser.c' || echo '$(srcdir)/'`parser.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libudunits2_la_CFLAGS) $(CFLAGS) -MT libudunits2_la-parser.lo -MD -MP -MF $(DEPDIR)/libudunits2_la-parser.Tpo -c -o libudunits2_la-parser.lo `test -f 'parser.c' || echo '$(srcdir)/'`parser.c
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libudunits2_la-parser.Tpo $(DEPDIR)/libudunits2_la-parser.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='parser.c' object='libudunits2_la-parser.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libudunits2_la_CPPFLAGS) $(CPPFLAGS) $(libudunits2_la_CFLAGS) $(CFLAGS) -c -o libudunits2_la-parser.lo `test -f 'parser.c' || echo '$(srcdir)/'`parser.c
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libudunits2_la_CFLAGS) $(CFLAGS) -c -o libudunits2_la-parser.lo `test -f 'parser.c' || echo '$(srcdir)/'`parser.c
 
 libudunits2_la-status.lo: status.c
-@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libudunits2_la_CPPFLAGS) $(CPPFLAGS) $(libudunits2_la_CFLAGS) $(CFLAGS) -MT libudunits2_la-status.lo -MD -MP -MF $(DEPDIR)/libudunits2_la-status.Tpo -c -o libudunits2_la-status.lo `test -f 'status.c' || echo '$(srcdir)/'`status.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libudunits2_la_CFLAGS) $(CFLAGS) -MT libudunits2_la-status.lo -MD -MP -MF $(DEPDIR)/libudunits2_la-status.Tpo -c -o libudunits2_la-status.lo `test -f 'status.c' || echo '$(srcdir)/'`status.c
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libudunits2_la-status.Tpo $(DEPDIR)/libudunits2_la-status.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='status.c' object='libudunits2_la-status.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libudunits2_la_CPPFLAGS) $(CPPFLAGS) $(libudunits2_la_CFLAGS) $(CFLAGS) -c -o libudunits2_la-status.lo `test -f 'status.c' || echo '$(srcdir)/'`status.c
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libudunits2_la_CFLAGS) $(CFLAGS) -c -o libudunits2_la-status.lo `test -f 'status.c' || echo '$(srcdir)/'`status.c
 
 libudunits2_la-xml.lo: xml.c
-@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libudunits2_la_CPPFLAGS) $(CPPFLAGS) $(libudunits2_la_CFLAGS) $(CFLAGS) -MT libudunits2_la-xml.lo -MD -MP -MF $(DEPDIR)/libudunits2_la-xml.Tpo -c -o libudunits2_la-xml.lo `test -f 'xml.c' || echo '$(srcdir)/'`xml.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libudunits2_la_CFLAGS) $(CFLAGS) -MT libudunits2_la-xml.lo -MD -MP -MF $(DEPDIR)/libudunits2_la-xml.Tpo -c -o libudunits2_la-xml.lo `test -f 'xml.c' || echo '$(srcdir)/'`xml.c
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libudunits2_la-xml.Tpo $(DEPDIR)/libudunits2_la-xml.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='xml.c' object='libudunits2_la-xml.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libudunits2_la_CPPFLAGS) $(CPPFLAGS) $(libudunits2_la_CFLAGS) $(CFLAGS) -c -o libudunits2_la-xml.lo `test -f 'xml.c' || echo '$(srcdir)/'`xml.c
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libudunits2_la_CFLAGS) $(CFLAGS) -c -o libudunits2_la-xml.lo `test -f 'xml.c' || echo '$(srcdir)/'`xml.c
 
 libudunits2_la-error.lo: error.c
-@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libudunits2_la_CPPFLAGS) $(CPPFLAGS) $(libudunits2_la_CFLAGS) $(CFLAGS) -MT libudunits2_la-error.lo -MD -MP -MF $(DEPDIR)/libudunits2_la-error.Tpo -c -o libudunits2_la-error.lo `test -f 'error.c' || echo '$(srcdir)/'`error.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libudunits2_la_CFLAGS) $(CFLAGS) -MT libudunits2_la-error.lo -MD -MP -MF $(DEPDIR)/libudunits2_la-error.Tpo -c -o libudunits2_la-error.lo `test -f 'error.c' || echo '$(srcdir)/'`error.c
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libudunits2_la-error.Tpo $(DEPDIR)/libudunits2_la-error.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='error.c' object='libudunits2_la-error.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libudunits2_la_CPPFLAGS) $(CPPFLAGS) $(libudunits2_la_CFLAGS) $(CFLAGS) -c -o libudunits2_la-error.lo `test -f 'error.c' || echo '$(srcdir)/'`error.c
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libudunits2_la_CFLAGS) $(CFLAGS) -c -o libudunits2_la-error.lo `test -f 'error.c' || echo '$(srcdir)/'`error.c
 
 libudunits2_la-ut_free_system.lo: ut_free_system.c
-@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libudunits2_la_CPPFLAGS) $(CPPFLAGS) $(libudunits2_la_CFLAGS) $(CFLAGS) -MT libudunits2_la-ut_free_system.lo -MD -MP -MF $(DEPDIR)/libudunits2_la-ut_free_system.Tpo -c -o libudunits2_la-ut_free_system.lo `test -f 'ut_free_system.c' || echo '$(srcdir)/'`ut_free_system.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libudunits2_la_CFLAGS) $(CFLAGS) -MT libudunits2_la-ut_free_system.lo -MD -MP -MF $(DEPDIR)/libudunits2_la-ut_free_system.Tpo -c -o libudunits2_la-ut_free_system.lo `test -f 'ut_free_system.c' || echo '$(srcdir)/'`ut_free_system.c
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libudunits2_la-ut_free_system.Tpo $(DEPDIR)/libudunits2_la-ut_free_system.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='ut_free_system.c' object='libudunits2_la-ut_free_system.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libudunits2_la_CPPFLAGS) $(CPPFLAGS) $(libudunits2_la_CFLAGS) $(CFLAGS) -c -o libudunits2_la-ut_free_system.lo `test -f 'ut_free_system.c' || echo '$(srcdir)/'`ut_free_system.c
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libudunits2_la_CFLAGS) $(CFLAGS) -c -o libudunits2_la-ut_free_system.lo `test -f 'ut_free_system.c' || echo '$(srcdir)/'`ut_free_system.c
 
 testUnits-testUnits.o: testUnits.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(testUnits_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT testUnits-testUnits.o -MD -MP -MF $(DEPDIR)/testUnits-testUnits.Tpo -c -o testUnits-testUnits.o `test -f 'testUnits.c' || echo '$(srcdir)/'`testUnits.c
@@ -937,10 +941,10 @@ check-am: all-am
 	$(MAKE) $(AM_MAKEFLAGS) check-TESTS
 check: $(BUILT_SOURCES)
 	$(MAKE) $(AM_MAKEFLAGS) check-recursive
-all-am: Makefile $(INFO_DEPS) $(LTLIBRARIES) $(DATA) $(HEADERS)
+all-am: Makefile $(LTLIBRARIES) $(DATA) $(HEADERS)
 installdirs: installdirs-recursive
 installdirs-am:
-	for dir in "$(DESTDIR)$(libdir)" "$(DESTDIR)$(infodir)" "$(DESTDIR)$(datadir)" "$(DESTDIR)$(includedir)"; do \
+	for dir in "$(DESTDIR)$(libdir)" "$(DESTDIR)$(datadir)" "$(DESTDIR)$(includedir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: $(BUILT_SOURCES)
@@ -994,8 +998,7 @@ info: info-recursive
 
 info-am: $(INFO_DEPS)
 
-install-data-am: install-dataDATA install-includeHEADERS \
-	install-info-am
+install-data-am: install-dataDATA install-includeHEADERS
 
 install-dvi: install-dvi-recursive
 

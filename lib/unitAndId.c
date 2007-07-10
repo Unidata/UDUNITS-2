@@ -1,7 +1,7 @@
 /*
  * Searchable unit-and-identifier tree.
  *
- * $Id: unitAndId.c,v 1.6 2007/04/11 20:28:18 steve Exp $
+ * $Id: unitAndId.c,v 1.7 2007/07/10 22:29:22 steve Exp $
  */
 
 /*LINTLIBRARY*/
@@ -25,20 +25,20 @@
  *	id	The identifier (name or symbol).  May be freed upon return.
  * Returns:
  *	NULL	Failure.  "ut_get_status()" will be
- *		    UT_NULL_ARG	"unit" or "id" is NULL.
+ *		    UT_BAD_ARG	"unit" or "id" is NULL.
  *		    UT_OS	Operating-system failure.  See "errno".
  *	else	Pointer to the new unit-and-identifier.
  */
 UnitAndId*
 uaiNew(
     const ut_unit* const	unit,
-    const char* const	id)
+    const char* const	        id)
 {
     UnitAndId*	entry = NULL;		/* failure */
 
     if (id == NULL || unit == NULL) {
 	ut_handle_error_message("uaiNew(): NULL argument");
-	ut_set_status(UT_NULL_ARG);
+	ut_set_status(UT_BAD_ARG);
     }
     else {
 	entry = malloc(sizeof(UnitAndId));

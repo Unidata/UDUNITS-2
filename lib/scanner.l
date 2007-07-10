@@ -1,7 +1,7 @@
 /*
  * lex(1) specification for tokens for the Unidata units package, UDUNITS2.
  *
- * $Id: scanner.l,v 1.6 2007/04/11 20:28:17 steve Exp $
+ * $Id: scanner.l,v 1.7 2007/07/10 22:29:22 steve Exp $
  */
 
 %option noyywrap
@@ -20,19 +20,6 @@
 %}
 
 space			[ \t\r\f\v]
-utf8_exp_0		\xe2\x81\xb0
-utf8_exp_1		\xc2\xb9
-utf8_exp_2		\xc2\xb2
-utf8_exp_3		\xc2\xb3
-utf8_exp_4		\xe2\x81\xb4
-utf8_exp_5		\xe2\x81\xb5
-utf8_exp_6		\xe2\x81\xb6
-utf8_exp_7		\xe2\x81\xb7
-utf8_exp_8		\xe2\x81\xb8
-utf8_exp_9		\xe2\x81\xb9
-utf8_exp_digit		{utf8_exp_0}|{utf8_exp_1}|{utf8_exp_2}|{utf8_exp_3}|{utf8_exp_4}|{utf8_exp_5}|{utf8_exp_6}|{utf8_exp_7}|{utf8_exp_8}|{utf8_exp_9}
-utf8_exp_sign		\xe2\x81\xba|\xe2\x81\xbb
-utf8_exponent		{utf8_exp_sign}?{utf8_exp_digit}+
 int			[0-9]+
 int_period		{int}\.
 period_int		\.{int}
@@ -40,34 +27,30 @@ int_period_int		{int}\.{int}
 mantissa		{int_period}|{period_int}|{int_period_int}
 real_exp		[eE][+-]?[0-9]+
 real			[+-]?({int}{real_exp}|{mantissa}{real_exp}?)
-latin1_exponent		[¹²³]+
 year			[+-]?[0-9]{1,4}
 month			0?[1-9]|1[0-2]
 day			0?[1-9]|[1-2][0-9]|30|31
 hour			[+-]?[0-1]?[0-9]|2[0-3]
 minute			[0-5]?[0-9]
 second			({minute}|60)(\.[0-9]*)?
-ascii_letter		[_a-zA-Z]
-ascii_alphanum		[_a-zA-Z0-9]
-ascii_id		%|'|\"|{ascii_letter}({ascii_alphanum}*{ascii_letter})?
-latin1_nbsp		\xa0
-latin1_shy		\xad
-latin1_degree		°
-latin1_mu		µ
-latin1_special		{latin1_nbsp}|{latin1_shy}|{latin1_degree}|{latin1_mu}
-latin1_blk1		[À-Ö]
-latin1_blk2		[Ø-ö]
-latin1_blk3		[ø-\xff]
-latin1_blk		{latin1_blk1}|{latin1_blk2}|{latin1_blk3}
-latin1_letter		[_a-zA-Z]|{latin1_special}|{latin1_blk}
-latin1_alphanum		{latin1_letter}|[0-9]
-latin1_id		%|'|´|{latin1_letter}({latin1_alphanum}*{latin1_letter})?
-utf8_ohm		\xe0\x96\xa9
-utf8_special		\xc2{latin1_special}|{utf8_ohm}
-utf8_blk		\xc2{latin1_blk}
-utf8_letter		[_a-zA-Z]|{utf8_special}|{utf8_blk}
-utf8_alphanum		{utf8_letter}|[0-9]
-utf8_id			%|'|\"|\xe2\x80\xb3|{utf8_letter}({utf8_alphanum}*{utf8_letter})?
+middot                  \xc2\xb7
+utf8_exp_digit	        \xc2(\xb9|\xb2|\xb3)|\xe2\x81(\xb0|[\xb4-\xb9])
+utf8_exp_sign		\xe2\x81\xba|\xe2\x81\xbb
+utf8_exponent		{utf8_exp_sign}?{utf8_exp_digit}+
+nbsp                    \xc2\xa0
+shy                     \xc2\xad
+degree                  \xc2\xb0
+mu                      \xc2\xb5
+blk1                    \xc3([\x80-\x96])
+blk2                    \xc3([\x98-\xB6])
+blk3                    \xc3([\xB8-\xBF])
+latin1		        {nbsp}|{shy}|{degree}|{mu}|{blk1}|{blk2}|{blk3}
+utf8_cont               [\x80-\xbf]
+utf8_2bytes             [\xc8-\xdf]{utf8_cont}
+utf8_3bytes             [\xe0-\xef]{utf8_cont}{utf8_cont}
+letter  		[_a-zA-Z]|{latin1}|{utf8_2bytes}|{utf8_3bytes}
+alphanum		{letter}|[0-9]
+id			%|'|\"|{letter}({alphanum}*{letter})?
 broken_date		{year}-{month}(-{day})?
 packed_date		{year}({month}{day}?)?
 broken_clock		{hour}:{minute}(:{second})?
@@ -75,94 +58,51 @@ packed_clock		{hour}({minute}{second}?)?
 broken_timestamp	{broken_date}({space}+{broken_clock})?
 packed_timestamp	{packed_date}T{packed_clock}?
 logref			\({space}*[Rr][Ee](:{space})?{space}*
+after                   [Aa][Ff][Tt][Ee][Rr]
+from                    [Ff][Rr][Oo][Mm]
+since                   [Ss][Ii][Nn][Cc][Ee]
+ref                     [Rr][Ee][Ff]
+per                     [Pp][Ee][Rr]
 
-%Start		latin1 utf8 ascii_exp latin1_exp utf8_exp
+%Start		id_seen
 
 %%
-    int	initial_condition;
-    int	exp_condition;
-
-    if (_encoding == UT_UTF8) {
-	initial_condition = utf8;
-	exp_condition = utf8_exp;
-    }
-    else if (_encoding == UT_LATIN1) {
-	initial_condition = latin1;
-	exp_condition = latin1_exp;
-    }
-    else {
-	initial_condition = INITIAL;
-	exp_condition = ascii_exp;
-    }
-
     if (_restartScanner) {
-	BEGIN(initial_condition);
+	BEGIN(INITIAL);
 	_restartScanner = 0;
     }
 
-{space}*(@|after|AFTER|from|FROM|since|SINCE|ref|REF){space}* {
-    BEGIN(initial_condition);
+{space}*(@|{after}|{from}|{since}|{ref}){space}* {
+    BEGIN(INITIAL);
     return SHIFT;
 }
 
-{space}*(per|PER|"/"){space}* {
-    BEGIN(initial_condition);
+{space}*({per}|"/"){space}* {
+    BEGIN(INITIAL);
     return DIVIDE;
 }
 
-"-"|"."|"*"|{space}+ {
-    BEGIN(initial_condition);
+"-"|"."|"*"|{middot}|{space}+ {
+    BEGIN(INITIAL);
     return MULTIPLY;
 }
 
-<latin1,latin1_exp>"·" {
-    BEGIN(initial_condition);
-    return MULTIPLY;
-}
+("^"|"**")[+-]?{int} {
+    int		status;
 
-<utf8,utf8_exp>\xc2\xb7 {
-    BEGIN(initial_condition);
-    return MULTIPLY;
-}
+    if (sscanf(yytext, "%*[*^]%ld", &yylval.ival) != 1) {
+        ut_handle_error_message("udunits(3): Invalid integer\n", stderr);
 
-"^"|"**" {
-    BEGIN(exp_condition);
-    return RAISE;
-}
-
-<latin1,latin1_exp>{latin1_exponent} {
-    int	status = EXPONENT;
-    int	exponent = 0;
-    int	i;
-
-    for (i = 0; i < yyleng; i++) {
-	int	c = yytext[i];
-
-	exponent *= 10;
-
-	if (c == '¹') {
-	    exponent += 1;
-	}
-	else if (c == '²') {
-	    exponent += 2;
-	}
-	else if (c == '³') {
-	    exponent += 3;
-	}
-	else {
-	    status = ERR;
-	    break;
-	}
+	status	= ERR;
+    }
+    else {
+	status	= EXPONENT;
     }
 
-    if (status == EXPONENT)
-	yylval.ival = exponent;
-
-    BEGIN(initial_condition);
     return status;
 }
 
-<utf8,utf8_exp>{utf8_exponent} {
+{utf8_exponent} {
     int		status = EXPONENT;
     int		exponent = 0;
     int		sign = 1;
@@ -182,16 +122,16 @@ logref			\({space}*[Rr][Ee](:{space})?{space}*
 	    const char*	string;
 	    const int	len;
 	} utf8_exponents[] = {
-	    {"\xe2\x81\xb0", 3},
-	    {"\xc2\xb9",     2},
-	    {"\xc2\xb2",     2},
-	    {"\xc2\xb3",     2},
-	    {"\xe2\x81\xb4", 3},
-	    {"\xe2\x81\xb5", 3},
-	    {"\xe2\x81\xb6", 3},
-	    {"\xe2\x81\xb7", 3},
-	    {"\xe2\x81\xb8", 3},
-	    {"\xe2\x81\xb9", 3},
+	    {"\xe2\x81\xb0", 3},        /* 0 */
+	    {"\xc2\xb9",     2},        /* 1 */
+	    {"\xc2\xb2",     2},        /* 2 */
+	    {"\xc2\xb3",     2},        /* 3 */
+	    {"\xe2\x81\xb4", 3},        /* 4 */
+	    {"\xe2\x81\xb5", 3},        /* 5 */
+	    {"\xe2\x81\xb6", 3},        /* 6 */
+	    {"\xe2\x81\xb7", 3},        /* 7 */
+	    {"\xe2\x81\xb8", 3},        /* 8 */
+	    {"\xe2\x81\xb9", 3},        /* 9 */
 	};
 
 	exponent *= 10;
@@ -215,7 +155,7 @@ logref			\({space}*[Rr][Ee](:{space})?{space}*
     if (status == EXPONENT)
 	yylval.ival = sign * exponent;
 
-    BEGIN(initial_condition);
+    BEGIN(INITIAL);
     return status;
 }
 
@@ -228,7 +168,7 @@ logref			\({space}*[Rr][Ee](:{space})?{space}*
 
     yylval.rval	= ut_encode_date(year, month, day);
 
-    BEGIN(initial_condition);
+    BEGIN(INITIAL);
     return DATE;
 }
 
@@ -241,7 +181,7 @@ logref			\({space}*[Rr][Ee](:{space})?{space}*
 
     yylval.rval	= ut_encode_clock(hour, minute, second);
 
-    BEGIN(initial_condition);
+    BEGIN(INITIAL);
     return CLOCK;
 }
 
@@ -258,22 +198,25 @@ logref			\({space}*[Rr][Ee](:{space})?{space}*
 
     yylval.rval	= ut_encode_time(year, month, day, hour, minute, second);
 
-    BEGIN(initial_condition);
+    BEGIN(INITIAL);
     return TIMESTAMP;
 }
 
-{ascii_id} {
-    yylval.id = strdup((char*)yytext);
+<INITIAL>{real} {
+    int		status;
 
-    BEGIN(exp_condition);
-    return ID;
-}
+    errno	= 0;
+    yylval.rval = atof((char*)yytext);
 
-<latin1>{latin1_id} {
-    yylval.id = strdup((char*)yytext);
+    if (errno == 0) {
+	status	= REAL;
+    } else {
+        ut_handle_error_message("udunits(3): Invalid real\n", stderr);
 
-    BEGIN(latin1_exp);
-    return ID;
+	status	= ERR;
+    }
+
+    return status;
 }
 
 [+-]?{int} {
@@ -285,24 +228,7 @@ logref			\({space}*[Rr][Ee](:{space})?{space}*
     if (errno == 0) {
 	status	= INT;
     } else {
-	(void) fputs("udunits(3): Invalid integer\n", stderr);
-
-	status	= ERR;
-    }
-
-    return status;
-}
-
-<INITIAL,latin1,utf8>{real} {
-    int		status;
-
-    errno	= 0;
-    yylval.rval = atof((char*)yytext);
-
-    if (errno == 0) {
-	status	= REAL;
-    } else {
-	(void) fputs("udunits(3): Invalid real\n", stderr);
+        ut_handle_error_message("udunits(3): Invalid integer\n", stderr);
 
 	status	= ERR;
     }
@@ -325,8 +251,15 @@ lb{space}*{logref} {
     return LOGREF;
 }
 
+{id} {
+    yylval.id = strdup((char*)yytext);
+
+    BEGIN(id_seen);
+    return ID;
+}
+
 . {
-    BEGIN(initial_condition);
+    BEGIN(INITIAL);
     return yytext[0];
 }
 

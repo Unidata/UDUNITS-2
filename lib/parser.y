@@ -1,8 +1,11 @@
 %{
 /*
- * $Id: parser.y,v 1.9 2007/04/11 20:28:17 steve Exp $
+ * $Id: parser.y,v 1.10 2007/07/10 22:29:22 steve Exp $
  *
  * yacc(1)-based parser for decoding formatted unit specifications.
+ *
+ * This module is thread-compatible but not thread-safe.  Multi-threaded
+ * access must be externally synchronized.
  */
 
 /*LINTLIBRARY*/
@@ -11,6 +14,7 @@
 #   define _XOPEN_SOURCE 500
 #endif
 
+#include <assert.h>
 #include <ctype.h>
 #include <errno.h>
 #include <stdlib.h>
@@ -20,20 +24,19 @@
 
 #include "udunits2.h"
 
-static ut_unit*		finalUnit;	/* fully-parsed specification */
-static ut_system*	unitSystem;	/* The unit-system to use */
-static char*		errorMessage;	/* last error-message */
+static ut_unit*		_finalUnit;	/* fully-parsed specification */
+static ut_system*	_unitSystem;	/* The unit-system to use */
+static char*		_errorMessage;	/* last error-message */
 static ut_encoding	_encoding;	/* encoding of string to be parsed */
-static int		_restartScanner;	/* restart scanner? */
-static size_t		_nchar;		/* number of parsed characters */
+static int		_restartScanner;/* restart scanner? */
 
 
 /*
  * Removes leading and trailing whitespace from a string.
  *
  * Arguments:
- *	string		NUL-terminated string.  Will be modified if it contains
- *                      whitespace.
+ *	string		NUL-terminated string.  Will be modified if it
+ *                      contains whitespace.
  *	encoding	The character-encoding of "string".
  * Returns:
  *      "string"
@@ -74,22 +77,6 @@ ut_trim(
 
 
 /*
- * Returns the number of successfully parsed characters.  If ut_parse() was
- * successful, then the returned number will equal the length of the string;
- * otherwise, the returned number will be the 0-based index of the character
- * that caused the parse to fail.
- *
- * Returns:
- *	The number of successfully parsed characters.
- */
-size_t
-ut_get_parse_length(void)
-{
-    return _nchar;
-}
-
-
-/*
  *  YACC error routine:
  */
 void
@@ -98,13 +85,13 @@ uterror(
 {
     static char*	nomem = "ut_error(): out of memory";
 
-    if (errorMessage != NULL && errorMessage != nomem)
-	free(errorMessage);
+    if (_errorMessage != NULL && _errorMessage != nomem)
+	free(_errorMessage);
 
-    errorMessage = strdup(s);
+    _errorMessage = strdup(s);
 
-    if (errorMessage == NULL)
-	errorMessage = nomem;
+    if (_errorMessage == NULL)
+	_errorMessage = nomem;
 }
 %}
 
@@ -119,7 +106,6 @@ uterror(
 %token		SHIFT
 %token  	MULTIPLY
 %token  	DIVIDE
-%token  	RAISE
 %token  <ival>	INT
 %token  <ival>	EXPONENT
 %token  <rval>	REAL
@@ -140,11 +126,11 @@ uterror(
 %%
 
 unit_spec:      /* nothing */ {
-		    finalUnit = ut_get_dimensionless_unit_one(unitSystem);
+		    _finalUnit = ut_get_dimensionless_unit_one(_unitSystem);
 		    YYACCEPT;
 		} |
 		shift_exp {
-		    finalUnit = $1;
+		    _finalUnit = $1;
 		    YYACCEPT;
 		} |
 		error {
@@ -232,14 +218,6 @@ power_exp:	basic_exp {
 
 		    if ($$ == NULL)
 			YYABORT;
-		} |
-		basic_exp RAISE INT {
-		    $$ = ut_raise($1, $3);
-
-		    ut_free($1);
-
-		    if ($$ == NULL)
-			YYABORT;
 		}
 		;
 
@@ -253,20 +231,20 @@ basic_exp:	ID {
 			size_t	nchar;
 			double	value;
 
-			unit = ut_get_unit_by_name(unitSystem, cp);
+			unit = ut_get_unit_by_name(_unitSystem, cp);
 
 			if (unit != NULL)
 			    break;
 
-			unit = ut_get_unit_by_symbol(unitSystem, cp);
+			unit = ut_get_unit_by_symbol(_unitSystem, cp);
 
 			if (unit != NULL)
 			    break;
 
-			if (utGetPrefixByName(unitSystem, cp, &value, &nchar)
+			if (utGetPrefixByName(_unitSystem, cp, &value, &nchar)
 				!= UT_SUCCESS) {
 			    if (symbolPrefixSeen ||
-				    utGetPrefixBySymbol(unitSystem, cp, &value,
+				    utGetPrefixBySymbol(_unitSystem, cp, &value,
 					&nchar) != UT_SUCCESS)
 				break;
 
@@ -303,7 +281,8 @@ basic_exp:	ID {
 			YYABORT;
 		} |
 		number {
-		    $$ = ut_scale($1, ut_get_dimensionless_unit_one(unitSystem));
+		    $$ = ut_scale($1,
+                        ut_get_dimensionless_unit_one(_unitSystem));
 		}
 		;
 
@@ -417,6 +396,65 @@ timestamp:	DATE {
 
 
 /*
+ * Converts a string in the Latin-1 character set (ISO 8859-1) to the UTF-8
+ * character set.
+ *
+ * Arguments:
+ *      latin1String    Pointer to the string to be converted.  May be freed
+ *                      upon return.
+ * Returns:
+ *      NULL            Failure.  ut_handle_error_message() was called.
+ *      else            Pointer to UTF-8 representation of "string".  Must not
+ *                      be freed.  Subsequent calls may overwrite.
+ */
+static const char*
+latin1ToUtf8(
+    const char* const   latin1String)
+{
+    static char*                utf8String = NULL;
+    static size_t               bufSize = 0;
+    size_t                      size;
+    const unsigned char*        in;
+    unsigned char*              out;
+
+    assert(latin1String != NULL);
+
+    size = 2 * strlen(latin1String) + 1;
+
+    if (size > bufSize) {
+        char*   buf = realloc(utf8String, size);
+
+        if (buf != NULL) {
+            utf8String = buf;
+            bufSize = size;
+        }
+        else {
+            ut_handle_error_message("Couldn't allocate %ld-byte buffer: %s",
+                (unsigned long)size, strerror(errno));
+
+            return NULL;
+        }
+    }
+
+    for (in = latin1String, out = utf8String; *in; ++in) {
+#       define IS_ASCII(c) (((c) & 0x80) == 0)
+
+        if (IS_ASCII(*in)) {
+            *out++ = *in;
+        }
+        else {
+            *out++ = 0xC0 | ((0xC0 & *in) >> 6);
+            *out++ = 0x80 | (0x3F & *in);
+        }
+    }
+
+    *out = 0;
+
+    return utf8String;
+}
+
+
+/*
  * Returns the binary representation of a unit corresponding to a string
  * representation.
  *
@@ -429,7 +467,7 @@ timestamp:	DATE {
  *	encoding	The encoding of "string".
  * Returns:
  *	NULL		Failure.  "ut_get_status()" will be one of
- *			    UT_NULL_ARG		"system" or "string" is NULL.
+ *			    UT_BAD_ARG		"system" or "string" is NULL.
  *			    UT_SYNTAX		"string" contained a syntax
  *						error.
  *			    UT_UNKNOWN		"string" contained an unknown
@@ -442,54 +480,60 @@ ut_unit*
 ut_parse(
     ut_system* const	system,
     const char* const	string,
-    const ut_encoding	encoding)
+    ut_encoding	        encoding)
 {
     ut_unit*	unit = NULL;		/* failure */
 
     if (system == NULL || string == NULL) {
-	ut_set_status(UT_NULL_ARG);
+	ut_set_status(UT_BAD_ARG);
     }
     else {
-	YY_BUFFER_STATE	buf;
+        const char*     utf8String;
 
 	utrestart((FILE*)NULL);
 
-	buf = ut_scan_string(string);
-	unitSystem = system;
-	_encoding = encoding;
-	_restartScanner = 1;
+        if (encoding != UT_LATIN1) {
+            utf8String = string;
+        }
+        else {
+            utf8String = latin1ToUtf8(string);
+            encoding = UT_UTF8;
+
+            if (utf8String == NULL)
+                ut_set_status(UT_OS);
+        }
+
+        if (utf8String != NULL) {
+            YY_BUFFER_STATE	buf = ut_scan_string(utf8String);
+
+            _unitSystem = system;
+            _encoding = encoding;
+            _restartScanner = 1;
 
 #if YYDEBUG
-	utdebug = 0;
-	ut_flex_debug = 0;
+            utdebug = 0;
+            ut_flex_debug = 0;
 #endif
 
-	finalUnit = NULL;
+            _finalUnit = NULL;
 
-	if (utparse() == 0) {
-	    int	n = yy_c_buf_p  - buf->yy_ch_buf;
+            if (utparse() == 0) {
+                int	n = yy_c_buf_p  - buf->yy_ch_buf;
 
-	    if (n >= strlen(string)) {
-		unit = finalUnit;	/* success */
-	    }
-	    else {
-		/*
-		 * Parsing terminated before the end of the string.
-		 */
-		ut_free(finalUnit);
+                if (n >= strlen(utf8String)) {
+                    unit = _finalUnit;	/* success */
+                }
+                else {
+                    /*
+                     * Parsing terminated before the end of the string.
+                     */
+                    ut_free(_finalUnit);
+                }
+            }
 
-		/*
-		 * The number of characters parsed is adjusted because
-		 * the scanner accepted the terminating character.
-		 */
-		n--;
-	    }
-
-	    _nchar = n;
-	}
-
-	ut_delete_buffer(buf);
-    }
+            ut_delete_buffer(buf);
+        }                               /* utf8String != NULL */
+    }                                   /* valid arguments */
 
     return unit;
 }

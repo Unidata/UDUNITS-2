@@ -11,16 +11,13 @@ typedef union ut_unit		ut_unit;
 
 typedef enum {
     UT_SUCCESS = 0,	/* Success */
-    UT_NULL_ARG,	/* An argument is NULL */
-    UT_BAD_ID,		/* Identifier is NULL or empty */
-    UT_BAD_VALUE,	/* Invalid numeric value */
+    UT_BAD_ARG,	        /* An argument violates the function's contract */
     UT_EXISTS,		/* Unit, prefix, or identifier already exists */
     UT_NO_UNIT,		/* No such unit exists */
     UT_OS,		/* Operating-system error.  See "errno". */
     UT_NOT_SAME_SYSTEM,	/* The units belong to different unit-systems */
     UT_MEANINGLESS,	/* The operation on the unit(s) is meaningless */
     UT_NO_SECOND,	/* The unit-system doesn't have a unit named "second" */
-    UT_BAD_BUF,		/* Character buffer argument is NULL */
     UT_VISIT_ERROR,	/* An error occurred while visiting a unit */
     UT_CANT_FORMAT,	/* A unit can't be formatted in the desired manner */
     UT_SYNTAX,		/* string unit representation contains syntax error */
@@ -28,7 +25,7 @@ typedef enum {
     UT_OPEN_ARG,	/* Can't open argument-specified unit database */
     UT_OPEN_ENV,	/* Can't open environment-specified unit database */
     UT_OPEN_DEFAULT,	/* Can't open installed, default, unit database */
-    UT_PARSE		/* Error parsing unit database */
+    UT_PARSE		/* Error parsing unit specification */
 } ut_status;
 
 typedef enum {
@@ -206,7 +203,7 @@ ut_free_system(
  *	unit	Pointer to the unit in question.
  * Returns:
  *	NULL	Failure.  "ut_get_status()" will be
- *		    UT_NULL_ARG	"unit" is NULL.
+ *		    UT_BAD_ARG	"unit" is NULL.
  *	else	Pointer to the unit-system to which "unit" belongs.
  */
 ut_system*
@@ -222,7 +219,7 @@ ut_get_system(
  *		will be returned.
  * Returns:
  *	NULL	Failure.  "ut_get_status()" will be:
- *		    UT_NULL_ARG	"system" is NULL.
+ *		    UT_BAD_ARG	"system" is NULL.
  *	else	Pointer to the dimensionless-unit one associated with "system".
  *		While not necessary, the pointer may be passed to ut_free()
  *		when the unit is no longer needed by the client.
@@ -243,7 +240,7 @@ ut_get_dimensionless_unit_one(
  *	NULL	Failure.  "ut_get_status()" will be
  *		    UT_SUCCESS		"name" doesn't map to a unit of
  *					"system".
- *		    UT_NULL_ARG		"system" or "name" is NULL.
+ *		    UT_BAD_ARG		"system" or "name" is NULL.
  *	else	Pointer to the unit of the unit-system with the given name.
  *		The pointer should be passed to ut_free() when the unit is
  *		no longer needed.
@@ -266,7 +263,7 @@ ut_get_unit_by_name(
  *	NULL	Failure.  "ut_get_status()" will be
  *		    UT_SUCCESS		"symbol" doesn't map to a unit of
  *					"system".
- *		    UT_NULL_ARG		"system" or "symbol" is NULL.
+ *		    UT_BAD_ARG		"system" or "symbol" is NULL.
  *	else	Pointer to the unit in the unit-system with the given symbol.
  *		The pointer should be passed to ut_free() when the unit is no
  *		longer needed.
@@ -285,7 +282,7 @@ ut_get_unit_by_symbol(
  * Arguments:
  *	second		Pointer to the "second" unit.
  * Returns:
- *	UT_NULL_ARG	"second" is NULL.
+ *	UT_BAD_ARG	"second" is NULL.
  *	UT_EXISTS	The second unit of the unit-system to which "second"
  *			belongs is set to a different unit.
  *	UT_SUCCESS	Success.
@@ -311,8 +308,7 @@ ut_set_second(
  *	value		The value of the prefix (e.g., 1e6).
  * Returns:
  *	UT_SUCCESS	Success.
- *	UT_NULL_ARG	"system" or "name" is NULL.
- *	UT_BAD_VALUE	"value" is 0.
+ *	UT_BAD_ARG	"system" or "name" is NULL, or "value" is 0.
  *	UT_EXISTS	"name" already maps to a different value.
  *	UT_OS		Operating-system failure.  See "errno".
  */
@@ -335,7 +331,7 @@ ut_add_name_prefix(
  * Returns:
  *	UT_SUCCESS	Success.
  *	UT_BADSYSTEM	"system" or "symbol" is NULL.
- *	UT_BAD_VALUE	"value" is 0.
+ *	UT_BAD_ARG	"value" is 0.
  *	UT_EXISTS	"symbol" already maps to a different value.
  *	UT_OS		Operating-system failure.  See "errno".
  */
@@ -359,7 +355,7 @@ ut_add_symbol_prefix(
  *	system	Pointer to the unit-system to which to add the new base-unit.
  * Returns:
  *	NULL	Failure.  "ut_get_status()" will be
- *		    UT_NULL_ARG		"system" or "name" is NULL.
+ *		    UT_BAD_ARG		"system" or "name" is NULL.
  *		    UT_OS		Operating-system error.  See "errno".
  *	else	Pointer to the new base-unit.  The pointer should be passed to
  *		ut_free() when the unit is no longer needed by the client (the
@@ -380,7 +376,7 @@ ut_new_base_unit(
  *		dimensionless-unit.
  * Returns:
  *	NULL	Failure.  "ut_get_status()" will be
- *		    UT_NULL_ARG		"system" is NULL.
+ *		    UT_BAD_ARG		"system" is NULL.
  *		    UT_OS		Operating-system error.  See "errno".
  *	else	Pointer to the new dimensionless-unit.  The pointer should be
  *		passed to ut_free() when the unit is no longer needed by the
@@ -399,7 +395,7 @@ ut_new_dimensionless_unit(
  * Returns:
  *	NULL	Failure.  ut_get_status() will be
  *		    UT_OS	Operating-system failure.  See "errno".
- *		    UT_NULL_ARG	"unit" is NULL.
+ *		    UT_BAD_ARG	"unit" is NULL.
  *	else	Pointer to the clone of "unit".  The pointer should be
  *		passed to ut_free() when the unit is no longer needed by the
  *		client.
@@ -435,7 +431,7 @@ ut_free(
  *	encoding	The desired encoding of the name.
  * Returns:
  *	NULL		Failure.  "ut_get_status()" will be
- *			    UT_NULL_ARG		"unit" is NULL.
+ *			    UT_BAD_ARG		"unit" is NULL.
  *			    UT_SUCCESS		"unit" doesn't map to a name in
  *						in the given encoding.
  *	else		Pointer to the name in the given encoding to which
@@ -456,7 +452,7 @@ ut_get_name(
  *	unit		Pointer to the unit to be mapped-to by "name".  May be
  *			freed upon return.
  * Returns:
- *	UT_NULL_ARG	"name" or "unit" is NULL.
+ *	UT_BAD_ARG	"name" or "unit" is NULL.
  *	UT_OS		Operating-system error.  See "errno".
  *	UT_EXISTS	"name" already maps to a different unit.
  *	UT_SUCCESS	Success.
@@ -476,7 +472,7 @@ ut_map_name_to_unit(
  *	name		The name of the unit.
  * Returns:
  *	UT_SUCCESS	Success.
- *	UT_NULL_ARG	"system" or "name" is NULL.
+ *	UT_BAD_ARG	"system" or "name" is NULL.
  */
 ut_status
 ut_unmap_name_to_unit(
@@ -495,8 +491,8 @@ ut_unmap_name_to_unit(
  *	encoding	The encoding of "name".
  * Returns:
  *	UT_SUCCESS	Success.
- *	UT_NULL_ARG	"unit" or "name" is NULL.
- *	UT_BAD_ID	"name" is not in the specified encoding.
+ *	UT_BAD_ARG	"unit" or "name" is NULL, or "name" is not in the
+ *                      specified encoding.
  *	UT_OS		Operating-system error.  See "errno".
  *	UT_EXISTS	"unit" already maps to a name.
  */
@@ -515,7 +511,7 @@ ut_map_unit_to_name(
  *	encoding	The encoding to be removed.  No other encodings will be
  *			removed.
  * Returns:
- *	UT_NULL_ARG	"unit" is NULL.
+ *	UT_BAD_ARG	"unit" is NULL.
  *	UT_SUCCESS	Success.
  */
 ut_status
@@ -537,7 +533,7 @@ ut_unmap_unit_to_name(
  *	encoding	The desired encoding of the symbol.
  * Returns:
  *	NULL		Failure.  "ut_get_status()" will be
- *			    UT_NULL_ARG		"unit" is NULL.
+ *			    UT_BAD_ARG		"unit" is NULL.
  *			    UT_SUCCESS		"unit" doesn't map to a symbol
  *						in the given encoding.
  *	else		Pointer to the symbol in the given encoding to which
@@ -558,7 +554,7 @@ ut_get_symbol(
  *	unit		Pointer to the unit to be mapped-to by "symbol".  May
  *			be freed upon return.
  * Returns:
- *	UT_NULL_ARG	"symbol" or "unit" is NULL.
+ *	UT_BAD_ARG	"symbol" or "unit" is NULL.
  *	UT_OS		Operating-system error.  See "errno".
  *	UT_EXISTS	"symbol" already maps to a different unit.
  *	UT_SUCCESS	Success.
@@ -578,7 +574,7 @@ ut_map_symbol_to_unit(
  *	symbol		The symbol of the unit.
  * Returns:
  *	UT_SUCCESS	Success.
- *	UT_NULL_ARG	"system" or "symbol" is NULL.
+ *	UT_BAD_ARG	"system" or "symbol" is NULL.
  */
 ut_status
 ut_unmap_symbol_to_unit(
@@ -597,7 +593,7 @@ ut_unmap_symbol_to_unit(
  *	encoding	The encoding of "symbol".
  * Returns:
  *	UT_SUCCESS	Success.
- *	UT_NULL_ARG	"unit" or "symbol" is NULL.
+ *	UT_BAD_ARG	"unit" or "symbol" is NULL.
  *	UT_OS		Operating-system error.  See "errno".
  *	UT_EXISTS	"unit" already maps to a symbol.
  */
@@ -618,7 +614,7 @@ ut_map_unit_to_symbol(
  *			other encodings will not be removed.
  * Returns:
  *	UT_SUCCESS	Success.
- *	UT_NULL_ARG	"unit" is NULL.
+ *	UT_BAD_ARG	"unit" is NULL.
  */
 ut_status
 ut_unmap_unit_to_symbol(
@@ -640,7 +636,7 @@ ut_unmap_unit_to_symbol(
  * Returns:
  *	0	"unit" is dimensionfull or an error occurred.  "ut_get_status()"
  *		 will be
- *		    UT_NULL_ARG		"unit" is NULL.
+ *		    UT_BAD_ARG		"unit" is NULL.
  *		    UT_SUCCESS		"unit" is dimensionfull.
  *	else	"unit" is dimensionless.
  */
@@ -658,7 +654,7 @@ ut_is_dimensionless(
  * Returns:
  *	0		Failure or the units belong to different unit-systems.
  *			"ut_get_status()" will be
- *	    		    UT_NULL_ARG		"unit1" or "unit2" is NULL.
+ *	    		    UT_BAD_ARG		"unit1" or "unit2" is NULL.
  *	    		    UT_SUCCESS		The units belong to different
  *						unit-systems.
  *	else		The units belong to the same unit-system.
@@ -699,7 +695,7 @@ ut_compare(
  *	unit2		Pointer to another unit.
  * Returns:
  *	0		Failure.  "ut_get_status()" will be
- *	    		    UT_NULL_ARG		"unit1" or "unit2" is NULL.
+ *	    		    UT_BAD_ARG		"unit1" or "unit2" is NULL.
  *			    UT_NOT_SAME_SYSTEM	"unit1" and "unit2" belong to
  *						different unit-sytems.
  *			    UT_SUCCESS		Conversion between the units is
@@ -727,7 +723,7 @@ ut_are_convertible(
  *	to		Pointer to the unit to which to convert values.
  * Returns:
  *	NULL		Failure.  "ut_get_status()" will be:
- *			    UT_NULL_ARG		"from" or "to" is NULL.
+ *			    UT_BAD_ARG		"from" or "to" is NULL.
  *			    UT_NOT_SAME_SYSTEM	"from" and "to" belong to
  *						different unit-systems.
  *			    UT_MEANINGLESS	Conversion between the units is
@@ -759,8 +755,7 @@ ut_get_converter(
  *	unit		Pointer to the unit to be scaled.
  * Returns:
  *	NULL		Failure.  "ut_get_status()" will be
- *			    UT_BAD_VALUE	"factor" is 0.
- *			    UT_NULL_ARG		"unit" is NULL.
+ *			    UT_BAD_ARG  	"factor" is 0 or "unit" is NULL.
  *			    UT_OS		Operating-system error.  See
  *						"errno".
  *	else		Pointer to the resulting unit.  The pointer should be
@@ -784,7 +779,7 @@ ut_scale(
  *	offset		The numeric offset.
  * Returns:
  *	NULL		Failure.  "ut_get_status()" will be
- *			    UT_NULL_ARG		"unit" is NULL.
+ *			    UT_BAD_ARG		"unit" is NULL.
  *			    UT_OS		Operating-system error.  See
  *						"errno".
  *	else		Pointer to the resulting unit.  The pointer should be
@@ -809,7 +804,7 @@ ut_offset(
  *	origin	The origin as returned by ut_encode_time().
  * Returns:
  *	NULL	Failure.  "ut_get_status()" will be
- *		    UT_NULL_ARG		"unit" is NULL.
+ *		    UT_BAD_ARG		"unit" is NULL.
  *		    UT_OS		Operating-system error.  See "errno".
  *		    UT_MEANINGLESS	Creation of a timestamp unit based on
  *					"unit" is not meaningful.
@@ -833,7 +828,7 @@ ut_offset_by_time(
  *	unit2	Pointer to another unit.
  * Returns:
  *	NULL	Failure.  "ut_get_status()" will be:
- *		    UT_NULL_ARG		"unit1" or "unit2" is NULL.
+ *		    UT_BAD_ARG		"unit1" or "unit2" is NULL.
  *		    UT_NOT_SAME_SYSTEM	"unit1" and "unit2" belong to
  *					different unit-systems.
  *		    UT_OS		Operating-system error. See "errno".
@@ -854,7 +849,7 @@ ut_multiply(
  *	unit	Pointer to the unit.
  * Returns:
  *	NULL	Failure.  "ut_get_status()" will be:
- *		    UT_NULL_ARG		"unit" is NULL.
+ *		    UT_BAD_ARG		"unit" is NULL.
  *		    UT_OS		Operating-system error. See "errno".
  *	else	Pointer to the resulting unit.  The pointer should be passed to
  *		ut_free() when the unit is no longer needed by the client.
@@ -878,7 +873,7 @@ ut_invert(
  *	denom	Pointer to the denominator (bottom, divisor) unit.
  * Returns:
  *	NULL	Failure.  "ut_get_status()" will be:
- *		    UT_NULL_ARG		"numer" or "denom" is NULL.
+ *		    UT_BAD_ARG		"numer" or "denom" is NULL.
  *		    UT_NOT_SAME_SYSTEM	"unit1" and "unit2" belong to
  *					different unit-systems.
  *		    UT_OS		Operating-system error. See "errno".
@@ -900,8 +895,7 @@ ut_divide(
  *		equal to -255 and less than or equal to 255.
  * Returns:
  *	NULL	Failure.  "ut_get_status()" will be:
- *		    UT_NULL_ARG		"unit" is NULL.
- *		    UT_BAD_VALUE	"power" is invalid.
+ *		    UT_BAD_ARG		"unit" is NULL or "power" is invalid.
  *		    UT_OS		Operating-system error. See "errno".
  *	else	Pointer to the resulting unit.  The pointer should be passed to
  *		ut_free() when the unit is no longer needed by the client.
@@ -943,8 +937,8 @@ ut_raise(
  *	reference	Pointer to the reference value as a unit.
  * Returns:
  *	NULL		Failure.  "ut_get_status()" will be:
- *			    UT_BAD_VALUE	"base" is invalid.
- *			    UT_NULL_ARG		"reference" is NULL.
+ *			    UT_BAD_ARG	        "base" is invalid or "reference"
+ *                                              is NULL.
  *			    UT_OS		Operating-system error. See
  *						"errno".
  *	else		Pointer to the resulting unit.  The pointer should be
@@ -975,7 +969,7 @@ ut_log(
  *	encoding	The encoding of "string".
  * Returns:
  *	NULL		Failure.  "ut_get_status()" will be one of
- *			    UT_NULL_ARG		"system" or "string" is NULL.
+ *			    UT_BAD_ARG		"system" or "string" is NULL.
  *			    UT_SYNTAX		"string" contained a syntax
  *						error.
  *			    UT_UNKNOWN		"string" contained an unknown
@@ -989,19 +983,6 @@ ut_parse(
     ut_system* const	system,
     const char* const	string,
     const ut_encoding	encoding);
-
-
-/*
- * Returns the number of successfully parsed characters.  If ut_parse() was
- * successful, then the returned number will equal the length of the string;
- * otherwise, the returned number will be the 0-based index of the character
- * that caused the parse to fail.
- *
- * Returns:
- *	The number of successfully parsed characters.
- */
-size_t
-ut_get_parse_length(void);
 
 
 /*
@@ -1048,9 +1029,8 @@ ut_trim(
  *			not both be specified.
  * Returns:
  *	-1		Failure:  "ut_get_status()" will be
- *			    UT_NULL_ARG		"unit" or "buf" is NULL
- *			    UT_BAD_VALUE	Both UT_LATIN1 and UT_UTF8
- *						specified.
+ *			    UT_BAD_ARG		"unit" or "buf" is NULL, or both
+ *                                              UT_LATIN1 and UT_UTF8 specified.
  *			    UT_CANT_FORMAT	"unit" can't be formatted in
  *						the desired manner.
  *      else		Success.  Number of characters printed in "buf".  If
@@ -1073,7 +1053,7 @@ ut_format(
  *	visitor		Pointer to the visitor of "unit".
  *	arg		An arbitrary pointer that will be passed to "visitor".
  * Returns:
- *	UT_NULL_ARG	"unit" or "visitor" is NULL.
+ *	UT_BAD_ARG	"unit" or "visitor" is NULL.
  *	UT_VISIT_ERROR	A error occurred in "visitor" while visiting "unit".
  *	UT_SUCCESS	Success.
  */

@@ -1,7 +1,7 @@
 /*
  * Module for handling unit prefixes -- both names and symbols.
  *
- * $Id: prefix.c,v 1.6 2007/04/11 20:28:17 steve Exp $
+ * $Id: prefix.c,v 1.7 2007/07/10 22:29:22 steve Exp $
  */
 
 /*LINTLIBRARY*/
@@ -49,7 +49,8 @@ pseNew(
 
     if (entry == NULL) {
 	ut_handle_error_message(strerror(errno));
-	ut_handle_error_message("Couldn't allocate %lu-byte prefix-search-entry",
+	ut_handle_error_message(
+            "Couldn't allocate %lu-byte prefix-search-entry",
 	    sizeof(PrefixSearchEntry));
 	ut_set_status(UT_OS);
     }
@@ -251,9 +252,8 @@ ptvmFind(
  *	compare		Prefix comparison function.
  * Returns:
  *	UT_SUCCESS	Success.
- *	UT_NULL_ARG	"system" is NULL.
- *	UT_BAD_ID	"prefix" is NULL or empty.
- *	UT_BAD_VALUE	"value" is 0.
+ *	UT_BAD_ARG	"system" is NULL, "prefix" is NULL or empty, or "value"
+ *                      is 0.
  *	UT_EXISTS	"prefix" already maps to a different value.
  *	UT_OS		Operating-system failure.  See "errno".
  */
@@ -268,13 +268,13 @@ addPrefix(
     ut_status		status;
 
     if (system == NULL) {
-	status = UT_NULL_ARG;
+	status = UT_BAD_ARG;
     }
     else if (prefix == NULL || strlen(prefix) == 0) {
-	status = UT_BAD_ID;
+	status = UT_BAD_ARG;
     }
     else if (value == 0) {
-	status = UT_BAD_VALUE;
+	status = UT_BAD_ARG;
     }
     else {
 	if (*systemMap == NULL) {
@@ -329,8 +329,7 @@ addPrefix(
  *	value		The value of the prefix (e.g., 1e6).
  * Returns:
  *	UT_SUCCESS	Success.
- *	UT_NULL_ARG	"system" or "name" is NULL.
- *	UT_BAD_VALUE	"value" is 0.
+ *	UT_BAD_ARG	"system" or "name" is NULL, or "value" is 0.
  *	UT_EXISTS	"name" already maps to a different value.
  *	UT_OS		Operating-system failure.  See "errno".
  */
@@ -359,7 +358,7 @@ ut_add_name_prefix(
  * Returns:
  *	UT_SUCCESS	Success.
  *	UT_BADSYSTEM	"system" or "symbol" is NULL.
- *	UT_BAD_VALUE	"value" is 0.
+ *	UT_BAD_ARG	"value" is 0.
  *	UT_EXISTS	"symbol" already maps to a different value.
  *	UT_OS		Operating-system failure.  See "errno".
  */
@@ -392,11 +391,8 @@ ut_add_symbol_prefix(
  *	
  * Returns:
  *	UT_SUCCESS	Success.
- *	UT_NULL_ARG	"system" is NULL.
- *	UT_NULL_ARG	"systemMap" is NULL.
- *	UT_NULL_ARG	"string" is NULL or empty.
- *	UT_NULL_ARG	"compare" is NULL.
- *	UT_BAD_VALUE	"value" is 0.
+ *	UT_BAD_ARG	"system" is NULL, "systemMap" is NULL, "compare" is
+ *                      NULL, "string" is NULL or empty, or "value" is 0.
  *	UT_OS		Operating-system failure.  See "errno".
  *	UT_UNKNOWN	No prefix-to-value map is associated with "system".
  *	UT_UNKNOWN	No prefix found in the prefix-to-value map associated
@@ -413,13 +409,13 @@ findPrefix(
     ut_status		status;
 
     if (system == NULL) {
-	status = UT_NULL_ARG;
+	status = UT_BAD_ARG;
     }
     else if (systemMap == NULL) {
-	status = UT_NULL_ARG;
+	status = UT_BAD_ARG;
     }
     else if (string == NULL || strlen(string) == 0) {
-	status = UT_NULL_ARG;
+	status = UT_BAD_ARG;
     }
     else {
 	PrefixToValueMap** const	prefixToValue =
@@ -463,7 +459,7 @@ findPrefix(
  *	len	NULL or pointer to the memory location to receive the number of
  *		characters in the name-prefix, if one is discovered.
  * Returns:
- *	UT_NULL_ARG	"string" is NULL.
+ *	UT_BAD_ARG	"string" is NULL.
  *	UT_UNKNOWN	A name-prefix was not discovered.
  *	UT_SUCCESS	Success.  "*value" and "*len" will be set if non-NULL.
  */
@@ -476,7 +472,7 @@ utGetPrefixByName(
 {
     return
 	string == NULL
-	    ? UT_NULL_ARG
+	    ? UT_BAD_ARG
 	    : findPrefix(system, systemToNameToValue, string, value, len);
 }
 
@@ -493,7 +489,7 @@ utGetPrefixByName(
  *	len	NULL or pointer to the memory location to receive the number of
  *		characters in the symbol-prefix, if one is discovered.
  * Returns:
- *	UT_NULL_ARG	"string" is NULL.
+ *	UT_BAD_ARG	"string" is NULL.
  *	UT_UNKNOWN	A symbol-prefix was not discovered.
  *	UT_SUCCESS	Success.  "*value" and "*len" will be set if non-NULL.
  */
@@ -506,6 +502,6 @@ utGetPrefixBySymbol(
 {
     return
 	string == NULL
-	    ? UT_NULL_ARG
+	    ? UT_BAD_ARG
 	    : findPrefix(system, systemToSymbolToValue, string, value, len);
 }

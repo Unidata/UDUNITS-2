@@ -5,8 +5,7 @@ AC_PREREQ(2.59)
 AC_INIT(UDUNITS, 2.0.0, support-udunits@unidata.ucar.edu)
 AC_CONFIG_AUX_DIR([.])
 AC_CONFIG_SRCDIR([lib/converter.c])
-#AM_INIT_AUTOMAKE([foreign subdir-objects no-installinfo])
-AM_INIT_AUTOMAKE([foreign subdir-objects])
+AM_INIT_AUTOMAKE([foreign subdir-objects no-installinfo])
 AC_CONFIG_HEADERS([config.h expat/expat_config.h])
 
 CFLAGS_COVERAGE=''
@@ -116,7 +115,8 @@ AC_PROG_LIBTOOL
 AC_CONFIG_FILES([Makefile
 		 expat/Makefile
                  lib/Makefile
-                 lib/xmlTests/Makefile
+                 lib/xmlFailure/Makefile
+                 lib/xmlSuccess/Makefile
                  installdirs.texi
 		 prog/Makefile])
 AC_OUTPUT

@@ -25,7 +25,7 @@
  * This module is thread-compatible but not thread-safe: multi-thread access to
  * this module must be externally synchronized.
  *
- * $Id: unitcore.c,v 1.3 2007/04/11 20:28:18 steve Exp $
+ * $Id: unitcore.c,v 1.4 2007/07/10 22:29:22 steve Exp $
  */
 
 /*LINTLIBRARY*/
@@ -2547,7 +2547,7 @@ coreFreeSystem(
  *		will be returned.
  * Returns:
  *	NULL	Failure.  "utgetStatus()" will be:
- *		    UT_NULL_ARG	"system" is NULL.
+ *		    UT_BAD_ARG	"system" is NULL.
  *	else	Pointer to the dimensionless-unit one associated with "system".
  *		While not necessary, the pointer may be passed to ut_free()
  *		when the unit is no longer needed by the client.
@@ -2564,7 +2564,7 @@ ut_get_dimensionless_unit_one(
 	one = NULL;
 	ut_handle_error_message(
 	    "ut_get_dimensionless_unit_one(): NULL unit-system argument");
-	ut_set_status(UT_NULL_ARG);
+	ut_set_status(UT_BAD_ARG);
     }
     else {
 	one = system->one;
@@ -2581,7 +2581,7 @@ ut_get_dimensionless_unit_one(
  *	unit	Pointer to the unit in question.
  * Returns:
  *	NULL	Failure.  "ut_get_status()" will be
- *		    UT_NULL_ARG	"unit" is NULL.
+ *		    UT_BAD_ARG	"unit" is NULL.
  *	else	Pointer to the unit-system to which "unit" belongs.
  */
 ut_system*
@@ -2595,7 +2595,7 @@ ut_get_system(
     if (unit == NULL) {
 	system = NULL;
 	ut_handle_error_message("ut_get_system(): NULL unit argument");
-	ut_set_status(UT_NULL_ARG);
+	ut_set_status(UT_BAD_ARG);
     }
     else {
 	system = unit->common.system;
@@ -2614,7 +2614,7 @@ ut_get_system(
  * Returns:
  *	0		Failure or the units belong to different unit-systems.
  *			"ut_get_status()" will be
- *	    		    UT_NULL_ARG		"unit1" or "unit2" is NULL.
+ *	    		    UT_BAD_ARG		"unit1" or "unit2" is NULL.
  *	    		    UT_SUCCESS		The units belong to different
  *						unit-systems.
  *	else		The units belong to the same unit-system.
@@ -2628,7 +2628,7 @@ ut_same_system(
 
     if (unit1 == NULL || unit2 == NULL) {
 	ut_handle_error_message("ut_same_system(): NULL argument");
-	ut_set_status(UT_NULL_ARG);
+	ut_set_status(UT_BAD_ARG);
     }
     else {
 	ut_set_status(UT_SUCCESS);
@@ -2648,7 +2648,7 @@ ut_same_system(
  *			a radian).
  * Returns:
  *	NULL	Failure.  "ut_get_status()" will be
- *		    UT_NULL_ARG		"system" is NULL.
+ *		    UT_BAD_ARG		"system" is NULL.
  *		    UT_OS		Operating-system error.  See "errno".
  *	else	Pointer to the new base-unit.
  */
@@ -2661,7 +2661,7 @@ newBasicUnit(
 
     if (system == NULL) {
 	ut_handle_error_message("newBasicUnit(): NULL unit-system argument");
-	ut_set_status(UT_NULL_ARG);
+	ut_set_status(UT_BAD_ARG);
     }
     else {
 	basicUnit = basicNew(system, isDimensionless, system->basicCount);
@@ -2716,7 +2716,7 @@ newBasicUnit(
  *	system	Pointer to the unit-system to which to add the new base-unit.
  * Returns:
  *	NULL	Failure.  "ut_get_status()" will be
- *		    UT_NULL_ARG		"system" or "name" is NULL.
+ *		    UT_BAD_ARG		"system" or "name" is NULL.
  *		    UT_OS		Operating-system error.  See "errno".
  *	else	Pointer to the new base-unit.  The pointer should be passed to
  *		ut_free() when the unit is no longer needed by the client (the
@@ -2742,7 +2742,7 @@ ut_new_base_unit(
  *		dimensionless-unit.
  * Returns:
  *	NULL	Failure.  "ut_get_status()" will be
- *		    UT_NULL_ARG		"system" is NULL.
+ *		    UT_BAD_ARG		"system" is NULL.
  *		    UT_OS		Operating-system error.  See "errno".
  *	else	Pointer to the new dimensionless-unit.  The pointer should be
  *		passed to ut_free() when the unit is no longer needed by the
@@ -2764,7 +2764,7 @@ ut_new_dimensionless_unit(
  * Arguments:
  *	second		Pointer to the "second" unit.
  * Returns:
- *	UT_NULL_ARG	"second" is NULL.
+ *	UT_BAD_ARG	"second" is NULL.
  *	UT_EXISTS	The second unit of the unit-system to which "second"
  *			belongs is set to a different unit.
  *	UT_SUCCESS	Success.
@@ -2776,8 +2776,9 @@ ut_set_second(
     ut_set_status(UT_SUCCESS);
 
     if (second == NULL) {
-	ut_handle_error_message("ut_set_second(): NULL \"second\" unit argument");
-	ut_set_status(UT_NULL_ARG);
+	ut_handle_error_message(
+            "ut_set_second(): NULL \"second\" unit argument");
+	ut_set_status(UT_BAD_ARG);
     }
     else {
 	ut_system*	system = second->common.system;
@@ -2788,7 +2789,8 @@ ut_set_second(
 	else {
 	    if (ut_compare(system->second, second) != 0) {
 		ut_handle_error_message(
-		    "ut_set_second(): Different \"second\" unit already defined");
+		    "ut_set_second(): Different \"second\" unit already "
+                    "defined");
 		ut_set_status(UT_EXISTS);
 	    }
 	}
@@ -2856,8 +2858,7 @@ ut_compare(
  *	unit		Pointer to the unit to be scaled.
  * Returns:
  *	NULL		Failure.  "ut_get_status()" will be
- *			    UT_BAD_VALUE	"factor" is 0.
- *			    UT_NULL_ARG		"unit" is NULL.
+ *			    UT_BAD_ARG  	"factor" is 0 or "unit" is NULL.
  *			    UT_OS		Operating-system error.  See
  *						"errno".
  *	else		Pointer to the resulting unit.  The pointer should be
@@ -2875,12 +2876,12 @@ ut_scale(
 
     if (unit == NULL) {
 	ut_handle_error_message("ut_scale(): NULL unit argument");
-	ut_set_status(UT_NULL_ARG);
+	ut_set_status(UT_BAD_ARG);
     }
     else {
 	if (factor == 0) {
 	    ut_handle_error_message("ut_scale(): NULL factor argument");
-	    ut_set_status(UT_BAD_VALUE);
+	    ut_set_status(UT_BAD_ARG);
 	}
 	else {
 	    result = factor == 1
@@ -2904,7 +2905,7 @@ ut_scale(
  *	offset		The numeric offset.
  * Returns:
  *	NULL		Failure.  "ut_get_status()" will be
- *			    UT_NULL_ARG		"unit" is NULL.
+ *			    UT_BAD_ARG		"unit" is NULL.
  *			    UT_OS		Operating-system error.  See
  *						"errno".
  *	else		Pointer to the resulting unit.  The pointer should be
@@ -2922,7 +2923,7 @@ ut_offset(
 
     if (unit == NULL) {
 	ut_handle_error_message("ut_offset(): NULL unit argument");
-	ut_set_status(UT_NULL_ARG);
+	ut_set_status(UT_BAD_ARG);
     }
     else {
 	result = offset == 0
@@ -2946,7 +2947,7 @@ ut_offset(
  *	origin	The origin as returned by ut_encode_time().
  * Returns:
  *	NULL	Failure.  "ut_get_status()" will be
- *		    UT_NULL_ARG		"unit" is NULL.
+ *		    UT_BAD_ARG		"unit" is NULL.
  *		    UT_OS		Operating-system error.  See "errno".
  *		    UT_MEANINGLESS	Creation of a timestamp unit based on
  *					"unit" is not meaningful.
@@ -2967,7 +2968,7 @@ ut_offset_by_time(
 
     if (unit == NULL) {
 	ut_handle_error_message("ut_offset_by_time(): NULL unit argument");
-	ut_set_status(UT_NULL_ARG);
+	ut_set_status(UT_BAD_ARG);
     }
     else {
 	result = timestampNewOrigin(unit, origin);
@@ -2985,7 +2986,7 @@ ut_offset_by_time(
  *	unit2	Pointer to another unit.
  * Returns:
  *	NULL	Failure.  "ut_get_status()" will be:
- *		    UT_NULL_ARG		"unit1" or "unit2" is NULL.
+ *		    UT_BAD_ARG		"unit1" or "unit2" is NULL.
  *		    UT_NOT_SAME_SYSTEM	"unit1" and "unit2" belong to
  *					different unit-systems.
  *		    UT_OS		Operating-system error. See "errno".
@@ -3003,7 +3004,7 @@ ut_multiply(
 
     if (unit1 == NULL || unit2 == NULL) {
 	ut_handle_error_message("ut_multiply(): NULL argument");
-	ut_set_status(UT_NULL_ARG);
+	ut_set_status(UT_BAD_ARG);
     }
     else if (unit1->common.system != unit2->common.system) {
 	ut_handle_error_message("ut_multiply(): Units in different unit-systems");
@@ -3025,7 +3026,7 @@ ut_multiply(
  *	unit	Pointer to the unit.
  * Returns:
  *	NULL	Failure.  "ut_get_status()" will be:
- *		    UT_NULL_ARG		"unit" is NULL.
+ *		    UT_BAD_ARG		"unit" is NULL.
  *		    UT_OS		Operating-system error. See "errno".
  *	else	Pointer to the resulting unit.  The pointer should be passed to
  *		ut_free() when the unit is no longer needed by the client.
@@ -3052,7 +3053,7 @@ ut_invert(
  *	denom	Pointer to the denominator (bottom, divisor) unit.
  * Returns:
  *	NULL	Failure.  "ut_get_status()" will be:
- *		    UT_NULL_ARG		"numer" or "denom" is NULL.
+ *		    UT_BAD_ARG		"numer" or "denom" is NULL.
  *		    UT_NOT_SAME_SYSTEM	"unit1" and "unit2" belong to
  *					different unit-systems.
  *		    UT_OS		Operating-system error. See "errno".
@@ -3070,7 +3071,7 @@ ut_divide(
 
     if (numer == NULL || denom == NULL) {
 	ut_handle_error_message("ut_divide(): NULL argument");
-	ut_set_status(UT_NULL_ARG);
+	ut_set_status(UT_BAD_ARG);
     }
     else if (numer->common.system != denom->common.system) {
 	ut_handle_error_message("ut_divide(): Units in different unit-systems");
@@ -3099,8 +3100,7 @@ ut_divide(
  *		equal to -255 and less than or equal to 255.
  * Returns:
  *	NULL	Failure.  "ut_get_status()" will be:
- *		    UT_NULL_ARG		"unit" is NULL.
- *		    UT_BAD_VALUE	"power" is invalid.
+ *		    UT_BAD_ARG		"unit" is NULL, or "power" is invalid.
  *		    UT_OS		Operating-system error. See "errno".
  *	else	Pointer to the resulting unit.  The pointer should be passed to
  *		ut_free() when the unit is no longer needed by the client.
@@ -3116,11 +3116,11 @@ ut_raise(
 
     if (unit == NULL) {
 	ut_handle_error_message("ut_raise(): NULL unit argument");
-	ut_set_status(UT_NULL_ARG);
+	ut_set_status(UT_BAD_ARG);
     }
     else if (power < -255 || power > 255) {
 	ut_handle_error_message("ut_raise(): Invalid power argument");
-	ut_set_status(UT_BAD_VALUE);
+	ut_set_status(UT_BAD_ARG);
     }
     else {
 	result = 
@@ -3166,8 +3166,8 @@ ut_raise(
  *	reference	Pointer to the reference value as a unit.
  * Returns:
  *	NULL		Failure.  "ut_get_status()" will be:
- *			    UT_BAD_VALUE	"base" is invalid.
- *			    UT_NULL_ARG		"reference" is NULL.
+ *			    UT_BAD_ARG  	"base" is invalid or "reference"
+ *                                              is NULL.
  *			    UT_OS		Operating-system error. See
  *						"errno".
  *	else		Pointer to the resulting unit.  The pointer should be
@@ -3185,11 +3185,11 @@ ut_log(
 
     if (base <= 1) {
 	ut_handle_error_message("ut_log(): Invalid logarithmic base, %g", base);
-	ut_set_status(UT_BAD_VALUE);
+	ut_set_status(UT_BAD_ARG);
     }
     else if (reference == NULL) {
 	ut_handle_error_message("ut_log(): NULL reference argument");
-	ut_set_status(UT_NULL_ARG);
+	ut_set_status(UT_BAD_ARG);
     }
     else {
 	result = logNew(base, reference);
@@ -3209,7 +3209,7 @@ ut_log(
  *	unit2		Pointer to another unit.
  * Returns:
  *	0		Failure.  "ut_get_status()" will be
- *	    		    UT_NULL_ARG		"unit1" or "unit2" is NULL.
+ *	    		    UT_BAD_ARG		"unit1" or "unit2" is NULL.
  *			    UT_NOT_SAME_SYSTEM	"unit1" and "unit2" belong to
  *						different unit-sytems.
  *			    UT_SUCCESS		Conversion between the units is
@@ -3227,7 +3227,7 @@ ut_are_convertible(
 
     if (unit1 == NULL || unit2 == NULL) {
 	ut_handle_error_message("ut_are_convertible(): NULL unit argument");
-	ut_set_status(UT_NULL_ARG);
+	ut_set_status(UT_BAD_ARG);
     }
     else if (unit1->common.system != unit2->common.system) {
 	ut_handle_error_message(
@@ -3266,7 +3266,7 @@ ut_are_convertible(
  *	to		Pointer to the unit to which to convert values.
  * Returns:
  *	NULL		Failure.  "ut_get_status()" will be:
- *			    UT_NULL_ARG		"from" or "to" is NULL.
+ *			    UT_BAD_ARG		"from" or "to" is NULL.
  *			    UT_NOT_SAME_SYSTEM	"from" and "to" belong to
  *						different unit-systems.
  *			    UT_MEANINGLESS	Conversion between the units is
@@ -3285,7 +3285,7 @@ ut_get_converter(
 
     if (from == NULL || to == NULL) {
 	ut_handle_error_message("ut_get_converter(): NULL unit argument");
-	ut_set_status(UT_NULL_ARG);
+	ut_set_status(UT_BAD_ARG);
     }
     else if (from->common.system != to->common.system) {
 	ut_handle_error_message(
@@ -3417,7 +3417,7 @@ ut_get_converter(
  * Returns:
  *	0	"unit" is dimensionfull or an error occurred.  "ut_get_status()"
  *		 will be
- *		    UT_NULL_ARG		"unit" is NULL.
+ *		    UT_BAD_ARG		"unit" is NULL.
  *		    UT_SUCCESS		"unit" is dimensionfull.
  *	else	"unit" is dimensionless.
  */
@@ -3431,7 +3431,7 @@ ut_is_dimensionless(
 
     if (unit == NULL) {
 	ut_handle_error_message("ut_is_dimensionless(): NULL unit argument");
-	ut_set_status(UT_NULL_ARG);
+	ut_set_status(UT_BAD_ARG);
     }
     else {
 	/*
@@ -3456,7 +3456,7 @@ ut_is_dimensionless(
  * Returns:
  *	NULL	Failure.  ut_get_status() will be
  *		    UT_OS	Operating-system failure.  See "errno".
- *		    UT_NULL_ARG	"unit" is NULL.
+ *		    UT_BAD_ARG	"unit" is NULL.
  *	else	Pointer to the clone of "unit".  The pointer should be
  *		passed to ut_free() when the unit is no longer needed by the
  *		client.
@@ -3471,7 +3471,7 @@ ut_clone(
 
     if (unit == NULL) {
 	ut_handle_error_message("ut_clone(): NULL unit argument");
-	ut_set_status(UT_NULL_ARG);
+	ut_set_status(UT_BAD_ARG);
     }
     else {
 	clone =
@@ -3513,7 +3513,7 @@ ut_free(
  *	visitor		Pointer to the visitor of "unit".
  *	arg		An arbitrary pointer that will be passed to "visitor".
  * Returns:
- *	UT_NULL_ARG	"unit" or "visitor" is NULL.
+ *	UT_BAD_ARG	"unit" or "visitor" is NULL.
  *	UT_VISIT_ERROR	A error occurred in "visitor" while visiting "unit".
  *	UT_SUCCESS	Success.
  */
@@ -3527,7 +3527,7 @@ ut_accept_visitor(
 
     if (unit == NULL || visitor == NULL) {
 	ut_handle_error_message("ut_accept_visitor(): NULL argument");
-	ut_set_status(UT_NULL_ARG);
+	ut_set_status(UT_BAD_ARG);
     }
     else {
 	ut_set_status(ACCEPT_VISITOR(unit, visitor, arg));

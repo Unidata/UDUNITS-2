@@ -1,24 +1,35 @@
 ## Process this file with automake to produce Makefile.in
 SUBDIRS	= expat lib prog
 info_TEXINFOS = udunits2.texi
-EXTRA_DIST = success.texi failure.texi
+udunits2_TEXINFOS = success.texi failure.texi make.texi
+EXTRA_DIST = \
+    udunits2.html \
+    udunits2.pdf \
+    results.tab \
+    success.texi \
+    failure.texi \
+    make.texi
 AM_MAKEINFOHTMLFLAGS = --no-split
 # DISTCHECK_CONFIGURE_FLAGS = 
 
 # The following rule is executed on the remote system.
-hostcheck:	$(DIST_ARCHIVES)
+hostcheck:
 	-test -d /tmp/$(distdir) && \
 	    (chmod -R +w /tmp/$(distdir) && rm -rf /tmp/$(distdir))
 	gunzip -c $(DIST_ARCHIVES) | \
-	    (mkdir /tmp/$(distdir) && cd /tmp/$(distdir) && tar xf -)
-	cd /tmp/$(distdir)/$(distdir) && \
+	    (mkdir /tmp/$(distdir) && cd /tmp/$(distdir) && pax -r)
+	if cd /tmp/$(distdir)/$(distdir); then \
 	    eval ./configure --prefix=/tmp/$(distdir) --enable-debug \
-		$(SHARED_OPT) CC='$(CC)' && \
-	    $(MAKE) all check install install-info install-html install-pdf \
-		uninstall; \
+		$(SHARED_OPT) CC='$(CC)'; \
 	    status=$$?; \
+	    if test $$status -eq 0; then \
+		$(MAKE) all check install install-info install-html \
+		    install-pdf uninstall; \
+		status=$$?; \
+	    fi; \
 	    cd /tmp && rm -rf /tmp/$(distdir); \
-	    exit $$status
+	    exit $$status; \
+	fi
 
 # The following rule starts a build process on a remote system.
 .host.check:
@@ -40,7 +51,7 @@ hostcheck:	$(DIST_ARCHIVES)
 	touch redo-results
 
 # The following rule starts multiple, parallel, asynchronous builds.
-hostchecks:	distcheck
+hostchecks:	$(DIST_ARCHIVES)
 	rm -f $@ results.tab
 	hosts=`ls *.host | sed 's/.host//'`; \
 	for host in $$hosts; do \
@@ -63,8 +74,7 @@ hostchecks:	distcheck
 	echo "Done waiting"; \
 	exit $$status
 
-results.tab:	redo-results
-	rm -f $@
+results.tab:
 	ls *.results | sed 's/.results//' | \
 	while read host; do \
 	    IFS=':' read uname shell <$$host.host || break; \
@@ -72,34 +82,58 @@ results.tab:	redo-results
 	    sed -n "s/^/$$host:$$id:/p" $$host.results || break; \
 	done >$@
 
-success.tab:	results.tab
+success.texi:	results.tab
 	sort -t : -k +2 results.tab | \
 	awk -F: ' \
 	    BEGIN { \
-		print "@multitable {Linux 2.6.18-1.2257.fc5smp} {/opt/csw/gcc4/bin/gcc} {--disable-shared}"; \
+		print "@multitable {@code{Linux 2.6.18-1.2257.fc5smp}} {@code{/opt/csw/gcc4/bin/gcc}} {@code{--disable-shared}}"; \
 		print "@headitem O/S @tab Compiler @tab @code{configure} Option"; \
 	    } \
 	    $$6 == 1 { \
-		print "@item",$$2,"@tab",$$4,"@tab",$$5; \
+		printf "@item @code{%s} @tab @code{%s} @tab @code{%s}\n", \
+		    $$2, $$4, $$5; \
 	    } \
 	    END { \
 		print "@end multitable"; \
 	    }' >success.texi
 
-failure.tab:	results.tab
+failure.texi:	results.tab
 	sort -t : -k +2 results.tab | \
 	awk -F: ' \
 	    BEGIN { \
-		print "@multitable {Linux 2.6.18-1.2257.fc5smp} {/opt/SUNWspro/bin/c99} {--disable-shared}"; \
+		print "@multitable {@code{Linux 2.6.18-1.2257.fc5smp}} {@code{/opt/SUNWspro/bin/c99}} {@code{--disable-shared}}"; \
 		print "@headitem O/S @tab Compiler @tab @code{configure} Option"; \
 	    } \
 	    $$6 == 0 { \
-		print "@item",$$2,"@tab",$$4,"@tab",$$5; \
+		printf "@item @code{%s} @tab @code{%s} @tab @code{%s}\n", \
+		    $$2, $$4, $$5; \
 	    } \
 	    END { \
 		print "@end multitable"; \
 	    }' >failure.texi
 
-remote-checks:	hostchecks success.tab failure.tab
+make.texi:	results.tab
+	awk -F: '$$6 == 1 {printf "%s:%s\n", $$2, $$3}' results.tab | \
+	sort -t : -u | \
+	awk -F: ' \
+	    BEGIN { \
+		print "@multitable {@code{Linux 2.6.18-1.2257.fc5smp}} {@code{/usr/bin/posix/make}}"; \
+		print "@headitem O/S @tab @code{make} Utility"; \
+	    } \
+	    { \
+		printf "@item @code{%s} @tab @code{%s}\n", $$1, $$2; \
+	    } \
+	    END { \
+		print "@end multitable"; \
+	    }' >$@
+
+remote-checks:	distcheck hostchecks udunits2.info udunits2.html udunits2.pdf
 
 .PHONY:	hostchecks hostcheck remote-checks
+
+udunits2.info:	success.texi failure.texi make.texi
+udunits2.html:	success.texi failure.texi make.texi
+udunits2.pdf:	success.texi failure.texi make.texi
+
+$(srcdir)/version.texi:  $(srcdir)/stamp-vti
+	@cp $(srcdir)/stamp-vti $@

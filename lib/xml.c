@@ -2,7 +2,7 @@
  * This module is thread-compatible but not thread-safe.  Multi-threaded
  * access must be externally synchronized.
  *
- * $Id: xml.c,v 1.8 2007/06/22 22:00:39 steve Exp $
+ * $Id: xml.c,v 1.9 2007/07/10 22:29:22 steve Exp $
  */
 
 /*LINTLIBRARY*/
@@ -53,7 +53,7 @@ typedef struct {
     ut_unit*	unit;
     ElementType context;
     ut_encoding xmlEncoding;
-    ut_encoding encoding;
+    ut_encoding textEncoding;
     int         fd;
     int         skipDepth;
     int		prefixAdded;
@@ -65,80 +65,31 @@ typedef struct {
     int         symbolSeen;
 } File;
 
+typedef struct {
+    char       ascii[NAME_SIZE];
+    char       latin1[NAME_SIZE];
+    char       latin1Nbsp[NAME_SIZE];
+    char       utf8[NAME_SIZE];
+    char       utf8Nbsp[NAME_SIZE];
+} Identifiers;
+
 static int readXml(
-    XML_Parser          parser,
     const char* const   path);
 
 static File*            currFile = NULL;
 static ut_system*	unitSystem = NULL;
 static char*            text = NULL;
 static size_t           nbytes = 0;
-static ut_encoding      textEncoding;
-
-
-/*
- * Returns the embedded-NBSP form of a identifier or NULL if that form is
- * identical.
- */
-static const char*
-embeddedNbspForm(
-    const char*		id,
-    const ut_encoding	encoding)
-{
-    const char*	newForm = NULL;		/* failure */
-
-    if (strchr(id, '_') != NULL) {
-	static char	buf[NAME_SIZE];
-	const char*	replChars = NULL;
-	int		replCharCount;
-
-	if (encoding == UT_LATIN1) {
-	    replChars = "\xa0";
-	    replCharCount = 1;
-	}
-	else if (encoding == UT_UTF8) {
-	    replChars = "\xc2\xa0";
-	    replCharCount = 2;
-	}
-
-	if (replChars != NULL) {
-	    int		n = 0;
-	    const char*	cp;
-
-	    for (cp = id; *cp; ++cp) {
-		if (*cp != '_') {
-		    if (n >= NAME_SIZE - 1)
-			break;
-
-		    buf[n++] = *cp;
-		}
-		else {
-		    if (n >= NAME_SIZE - replCharCount)
-			break;
-
-		    (void)strncpy(buf+n, replChars, replCharCount);
-
-		    n += replCharCount;
-		}
-	    }
-
-	    if (*cp) {
-		ut_handle_error_message("Identifier \"%s\" is too long", id);
-		XML_StopParser(currFile->parser, 0);
-	    }
-	    else {
-		buf[n] = 0;
-		newForm = buf;
-	    }
-	}
-    }
-
-    return newForm;
-}
 
 
 /*
  * Returns the plural form of a name.
+ *
+ * Arguments:
+ *      singular        Pointer to the singular form of a name.
+ * Returns:
+ *      Pointer to the plural form of "singular".  Client must not free.  May be
+ *      overwritten by subsequent calls.
  */
 static const char*
 formPlural(
@@ -197,7 +148,361 @@ formPlural(
 
 
 /*
+ * Substitutes one substring for all occurrences another in a string.
+ *
+ * Arguments:
+ *      inString        Pointer to the input string.
+ *      str             Pointer to the substring to be replaced.
+ *      outString       Pointer to the output string buffer.
+ *      repl            Pointer to the replacement substring.
+ *      size            Size of the output string buffer, including the
+ *                      terminating NUL.
+ * Returns:
+ *      0               Failure.  The output string buffer is too small.
+ *      else            Success.
+ */
+static int
+substitute(
+    const char* const   inString,
+    const char*         str,
+    char* const         outString,
+    const char*         repl,
+    const size_t        size)
+{
+    const char* in = inString;
+    char*       out = outString;
+    char*       beyond = outString + size;
+    size_t      strLen = strlen(str);
+    size_t      replLen = strlen(repl);
+
+    while (*in) {
+        size_t      nbytes;
+        char*       cp = strstr(in, str);
+
+        if (cp == NULL) {
+            nbytes = strlen(in);
+
+            if (out + nbytes >= beyond) {
+                ut_handle_error_message("String \"%s\" is too long", inString);
+                return 0;
+            }
+
+            (void)strncpy(out, in, nbytes);
+
+            out += nbytes;
+
+            break;
+        }
+        else {
+            nbytes = (size_t)(cp - in);
+
+            if (out + nbytes + replLen >= beyond) {
+                ut_handle_error_message("String \"%s\" is too long", inString);
+                return 0;
+            }
+
+            (void)strncpy(out, in, nbytes);
+
+            out += nbytes;
+
+            (void)strncpy(out, repl, replLen);
+
+            out += replLen;
+            in += nbytes + strLen;
+        }
+    }
+
+    *out = 0;
+
+    return 1;
+}
+
+
+#define IS_ASCII(c)     (((c) & '\x80') == 0)
+
+
+/*
+ * Returns the UTF-8 string equivalent to a Latin-1 string.
+ *
+ * Arguments:
+ *      inString        Pointer to the input, Latin-1 string.
+ *      outString       Pointer to the output, UTF-8, string buffer.
+ *      size            Size of "outString".
+ * Returns:
+ *      0               Failure.  "outString" is too small.
+ *      1               Success.
+ */
+static int
+latin1_to_utf8(
+    const char* inString,
+    char*       outString,
+    size_t      size)
+{
+    size_t                      numSpecial = 0;
+    const unsigned char*        in;
+    unsigned char*              out;
+
+    assert(inString != NULL);
+    assert(outString != NULL);
+
+    /*
+     * Compute the number of non-ASCII characters.
+     */
+    for (in = inString; *in; in++)
+        if (!IS_ASCII(*in))
+            numSpecial++;
+
+    if (size < ((size_t)((char*)in - (char*)inString) + numSpecial + 1)) {
+        ut_handle_error_message("Identifier \"%s\" is too long", inString);
+        return 0;
+    }
+
+    /*
+     * Convert the string.
+     */
+    for (in = inString, out = outString; *in; ++in) {
+        if (IS_ASCII(*in)) {
+            *out++ = *in;
+        }
+        else {
+            *out++ = 0xC0 | ((0xC0 & *in) >> 6);
+            *out++ = 0x80 | (0x3F & *in);
+        }
+    }
+
+    *out = 0;
+
+    return 1;
+}
+
+
+/*
+ * Returns the Latin-1 string equivalent to a UTF-8 string, if possible.
+ *
+ * Arguments:
+ *      inString        Pointer to the input, UTF-8 string.
+ *      outString       Pointer to the output, Latin-1, string buffer.
+ *      size            Size of "outString".
+ * Returns:
+ *     -1               Failure.  "outString" is too small.
+ *      0               "inString" can't be represented in Latin-1.
+ *      1               Success.
+ */
+static int
+utf8_to_latin1(
+    const char* inString,
+    char*       outString,
+    size_t      size)
+{
+    size_t                      numSpecial = 0;
+    const unsigned char*        in;
+    unsigned char*              out;
+
+    assert(inString != NULL);
+    assert(outString != NULL);
+
+    /*
+     * Compute the number of non-ASCII characters.
+     */
+    for (in = inString; *in; in++) {
+        if (*in > 0xC3)
+            return 0;
+
+        if (!IS_ASCII(*in)) {
+            numSpecial++;
+            in++;
+        }
+    }
+
+    if (size < ((size_t)((char*)in - (char*)inString) - numSpecial + 1)) {
+        ut_handle_error_message("Identifier \"%s\" is too long", inString);
+        return -1;
+    }
+
+    /*
+     * Convert the string.
+     */
+    for (in = inString, out = outString; *in; ++out) {
+        if (IS_ASCII(*in)) {
+            *out = *in++;
+        }
+        else {
+            *out = (*in++ & 0x3) << 6;
+            *out |= (*in++ & 0x3F);
+        }
+    }
+
+    *out = 0;
+
+    return 1;
+}
+
+
+#define LATIN1_NBSP "\xA0"
+#define UTF8_NBSP "\xC2\xA0"
+
+
+/*
+ * Creates the regular and NBSP forms of a Latin-1 string.
+ *
+ * Arguments:
+ *      latin1          Pointer to the input Latin-1 string.
+ *      nonNbsp         Pointer to an output string buffer of size NAME_SIZE
+ *                      that will be identical to "latin1" but with all
+ *                      non-breaking spaces replaced with underscores.
+ *      nbsp            Pointer to an output string buffer of size NAME_SIZE
+ *                      that will be identical to "latin1" but with all
+ *                      underscores replaced with non-breaking spaces.
+ */
+static void
+make_latin1_forms(
+    const char* latin1,
+    char*       nonNbsp,
+    char*       nbsp)
+{
+    if (strchr(latin1, '_')) {
+        substitute(latin1, "_", nbsp, LATIN1_NBSP, NAME_SIZE);
+        substitute(nbsp, LATIN1_NBSP, nonNbsp, "_", NAME_SIZE);
+    }
+    else if (strstr(latin1, LATIN1_NBSP)) {
+        substitute(latin1, LATIN1_NBSP, nonNbsp, "_", NAME_SIZE);
+        substitute(nonNbsp, "_", nbsp, LATIN1_NBSP, NAME_SIZE);
+    }
+    else {
+        (void)strcpy(nonNbsp, latin1);
+        *nbsp = 0;
+    }
+}
+
+
+/*
+ * Creates the regular and NBSP forms of a UTF-8 string.
+ *
+ * Arguments:
+ *      utf8            Pointer to the input UTF-8 string.
+ *      nonNbsp         Pointer to an output string buffer of size NAME_SIZE
+ *                      that will be identical to "utf8" but with all
+ *                      non-breaking spaces replaced with underscores.
+ *      nbsp            Pointer to an output string buffer of size NAME_SIZE
+ *                      that will be identical to "utf8" but with all
+ *                      underscores replaced with non-breaking spaces.
+ */
+static int
+make_utf8_forms(
+    const char* utf8,
+    char*       nonNbsp,
+    char*       nbsp)
+{
+    int         success;
+
+    if (strchr(utf8, '_')) {
+        success = substitute(utf8, "_", nbsp, UTF8_NBSP, NAME_SIZE);
+
+        if (success)
+            success = substitute(nbsp, UTF8_NBSP, nonNbsp, "_", NAME_SIZE);
+    }
+    else if (strstr(utf8, UTF8_NBSP)) {
+        success = substitute(utf8, UTF8_NBSP, nonNbsp, "_", NAME_SIZE);
+
+        if (success)
+            success = substitute(nonNbsp, "_", nbsp, UTF8_NBSP, NAME_SIZE);
+    }
+    else {
+        (void)strcpy(nonNbsp, utf8);
+        *nbsp = 0;
+        success = 1;
+    }
+
+    return success;
+}
+
+
+/*
+ * Creates derivatives of an identifier, which are all legitimate combinations
+ * of ASCII, Latin-1, and UTF-8, on the one hand, and underscore vs.
+ * non-breaking spaces on the other.
+ *
+ * Arguments:
+ *      id              Pointer to the identifier.
+ *      encoding        The encoding of "id".
+ *      ids             Pointer to an "Identifier" structure.
+ * Returns:
+ *      0               Failure.
+ *      else            Success.  If a combination is not possible or is
+ *                      identical to a simpler combination, then the first
+ *                      character of the relevant member of "ids" will be NUL.
+ */
+static int
+makeDerivatives(
+    const char* const   id,
+    const ut_encoding   encoding,
+    Identifiers*        ids)
+{
+    int                 success = 1;
+
+    assert(id != NULL);
+    assert(ids != NULL);
+
+    if (strlen(id) > NAME_SIZE - 1) {
+        ut_handle_error_message("Identifier \"%s\" is too long", id);
+        success = 0;
+    }
+    else {
+        ids->ascii[0] = 0;
+        ids->latin1[0] = 0;
+        ids->latin1Nbsp[0] = 0;
+        ids->utf8[0] = 0;
+        ids->utf8Nbsp[0] = 0;
+
+        if (encoding == UT_ASCII) {
+            (void)strcpy(ids->ascii, id);
+
+            if (strchr(id, '_')) {
+                (void)substitute(id, "_", ids->latin1Nbsp, LATIN1_NBSP,
+                    NAME_SIZE);
+                success =
+                    latin1_to_utf8(ids->latin1Nbsp, ids->utf8Nbsp, NAME_SIZE);
+            }
+        }
+        else if (encoding == UT_LATIN1) {
+            make_latin1_forms(id, ids->latin1, ids->latin1Nbsp);
+
+            success = latin1_to_utf8(ids->latin1, ids->utf8, NAME_SIZE) &&
+                latin1_to_utf8(ids->latin1Nbsp, ids->utf8Nbsp, NAME_SIZE);
+        }
+        else {
+            success = make_utf8_forms(id, ids->utf8, ids->utf8Nbsp) &&
+                utf8_to_latin1(ids->utf8, ids->latin1, NAME_SIZE) != -1 &&
+                utf8_to_latin1(ids->utf8Nbsp, ids->latin1Nbsp, NAME_SIZE) != -1;
+        }
+
+        if (success) {
+            if (strcmp(ids->ascii, ids->latin1) == 0)
+                ids->latin1[0] = 0;
+            if (strcmp(ids->ascii, ids->latin1Nbsp) == 0)
+                ids->latin1Nbsp[0] = 0;
+            if (strcmp(ids->ascii, ids->utf8) == 0)
+                ids->utf8[0] = 0;
+            if (strcmp(ids->ascii, ids->utf8Nbsp) == 0)
+                ids->utf8Nbsp[0] = 0;
+        }
+    }
+
+    return success;
+}
+
+
+/*
  * Maps a unit to an identifier.
+ *
+ * Arguments:
+ *      unit            Pointer to the unit.
+ *      id              Pointer to the identifier.
+ *      encoding        The encoding of "id".
+ *      isName          Whether or not "id" is a name.
+ * Returns:
+ *      0               Failure.
+ *      else            Success.
  */
 static int
 mapUnitToId(
@@ -209,6 +514,7 @@ mapUnitToId(
     int                 success = 0;             /* failure */
     ut_status           (*func)(ut_unit*, const char*, ut_encoding);
     const char*         desc;
+    Identifiers         ids;
 
     if (isName) {
         func = ut_map_unit_to_name;
@@ -223,20 +529,7 @@ mapUnitToId(
         ut_handle_error_message("Couldn't map unit to %s \"%s\"", desc, id);
     }
     else {
-        const char*	newForm = embeddedNbspForm(id, encoding);
-
-        if (newForm == NULL) {
-            success = 1;
-        }
-        else {
-            if (func(unit, newForm, encoding) != UT_SUCCESS) {
-                ut_handle_error_message("Couldn't map unit to %s \"%s\"",
-                    desc, newForm);
-            }
-            else {
-                success = 1;
-            }
-        }
+        success = 1;
     }
 
     return success;
@@ -244,39 +537,109 @@ mapUnitToId(
 
 
 /*
- * Maps a unit to a name.
+ * Maps a unit to identifiers.
+ *
+ * Arguments:
+ *      unit            Pointer to the unit.
+ *      id              Pointer to the identifier upon wich to base all
+ *                      derived identifiers.
+ *      encoding        The encoding of "id".
+ *      isName          Whether or not "id" is a name.
+ * Returns:
+ *      0               Failure.
+ *      else            Success.
  */
 static int
-mapUnitToName(
+mapUnitToIds(
     ut_unit* const        unit,
-    const char* const     name,
-    ut_encoding           encoding)
+    const char* const     id,
+    ut_encoding           encoding,
+    int                   isName)
 {
-    return mapUnitToId(unit, name, encoding, 1);
+    int                 success = 1;             /* success */
+    Identifiers         ids;
+
+    if (!makeDerivatives(id, encoding, &ids)) {
+        success = 0;
+    }
+    else {
+        if (ids.ascii[0])
+            success = mapUnitToId(unit, ids.ascii, UT_ASCII, isName);
+        if (success && ids.latin1[0])
+            success = mapUnitToId(unit, ids.latin1, UT_LATIN1, isName);
+        if (success && ids.latin1Nbsp[0])
+            success = mapUnitToId(unit, ids.latin1Nbsp, UT_LATIN1, isName);
+        if (success && ids.utf8[0])
+            success = mapUnitToId(unit, ids.utf8, UT_UTF8, isName);
+        if (success && ids.utf8Nbsp[0])
+            success = mapUnitToId(unit, ids.utf8Nbsp, UT_UTF8, isName);
+    }
+
+    return success;
 }
 
 
 /*
- * Maps a unit to a symbol.
+ * Maps a unit to a name and all derivatives of the name.
+ *
+ * Arguments:
+ *      unit            Pointer to the unit.
+ *      name            Pointer to the name upon wich to base all derived names.
+ *      encoding        The encoding of "name".
+ * Returns:
+ *      0               Failure.
+ *      else            Success.
  */
 static int
-mapUnitToSymbol(
+mapUnitToNames(
+    ut_unit* const        unit,
+    const char* const     name,
+    ut_encoding           encoding)
+{
+    return mapUnitToIds(unit, name, encoding, 1);
+}
+
+
+/*
+ * Maps a unit to a symbol and all derivatives of the symbol.
+ *
+ * Arguments:
+ *      unit            Pointer to the unit.
+ *      symbol          Pointer to the symbol upon wich to base all derived
+ *                      symbols.
+ *      encoding        The encoding of "symbol".
+ * Returns:
+ *      0               Failure.
+ *      else            Success.
+ */
+static int
+mapUnitToSymbols(
     ut_unit* const        unit,
     const char* const     symbol,
     ut_encoding           encoding)
 {
-    return mapUnitToId(unit, symbol, encoding, 0);
+    return mapUnitToIds(unit, symbol, encoding, 0);
 }
 
 
 /*
  * Maps an identifier to a unit.
+ *
+ * Arguments:
+ *      id              Pointer to the identifier.
+ *      encoding        The character encoding of "id".
+ *      unit            Pointer to the unit.
+ *      isName          Whether or not "id" is a name.
+ * Returns:
+ *      0               Failure.
+ *      else            Success.
  */
 static int
 mapIdToUnit(
-    const char*	id,
-    ut_unit*	unit,
-    int		isName)
+    const char*	        id,
+    const ut_encoding   encoding,
+    ut_unit*	        unit,
+    const int	        isName)
 {
     int		success = 0;		/* failure */
     ut_unit*	prev = ut_get_unit_by_name(unitSystem, id);
@@ -310,7 +673,7 @@ mapIdToUnit(
 	 * Take prefixes into account for a prior definition by using
          * ut_parse().
 	 */
-	prev = ut_parse(unitSystem, id, currFile->encoding);
+	prev = ut_parse(unitSystem, id, encoding);
 
 	if ((isName
                     ? ut_map_name_to_unit(id, unit)
@@ -357,23 +720,41 @@ mapIdToUnit(
 
 
 /*
- * Maps an identifier and the NBSP form of that identifier (if it exists) to a
- * unit.
+ * Maps an identifier and all derivatives to a unit.
+ *
+ * Arguments:
+ *      id              Pointer to the identifier.
+ *      encoding        The encoding of "id".
+ *      unit            Pointer to the unit.
+ *      isName          Whether or not "id" is a name.
+ * Returns:
+ *      0               Failure.
+ *      else            Success.
  */
 static int
 mapIdsToUnit(
-    const char* const     id,
-    const ut_encoding     encoding,
-    ut_unit* const        unit,
-    const int             isName)
+    const char* const   id,
+    const ut_encoding   encoding,
+    ut_unit* const      unit,
+    const int           isName)
 {
-    int success = mapIdToUnit(id, unit, isName);
+    Identifiers         ids;
+    int                 success = 1;
 
-    if (success) {
-        const char*	newForm = embeddedNbspForm(id, encoding);
-
-        if (newForm != NULL)
-            success = mapIdToUnit(newForm, unit, isName);
+    if (!makeDerivatives(id, encoding, &ids)) {
+        success = 0;
+    }
+    else {
+        if (ids.ascii[0])
+            success = mapIdToUnit(ids.ascii, UT_ASCII, unit, isName);
+        if (success && ids.latin1[0])
+            success = mapIdToUnit(ids.latin1, UT_LATIN1, unit, isName);
+        if (success && ids.latin1Nbsp[0])
+            success = mapIdToUnit(ids.latin1Nbsp, UT_LATIN1, unit, isName);
+        if (success && ids.utf8[0])
+            success = mapIdToUnit(ids.utf8, UT_UTF8, unit, isName);
+        if (success && ids.utf8Nbsp[0])
+            success = mapIdToUnit(ids.utf8Nbsp, UT_UTF8, unit, isName);
     }
 
     return success;
@@ -381,7 +762,15 @@ mapIdsToUnit(
 
 
 /*
- * Maps a name and the NBSP form of that name (if it exists) to a unit.
+ * Maps a name and all derivatives to a unit.
+ *
+ * Arguments:
+ *      name            Pointer to the name.
+ *      encoding        The encoding of "name".
+ *      unit            Pointer to the unit.
+ * Returns:
+ *      0               Failure.
+ *      else            Success.
  */
 static int
 mapNamesToUnit(
@@ -394,7 +783,15 @@ mapNamesToUnit(
 
 
 /*
- * Maps a symbol and the NBSP form of that symbol (if it exists) to a unit.
+ * Maps a symbol and all derivatives to a unit.
+ *
+ * Arguments:
+ *      symbol          Pointer to the symbol.
+ *      encoding        The encoding of "symbol".
+ *      unit            Pointer to the unit.
+ * Returns:
+ *      0               Failure.
+ *      else            Success.
  */
 static int
 mapSymbolsToUnit(
@@ -408,6 +805,14 @@ mapSymbolsToUnit(
 
 /*
  * Maps between a unit and a name.
+ *
+ * Arguments:
+ *      unit            Pointer to the unit.
+ *      name            Pointer to the name  .
+ *      encoding        The encoding of "name".
+ * Returns:
+ *      0               Failure.
+ *      else            Success.
  */
 static int
 mapUnitAndName(
@@ -417,12 +822,20 @@ mapUnitAndName(
 {
     return
         mapNamesToUnit(name, encoding, unit) &&
-        mapUnitToName(unit, name, encoding);
+        mapUnitToNames(unit, name, encoding);
 }
 
 
 /*
  * Maps between a unit and a symbol.
+ *
+ * Arguments:
+ *      unit            Pointer to the unit.
+ *      symbol          Pointer to the symbol  .
+ *      encoding        The encoding of "symbol".
+ * Returns:
+ *      0               Failure.
+ *      else            Success.
  */
 static int
 mapUnitAndSymbol(
@@ -432,7 +845,7 @@ mapUnitAndSymbol(
 {
     return
         mapSymbolsToUnit(symbol, encoding, unit) &&
-        mapUnitToSymbol(unit, symbol, encoding);
+        mapUnitToSymbols(unit, symbol, encoding);
 }
 
 
@@ -447,7 +860,7 @@ fileInit(
     file->skipDepth = 0;
     file->value = 0;
     file->xmlEncoding = UT_ASCII;
-    file->encoding = UT_ASCII;
+    file->textEncoding = UT_ASCII;
     file->unit = NULL;
     file->fd = -1;
     file->parser = NULL;
@@ -474,11 +887,10 @@ clearText(void)
 	*text = 0;
 
     nbytes = 0;
-    textEncoding = UT_ASCII;
+    currFile->textEncoding = UT_ASCII;
 }
 
 
-#       define IS_ASCII(c) (((c) & 0x80) == 0)
 
 
 /*
@@ -507,7 +919,7 @@ accumulateText(
             text[nbytes++] = string[i];
 
             if (!IS_ASCII(string[i]))
-                textEncoding = UT_UTF8;
+                currFile->textEncoding = UT_UTF8;
         }
 
 	text[nbytes] = 0;
@@ -515,6 +927,7 @@ accumulateText(
 }
 
 
+#if 0
 /*
  * Converts the accumulated text from UTF-8 to user-specified encoding.
  *
@@ -576,6 +989,7 @@ convertText(void)
 
     return success;
 }
+#endif
 
 
 /*
@@ -798,52 +1212,6 @@ endDimensionless(
 
 
 /*
- * Sets the encoding for the text of an element.
- */
-static int
-setEncoding(
-    const char**	atts)
-{
-    currFile->encoding = currFile->xmlEncoding;
-
-    for (; *atts != NULL; atts += 2) {
-	const char*	name = atts[0];
-	const char*	value = atts[1];
-
-	if (strcasecmp(name, "encoding") == 0) {
-	    if (strcasecmp(value, "ascii") == 0 || 
-                    strcasecmp(value, "us-ascii") == 0 || 
-                    strcasecmp(value, "us_ascii") == 0 || 
-		    strcasecmp(value, "iso646") == 0 ||
-		    strcasecmp(value, "iso_646") == 0 ||
-		    strcasecmp(value, "iso-646") == 0) {
-		currFile->encoding = UT_ASCII;
-	    }
-	    else if (strcasecmp(value, "latin1") == 0 ||
-		    strcasecmp(value, "latin-1") == 0 ||
-		    strcasecmp(value, "latin_1") == 0 ||
-		    strcasecmp(value, "iso-8859-1") == 0) {
-		currFile->encoding = UT_LATIN1;
-	    }
-	    else if (strcasecmp(value, "utf8") == 0 ||
-		    strcasecmp(value, "utf-8") == 0 ||
-		    strcasecmp(value, "utf_8") == 0) {
-		currFile->encoding = UT_UTF8;
-	    }
-	    else {
-		ut_handle_error_message("Unknown character encoding \"%s\"",
-		    value);
-		XML_StopParser(currFile->parser, 0);
-		break;
-	    }
-	}
-    }
-
-    return *atts == NULL;
-}
-
-
-/*
  * Handles the start of a <def> element.
  */
 static void
@@ -887,8 +1255,8 @@ endDef(
 	ut_handle_error_message("Empty unit definition");
 	XML_StopParser(currFile->parser, 0);
     }
-    else if (convertText()) {
-	currFile->unit = ut_parse(unitSystem, text, textEncoding);
+    else {
+	currFile->unit = ut_parse(unitSystem, text, currFile->textEncoding);
 
 	if (currFile->unit == NULL) {
 	    ut_handle_error_message(
@@ -907,35 +1275,33 @@ startName(
     void*		data,
     const char**	atts)
 {
-    if (setEncoding(atts)) {
-	if (currFile->context == PREFIX) {
-	    if (!currFile->haveValue) {
-		ut_handle_error_message("No previous <value> element");
-		XML_StopParser(currFile->parser, 0);
-	    }
-	    else {
-		clearText();
-                ACCUMULATE_TEXT;
-	    }
-	}
-	else if (currFile->context == UNIT || currFile->context == ALIASES) {
-	    if (currFile->unit == NULL) {
-		ut_handle_error_message(
-		    "No previous <base>, <dimensionless>, or <def> element");
-		XML_StopParser(currFile->parser, 0);
-	    }
-	    else {
-		currFile->noPLural = 0;
-                currFile->singular[0] = 0;
-                currFile->plural[0] = 0;
-                currFile->context =
-                    currFile->context == UNIT ? UNIT_NAME : ALIAS_NAME;
-	    }
-	}
-	else {
-	    ut_handle_error_message("Wrong place for <name> element");
-	    XML_StopParser(currFile->parser, 0);
-	}
+    if (currFile->context == PREFIX) {
+        if (!currFile->haveValue) {
+            ut_handle_error_message("No previous <value> element");
+            XML_StopParser(currFile->parser, 0);
+        }
+        else {
+            clearText();
+            ACCUMULATE_TEXT;
+        }
+    }
+    else if (currFile->context == UNIT || currFile->context == ALIASES) {
+        if (currFile->unit == NULL) {
+            ut_handle_error_message(
+                "No previous <base>, <dimensionless>, or <def> element");
+            XML_StopParser(currFile->parser, 0);
+        }
+        else {
+            currFile->noPLural = 0;
+            currFile->singular[0] = 0;
+           currFile->plural[0] = 0;
+            currFile->context =
+                currFile->context == UNIT ? UNIT_NAME : ALIAS_NAME;
+        }
+    }
+    else {
+        ut_handle_error_message("Wrong place for <name> element");
+        XML_StopParser(currFile->parser, 0);
     }
 }
 
@@ -952,7 +1318,7 @@ endName(
 	    ut_handle_error_message("No previous <value> element");
 	    XML_StopParser(currFile->parser, 0);
 	}
-	else if (convertText()) {
+	else {
 	    if (ut_add_name_prefix(unitSystem, text, currFile->value) !=
                     UT_SUCCESS) {
 		ut_handle_error_message(
@@ -972,7 +1338,7 @@ endName(
         }
         else {
             if (!mapUnitAndName(currFile->unit, currFile->singular,
-                    currFile->encoding)) {
+                    currFile->textEncoding)) {
                 XML_StopParser(currFile->parser, 0);
             }
             else {
@@ -997,7 +1363,7 @@ endName(
                          * Because the unit is already mapped to the singular
                          * name, it is not mapped to the plural name.
                          */
-                        if (!mapNamesToUnit(plural, currFile->encoding,
+                        if (!mapNamesToUnit(plural, currFile->textEncoding,
                                 currFile->unit)) {
                             XML_StopParser(currFile->parser, 0);
                         }
@@ -1015,7 +1381,7 @@ endName(
             XML_StopParser(currFile->parser, 0);
         }
         else {
-            if (!mapNamesToUnit(currFile->singular, currFile->encoding,
+            if (!mapNamesToUnit(currFile->singular, currFile->textEncoding,
                     currFile->unit)) {
                 XML_StopParser(currFile->parser, 0);
             }
@@ -1037,7 +1403,7 @@ endName(
                 }
 
                 if (plural != NULL) {
-                    if (!mapNamesToUnit(plural, currFile->encoding,
+                    if (!mapNamesToUnit(plural, currFile->textEncoding,
                             currFile->unit))
                         XML_StopParser(currFile->parser, 0);
                 }
@@ -1082,14 +1448,12 @@ static void
 endSingular(
     void*		data)
 {
-    if (convertText()) {
-        if (nbytes >= NAME_SIZE) {
-            ut_handle_error_message("Name \"%s\" is too long", text);
-            XML_StopParser(currFile->parser, 0);
-        }
-        else {
-            (void)strcpy(currFile->singular, text);
-        }
+    if (nbytes >= NAME_SIZE) {
+        ut_handle_error_message("Name \"%s\" is too long", text);
+        XML_StopParser(currFile->parser, 0);
+    }
+    else {
+        (void)strcpy(currFile->singular, text);
     }
 }
 
@@ -1124,18 +1488,16 @@ static void
 endPlural(
     void*		data)
 {
-    if (convertText()) {
-        if (nbytes == 0) {
-            ut_handle_error_message("Empty <plural> element");
-            XML_StopParser(currFile->parser, 0);
-        }
-        else if (nbytes >= NAME_SIZE) {
-            ut_handle_error_message("Plural name \"%s\" is too long", text);
-            XML_StopParser(currFile->parser, 0);
-        }
-        else {
-            (void)strcpy(currFile->plural, text);
-        }
+    if (nbytes == 0) {
+        ut_handle_error_message("Empty <plural> element");
+        XML_StopParser(currFile->parser, 0);
+    }
+    else if (nbytes >= NAME_SIZE) {
+        ut_handle_error_message("Plural name \"%s\" is too long", text);
+        XML_StopParser(currFile->parser, 0);
+    }
+    else {
+        (void)strcpy(currFile->plural, text);
     }
 }
 
@@ -1178,32 +1540,30 @@ startSymbol(
     void*		data,
     const char**	atts)
 {
-    if (setEncoding(atts)) {
-	if (currFile->context == PREFIX) {
-	    if (!currFile->haveValue) {
-		ut_handle_error_message("No previous <value> element");
-		XML_StopParser(currFile->parser, 0);
-	    }
-	    else {
-		clearText();
-                ACCUMULATE_TEXT;
-	    }
-	}
-	else if (currFile->context == UNIT || currFile->context == ALIASES) {
-	    if (currFile->unit == NULL) {
-		ut_handle_error_message(
-		    "No previous <base>, <dimensionless>, or <def> element");
-		XML_StopParser(currFile->parser, 0);
-	    }
-	    else {
-		clearText();
-                ACCUMULATE_TEXT;
-	    }
-	}
-	else {
-	    ut_handle_error_message("Wrong place for <symbol> element");
-	    XML_StopParser(currFile->parser, 0);
-	}
+    if (currFile->context == PREFIX) {
+        if (!currFile->haveValue) {
+            ut_handle_error_message("No previous <value> element");
+            XML_StopParser(currFile->parser, 0);
+        }
+        else {
+            clearText();
+            ACCUMULATE_TEXT;
+        }
+    }
+    else if (currFile->context == UNIT || currFile->context == ALIASES) {
+        if (currFile->unit == NULL) {
+            ut_handle_error_message(
+                "No previous <base>, <dimensionless>, or <def> element");
+            XML_StopParser(currFile->parser, 0);
+        }
+        else {
+            clearText();
+            ACCUMULATE_TEXT;
+        }
+    }
+    else {
+        ut_handle_error_message("Wrong place for <symbol> element");
+        XML_StopParser(currFile->parser, 0);
     }
 }
 
@@ -1215,29 +1575,27 @@ static void
 endSymbol(
     void*		data)
 {
-    if (convertText()) {
-        if (currFile->context == PREFIX) {
-            if (ut_add_symbol_prefix(unitSystem, text, currFile->value) !=
-                    UT_SUCCESS) {
-                ut_handle_error_message(
-                    "Couldn't map symbol-prefix \"%s\" to value %g",
-                    text, currFile->value);
-                XML_StopParser(currFile->parser, 0);
-            }
-            else {
-                currFile->prefixAdded = 1;
-            }
+    if (currFile->context == PREFIX) {
+        if (ut_add_symbol_prefix(unitSystem, text, currFile->value) !=
+                UT_SUCCESS) {
+            ut_handle_error_message(
+                "Couldn't map symbol-prefix \"%s\" to value %g",
+                text, currFile->value);
+            XML_StopParser(currFile->parser, 0);
         }
-        else if (currFile->context == UNIT) {
-            if (!mapUnitAndSymbol(currFile->unit, text, textEncoding))
-                XML_StopParser(currFile->parser, 0);
+        else {
+            currFile->prefixAdded = 1;
+        }
+    }
+    else if (currFile->context == UNIT) {
+        if (!mapUnitAndSymbol(currFile->unit, text, currFile->textEncoding))
+            XML_StopParser(currFile->parser, 0);
 
-            currFile->symbolSeen = 1;
-        }
-        else if (currFile->context == ALIASES) {
-            if (!mapSymbolsToUnit(text, textEncoding, currFile->unit))
-                XML_StopParser(currFile->parser, 0);
-        }
+        currFile->symbolSeen = 1;
+    }
+    else if (currFile->context == ALIASES) {
+        if (!mapSymbolsToUnit(text, currFile->textEncoding, currFile->unit))
+            XML_StopParser(currFile->parser, 0);
     }
 }
 
@@ -1322,6 +1680,53 @@ endAliases(
 
 
 /*
+ * Handles the start of an <import> element.
+ */
+static void
+startImport(
+    void*		data,
+    const char**	atts)
+{
+    if (currFile->context != UNIT_SYSTEM) {
+	ut_handle_error_message("Wrong place for <import> element");
+	XML_StopParser(currFile->parser, 0);
+    }
+    else {
+	clearText();
+        ACCUMULATE_TEXT;
+    }
+}
+
+
+/*
+ * Handles the end of an <import> element.
+ */
+static void
+endImport(
+    void*		data)
+{
+    char        buf[_POSIX_PATH_MAX];
+    const char* path;
+
+    if (text[0] == '/') {
+        path = text;
+    }
+    else {
+        (void)snprintf(buf, sizeof(buf), "%s/%s",
+            XML_GetBase(currFile->parser), text);
+
+        buf[sizeof(buf)-1] = 0;
+        path = buf;
+    }
+
+    ut_set_status(readXml(path));
+
+    if (ut_get_status() != UT_SUCCESS)
+        XML_StopParser(currFile->parser, 0);
+}
+
+
+/*
  * Handles the start of an element.
  */
 static void
@@ -1371,6 +1776,9 @@ startElement(
 	}
 	else if (strcasecmp(name, "aliases") == 0) {
 	    startAliases(data, atts);
+	}
+	else if (strcasecmp(name, "import") == 0) {
+	    startImport(data, atts);
 	}
 	else {
 	    currFile->skipDepth = 1;
@@ -1427,6 +1835,9 @@ endElement(
 	else if (strcasecmp(name, "aliases") == 0) {
 	    endAliases(data);
 	}
+	else if (strcasecmp(name, "import") == 0) {
+	    endImport(data);
+	}
 	else {
 	    ut_handle_error_message("Unknown element \"<%s>\"", name);
 	    XML_StopParser(currFile->parser, 0);
@@ -1464,59 +1875,7 @@ declareXml(
 
 
 /*
- * Handles parsing of external entities.  Specifically, handles parsing
- * of another XML file whose definitions are to be included in the 
- * unit-system being built.
- */
-static int
-parseExternalEntity(
-    XML_Parser          parser,
-    const XML_Char*     context,
-    const XML_Char*     base,
-    const XML_Char*     systemId,
-    const XML_Char*     publicId)
-{
-    int                 status = XML_STATUS_ERROR;
-
-    if (currFile->context != UNIT_SYSTEM) {
-	ut_handle_error_message("Wrong place for <ENTITY> element");
-    }
-    else {
-        char            buf[_POSIX_PATH_MAX];
-        const char*     path;
-        XML_Parser      newParser;
-
-        if (systemId[0] == '/') {
-            path = systemId;
-        }
-        else {
-            (void)snprintf(buf, sizeof(buf), "%s/%s", base, systemId);
-            buf[sizeof(buf)-1] = 0;
-            path = buf;
-        }
-
-        newParser = XML_ExternalEntityParserCreate(parser, context, NULL);
-
-        if (newParser == NULL) {
-            ut_handle_error_message(
-                "Couldn't create XML parser to handle \"%s\"", path);
-        }
-        else {
-            ut_set_status(readXml(newParser, path));
-
-            if (ut_get_status() == UT_SUCCESS)
-                status = XML_STATUS_OK;
-
-            XML_ParserFree(newParser);
-        }                               /* newParser != NULL */
-    }
-
-    return status;
-}
-
-
-/*
- * Reads an XML unit database into the unit-system.
+ * Reads an XML file into the unit-system with the given XML parser.
  *
  * Arguments:
  *      parser          Pointer to the XML parser.
@@ -1528,7 +1887,7 @@ parseExternalEntity(
  *      UT_PARSE        Parse failure.
  */
 static int
-readXml(
+readXmlWithParser(
     XML_Parser          parser,
     const char* const   path)
 {
@@ -1595,6 +1954,60 @@ readXml(
 
 
 /*
+ * Reads an XML file into the unit-system.
+ *
+ * Arguments:
+ *      path            Pointer to the pathname of the XML file.
+ * Returns:
+ *      UT_SUCCESS      Success.
+ *      UT_OPEN_ARG     File "path" couldn't be opened.  See "errno".
+ *      UT_OS           Operating-system error.  See "errno".
+ *      UT_PARSE        Parse failure.
+ */
+static int
+readXml(
+    const char* const   path)
+{
+    ut_status       status;
+    ut_status       openError;
+    XML_Parser      parser = XML_ParserCreate(NULL);
+
+    if (parser == NULL) {
+        ut_handle_error_message(strerror(errno));
+        ut_handle_error_message("Couldn't create XML parser");
+
+        status = UT_OS;
+    }
+    else {
+        char        base[_POSIX_PATH_MAX];
+
+        (void)strncpy(base, path, sizeof(base));
+        base[sizeof(base)-1] = 0;
+        (void)strncpy(base, dirname(base), sizeof(base));
+        base[sizeof(base)-1] = 0;
+
+        if (XML_SetBase(parser, base) != XML_STATUS_OK) {
+            ut_handle_error_message(strerror(errno));
+            ut_handle_error_message("XML_SetBase(\"%s\") failure", base);
+
+            status = UT_OS;
+        }
+        else {
+            XML_SetXmlDeclHandler(parser, declareXml);
+            XML_SetElementHandler(parser, startElement, endElement);
+            XML_SetCharacterDataHandler(parser, NULL);
+
+            status = readXmlWithParser(parser, path);
+        }                           /* parser "base" set */
+
+        XML_ParserFree(parser);
+    }                               /* parser != NULL */
+
+    return status;
+}
+
+
+/*
  * Returns the unit-system corresponding to an XML file.  This is the usual way
  * that a client will obtain a unit-system.
  *
@@ -1633,59 +2046,39 @@ ut_read_xml(
     }
     else {
         ut_status       status;
-        XML_Parser      parser;
+        ut_status       openError;
 
-        if (path == NULL) {
+        if (path != NULL) {
+            openError = UT_OPEN_ARG;
+        }
+        else {
             path = getenv("UDUNITS2_XML_PATH");
 
-            if (path == NULL)
-                path = DEFAULT_UDUNITS2_XML_PATH;
-        }
-
-	parser = XML_ParserCreate(NULL);
-
-	if (parser == NULL) {
-	    ut_handle_error_message(strerror(errno));
-	    ut_handle_error_message("Couldn't create XML parser");
-	}
-	else {
-            char        base[_POSIX_PATH_MAX];
-
-            (void)strncpy(base, path, sizeof(base));
-            base[sizeof(base)-1] = 0;
-            (void)strncpy(base, dirname(base), sizeof(base));
-            base[sizeof(base)-1] = 0;
-
-            if (XML_SetBase(parser, base) != XML_STATUS_OK) {
-                ut_handle_error_message(strerror(errno));
-                ut_handle_error_message("XML_SetBase(\"%s\") failure", base);
-
-                status = UT_OS;
+            if (path != NULL) {
+                openError = UT_OPEN_ENV;
             }
             else {
-                XML_SetXmlDeclHandler(parser, declareXml);
-                XML_SetElementHandler(parser, startElement, endElement);
-                XML_SetCharacterDataHandler(parser, NULL);
-                XML_SetExternalEntityRefHandler(parser, parseExternalEntity);
+                path = DEFAULT_UDUNITS2_XML_PATH;
+                openError = UT_OPEN_DEFAULT;
+            }
+        }
 
-                status = readXml(parser, path);
+        status = readXml(path);
 
-                if (status == UT_SUCCESS) {
-                    ut_unit*	second =
-                        ut_get_unit_by_name(unitSystem, "second");
+        if (status == UT_OPEN_ARG) {
+            status = openError;
+        }
+        else if (status == UT_SUCCESS) {
+            ut_unit*	second = ut_get_unit_by_name(unitSystem, "second");
 
-                    if (second != NULL) {
-                        if (ut_set_second(second) != UT_SUCCESS)
-                            ut_handle_error_message(
-                                "Couldn't set \"second\" unit in unit-system");
+            if (second != NULL) {
+                if (ut_set_second(second) != UT_SUCCESS)
+                    ut_handle_error_message(
+                        "Couldn't set \"second\" unit in unit-system");
 
-                        ut_free(second);
-                    }                   /* second != NULL */
-                }                       /* XML successfully read */
-            }                           /* parser "base" set */
-
-            XML_ParserFree(parser);
-        }                               /* parser != NULL */
+                ut_free(second);
+            }                   /* second != NULL */
+        }                       /* XML successfully read */
 
         if (status != UT_SUCCESS) {
             ut_free_system(unitSystem);

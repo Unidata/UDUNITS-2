@@ -29,6 +29,7 @@ static ut_unit*		rankine;
 static ut_unit*		celsius;
 static ut_unit*		fahrenheit;
 static ut_unit*		watt;
+static ut_unit*		wattSquared;
 static ut_unit*		cubicMeter;
 static ut_unit*		cubicMicron;
 static ut_unit*		BZ;
@@ -115,20 +116,20 @@ test_utNewBaseUnit(void)
     CU_ASSERT_EQUAL(ut_get_status(), UT_NO_SECOND);
 
     CU_ASSERT_EQUAL(ut_set_second(second), UT_SUCCESS);
-    CU_ASSERT_EQUAL(ut_set_second(NULL), UT_NULL_ARG);
+    CU_ASSERT_EQUAL(ut_set_second(NULL), UT_BAD_ARG);
     CU_ASSERT_EQUAL(ut_map_unit_to_name(second, "second", UT_ASCII), UT_SUCCESS);
     CU_ASSERT_EQUAL(ut_map_name_to_unit("second", second), UT_SUCCESS);
     CU_ASSERT_EQUAL(ut_map_unit_to_symbol(second, "s", UT_ASCII), UT_SUCCESS);
     CU_ASSERT_EQUAL(ut_map_symbol_to_unit("s", second), UT_SUCCESS);
 
     CU_ASSERT_PTR_NULL(ut_new_base_unit(NULL));
-    CU_ASSERT_EQUAL(ut_get_status(), UT_NULL_ARG);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
 
-    CU_ASSERT_EQUAL(ut_map_unit_to_name(kilogram, "Ångström", UT_UTF8), UT_BAD_ID);
+    CU_ASSERT_EQUAL(ut_map_unit_to_name(kilogram, "Ångström", UT_UTF8), UT_BAD_ARG);
 
     CU_ASSERT_EQUAL(ut_set_second(second), UT_SUCCESS);
     CU_ASSERT_EQUAL(ut_set_second(meter), UT_EXISTS);
-    CU_ASSERT_EQUAL(ut_set_second(NULL), UT_NULL_ARG);
+    CU_ASSERT_EQUAL(ut_set_second(NULL), UT_BAD_ARG);
 }
 
 
@@ -145,9 +146,9 @@ test_utNewDimensionlessUnit(void)
     CU_ASSERT_EQUAL(ut_map_unit_to_name(radian, "dummy", UT_ASCII), UT_EXISTS);
 
     CU_ASSERT_EQUAL(ut_map_unit_to_symbol(radian, "f", UT_ASCII), UT_EXISTS);
-    CU_ASSERT_EQUAL(ut_map_unit_to_symbol(NULL, "f", UT_ASCII), UT_NULL_ARG);
+    CU_ASSERT_EQUAL(ut_map_unit_to_symbol(NULL, "f", UT_ASCII), UT_BAD_ARG);
 
-    CU_ASSERT_EQUAL(ut_map_unit_to_name(radian, "Ångström", UT_UTF8), UT_BAD_ID);
+    CU_ASSERT_EQUAL(ut_map_unit_to_name(radian, "Ångström", UT_UTF8), UT_BAD_ARG);
 }
 
 
@@ -160,7 +161,7 @@ test_utGetUnitByName(void)
     CU_ASSERT_EQUAL(ut_compare(altMeter, meter), 0);
 
     CU_ASSERT_PTR_NULL(ut_get_unit_by_name(unitSystem, NULL));
-    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ID);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
 
     CU_ASSERT_PTR_NULL(ut_get_unit_by_name(unitSystem, "foo"));
     CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
@@ -176,7 +177,7 @@ test_utGetUnitBySymbol(void)
     CU_ASSERT_EQUAL(ut_compare(altMeter, meter), 0);
 
     CU_ASSERT_PTR_NULL(ut_get_unit_by_symbol(unitSystem, NULL));
-    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ID);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
 
     CU_ASSERT_PTR_NULL(ut_get_unit_by_symbol(unitSystem, "M"));
     CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
@@ -192,10 +193,10 @@ test_utAddNamePrefix(void)
 
     CU_ASSERT_EQUAL(ut_add_name_prefix(unitSystem, "mega", 1e5), UT_EXISTS);
     CU_ASSERT_EQUAL(ut_add_name_prefix(unitSystem, "MEGA", 1e5), UT_EXISTS);
-    CU_ASSERT_EQUAL(ut_add_name_prefix(NULL, "foo", 1), UT_NULL_ARG);
-    CU_ASSERT_EQUAL(ut_add_name_prefix(unitSystem, "", 2), UT_BAD_ID);
-    CU_ASSERT_EQUAL(ut_add_name_prefix(unitSystem, NULL, 3), UT_BAD_ID);
-    CU_ASSERT_EQUAL(ut_add_name_prefix(unitSystem, "foo", 0), UT_BAD_VALUE);
+    CU_ASSERT_EQUAL(ut_add_name_prefix(NULL, "foo", 1), UT_BAD_ARG);
+    CU_ASSERT_EQUAL(ut_add_name_prefix(unitSystem, "", 2), UT_BAD_ARG);
+    CU_ASSERT_EQUAL(ut_add_name_prefix(unitSystem, NULL, 3), UT_BAD_ARG);
+    CU_ASSERT_EQUAL(ut_add_name_prefix(unitSystem, "foo", 0), UT_BAD_ARG);
 }
 
 
@@ -206,13 +207,15 @@ test_utAddSymbolPrefix(void)
     CU_ASSERT_EQUAL(ut_add_symbol_prefix(unitSystem, "M", 1e6), UT_SUCCESS);
     CU_ASSERT_EQUAL(ut_add_symbol_prefix(unitSystem, "u", 1e-6), UT_SUCCESS);
     CU_ASSERT_EQUAL(ut_add_symbol_prefix(unitSystem, "µ", 1e-6), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_add_symbol_prefix(unitSystem, "\xc2\xb5", 1e-6),
+        UT_SUCCESS);    /* "\xc2\xb5" is "mu" character in UTF-8 */
     CU_ASSERT_EQUAL(ut_add_symbol_prefix(unitSystem, "k", 1e3), UT_SUCCESS);
 
     CU_ASSERT_EQUAL(ut_add_symbol_prefix(unitSystem, "M", 1e5), UT_EXISTS);
-    CU_ASSERT_EQUAL(ut_add_symbol_prefix(NULL, "foo", 1), UT_NULL_ARG);
-    CU_ASSERT_EQUAL(ut_add_symbol_prefix(unitSystem, "", 2), UT_BAD_ID);
-    CU_ASSERT_EQUAL(ut_add_symbol_prefix(unitSystem, NULL, 3), UT_BAD_ID);
-    CU_ASSERT_EQUAL(ut_add_symbol_prefix(unitSystem, "f", 0), UT_BAD_VALUE);
+    CU_ASSERT_EQUAL(ut_add_symbol_prefix(NULL, "foo", 1), UT_BAD_ARG);
+    CU_ASSERT_EQUAL(ut_add_symbol_prefix(unitSystem, "", 2), UT_BAD_ARG);
+    CU_ASSERT_EQUAL(ut_add_symbol_prefix(unitSystem, NULL, 3), UT_BAD_ARG);
+    CU_ASSERT_EQUAL(ut_add_symbol_prefix(unitSystem, "f", 0), UT_BAD_ARG);
 }
 
 
@@ -227,12 +230,43 @@ test_utMapNameToUnit(void)
     CU_ASSERT_EQUAL(ut_map_name_to_unit("metre", meter), UT_SUCCESS);
 
     CU_ASSERT_EQUAL(ut_map_name_to_unit("metre", second), UT_EXISTS);
-    CU_ASSERT_EQUAL(ut_map_name_to_unit("metre", NULL), UT_NULL_ARG);
+    CU_ASSERT_EQUAL(ut_map_name_to_unit("metre", NULL), UT_BAD_ARG);
 
     metre = ut_get_unit_by_name(unitSystem, "metre");
     CU_ASSERT_PTR_NOT_NULL(metre);
     CU_ASSERT_EQUAL(ut_compare(metre, meter), 0);
     ut_free(metre);
+}
+
+
+static void
+test_utMapSymbolToUnit(void)
+{
+    ut_unit*    degK;
+
+    /* "\xb0" is the degree symbol in Latin-1 */
+    CU_ASSERT_EQUAL(ut_map_symbol_to_unit("\xb0K", kelvin), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_map_symbol_to_unit("\xb0K", kelvin), UT_SUCCESS);
+
+    CU_ASSERT_EQUAL(ut_map_symbol_to_unit("\xb0K", second), UT_EXISTS);
+    CU_ASSERT_EQUAL(ut_map_symbol_to_unit("\xb0K", NULL), UT_BAD_ARG);
+
+    degK = ut_get_unit_by_symbol(unitSystem, "\xb0K");
+    CU_ASSERT_PTR_NOT_NULL(degK);
+    CU_ASSERT_EQUAL(ut_compare(degK, kelvin), 0);
+    ut_free(degK);
+
+    /* "\xc2\xb0" is the degree symbol in UTF-8 */
+    CU_ASSERT_EQUAL(ut_map_symbol_to_unit("\xc2\xb0K", kelvin), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_map_symbol_to_unit("\xc2\xb0K", kelvin), UT_SUCCESS);
+
+    CU_ASSERT_EQUAL(ut_map_symbol_to_unit("\xc2\xb0K", second), UT_EXISTS);
+    CU_ASSERT_EQUAL(ut_map_symbol_to_unit("\xc2\xb0K", NULL), UT_BAD_ARG);
+
+    degK = ut_get_unit_by_symbol(unitSystem, "\xc2\xb0K");
+    CU_ASSERT_PTR_NOT_NULL(degK);
+    CU_ASSERT_EQUAL(ut_compare(degK, kelvin), 0);
+    ut_free(degK);
 }
 
 
@@ -315,10 +349,10 @@ test_utScale(void)
     ut_free(metre);
 
     CU_ASSERT_PTR_NULL(ut_scale(0, meter));
-    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_VALUE);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
 
     CU_ASSERT_PTR_NULL(ut_scale(0, NULL));
-    CU_ASSERT_EQUAL(ut_get_status(), UT_NULL_ARG);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
 
     rankine = ut_scale(1/1.8, kelvin);
     CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
@@ -372,7 +406,7 @@ test_utOffset(void)
     ut_free(dupKelvin);
 
     (void)ut_offset(NULL, 5);
-    CU_ASSERT_EQUAL(ut_get_status(), UT_NULL_ARG);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
 }
 
 
@@ -384,7 +418,7 @@ test_utMapUnitToName(void)
     CU_ASSERT_EQUAL(ut_map_unit_to_name(meter, "metre", UT_ASCII), UT_EXISTS);
 
     CU_ASSERT_EQUAL(ut_map_name_to_unit("metre", second), UT_EXISTS);
-    CU_ASSERT_EQUAL(ut_map_name_to_unit("metre", NULL), UT_NULL_ARG);
+    CU_ASSERT_EQUAL(ut_map_name_to_unit("metre", NULL), UT_BAD_ARG);
 
     metre = ut_get_unit_by_name(unitSystem, "metre");
     CU_ASSERT_PTR_NOT_NULL(metre);
@@ -664,6 +698,15 @@ test_utRaise(void)
     char	buf[80];
     int		nchar;
 
+    wattSquared = ut_raise(watt, 2);
+    CU_ASSERT_PTR_NOT_NULL(wattSquared);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
+    nchar = ut_format(wattSquared, buf, sizeof(buf)-1, asciiSymbolDef);
+    CU_ASSERT_TRUE_FATAL(nchar > 0);
+    CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
+    buf[nchar] = 0;
+    CU_ASSERT_STRING_EQUAL(buf, "kg2.m4.s-6");
+
     perCubicMeter = ut_raise(meter, -3);
     CU_ASSERT_PTR_NOT_NULL(perCubicMeter);
     CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
@@ -744,7 +787,7 @@ test_utLog(void)
 
     unit = ut_log(-10, ut_scale(0.001, watt));
     CU_ASSERT_PTR_NULL(unit);
-    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_VALUE);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
 
     cubicMeter = ut_raise(meter, 3);
     cubicMicron = ut_raise(ut_scale(1e-6, meter), 3);
@@ -782,9 +825,9 @@ test_utLog(void)
     ut_free(unit);
 
     CU_ASSERT_PTR_NULL(ut_log(2, NULL));
-    CU_ASSERT_EQUAL(ut_get_status(), UT_NULL_ARG);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
     CU_ASSERT_PTR_NULL(ut_log(1, meter));
-    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_VALUE);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
 
     CU_ASSERT_PTR_NULL(ut_multiply(dBZ, meter));
     unit = ut_multiply(dBZ, radian);
@@ -855,9 +898,9 @@ test_utSameSystem(void)
     CU_ASSERT_EQUAL(ut_same_system(meter, kilogram), 1);
 
     CU_ASSERT_EQUAL(ut_same_system(NULL, kilogram), 0);
-    CU_ASSERT_EQUAL(ut_get_status(), UT_NULL_ARG);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
     CU_ASSERT_EQUAL(ut_same_system(kilogram, NULL), 0);
-    CU_ASSERT_EQUAL(ut_get_status(), UT_NULL_ARG);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
 
     system = ut_new_system();
     CU_ASSERT_PTR_NOT_NULL(system);
@@ -877,7 +920,7 @@ test_utIsDimensionless(void)
     CU_ASSERT_EQUAL(ut_is_dimensionless(radian), 1);
     CU_ASSERT_EQUAL(ut_is_dimensionless(secondsSinceTheEpoch), 0);
     CU_ASSERT_EQUAL(ut_is_dimensionless(NULL), 0);
-    CU_ASSERT_EQUAL(ut_get_status(), UT_NULL_ARG);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
 
     unit = ut_raise(radian, 2);
     CU_ASSERT_EQUAL(ut_is_dimensionless(unit), 1);
@@ -896,7 +939,7 @@ test_utClone(void)
     ut_free(unit);
 
     CU_ASSERT_PTR_NULL(ut_clone(NULL));
-    CU_ASSERT_EQUAL(ut_get_status(), UT_NULL_ARG);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
 }
 
 
@@ -922,7 +965,7 @@ test_utAreConvertible(void)
     ut_free(unit);
 
     CU_ASSERT_EQUAL(ut_are_convertible(NULL, meter), 0);
-    CU_ASSERT_EQUAL(ut_get_status(), UT_NULL_ARG);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
 }
 
 
@@ -1370,7 +1413,7 @@ test_utOffsetByTime(void)
     ut_free(daysSinceTheEpoch);
 
     CU_ASSERT_PTR_NULL(ut_offset_by_time(NULL, ut_encode_time(0, 0, 0, 0, 0, 0)));
-    CU_ASSERT_EQUAL(ut_get_status(), UT_NULL_ARG);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
 }
 
 
@@ -1399,6 +1442,14 @@ test_utSetEncoding(void)
     buf[nchar] = 0;
     CU_ASSERT_STRING_EQUAL(buf,
 	"kg\xc2\xb7m\xc2\xb2\xc2\xb7s\xe2\x81\xbb\xc2\xb3");
+
+    nchar = ut_format(wattSquared, buf, sizeof(buf)-1, utf8SymbolDef);
+    CU_ASSERT_TRUE_FATAL(nchar > 0);
+    CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
+    buf[nchar] = 0;
+    CU_ASSERT_STRING_EQUAL(buf,
+	"kg\xc2\xb2\xc2\xb7m\xe2\x81\xb4\xc2\xb7s\xe2\x81\xbb\xe2\x81\xb6");
+        /* kg2.m4.s-6 */
 }
 
 
@@ -1439,145 +1490,124 @@ test_parsing(void)
     spec = "m";
     unit = ut_parse(unitSystem, spec, UT_ASCII);
     CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(ut_get_parse_length(), strlen(spec));
     CU_ASSERT_EQUAL(ut_compare(unit, meter), 0);
     ut_free(unit);
 
     spec = "kg.m";
     unit = ut_parse(unitSystem, spec, UT_ASCII);
     CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(ut_get_parse_length(), strlen(spec));
     ut_free(unit);
 
     spec = "kg m";
     unit = ut_parse(unitSystem, spec, UT_ASCII);
     CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(ut_get_parse_length(), strlen(spec));
     ut_free(unit);
 
     spec = "1/s";
     unit = ut_parse(unitSystem, spec, UT_ASCII);
     CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(ut_get_parse_length(), strlen(spec));
     CU_ASSERT_EQUAL(ut_compare(unit, hertz), 0);
     ut_free(unit);
 
     spec = "kg.m2.s-3";
     unit = ut_parse(unitSystem, spec, UT_ASCII);
     CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(ut_get_parse_length(), strlen(spec));
     CU_ASSERT_EQUAL(ut_compare(unit, watt), 0);
     ut_free(unit);
 
     spec = "kg.m2/s3";
     unit = ut_parse(unitSystem, spec, UT_ASCII);
     CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(ut_get_parse_length(), strlen(spec));
     CU_ASSERT_EQUAL(ut_compare(unit, watt), 0);
     ut_free(unit);
 
     spec = "s-3.m2.kg";
     unit = ut_parse(unitSystem, spec, UT_ASCII);
     CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(ut_get_parse_length(), strlen(spec));
     CU_ASSERT_EQUAL(ut_compare(unit, watt), 0);
     ut_free(unit);
 
     spec = "(kg.m2/s3)";
     unit = ut_parse(unitSystem, spec, UT_ASCII);
     CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(ut_get_parse_length(), strlen(spec));
     CU_ASSERT_EQUAL(ut_compare(unit, watt), 0);
     ut_free(unit);
 
     spec = "(kg.m2/s3)^1";
     unit = ut_parse(unitSystem, spec, UT_ASCII);
     CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(ut_get_parse_length(), strlen(spec));
     CU_ASSERT_EQUAL(ut_compare(unit, watt), 0);
     ut_free(unit);
 
     spec = "kg.(m/s)^2.s-1";
     unit = ut_parse(unitSystem, spec, UT_ASCII);
     CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(ut_get_parse_length(), strlen(spec));
     CU_ASSERT_EQUAL(ut_compare(unit, watt), 0);
     ut_free(unit);
 
     spec = "1000 m";
     unit = ut_parse(unitSystem, spec, UT_ASCII);
     CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(ut_get_parse_length(), strlen(spec));
     CU_ASSERT_EQUAL(ut_compare(unit, kilometer), 0);
     ut_free(unit);
 
     spec = "(1000)(m)";
     unit = ut_parse(unitSystem, spec, UT_ASCII);
     CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(ut_get_parse_length(), strlen(spec));
     CU_ASSERT_EQUAL(ut_compare(unit, kilometer), 0);
     ut_free(unit);
 
     spec = "(K/1.8) @ 459.67";
     unit = ut_parse(unitSystem, spec, UT_ASCII);
     CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(ut_get_parse_length(), strlen(spec));
     CU_ASSERT_EQUAL(ut_compare(unit, fahrenheit), 0);
     ut_free(unit);
 
     spec = "METER";
     unit = ut_parse(unitSystem, spec, UT_ASCII);
     CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(ut_get_parse_length(), strlen(spec));
     CU_ASSERT_EQUAL(ut_compare(unit, meter), 0);
     ut_free(unit);
 
     spec = "s@19700101T000000 UTC";
     unit = ut_parse(unitSystem, spec, UT_ASCII);
     CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(ut_get_parse_length(), strlen(spec));
     CU_ASSERT_EQUAL(ut_compare(unit, secondsSinceTheEpoch), 0);
     ut_free(unit);
 
     spec = "s @ 19700101T000000";
     unit = ut_parse(unitSystem, spec, UT_ASCII);
     CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(ut_get_parse_length(), strlen(spec));
     CU_ASSERT_EQUAL(ut_compare(unit, secondsSinceTheEpoch), 0);
     ut_free(unit);
 
     spec = "s @ 1970-01-01 00:00:00";
     unit = ut_parse(unitSystem, spec, UT_ASCII);
     CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(ut_get_parse_length(), strlen(spec));
     CU_ASSERT_EQUAL(ut_compare(unit, secondsSinceTheEpoch), 0);
     ut_free(unit);
 
     spec = "kg·m²/s³";
     unit = ut_parse(unitSystem, spec, UT_LATIN1);
     CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(ut_get_parse_length(), strlen(spec));
     CU_ASSERT_EQUAL(ut_compare(unit, watt), 0);
     ut_free(unit);
 
     spec = "(kg)(m)^2/(s)^3";
     unit = ut_parse(unitSystem, spec, UT_ASCII);
     CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(ut_get_parse_length(), strlen(spec));
     CU_ASSERT_EQUAL(ut_compare(unit, watt), 0);
     ut_free(unit);
 
     spec = "kg\xc2\xb7m\xc2\xb2/s\xc2\xb3";
     unit = ut_parse(unitSystem, spec, UT_UTF8);
     CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(ut_get_parse_length(), strlen(spec));
     CU_ASSERT_EQUAL(ut_compare(unit, watt), 0);
     ut_free(unit);
 
     spec = "0.1 lg(re (1e-6 m)^3)";
     unit = ut_parse(unitSystem, spec, UT_ASCII);
     CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(ut_get_parse_length(), strlen(spec));
     CU_ASSERT_EQUAL(ut_compare(unit, dBZ), 0);
     ut_free(unit);
 
@@ -1588,7 +1618,6 @@ test_parsing(void)
 
         unit = ut_parse(unitSystem, buf, UT_ASCII);
         CU_ASSERT_PTR_NOT_NULL(unit);
-        CU_ASSERT_EQUAL(ut_get_parse_length(), strlen(buf));
         CU_ASSERT_EQUAL(ut_compare(unit, fahrenheit), 0);
         ut_free(unit);
     }
@@ -1596,48 +1625,41 @@ test_parsing(void)
     spec = "1";
     unit = ut_parse(unitSystem, spec, UT_ASCII);
     CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(ut_get_parse_length(), strlen(spec));
     CU_ASSERT_EQUAL(ut_compare(ut_get_dimensionless_unit_one(unitSystem), unit), 0);
     ut_free(unit);
 
     spec = "3.141592653589793238462643383279";
     unit = ut_parse(unitSystem, spec, UT_ASCII);
     CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(ut_get_parse_length(), strlen(spec));
     ut_free(unit);
 
     spec = "";
     unit = ut_parse(unitSystem, spec, UT_ASCII);
     CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(ut_get_parse_length(), strlen(spec));
     CU_ASSERT_EQUAL(ut_compare(ut_get_dimensionless_unit_one(unitSystem), unit), 0);
     ut_free(unit);
 
     spec = "km";
     unit = ut_parse(unitSystem, spec, UT_ASCII);
     CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(ut_get_parse_length(), strlen(spec));
     CU_ASSERT_EQUAL(ut_compare(kilometer, unit), 0);
     ut_free(unit);
 
     spec = "µm";
     unit = ut_parse(unitSystem, spec, UT_LATIN1);
     CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(ut_get_parse_length(), strlen(spec));
     CU_ASSERT_EQUAL(ut_compare(unit, micron), 0);
     ut_free(unit);
 
     spec = "µmegaHz";
     unit = ut_parse(unitSystem, spec, UT_LATIN1);
     CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(ut_get_parse_length(), strlen(spec));
     CU_ASSERT_EQUAL(ut_compare(unit, hertz), 0);
     ut_free(unit);
 
     spec = "MeGaµHertz";
     unit = ut_parse(unitSystem, spec, UT_LATIN1);
     CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(ut_get_parse_length(), strlen(spec));
     CU_ASSERT_EQUAL(ut_compare(unit, hertz), 0);
     ut_free(unit);
 }
@@ -1646,22 +1668,141 @@ test_parsing(void)
 static void
 test_visitor(void)
 {
-    CU_ASSERT_EQUAL(ut_accept_visitor(NULL, NULL, NULL), UT_NULL_ARG);
+    CU_ASSERT_EQUAL(ut_accept_visitor(NULL, NULL, NULL), UT_BAD_ARG);
 }
 
 
 static void
 test_xml(void)
 {
-    ut_system*           xmlSystem;
+    ut_system*          xmlSystem;
     glob_t              files;
     int                 status;
+    ut_unit*            unit1;
+    ut_unit*            unit2;
+    cv_converter*	converter;
 
     chdir(getenv("srcdir"));
 
     ut_set_error_message_handler(ut_write_to_stderr);
     xmlSystem = ut_read_xml("udunits2.xml");
-    CU_ASSERT_PTR_NOT_NULL(xmlSystem);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(xmlSystem);
+
+    unit1 = ut_get_unit_by_symbol(unitSystem, "\xb0K"); /* Latin-1 degree sym */
+    CU_ASSERT_PTR_NOT_NULL(unit1);
+    CU_ASSERT_EQUAL(ut_compare(unit1, kelvin), 0);
+    ut_free(unit1);
+
+    unit1 = ut_parse(xmlSystem, "\xb0K", UT_LATIN1);    /* degree sign */
+    CU_ASSERT_PTR_NOT_NULL(unit1);
+
+    unit2 = ut_parse(xmlSystem, "K", UT_LATIN1);
+    CU_ASSERT_PTR_NOT_NULL(unit2);
+
+    CU_ASSERT_EQUAL(ut_compare(unit1, unit2), 0);
+
+    ut_free(unit1);
+
+    unit1 = ut_parse(xmlSystem, "\xc2\xb5K", UT_UTF8);  /* "mu" character */
+    CU_ASSERT_PTR_NOT_NULL(unit1);
+    converter = ut_get_converter(unit1, unit2);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(converter);
+    CU_ASSERT_TRUE(areCloseDoubles(cv_convert_double(converter, 1e6), 1.0));
+
+    cv_free(converter);
+    ut_free(unit1);
+    ut_free(unit2);
+
+    unit1 = ut_parse(xmlSystem, "arc_degree", UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit1);
+    unit2 = ut_parse(xmlSystem, "arc""\xA0""degree", UT_LATIN1);  /* NBSP */
+    CU_ASSERT_PTR_NOT_NULL(unit2);
+    CU_ASSERT_EQUAL(ut_compare(unit1, unit2), 0);
+    ut_free(unit2);
+    unit2 = ut_parse(xmlSystem, "\xB0", UT_LATIN1);  /* degree sign */
+    CU_ASSERT_PTR_NOT_NULL(unit2);
+    CU_ASSERT_EQUAL(ut_compare(unit1, unit2), 0);
+    ut_free(unit2);
+    unit2 = ut_parse(xmlSystem, "\xC2\xB0", UT_UTF8);  /* degree sign */
+    CU_ASSERT_PTR_NOT_NULL(unit2);
+    CU_ASSERT_EQUAL(ut_compare(unit1, unit2), 0);
+    ut_free(unit2);
+    ut_free(unit1);
+
+    unit1 = ut_parse(xmlSystem, "arc_minute", UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit1);
+    unit2 = ut_parse(xmlSystem, "arc""\xA0""minute", UT_LATIN1);  /* NBSP */
+    CU_ASSERT_PTR_NOT_NULL(unit2);
+    CU_ASSERT_EQUAL(ut_compare(unit1, unit2), 0);
+    ut_free(unit2);
+    unit2 = ut_parse(xmlSystem, "'", UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit2);
+    CU_ASSERT_EQUAL(ut_compare(unit1, unit2), 0);
+    ut_free(unit2);
+    unit2 = ut_parse(xmlSystem, "\xE2\x80\xB2", UT_UTF8);  /* PRIME */
+    CU_ASSERT_PTR_NOT_NULL(unit2);
+    CU_ASSERT_EQUAL(ut_compare(unit1, unit2), 0);
+    ut_free(unit2);
+    ut_free(unit1);
+
+    unit1 = ut_parse(xmlSystem, "arc_second", UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit1);
+    unit2 = ut_parse(xmlSystem, "arc""\xA0""second", UT_LATIN1);  /* NBSP */
+    CU_ASSERT_PTR_NOT_NULL(unit2);
+    CU_ASSERT_EQUAL(ut_compare(unit1, unit2), 0);
+    ut_free(unit2);
+    unit2 = ut_parse(xmlSystem, "\"", UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit2);
+    CU_ASSERT_EQUAL(ut_compare(unit1, unit2), 0);
+    ut_free(unit2);
+    unit2 = ut_parse(xmlSystem, "\xE2\x80\xB3", UT_UTF8);  /* DOUBLE PRIME */
+    CU_ASSERT_PTR_NOT_NULL(unit2);
+    CU_ASSERT_EQUAL(ut_compare(unit1, unit2), 0);
+    ut_free(unit2);
+    ut_free(unit1);
+
+    unit1 = ut_parse(xmlSystem, "ohm", UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit1);
+    unit2 = ut_parse(xmlSystem, "\xCE\xA9", UT_UTF8);  /* UPPER CASE OMEGA */
+    CU_ASSERT_PTR_NOT_NULL(unit2);
+    CU_ASSERT_EQUAL(ut_compare(unit1, unit2), 0);
+    ut_free(unit2);
+    unit2 = ut_parse(xmlSystem, "\xE2\x84\xA6", UT_UTF8);  /* OHM SIGN */
+    CU_ASSERT_PTR_NOT_NULL(unit2);
+    CU_ASSERT_EQUAL(ut_compare(unit1, unit2), 0);
+    ut_free(unit2);
+    ut_free(unit1);
+
+    unit1 = ut_parse(xmlSystem, "degree_celsius", UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit1);
+    unit2 = ut_parse(xmlSystem, "degree""\xA0""celsius", UT_LATIN1);/* NBSP */
+    CU_ASSERT_PTR_NOT_NULL(unit2);
+    CU_ASSERT_EQUAL(ut_compare(unit1, unit2), 0);
+    ut_free(unit2);
+    unit2 = ut_parse(xmlSystem, "\xB0""C", UT_LATIN1);  /* degree sign */
+    CU_ASSERT_PTR_NOT_NULL(unit2);
+    CU_ASSERT_EQUAL(ut_compare(unit1, unit2), 0);
+    ut_free(unit2);
+    unit2 = ut_parse(xmlSystem, "\xE2\x84\x83", UT_UTF8); /* DEGREE CELSIUS */
+    CU_ASSERT_PTR_NOT_NULL(unit2);
+    CU_ASSERT_EQUAL(ut_compare(unit1, unit2), 0);
+    ut_free(unit2);
+    ut_free(unit1);
+
+    unit1 = ut_parse(xmlSystem, "angstrom", UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit1);
+    unit2 = ut_parse(xmlSystem, "\xE5ngstr\xF6m", UT_LATIN1);/* small A with ring */
+    CU_ASSERT_PTR_NOT_NULL(unit2);
+    CU_ASSERT_EQUAL(ut_compare(unit1, unit2), 0);
+    ut_free(unit2);
+#if 0
+    unit2 = ut_parse(xmlSystem, "\xC5ngstr\xF6m", UT_LATIN1);/* capital A with ring */
+    CU_ASSERT_PTR_NOT_NULL(unit2);
+    CU_ASSERT_EQUAL(ut_compare(unit1, unit2), 0);
+    ut_free(unit2);
+#endif
+    ut_free(unit1);
+
     ut_free_system(xmlSystem);
 
     ut_set_error_message_handler(ut_ignore);
@@ -1674,11 +1815,11 @@ test_xml(void)
         ut_free_system(xmlSystem);
     }
 
-    xmlSystem = ut_read_xml("xmlTests/noExist.xml");
+    xmlSystem = ut_read_xml("xmlFailure/noExist.xml");
     CU_ASSERT_PTR_NULL(xmlSystem);
     CU_ASSERT_EQUAL(ut_get_status(), UT_OPEN_ARG);
 
-    status = glob("xmlTests/*.xml", 0, NULL, &files);
+    status = glob("xmlFailure/*.xml", 0, NULL, &files);
 
     if (status != 0 && status != GLOB_NOMATCH) {
         CU_ASSERT_TRUE(0);
@@ -1708,9 +1849,37 @@ test_xml(void)
 
     globfree(&files);
 
+    ut_set_error_message_handler(ut_write_to_stderr);
+
+    status = glob("xmlSuccess/*.xml", 0, NULL, &files);
+
+    if (status != 0 && status != GLOB_NOMATCH) {
+        CU_ASSERT_TRUE(0);
+    }
+    else {
+        size_t  i;
+
+        for (i = 0; i < files.gl_pathc; ++i) {
+            xmlSystem = ut_read_xml(files.gl_pathv[i]);
+
+            CU_ASSERT_PTR_NOT_NULL(xmlSystem);
+
+            if (xmlSystem != NULL) {
+                ut_free_system(xmlSystem);
+            }
+            else {
+                (void)fprintf(stderr, "File failed: \"%s\"\n",
+                    files.gl_pathv[i]);
+            }
+        }
+    }
+
+    globfree(&files);
+
     /*
      * Test again to ensure any persistent state doesn't interfere.
      */
+    ut_set_error_message_handler(ut_ignore);
     xmlSystem = ut_read_xml("udunits2.xml");
     CU_ASSERT_PTR_NOT_NULL(xmlSystem);
     ut_free_system(xmlSystem);
@@ -1736,6 +1905,7 @@ main(
 	    CU_ADD_TEST(testSuite, test_utAddNamePrefix);
 	    CU_ADD_TEST(testSuite, test_utAddSymbolPrefix);
 	    CU_ADD_TEST(testSuite, test_utMapNameToUnit);
+	    CU_ADD_TEST(testSuite, test_utMapSymbolToUnit);
 	    CU_ADD_TEST(testSuite, test_utScale);
 	    CU_ADD_TEST(testSuite, test_utOffset);
 	    CU_ADD_TEST(testSuite, test_utOffsetByTime);

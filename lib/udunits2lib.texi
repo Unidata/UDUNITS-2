@@ -52,7 +52,7 @@ units.
 The library comes with an extensive database of units all referenced to the
 SI system of units.
 
-CVS keywords: $Date: 2007/04/11 20:28:18 $, Revision: 1.3 $
+CVS keywords: $Date: 2007/07/10 22:29:22 $, Revision: 1.3 $
 
 @insertcopying
 @end ifnottex
@@ -122,7 +122,6 @@ Coding:
 @item ut_unit* @tab ut_raise(ut_unit* @var{unit}, int @var{power});
 @item ut_unit* @tab ut_log(double @var{base}, ut_unit* @var{reference});
 @item ut_unit* @tab ut_parse(ut_system* @var{system}, const char* @var{string}, ut_encoding @var{encoding});
-@item size_t  @tab ut_get_parse_length(void);
 @item char*   @tab ut_trim(char* @var{string}, ut_encoding @var{encoding});
 @item int @tab ut_format(const ut_unit* @var{unit}, char* @var{buf}, size_t @var{size}, unsigned @var{opts});
 @item ut_status @tab ut_accept_visitor(const ut_unit* @var{unit}, const ut_visitor* @var{visitor}, void* @var{arg});
@@ -342,7 +341,7 @@ one of the following:
 @table @code
 @item UT_SUCCESS
 @var{name} doesn't map to a unit of @var{system}.
-@item UT_NULL_ARG
+@item UT_BAD_ARG
 @var{system} or @var{name} is @code{NULL}.
 @end table
 @end deftypefun
@@ -361,7 +360,7 @@ one of the following:
 @table @code
 @item UT_SUCCESS
 @var{symbol} doesn't map to a unit of @var{system}.
-@item UT_NULL_ARG
+@item UT_BAD_ARG
 @var{system} or @var{symbol} is @code{NULL}.
 @end table
 @end deftypefun
@@ -375,7 +374,7 @@ when you no longer need the unit.
 If @var{system} is @code{NULL}, then this function writes an error-message 
 using @code{@ref{ut_handle_error_message()}}
 and returns @code{NULL}.
-Also, @code{@ref{ut_get_status()}} will return @code{UT_NULL_ARG}.
+Also, @code{@ref{ut_get_status()}} will return @code{UT_BAD_ARG}.
 @end deftypefun
 
 @node Adding, Prefixes, Extracting, Unit-Systems
@@ -413,7 +412,7 @@ and returns @code{NULL}.
 Also, @code{@ref{ut_get_status()}} will return one of the following:
 
 @table @code
-@item UT_NULL_ARG
+@item UT_BAD_ARG
 @var{system} is @code{NULL}.
 @item UT_OS
 Operating-system failure.  See @code{errno}.
@@ -435,7 +434,7 @@ and returns @code{NULL}.
 Also, @code{@ref{ut_get_status()}} will return one of the following:
 
 @table @code
-@item UT_NULL_ARG
+@item UT_BAD_ARG
 @var{system} is @code{NULL}.
 @item UT_OS
 Operating-system failure.  See @code{errno}.
@@ -469,10 +468,8 @@ This function returns one of the following:
 @table @code
 @item UT_SUCCESS
 Success.
-@item UT_NULL_ARG
-@var{system} or @var{name} is @code{NULL}.
-@item UT_BAD_VALUE
-@var{value} is @code{0}.
+@item UT_BAD_ARG
+@var{system} or @var{name} is @code{NULL}, or @var{value} is @code{0}.
 @item UT_EXISTS
 @var{name} already maps to a different value.
 @item UT_OS
@@ -491,10 +488,8 @@ This function returns one of the following:
 @table @code
 @item UT_SUCCESS
 Success.
-@item UT_NULL_ARG
-@var{system} or @var{symbol} is @code{NULL}.
-@item UT_BAD_VALUE
-@var{value} is @code{0}.
+@item UT_BAD_ARG
+@var{system} or @var{symbol} is @code{NULL}, or @var{value} is @code{0}.
 @item UT_EXISTS
 @var{symbol} already maps to a different value.
 @item UT_OS
@@ -525,7 +520,7 @@ This function returns one of the following:
 The ``second'' unit of @var{system} was successfully set.
 @item UT_EXISTS
 The ``second'' unit of @var{system} is set to a different unit.
-@item UT_NULL_ARG
+@item UT_BAD_ARG
 @var{second} is @code{NULL}.
 @end table
 @end deftypefun
@@ -565,7 +560,7 @@ otherwise, @code{0} is returned and @ref{ut_get_status()} will return one
 of the following:
 
 @table @code
-@item UT_NULL_ARG
+@item UT_BAD_ARG
 @var{unit1} or @var{unit2} is @code{NULL}.
 @item UT_NOT_SAME_SYSTEM
 @var{unit1} and @var{unit2} belong to different @ref{unit-system}s.
@@ -588,7 +583,7 @@ and returns @code{NULL}.
 Also, @code{@ref{ut_get_status()}} will return one of the following:
 
 @table @code
-@item UT_NULL_ARG
+@item UT_BAD_ARG
 @var{from} or @var{to} is @code{NULL}.
 @item UT_NOT_SAME_SYSTEM
 The units @var{from} and @var{to} don't belong to the same unit-system.
@@ -654,10 +649,6 @@ its binary representation:
     if (watt == NULL) @{
         /* Unable to parse string. */
     @}
-    else if (@ref{ut_get_parse_length(),utGetPasrseLength}() != strlen(string)) @{
-        /* The string wasn't completely parsed.
-         * Can't happen with this contrived example. */
-    @}
     else @{
         /* Life is good. */
     @}
@@ -674,7 +665,7 @@ If an error occurs, then this function returns @code{NULL} and
 @code{@ref{ut_get_status()}} will return one of the following:
 
 @table @code
-@item UT_NULL_ARG
+@item UT_BAD_ARG
 @var{system} or @var{string} is @code{NULL}.
 @item UT_SYNTAX
 @var{string} contained a syntax error.
@@ -683,15 +674,6 @@ If an error occurs, then this function returns @code{NULL} and
 @item UT_OS
 Operating-system failure.  See @code{errno} for the reason.
 @end table
-@end deftypefun
-
-@anchor{ut_get_parse_length()}
-@deftypefun @code{size_t} ut_get_parse_length @code{(void)}
-Returns the number of characters successfully parsed by
-@code{@ref{ut_parse()}}.
-If ut_parse() was successful, then the returned number will equal the length of
-the string; otherwise, the returned number will be the 0-based index of the
-character that caused the parse to fail.
 @end deftypefun
 
 @anchor{ut_trim()}
@@ -955,9 +937,8 @@ have a terminating @code{NUL} character.
 On failure, this function returns @code{-1} and @ref{ut_get_status()} will return one of the following:
 
 @table @code
-@item UT_NULL_ARG
-@var{unit} or @var{buf} is @code{NULL}.
-@item UT_BAD_VALUE
+@item UT_BAD_ARG
+@var{unit} or @var{buf} is @code{NULL}, or 
 @var{opts} contains the bit patterns of both @code{UT_LATIN1} and
 @code{UT_UTF8}.
 @item UT_CANT_FORMAT
@@ -1024,7 +1005,7 @@ If an error occurs, then this function returns @code{NULL} and
 @code{@ref{ut_get_status()}} will return one of the following:
 
 @table @code
-@item UT_NULL_ARG
+@item UT_BAD_ARG
 @var{unit} is @code{NULL}.
 @item UT_OS
 Operating-system error.  See @code{errno} for the reason.
@@ -1049,7 +1030,7 @@ If an error occurs, then this function returns @code{NULL} and
 @code{@ref{ut_get_status()}} will return one of the following:
 
 @table @code
-@item UT_NULL_ARG
+@item UT_BAD_ARG
 @var{unit} is @code{NULL}.
 @item UT_OS
 Operating-system error.  See @code{errno} for the reason.
@@ -1086,7 +1067,7 @@ and returns @code{NULL}.
 Also, @code{@ref{ut_get_status()}} will return one of the following:
 
 @table @code
-@item UT_NULL_ARG
+@item UT_BAD_ARG
 @var{unit} is @code{NULL}.
 @item UT_OS
 Operating-system error. See @code{errno} for the reason.
@@ -1105,7 +1086,7 @@ and returns @code{NULL}.
 Also, @code{@ref{ut_get_status()}} will return one of the following:
 
 @table @code
-@item UT_NULL_ARG
+@item UT_BAD_ARG
 @var{unit} is @code{NULL}.
 @item UT_OS
 Operating-system error. See @code{errno} for the reason.
@@ -1143,11 +1124,11 @@ and returns @code{NULL}.
 Also, @code{@ref{ut_get_status()}} will return one of the following:
 
 @table @code
-@item UT_NULL_ARG
+@item UT_BAD_ARG
 @var{reference} is @code{NULL}.
 @item UT_OS
 Operating-system error. See @code{errno} for the reason.
-@item UT_BAD_VALUE
+@item UT_BAD_ARG
 @var{base} is invalid (e.g., it must be greater than one).
 @end table
 @end deftypefun
@@ -1161,7 +1142,7 @@ If this function returns @code{NULL}, then
 one of the following:
 
 @table @code
-@item UT_NULL_ARG
+@item UT_BAD_ARG
 @var{name} is @code{NULL}.
 @item UT_SUCCESS
 @var{unit} doesn't map to a name in the given character-set.
@@ -1177,7 +1158,7 @@ If this function returns @code{NULL}, then
 one of the following:
 
 @table @code
-@item UT_NULL_ARG
+@item UT_BAD_ARG
 @var{symbol} is @code{NULL}.
 @item UT_SUCCESS
 @var{unit} doesn't map to a symbol in the given character-set.
@@ -1190,7 +1171,7 @@ Returns the unit-system to which the unit referenced by @var{unit} belongs.
 If @var{unit} is @code{NULL}, then this function writes an error-message
 using @code{@ref{ut_handle_error_message()}}
 and returns @code{NULL}.
-Also, @code{@ref{ut_get_status()}} will return @code{UT_NULL_ARG}.
+Also, @code{@ref{ut_get_status()}} will return @code{UT_BAD_ARG}.
 @end deftypefun
 
 @anchor{ut_is_dimensionless()}
@@ -1201,7 +1182,7 @@ otherwise, @code{0} is returned and
 @ref{ut_get_status()} will return one of the following:
 
 @table @code
-@item UT_NULL_ARG
+@item UT_BAD_ARG
 @var{unit1} is @code{NULL}.
 @item UT_SUCCESS
 The unit is dimensionless.
@@ -1220,7 +1201,7 @@ and returns @code{NULL}.
 Also, @code{@ref{ut_get_status()}} will return one of the following:
 
 @table @code
-@item UT_NULL_ARG
+@item UT_BAD_ARG
 @var{unit} is @code{NULL}.
 @item UT_OS
 Operating-system failure.  See @code{errno}.
@@ -1236,7 +1217,7 @@ The argument @var{arg} is passed to the visitor's functions.
 This function returns one of the following:
 
 @table @code
-@item UT_NULL_ARG
+@item UT_BAD_ARG
 @var{visitor} or @var{unit} is @code{NULL}.
 @item UT_VISIT_ERROR
 An error occurred in @var{visitor} while visiting @var{unit}.
@@ -1297,7 +1278,7 @@ On failure, this function returns @code{NUL} and @ref{ut_get_status()}
 will return one of the following:
 
 @table @code
-@item UT_NULL_ARG
+@item UT_BAD_ARG
 @var{unit1} or @var{unit2} is @code{NULL}.
 @item UT_NOT_SAME_SYSTEM
 @var{unit1} and @var{unit2} belong to different @ref{unit-system}s.
@@ -1314,7 +1295,7 @@ On failure, this function returns @code{NULL} and @ref{ut_get_status()}
 will return one of the following:
 
 @table @code
-@item UT_NULL_ARG
+@item UT_BAD_ARG
 @var{numer} or @var{denom} is @code{NULL}.
 @item UT_NOT_SAME_SYSTEM
 @var{unit1} and @var{unit2} belong to different @ref{unit-system}s.
@@ -1340,7 +1321,7 @@ same @ref{unit-system}; otherwise, @code{0} is returned and
 @ref{ut_get_status()} will return one of the following:
 
 @table @code
-@item UT_NULL_ARG
+@item UT_BAD_ARG
 @var{unit1} or @var{unit2} is @code{NULL}.
 @item UT_SUCCESS
 The units belong to different @ref{unit-system}s.
@@ -1383,7 +1364,7 @@ This function returns one of the following:
 @table @code
 @item UT_SUCCESS
 Success.
-@item UT_NULL_ARG
+@item UT_BAD_ARG
 @var{name} or @var{unit} is @code{NULL}.
 @item UT_OS
 Operating-system failure.  See @code{errno}.
@@ -1400,7 +1381,7 @@ This function returns one of the following:
 @table @code
 @item UT_SUCCESS
 Success.
-@item UT_NULL_ARG
+@item UT_BAD_ARG
 @var{system} or @var{name} is @code{NULL}.
 @end table
 @end deftypefun
@@ -1414,10 +1395,9 @@ This function returns one of the following:
 @table @code
 @item UT_SUCCESS
 Success.
-@item UT_NULL_ARG
-@var{unit} or @var{name} is @code{NULL}.
-@item UT_BAD_ID
-Name @var{name} is not in the character-set @var{encoding}.
+@item UT_BAD_ARG
+@var{unit} or @var{name} is @code{NULL}, or @var{name} is not in the
+character-set @var{encoding}.
 @item UT_OS
 Operating-system failure.  See @code{errno}.
 @item UT_EXISTS
@@ -1434,7 +1414,7 @@ This function returns one of the following:
 @table @code
 @item UT_SUCCESS
 Success.
-@item UT_NULL_ARG
+@item UT_BAD_ARG
 @var{unit} is @code{NULL}.
 @end table
 @end deftypefun
@@ -1455,7 +1435,7 @@ This function returns one of the following:
 @table @code
 @item UT_SUCCESS
 Success.
-@item UT_NULL_ARG
+@item UT_BAD_ARG
 @var{symbol} or @var{unit} is @code{NULL}.
 @item UT_OS
 Operating-system failure.  See @code{errno}.
@@ -1472,7 +1452,7 @@ This function returns one of the following:
 @table @code
 @item UT_SUCCESS
 Success.
-@item UT_NULL_ARG
+@item UT_BAD_ARG
 @var{system} or @var{symbol} is @code{NULL}.
 @end table
 @end deftypefun
@@ -1486,9 +1466,9 @@ This function returns one of the following:
 @table @code
 @item UT_SUCCESS
 Success.
-@item UT_NULL_ARG
+@item UT_BAD_ARG
 @var{unit} or @var{symbol} is @code{NULL}.
-@item UT_BAD_ID
+@item UT_BAD_ARG
 Symbol @var{symbol} is not in the character-set @var{encoding}.
 @item UT_OS
 Operating-system failure.  See @code{errno}.
@@ -1506,7 +1486,7 @@ This function returns one of the following:
 @table @code
 @item UT_SUCCESS
 Success.
-@item UT_NULL_ARG
+@item UT_BAD_ARG
 @var{unit} is @code{NULL}.
 @end table
 @end deftypefun
@@ -1585,12 +1565,8 @@ This enumeration has the following values:
 @table @code
 @item UT_SUCCESS
 Success
-@item UT_NULL_ARG
-An argument is @code{NULL}
-@item UT_BAD_ID
-Identifier is @code{NULL} or empty
-@item UT_BAD_VALUE
-Invalid numeric value
+@item UT_BAD_ARG
+An argument violates the the function's contract (e.g., it's @code{NULL}).
 @item UT_EXISTS
 Unit, prefix, or identifier already exists
 @item UT_NO_UNIT
@@ -1603,8 +1579,6 @@ The units belong to different unit-systems
 The operation on the unit or units is meaningless
 @item UT_NO_SECOND
 The unit-system doesn't have a unit named ``second''
-@item UT_BAD_BUF
-Character buffer argument is @code{NULL}
 @item UT_VISIT_ERROR
 An error occurred while visiting a unit
 @item UT_CANT_FORMAT

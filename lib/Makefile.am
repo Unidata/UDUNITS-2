@@ -1,5 +1,5 @@
 ## Process this file with automake to produce Makefile.in
-SUBDIRS	= xmlTests
+SUBDIRS	= xmlFailure xmlSuccess
 lib_LTLIBRARIES = libudunits2.la
 libudunits2_la_SOURCES = unitcore.c converter.c formatter.c \
     idToUnitMap.c idToUnitMap.h \
@@ -13,14 +13,18 @@ libudunits2_la_SOURCES = unitcore.c converter.c formatter.c \
     error.c \
     ut_free_system.c
 BUILT_SOURCES = parser.c scanner.c
-data_DATA = udunits2.xml
+data_DATA = \
+    udunits2.xml \
+    udunits2-accepted.xml \
+    udunits2-base.xml \
+    udunits2-common.xml \
+    udunits2-derived.xml \
+    udunits2-prefixes.xml
 info_TEXINFOS = udunits2lib.texi
 #html_DATA = udunits2lib.html
 #pdf_DATA = udunits2lib.pdf
 AM_MAKEINFOHTMLFLAGS = --no-split
-libudunits2_la_CPPFLAGS = \
-	-DDEFAULT_UDUNITS2_XML_PATH='"@datadir@/udunits2.xml"' \
-	-I$(top_srcdir)/expat
+AM_CPPFLAGS    = -DDEFAULT_UDUNITS2_XML_PATH='"$(datadir)/udunits2.xml"'
 
 lex_prefix = ut
 LEX_OUTPUT_ROOT = lex.$(lex_prefix)

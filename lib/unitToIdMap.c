@@ -1,7 +1,7 @@
 /*
  * Unit-to-identifier map.
  *
- * $Id: unitToIdMap.c,v 1.7 2007/04/11 20:28:18 steve Exp $
+ * $Id: unitToIdMap.c,v 1.8 2007/07/10 22:29:22 steve Exp $
  */
 
 /*LINTLIBRARY*/
@@ -250,7 +250,7 @@ utimFree(
  *	id		The identifier.  May be freed upon return.
  *	encoding	The ostensible encoding of "id".
  * Returns:
- *	UT_BAD_ID	"id" is inconsistent with "encoding".
+ *	UT_BAD_ARG	"id" is inconsistent with "encoding".
  *	UT_OS		Operating-system error.  See "errno".
  *	UT_EXISTS	"unit" already maps to a different identifier.
  *	UT_SUCCESS	Success.
@@ -270,7 +270,7 @@ utimAdd(
 
     if (adjustEncoding(&encoding, id)) {
 	ut_handle_error_message("Identifier not in given encoding");
-	status = UT_BAD_ID;
+	status = UT_BAD_ARG;
     }
     else {
 	UnitAndId*	targetEntry = uaiNew(unit, id);
@@ -283,6 +283,7 @@ utimAdd(
 	    if (treeEntry == NULL) {
 		ut_handle_error_message(strerror(errno));
 		ut_handle_error_message("Couldn't add search-tree entry");
+		uaiFree(targetEntry);
 		status = UT_OS;
 	    }
 	    else {
@@ -294,10 +295,10 @@ utimAdd(
 		else {
 		    status = UT_SUCCESS;
 		}
-	    }
 
-	    if (status != UT_SUCCESS)
-		uaiFree(targetEntry);
+                if (targetEntry != *treeEntry)
+                    uaiFree(targetEntry);
+	    }
 	}				/* "targetEntry" allocated */
     }					/* valid arguments */
 
@@ -404,7 +405,7 @@ utimFindLatin1ByUnit(
 
 
 /*
- * Finds a unit-search-entry with a UTF-8 identifier correcponding to a unit.
+ * Finds an entry with a UTF-8 identifier corresponding to a unit.
  *
  * Arguments:
  *	map	The unit-to-identifier map.
@@ -417,7 +418,7 @@ utimFindLatin1ByUnit(
  */
 static UnitAndId*
 utimFindUtf8ByUnit(
-    UnitToIdMap* const	map,
+    UnitToIdMap* const	        map,
     const ut_unit* const	unit)
 {
     UnitAndId	targetEntry;
@@ -455,8 +456,8 @@ utimFindUtf8ByUnit(
 		    if (treeEntry == NULL) {
 			uaiFree(newEntry);
 			ut_handle_error_message(strerror(errno));
-			ut_handle_error_message("Couldn't add unit-and-identifier "
-			    "to search-tree");
+			ut_handle_error_message(
+                            "Couldn't add unit-and-identifier to search-tree");
 			ut_set_status(UT_OS);
 		    }
 		}
@@ -480,8 +481,8 @@ utimFindUtf8ByUnit(
  *	id		The identifier.  May be freed upon return.
  *	encoding	The ostensible encoding of "id".
  * Returns:
- *	UT_NULL_ARG	"unit" or "id" is NULL.
- *	UT_BAD_ID	"id" is inconsistent with "encoding".
+ *	UT_BAD_ARG	"unit" or "id" is NULL, or "id" is inconsistent with
+ *                      "encoding".
  *	UT_OS		Operating-system error.  See "errno".
  *	UT_EXISTS	"unit" already maps to a different identifier.
  *	UT_SUCCESS	Success.
@@ -498,7 +499,7 @@ mapUnitToId(
     assert(systemMap != NULL);
 
     if (unit == NULL || id == NULL) {
-	status = UT_NULL_ARG;
+	status = UT_BAD_ARG;
     }
     else {
 	if (*systemMap == NULL) {
@@ -542,8 +543,8 @@ mapUnitToId(
  *	unit		The unit.  May be freed upon return.
  *	encoding	The ostensible encoding of "id".
  * Returns:
- *	UT_NULL_ARG	"systemMap" is NULL.
- *	UT_NULL_ARG	"unit" is NULL.
+ *	UT_BAD_ARG	"systemMap" is NULL.
+ *	UT_BAD_ARG	"unit" is NULL.
  *	UT_SUCCESS	Success.
  */
 static ut_status
@@ -555,7 +556,7 @@ unmapUnitToId(
     ut_status		status;
 
     if (systemMap == NULL || unit == NULL) {
-	status = UT_NULL_ARG;
+	status = UT_BAD_ARG;
     }
     else {
 	UnitToIdMap** const	unitToIdMap =
@@ -581,7 +582,7 @@ unmapUnitToId(
  *	encoding	The desired encoding of the identifier.
  * Returns:
  *	NULL		Failure.  "ut_get_status()" will be
- *			    UT_NULL_ARG	"unit" was NULL.
+ *			    UT_BAD_ARG	"unit" was NULL.
  *	else		Pointer to the identifier in the given encoding
  *			associated with "unit".
  */
@@ -595,7 +596,7 @@ getId(
 
     if (unit == NULL) {
 	ut_handle_error_message("NULL unit argument");
-	ut_set_status(UT_NULL_ARG);
+	ut_set_status(UT_BAD_ARG);
     }
     else {
 	UnitToIdMap** const	unitToId = 
@@ -634,8 +635,8 @@ getId(
  *	encoding	The encoding of "name".
  * Returns:
  *	UT_SUCCESS	Success.
- *	UT_NULL_ARG	"unit" or "name" is NULL.
- *	UT_BAD_ID	"name" is not in the specified encoding.
+ *	UT_BAD_ARG	"unit" or "name" is NULL, or "name" is not in the
+ *                      specified encoding.
  *	UT_OS		Operating-system error.  See "errno".
  *	UT_EXISTS	"unit" already maps to a name.
  */
@@ -659,7 +660,7 @@ ut_map_unit_to_name(
  *	encoding	The encoding to be removed.  No other encodings will be
  *			removed.
  * Returns:
- *	UT_NULL_ARG	"unit" is NULL.
+ *	UT_BAD_ARG	"unit" is NULL.
  *	UT_SUCCESS	Success.
  */
 ut_status
@@ -684,7 +685,7 @@ ut_unmap_unit_to_name(
  *	encoding	The encoding of "symbol".
  * Returns:
  *	UT_SUCCESS	Success.
- *	UT_NULL_ARG	"unit" or "symbol" is NULL.
+ *	UT_BAD_ARG	"unit" or "symbol" is NULL.
  *	UT_OS		Operating-system error.  See "errno".
  *	UT_EXISTS	"unit" already maps to a symbol.
  */
@@ -710,7 +711,7 @@ ut_map_unit_to_symbol(
  *			other encodings will not be removed.
  * Returns:
  *	UT_SUCCESS	Success.
- *	UT_NULL_ARG	"unit" is NULL.
+ *	UT_BAD_ARG	"unit" is NULL.
  */
 ut_status
 ut_unmap_unit_to_symbol(
@@ -731,7 +732,7 @@ ut_unmap_unit_to_symbol(
  *	encoding	The desired encoding of the name.
  * Returns:
  *	NULL		Failure.  "ut_get_status()" will be
- *			    UT_NULL_ARG		"unit" is NULL.
+ *			    UT_BAD_ARG		"unit" is NULL.
  *			    UT_SUCCESS		"unit" doesn't map to a name in
  *						in the given encoding.
  *	else		Pointer to the name in the given encoding to which
@@ -756,7 +757,7 @@ ut_get_name(
  *	encoding	The desired encoding of the symbol.
  * Returns:
  *	NULL		Failure.  "ut_get_status()" will be
- *			    UT_NULL_ARG		"unit" is NULL.
+ *			    UT_BAD_ARG		"unit" is NULL.
  *			    UT_SUCCESS		"unit" doesn't map to a symbol
  *						in the given encoding.
  *	else		Pointer to the symbol in the given encoding to which

@@ -137,29 +137,28 @@ getSymbol(
  *			whitespace is printed.
  * Returns:
  *	-1	Failure:  "utFormStatus()" will be
- *		    UT_NULL_ARG	"unit" is NULL.
- *		    UT_BAD_BUF	"buf" is NULL.
+ *		    UT_BAD_ARG	"unit" is NULL or "buf" is NULL.
  *	else	Number of characters printed in "buf".
  */
 static int
 format(
     const ut_unit* const	unit,
-    char*		buf,
-    size_t		size,
-    const int		useNames,
-    const int		getDefinition,
-    ut_encoding		encoding,
-    const int		addParens)
+    char*		        buf,
+    size_t		        size,
+    const int		        useNames,
+    const int		        getDefinition,
+    ut_encoding		        encoding,
+    const int		        addParens)
 {
     int	nchar = -1;	/* failure */
 
     if (unit == NULL) {
 	ut_handle_error_message("format(): NULL unit argument");
-	ut_set_status(UT_NULL_ARG);
+	ut_set_status(UT_BAD_ARG);
     }
     else if (buf == NULL) {
 	ut_handle_error_message("format(): NULL buffer argument");
-	ut_set_status(UT_BAD_BUF);
+	ut_set_status(UT_BAD_ARG);
     }
     else {
 	FormatPar	formatPar;
@@ -1186,9 +1185,8 @@ static ut_visitor	formatter = {
  *			not both be specified.
  * Returns:
  *	-1		Failure:  "ut_get_status()" will be
- *			    UT_NULL_ARG		"unit" or "buf" is NULL
- *			    UT_BAD_VALUE	Both UT_LATIN1 and UT_UTF8
- *						specified.
+ *			    UT_BAD_ARG		"unit" or "buf" is NULL, or both
+ *                                              UT_LATIN1 and UT_UTF8 specified.
  *			    UT_CANT_FORMAT	"unit" can't be formatted in
  *						the desired manner.
  *      else		Success.  Number of characters printed in "buf".  If
@@ -1198,9 +1196,9 @@ static ut_visitor	formatter = {
 int
 ut_format(
     const ut_unit* const	unit,
-    char*		buf,
-    size_t		size,
-    unsigned		opts)
+    char*		        buf,
+    size_t		        size,
+    unsigned		        opts)
 {
     int			nchar = -1;	/* failure */
     const int		useNames = opts & UT_NAMES;
@@ -1210,11 +1208,11 @@ ut_format(
 
     if (unit == NULL || buf == NULL) {
 	ut_handle_error_message("NULL argument");
-	ut_set_status(UT_NULL_ARG);
+	ut_set_status(UT_BAD_ARG);
     }
     else if ((encoding & UT_LATIN1) && (encoding & UT_UTF8)) {
 	ut_handle_error_message("Both UT_LATIN1 and UT_UTF8 specified");
-	ut_set_status(UT_BAD_VALUE);
+	ut_set_status(UT_BAD_ARG);
     }
     else {
 	nchar = format(unit, buf, size, useNames, getDefinition, encoding, 0);

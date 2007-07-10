@@ -1,7 +1,7 @@
 /*
  * Identifier-to-unit map.
  *
- * $Id: idToUnitMap.c,v 1.8 2007/04/11 20:28:17 steve Exp $
+ * $Id: idToUnitMap.c,v 1.9 2007/07/10 22:29:22 steve Exp $
  */
 
 /*LINTLIBRARY*/
@@ -120,6 +120,7 @@ itumAdd(
 	    map->compare);
 
 	if (treeEntry == NULL) {
+	    uaiFree(targetEntry);
 	    status = UT_OS;
 	}
 	else {
@@ -128,13 +129,13 @@ itumAdd(
 	    }
 	    else {
 		ut_handle_error_message(
-		    "\"%s\" maps to existing but different unit", id);
+		    "\"%s\" already maps to existing but different unit", id);
 		status = UT_EXISTS;
 	    }
-	}				/* found entry */
 
-	if (status != UT_SUCCESS)
-	    uaiFree(targetEntry);
+            if (targetEntry != *treeEntry)
+                uaiFree(targetEntry);
+	}				/* found entry */
     }					/* "targetEntry" allocated */
 
     return status;
@@ -218,8 +219,7 @@ itumFind(
  *	unit		Pointer to the unit.  May be freed upon return.
  *	compare		Pointer to comparison function for unit-identifiers.
  * Returns:
- *	UT_BAD_ID	"id" is NULL.
- *	UT_NULL_ARG	"unit" is NULL.
+ *	UT_BAD_ARG	"id" is NULL or "unit" is NULL.
  *	UT_OS		Operating-sytem failure.  See "errno".
  *	UT_SUCCESS	Success.
  */
@@ -233,10 +233,10 @@ mapIdToUnit(
     ut_status		status = UT_SUCCESS;
 
     if (id == NULL) {
-	status = UT_BAD_ID;
+	status = UT_BAD_ARG;
     }
     else if (unit == NULL) {
-	status = UT_NULL_ARG;
+	status = UT_BAD_ARG;
     }
     else {
 	ut_system*	system = ut_get_system(unit);
@@ -281,9 +281,7 @@ mapIdToUnit(
  *	id		Pointer to the identifier.  May be freed upon return.
  *	system		Pointer to the unit-system associated with the mapping.
  * Returns:
- *	UT_NULL_ARG	"id" is NULL.
- *	UT_NULL_ARG	"system" is NULL.
- *	UT_NULL_ARG	"compare" is NULL.
+ *	UT_BAD_ARG	"id" is NULL, "system" is NULL, or "compare" is NULL.
  *	UT_SUCCESS	Success.
  */
 static ut_status
@@ -295,7 +293,7 @@ unmapId(
     ut_status		status;
 
     if (systemMap == NULL || id == NULL || system == NULL) {
-	status = UT_NULL_ARG;
+	status = UT_BAD_ARG;
     }
     else {
 	IdToUnitMap** const	idToUnit =
@@ -320,7 +318,7 @@ unmapId(
  *	unit		Pointer to the unit to be mapped-to by "name".  May be
  *			freed upon return.
  * Returns:
- *	UT_NULL_ARG	"name" or "unit" is NULL.
+ *	UT_BAD_ARG	"name" or "unit" is NULL.
  *	UT_OS		Operating-system error.  See "errno".
  *	UT_EXISTS	"name" already maps to a different unit.
  *	UT_SUCCESS	Success.
@@ -346,7 +344,7 @@ ut_map_name_to_unit(
  *	name		The name of the unit.
  * Returns:
  *	UT_SUCCESS	Success.
- *	UT_NULL_ARG	"system" or "name" is NULL.
+ *	UT_BAD_ARG	"system" or "name" is NULL.
  */
 ut_status
 ut_unmap_name_to_unit(
@@ -368,7 +366,7 @@ ut_unmap_name_to_unit(
  *	unit		Pointer to the unit to be mapped-to by "symbol".  May
  *			be freed upon return.
  * Returns:
- *	UT_NULL_ARG	"symbol" or "unit" is NULL.
+ *	UT_BAD_ARG	"symbol" or "unit" is NULL.
  *	UT_OS		Operating-system error.  See "errno".
  *	UT_EXISTS	"symbol" already maps to a different unit.
  *	UT_SUCCESS	Success.
@@ -394,7 +392,7 @@ ut_map_symbol_to_unit(
  *	symbol		The symbol of the unit.
  * Returns:
  *	UT_SUCCESS	Success.
- *	UT_NULL_ARG	"system" or "symbol" is NULL.
+ *	UT_BAD_ARG	"system" or "symbol" is NULL.
  */
 ut_status
 ut_unmap_symbol_to_unit(
@@ -417,8 +415,7 @@ ut_unmap_symbol_to_unit(
  *	id		Pointer to the identifier.
  * Returns:
  *	NULL	Failure.  "ut_get_status()" will be:
- *		    UT_NULL_ARG	"system" is NULL.
- *		    UT_BAD_ID		"id" is NULL.
+ *		    UT_BAD_ARG	        "system" is NULL or "id" is NULL.
  *	else	Pointer to the unit in "system" with the identifier "id".
  *		Should be passed to ut_free() when no longer needed.
  */
@@ -432,11 +429,11 @@ getUnitById(
 
     if (system == NULL) {
 	ut_handle_error_message("getUnitById(): NULL unit-system argument");
-	ut_set_status(UT_NULL_ARG);
+	ut_set_status(UT_BAD_ARG);
     }
     else if (id == NULL) {
 	ut_handle_error_message("getUnitById(): NULL identifier argument");
-	ut_set_status(UT_BAD_ID);
+	ut_set_status(UT_BAD_ARG);
     }
     else if (systemMap != NULL) {
 	IdToUnitMap** const	idToUnit =
@@ -465,7 +462,7 @@ getUnitById(
  *	NULL	Failure.  "ut_get_status()" will be
  *		    UT_SUCCESS		"name" doesn't map to a unit of
  *					"system".
- *		    UT_NULL_ARG		"system" or "name" is NULL.
+ *		    UT_BAD_ARG		"system" or "name" is NULL.
  *	else	Pointer to the unit of the unit-system with the given name.
  *		The pointer should be passed to ut_free() when the unit is
  *		no longer needed.
@@ -493,7 +490,7 @@ ut_get_unit_by_name(
  *	NULL	Failure.  "ut_get_status()" will be
  *		    UT_SUCCESS		"symbol" doesn't map to a unit of
  *					"system".
- *		    UT_NULL_ARG		"system" or "symbol" is NULL.
+ *		    UT_BAD_ARG		"system" or "symbol" is NULL.
  *	else	Pointer to the unit in the unit-system with the given symbol.
  *		The pointer should be passed to ut_free() when the unit is no
  *		longer needed.

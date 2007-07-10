@@ -2,7 +2,7 @@
  * This program prints definitions of units of physical qantities and converts
  * values between such units.
  *
- * $Id: udunits2.c,v 1.6 2007/04/16 19:08:41 steve Exp $
+ * $Id: udunits2.c,v 1.7 2007/07/10 22:29:43 steve Exp $
  */
 
 #ifndef	_XOPEN_SOURCE
@@ -154,7 +154,7 @@ setEncoding(
 
 		(void)regerror(status, reg, buf, sizeof(buf));
 		(void)fprintf(stderr, "%s: Unable to compile regular "
-		    "expression \"%s\": %s\n", pattern, buf);
+		    "expression \"%s\": %s\n", _progname, pattern, buf);
 
 		break;
 	    }
@@ -182,7 +182,7 @@ setEncoding(
 
 		(void)regerror(status, reg, buf, sizeof(buf));
 		(void)fprintf(stderr, "%s: Unable to execute regular "
-		    "expression \"%s\": %s\n", entry->pattern, buf);
+		    "expression \"%s\": %s\n", _progname, entry->pattern, buf);
 
 		break;
 	    }
