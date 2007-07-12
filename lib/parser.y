@@ -1,6 +1,6 @@
 %{
 /*
- * $Id: parser.y,v 1.10 2007/07/10 22:29:22 steve Exp $
+ * $Id: parser.y,v 1.11 2007/07/12 16:16:16 steve Exp $
  *
  * yacc(1)-based parser for decoding formatted unit specifications.
  *
@@ -310,7 +310,8 @@ timestamp:	DATE {
 		    int	error = 0;
 
 		    if (strcasecmp($3, "UTC") != 0 &&
-			    strcasecmp($3, "GMT") != 0) {
+			    strcasecmp($3, "GMT") != 0 &&
+			    strcasecmp($3, "Z") != 0) {
 			ut_set_status(UT_UNKNOWN);
 			error = 1;
 		    }
@@ -337,7 +338,8 @@ timestamp:	DATE {
 		    int	error = 0;
 
 		    if (strcasecmp($2, "UTC") != 0 &&
-			    strcasecmp($2, "GMT") != 0) {
+			    strcasecmp($2, "GMT") != 0 &&
+			    strcasecmp($2, "Z") != 0) {
 			ut_set_status(UT_UNKNOWN);
 			error = 1;
 		    }

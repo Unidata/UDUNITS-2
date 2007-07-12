@@ -43,9 +43,9 @@ EXTRA_DIST = \
     udunits2-base.xml \
     udunits2-common.xml \
     udunits2-derived.xml \
-    udunits2-prefixes.xml
+    udunits2-prefixes.xml \
     udunits2lib.html \
-    udunits2lib.pdf \
+    udunits2lib.pdf
 AM_YFLAGS = -t -p ut
 
 if HAVE_CUNIT

@@ -1,7 +1,7 @@
 /*
  * lex(1) specification for tokens for the Unidata units package, UDUNITS2.
  *
- * $Id: scanner.l,v 1.7 2007/07/10 22:29:22 steve Exp $
+ * $Id: scanner.l,v 1.8 2007/07/12 16:16:16 steve Exp $
  */
 
 %option noyywrap
@@ -91,7 +91,7 @@ per                     [Pp][Ee][Rr]
     int		status;
 
     if (sscanf(yytext, "%*[*^]%ld", &yylval.ival) != 1) {
-        ut_handle_error_message("udunits(3): Invalid integer\n", stderr);
+        ut_handle_error_message("Invalid integer\n", stderr);
 
 	status	= ERR;
     }
@@ -211,7 +211,7 @@ per                     [Pp][Ee][Rr]
     if (errno == 0) {
 	status	= REAL;
     } else {
-        ut_handle_error_message("udunits(3): Invalid real\n", stderr);
+        ut_handle_error_message("Invalid real\n", stderr);
 
 	status	= ERR;
     }
@@ -228,7 +228,7 @@ per                     [Pp][Ee][Rr]
     if (errno == 0) {
 	status	= INT;
     } else {
-        ut_handle_error_message("udunits(3): Invalid integer\n", stderr);
+        ut_handle_error_message("Invalid integer\n", stderr);
 
 	status	= ERR;
     }
