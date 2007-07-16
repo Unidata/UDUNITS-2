@@ -449,6 +449,7 @@ ut_get_name(
  * Arguments:
  *	name		Pointer to the name to be mapped to "unit".  May be
  *			freed upon return.
+ *      encoding        The character encoding of "name".
  *	unit		Pointer to the unit to be mapped-to by "name".  May be
  *			freed upon return.
  * Returns:
@@ -460,6 +461,7 @@ ut_get_name(
 ut_status
 ut_map_name_to_unit(
     const char* const	name,
+    const ut_encoding   encoding,
     ut_unit* const	unit);
 
 
@@ -470,6 +472,7 @@ ut_map_name_to_unit(
  * Arguments:
  *	system		The unit-system to which the unit belongs.
  *	name		The name of the unit.
+ *      encoding        The character encoding of "name".
  * Returns:
  *	UT_SUCCESS	Success.
  *	UT_BAD_ARG	"system" or "name" is NULL.
@@ -477,7 +480,8 @@ ut_map_name_to_unit(
 ut_status
 ut_unmap_name_to_unit(
     ut_system*		system,
-    const char* const	name);
+    const char* const	name,
+    const ut_encoding   encoding);
 
 
 /*
@@ -551,6 +555,7 @@ ut_get_symbol(
  * Arguments:
  *	symbol		Pointer to the symbol to be mapped to "unit".  May be
  *			freed upon return.
+ *      ut_encoding     The character encoding of "symbol".
  *	unit		Pointer to the unit to be mapped-to by "symbol".  May
  *			be freed upon return.
  * Returns:
@@ -562,6 +567,7 @@ ut_get_symbol(
 ut_status
 ut_map_symbol_to_unit(
     const char* const	symbol,
+    const ut_encoding   encoding,
     ut_unit* const	unit);
 
 
@@ -572,6 +578,7 @@ ut_map_symbol_to_unit(
  * Arguments:
  *	system		The unit-system to which the unit belongs.
  *	symbol		The symbol of the unit.
+ *      encoding        The character encoding of "symbol".
  * Returns:
  *	UT_SUCCESS	Success.
  *	UT_BAD_ARG	"system" or "symbol" is NULL.
@@ -579,7 +586,8 @@ ut_map_symbol_to_unit(
 ut_status
 ut_unmap_symbol_to_unit(
     ut_system*		system,
-    const char* const	symbol);
+    const char* const	symbol,
+    const ut_encoding   encoding);
 
 
 /*
