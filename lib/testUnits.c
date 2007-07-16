@@ -90,21 +90,21 @@ test_utNewBaseUnit(void)
     CU_ASSERT_EQUAL(ut_map_unit_to_name(kilogram, "kilogram", UT_ASCII),
 	UT_SUCCESS);
     CU_ASSERT_EQUAL(ut_map_unit_to_symbol(kilogram, "kg", UT_ASCII), UT_SUCCESS);
-    CU_ASSERT_EQUAL(ut_map_symbol_to_unit("kg", kilogram), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_map_symbol_to_unit("kg", UT_ASCII, kilogram), UT_SUCCESS);
 
     meter = ut_new_base_unit(unitSystem);
     CU_ASSERT_PTR_NOT_NULL(meter);
-    CU_ASSERT_EQUAL(ut_map_name_to_unit("meter", meter), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_map_name_to_unit("meter", UT_ASCII, meter), UT_SUCCESS);
     CU_ASSERT_EQUAL(ut_map_unit_to_name(meter, "meter", UT_ASCII), UT_SUCCESS);
     CU_ASSERT_EQUAL(ut_map_unit_to_symbol(meter, "m", UT_ASCII), UT_SUCCESS);
-    CU_ASSERT_EQUAL(ut_map_symbol_to_unit("m", meter), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_map_symbol_to_unit("m", UT_ASCII, meter), UT_SUCCESS);
 
     kelvin = ut_new_base_unit(unitSystem);
     CU_ASSERT_PTR_NOT_NULL(kelvin);
     CU_ASSERT_EQUAL(ut_map_unit_to_name(kelvin, "kelvin", UT_ASCII), UT_SUCCESS);
-    CU_ASSERT_EQUAL(ut_map_name_to_unit("kelvin", kelvin), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_map_name_to_unit("kelvin", UT_ASCII, kelvin), UT_SUCCESS);
     CU_ASSERT_EQUAL(ut_map_unit_to_symbol(kelvin, "K", UT_ASCII), UT_SUCCESS);
-    CU_ASSERT_EQUAL(ut_map_symbol_to_unit("K", kelvin), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_map_symbol_to_unit("K", UT_ASCII, kelvin), UT_SUCCESS);
 
     CU_ASSERT_EQUAL(ut_map_unit_to_name(kilogram, "dummy", UT_ASCII), UT_EXISTS);
 
@@ -118,9 +118,9 @@ test_utNewBaseUnit(void)
     CU_ASSERT_EQUAL(ut_set_second(second), UT_SUCCESS);
     CU_ASSERT_EQUAL(ut_set_second(NULL), UT_BAD_ARG);
     CU_ASSERT_EQUAL(ut_map_unit_to_name(second, "second", UT_ASCII), UT_SUCCESS);
-    CU_ASSERT_EQUAL(ut_map_name_to_unit("second", second), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_map_name_to_unit("second", UT_ASCII, second), UT_SUCCESS);
     CU_ASSERT_EQUAL(ut_map_unit_to_symbol(second, "s", UT_ASCII), UT_SUCCESS);
-    CU_ASSERT_EQUAL(ut_map_symbol_to_unit("s", second), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_map_symbol_to_unit("s", UT_ASCII, second), UT_SUCCESS);
 
     CU_ASSERT_PTR_NULL(ut_new_base_unit(NULL));
     CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
@@ -139,9 +139,9 @@ test_utNewDimensionlessUnit(void)
     radian = ut_new_dimensionless_unit(unitSystem);
     CU_ASSERT_PTR_NOT_NULL(radian);
     CU_ASSERT_EQUAL(ut_map_unit_to_name(radian, "radian", UT_ASCII), UT_SUCCESS);
-    CU_ASSERT_EQUAL(ut_map_name_to_unit("radian", radian), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_map_name_to_unit("radian", UT_ASCII, radian), UT_SUCCESS);
     CU_ASSERT_EQUAL(ut_map_unit_to_symbol(radian, "rad", UT_ASCII), UT_SUCCESS);
-    CU_ASSERT_EQUAL(ut_map_symbol_to_unit("rad", radian), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_map_symbol_to_unit("rad", UT_ASCII, radian), UT_SUCCESS);
 
     CU_ASSERT_EQUAL(ut_map_unit_to_name(radian, "dummy", UT_ASCII), UT_EXISTS);
 
@@ -226,11 +226,11 @@ test_utMapNameToUnit(void)
 
     CU_ASSERT_PTR_NULL(ut_get_unit_by_name(unitSystem, "metre"));
 
-    CU_ASSERT_EQUAL(ut_map_name_to_unit("metre", meter), UT_SUCCESS);
-    CU_ASSERT_EQUAL(ut_map_name_to_unit("metre", meter), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_map_name_to_unit("metre", UT_ASCII, meter), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_map_name_to_unit("metre", UT_ASCII, meter), UT_SUCCESS);
 
-    CU_ASSERT_EQUAL(ut_map_name_to_unit("metre", second), UT_EXISTS);
-    CU_ASSERT_EQUAL(ut_map_name_to_unit("metre", NULL), UT_BAD_ARG);
+    CU_ASSERT_EQUAL(ut_map_name_to_unit("metre", UT_ASCII, second), UT_EXISTS);
+    CU_ASSERT_EQUAL(ut_map_name_to_unit("metre", UT_ASCII, NULL), UT_BAD_ARG);
 
     metre = ut_get_unit_by_name(unitSystem, "metre");
     CU_ASSERT_PTR_NOT_NULL(metre);
@@ -245,11 +245,11 @@ test_utMapSymbolToUnit(void)
     ut_unit*    degK;
 
     /* "\xb0" is the degree symbol in Latin-1 */
-    CU_ASSERT_EQUAL(ut_map_symbol_to_unit("\xb0K", kelvin), UT_SUCCESS);
-    CU_ASSERT_EQUAL(ut_map_symbol_to_unit("\xb0K", kelvin), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_map_symbol_to_unit("\xb0K", UT_LATIN1, kelvin), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_map_symbol_to_unit("\xb0K", UT_LATIN1, kelvin), UT_SUCCESS);
 
-    CU_ASSERT_EQUAL(ut_map_symbol_to_unit("\xb0K", second), UT_EXISTS);
-    CU_ASSERT_EQUAL(ut_map_symbol_to_unit("\xb0K", NULL), UT_BAD_ARG);
+    CU_ASSERT_EQUAL(ut_map_symbol_to_unit("\xb0K", UT_LATIN1, second), UT_EXISTS);
+    CU_ASSERT_EQUAL(ut_map_symbol_to_unit("\xb0K", UT_LATIN1, NULL), UT_BAD_ARG);
 
     degK = ut_get_unit_by_symbol(unitSystem, "\xb0K");
     CU_ASSERT_PTR_NOT_NULL(degK);
@@ -257,11 +257,11 @@ test_utMapSymbolToUnit(void)
     ut_free(degK);
 
     /* "\xc2\xb0" is the degree symbol in UTF-8 */
-    CU_ASSERT_EQUAL(ut_map_symbol_to_unit("\xc2\xb0K", kelvin), UT_SUCCESS);
-    CU_ASSERT_EQUAL(ut_map_symbol_to_unit("\xc2\xb0K", kelvin), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_map_symbol_to_unit("\xc2\xb0K", UT_UTF8, kelvin), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_map_symbol_to_unit("\xc2\xb0K", UT_UTF8, kelvin), UT_SUCCESS);
 
-    CU_ASSERT_EQUAL(ut_map_symbol_to_unit("\xc2\xb0K", second), UT_EXISTS);
-    CU_ASSERT_EQUAL(ut_map_symbol_to_unit("\xc2\xb0K", NULL), UT_BAD_ARG);
+    CU_ASSERT_EQUAL(ut_map_symbol_to_unit("\xc2\xb0K", UT_UTF8, second), UT_EXISTS);
+    CU_ASSERT_EQUAL(ut_map_symbol_to_unit("\xc2\xb0K", UT_UTF8, NULL), UT_BAD_ARG);
 
     degK = ut_get_unit_by_symbol(unitSystem, "\xc2\xb0K");
     CU_ASSERT_PTR_NOT_NULL(degK);
@@ -378,7 +378,7 @@ test_utOffset(void)
     CU_ASSERT_PTR_NOT_NULL(fahrenheit);
     CU_ASSERT_EQUAL(ut_get_system(rankine), ut_get_system(fahrenheit));
     CU_ASSERT_NOT_EQUAL(ut_compare(rankine, fahrenheit), 0);
-    CU_ASSERT_EQUAL(ut_map_name_to_unit("degrees_fahrenheit", fahrenheit),
+    CU_ASSERT_EQUAL(ut_map_name_to_unit("degrees_fahrenheit", UT_ASCII, fahrenheit),
 	UT_SUCCESS);
 
     nchar = ut_format(celsius, buf, sizeof(buf)-1, asciiSymbolDef);
@@ -417,8 +417,8 @@ test_utMapUnitToName(void)
 
     CU_ASSERT_EQUAL(ut_map_unit_to_name(meter, "metre", UT_ASCII), UT_EXISTS);
 
-    CU_ASSERT_EQUAL(ut_map_name_to_unit("metre", second), UT_EXISTS);
-    CU_ASSERT_EQUAL(ut_map_name_to_unit("metre", NULL), UT_BAD_ARG);
+    CU_ASSERT_EQUAL(ut_map_name_to_unit("metre", UT_ASCII, second), UT_EXISTS);
+    CU_ASSERT_EQUAL(ut_map_name_to_unit("metre", UT_ASCII, NULL), UT_BAD_ARG);
 
     metre = ut_get_unit_by_name(unitSystem, "metre");
     CU_ASSERT_PTR_NOT_NULL(metre);
@@ -612,9 +612,9 @@ test_utInvert(void)
     CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
 
     CU_ASSERT_EQUAL(ut_map_unit_to_name(hertz, "hertz", UT_ASCII), UT_SUCCESS);
-    CU_ASSERT_EQUAL(ut_map_name_to_unit("hertz", hertz), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_map_name_to_unit("hertz", UT_ASCII, hertz), UT_SUCCESS);
     CU_ASSERT_EQUAL(ut_map_unit_to_symbol(hertz, "Hz", UT_ASCII), UT_SUCCESS);
-    CU_ASSERT_EQUAL(ut_map_symbol_to_unit("Hz", hertz), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_map_symbol_to_unit("Hz", UT_ASCII, hertz), UT_SUCCESS);
 
     megahertz = ut_scale(1e6, ut_invert(second));
     CU_ASSERT_PTR_NOT_NULL(megahertz);
@@ -808,9 +808,9 @@ test_utLog(void)
     CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
     buf[nchar] = 0;
     CU_ASSERT_STRING_EQUAL(buf, "0.1 lg(re 1e-18 m3)");
-    CU_ASSERT_EQUAL(ut_map_symbol_to_unit("dBZ", dBZ), UT_SUCCESS);
-    CU_ASSERT_EQUAL(ut_map_symbol_to_unit("dBZ", dBZ), UT_SUCCESS);
-    CU_ASSERT_EQUAL(ut_map_symbol_to_unit("dBZ", meter), UT_EXISTS);
+    CU_ASSERT_EQUAL(ut_map_symbol_to_unit("dBZ", UT_ASCII, dBZ), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_map_symbol_to_unit("dBZ", UT_ASCII, dBZ), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_map_symbol_to_unit("dBZ", UT_ASCII, meter), UT_EXISTS);
     {
 	ut_unit*	unit = ut_get_unit_by_symbol(unitSystem, "dBZ");
 
