@@ -65,6 +65,8 @@ AC_PROG_YACC
 AM_PROG_LEX
 
 # Checks for libraries.
+AC_SEARCH_LIBS([dirname], [gen], , 
+    AC_MSG_ERROR([cannot find function dirname]))
 
 # Checks for header files.
 AC_HEADER_STDC
