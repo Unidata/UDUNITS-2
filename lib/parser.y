@@ -1,6 +1,6 @@
 %{
 /*
- * $Id: parser.y,v 1.11 2007/07/12 16:16:16 steve Exp $
+ * $Id: parser.y,v 1.12 2007/07/16 16:56:27 steve Exp $
  *
  * yacc(1)-based parser for decoding formatted unit specifications.
  *
@@ -438,7 +438,8 @@ latin1ToUtf8(
         }
     }
 
-    for (in = latin1String, out = utf8String; *in; ++in) {
+    for (in = (const unsigned char*)latin1String,
+            out = (unsigned char*)utf8String; *in; ++in) {
 #       define IS_ASCII(c) (((c) & 0x80) == 0)
 
         if (IS_ASCII(*in)) {
