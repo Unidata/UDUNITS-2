@@ -2,7 +2,7 @@
  * This module is thread-compatible but not thread-safe.  Multi-threaded
  * access must be externally synchronized.
  *
- * $Id: xml.c,v 1.9 2007/07/10 22:29:22 steve Exp $
+ * $Id: xml.c,v 1.10 2007/07/16 16:58:58 steve Exp $
  */
 
 /*LINTLIBRARY*/
@@ -73,7 +73,7 @@ typedef struct {
     char       utf8Nbsp[NAME_SIZE];
 } Identifiers;
 
-static int readXml(
+static ut_status readXml(
     const char* const   path);
 
 static File*            currFile = NULL;
@@ -248,7 +248,7 @@ latin1_to_utf8(
     /*
      * Compute the number of non-ASCII characters.
      */
-    for (in = inString; *in; in++)
+    for (in = (const unsigned char*)inString; *in; in++)
         if (!IS_ASCII(*in))
             numSpecial++;
 
@@ -260,7 +260,8 @@ latin1_to_utf8(
     /*
      * Convert the string.
      */
-    for (in = inString, out = outString; *in; ++in) {
+    for (in = (const unsigned char*)inString, out = (unsigned char*)outString;
+            *in; ++in) {
         if (IS_ASCII(*in)) {
             *out++ = *in;
         }
@@ -304,7 +305,7 @@ utf8_to_latin1(
     /*
      * Compute the number of non-ASCII characters.
      */
-    for (in = inString; *in; in++) {
+    for (in = (const unsigned char*)inString; *in; in++) {
         if (*in > 0xC3)
             return 0;
 
@@ -322,7 +323,8 @@ utf8_to_latin1(
     /*
      * Convert the string.
      */
-    for (in = inString, out = outString; *in; ++out) {
+    for (in = (const unsigned char*)inString, out = (unsigned char*)outString;
+            *in; ++out) {
         if (IS_ASCII(*in)) {
             *out = *in++;
         }
@@ -514,7 +516,6 @@ mapUnitToId(
     int                 success = 0;             /* failure */
     ut_status           (*func)(ut_unit*, const char*, ut_encoding);
     const char*         desc;
-    Identifiers         ids;
 
     if (isName) {
         func = ut_map_unit_to_name;
@@ -676,8 +677,8 @@ mapIdToUnit(
 	prev = ut_parse(unitSystem, id, encoding);
 
 	if ((isName
-                    ? ut_map_name_to_unit(id, unit)
-                    : ut_map_symbol_to_unit(id, unit))
+                    ? ut_map_name_to_unit(id, encoding, unit)
+                    : ut_map_symbol_to_unit(id, encoding, unit))
                 != UT_SUCCESS) {
 	    ut_handle_error_message("Couldn't map %s \"%s\" to unit",
 		isName ? "name" : "symbol", id);
@@ -1093,8 +1094,6 @@ static void
 endUnit(
     void*		data)
 {
-    int                 error = 0;
-
     if (currFile->isBase) {
         if (!currFile->nameSeen) {
             ut_handle_error_message("Base unit needs a name");
@@ -1886,12 +1885,12 @@ declareXml(
  *      UT_OS           Operating-system error.  See "errno".
  *      UT_PARSE        Parse failure.
  */
-static int
+static ut_status
 readXmlWithParser(
     XML_Parser          parser,
     const char* const   path)
 {
-    int         status = UT_SUCCESS;    /* success */
+    ut_status   status = UT_SUCCESS;    /* success */
     File        file;
 
     assert(parser != NULL);
@@ -1964,12 +1963,11 @@ readXmlWithParser(
  *      UT_OS           Operating-system error.  See "errno".
  *      UT_PARSE        Parse failure.
  */
-static int
+static ut_status
 readXml(
     const char* const   path)
 {
     ut_status       status;
-    ut_status       openError;
     XML_Parser      parser = XML_ParserCreate(NULL);
 
     if (parser == NULL) {
