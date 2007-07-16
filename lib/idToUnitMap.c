@@ -1,7 +1,7 @@
 /*
  * Identifier-to-unit map.
  *
- * $Id: idToUnitMap.c,v 1.9 2007/07/10 22:29:22 steve Exp $
+ * $Id: idToUnitMap.c,v 1.10 2007/07/16 16:55:59 steve Exp $
  */
 
 /*LINTLIBRARY*/
@@ -315,6 +315,7 @@ unmapId(
  * Arguments:
  *	name		Pointer to the name to be mapped to "unit".  May be
  *			freed upon return.
+ *      encoding        The character encoding of "name".
  *	unit		Pointer to the unit to be mapped-to by "name".  May be
  *			freed upon return.
  * Returns:
@@ -326,6 +327,7 @@ unmapId(
 ut_status
 ut_map_name_to_unit(
     const char* const	name,
+    const ut_encoding   encoding,
     ut_unit* const	unit)
 {
     ut_set_status(
@@ -342,6 +344,7 @@ ut_map_name_to_unit(
  * Arguments:
  *	system		The unit-system to which the unit belongs.
  *	name		The name of the unit.
+ *      encoding        The character encoding of "name".
  * Returns:
  *	UT_SUCCESS	Success.
  *	UT_BAD_ARG	"system" or "name" is NULL.
@@ -349,7 +352,8 @@ ut_map_name_to_unit(
 ut_status
 ut_unmap_name_to_unit(
     ut_system*		system,
-    const char* const	name)
+    const char* const	name,
+    const ut_encoding   encoding)
 {
     ut_set_status(unmapId(systemToNameToUnit, name, system));
 
@@ -363,6 +367,7 @@ ut_unmap_name_to_unit(
  * Arguments:
  *	symbol		Pointer to the symbol to be mapped to "unit".  May be
  *			freed upon return.
+ *      encoding        The character encoding of "symbol".
  *	unit		Pointer to the unit to be mapped-to by "symbol".  May
  *			be freed upon return.
  * Returns:
@@ -374,6 +379,7 @@ ut_unmap_name_to_unit(
 ut_status
 ut_map_symbol_to_unit(
     const char* const	symbol,
+    const ut_encoding   encoding,
     ut_unit* const	unit)
 {
     ut_set_status(
@@ -390,6 +396,7 @@ ut_map_symbol_to_unit(
  * Arguments:
  *	system		The unit-system to which the unit belongs.
  *	symbol		The symbol of the unit.
+ *      encoding        The character encoding of "symbol".
  * Returns:
  *	UT_SUCCESS	Success.
  *	UT_BAD_ARG	"system" or "symbol" is NULL.
@@ -397,7 +404,8 @@ ut_map_symbol_to_unit(
 ut_status
 ut_unmap_symbol_to_unit(
     ut_system*		system,
-    const char* const	symbol)
+    const char* const	symbol,
+    const ut_encoding   encoding)
 {
     ut_set_status(unmapId(systemToSymbolToUnit, symbol, system));
 
