@@ -13,20 +13,26 @@ set -m
 topSrcDir=`dirname $0`
 
 if cd $topSrcDir; then
-    if test -f remote-checks.pid; then
-	pid=`cat remote-checks.pid`
-	kill -- -$pid 2>/dev/null
-	wait $pid 2>/dev/null
-    fi
-
     (
-	trap 'rm -f remote-checks.pid' EXIT
-	trap 'exit' HUP INT QUIT TERM
+	while ! ln -s /dev/null check-commit.ln 2>/dev/null
+	do
+	    sleep 10
+	done
+
+	trap '' HUP INT QUIT TERM
+
+	if test -f remote-checks.pid; then
+	    pid=`cat remote-checks.pid`
+	    kill -- -$pid 2>/dev/null
+	    wait $pid 2>/dev/null
+	fi
+
+	echo $$ >remote-checks.pid
+	trap 'rm -f remote-checks.ln remote-checks.pid' EXIT HUP INT QUIT TERM
+	rm remote-checks.ln
 	sleep 300
 	make remote-checks 2>&1 | ssh zero mailx \
 	    -s '"UDUNITS-2: \"make remote-checks\" output"' \
 	    $USER@unidata.ucar.edu
     ) &
-
-    echo $! >remote-checks.pid
 fi
