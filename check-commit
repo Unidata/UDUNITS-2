@@ -14,6 +14,9 @@ topSrcDir=`dirname $0`
 
 if cd $topSrcDir; then
     (
+	#
+	# Allow only one process to proceed.
+	#
 	while ! ln -s /dev/null check-commit.ln 2>/dev/null
 	do
 	    sleep 10
@@ -24,18 +27,24 @@ if cd $topSrcDir; then
 
 	if test -f check-commit.pid; then
 	    pid=`cat check-commit.pid`
-	    kill -- '-$pid' 2>/dev/null
-	    wait '$pid' 2>/dev/null
+	    kill -- -$pid
+	    while kill -n 0 $pid
+	    do
+		sleep 1
+	    done
 	fi
 
-	trap 'rm -f check-commit.ln check-commit.pid' EXIT
-	echo '$$' >check-commit.pid
+	echo $! >check-commit.pid
+	trap 'rm -f check-commit.pid' EXIT
+
+	#
+	# Allow another process to proceed.
+	#
 	rm check-commit.ln
+
 	sleep 300
 	make remote-checks 2>&1 | ssh zero mailx \
 	    -s '"UDUNITS-2: \"make remote-checks\" output"' \
 	    $USER@unidata.ucar.edu
-
-	rm -f check-commit.ln check-commit.pid
     ) &
 fi
