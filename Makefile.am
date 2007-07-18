@@ -8,7 +8,8 @@ EXTRA_DIST = \
     results.tab \
     success.texi \
     failure.texi \
-    make.texi
+    make.texi \
+    CHANGE_LOG
 AM_MAKEINFOHTMLFLAGS = --no-split
 # DISTCHECK_CONFIGURE_FLAGS = 
 
