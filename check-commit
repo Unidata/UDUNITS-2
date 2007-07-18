@@ -19,22 +19,22 @@ if cd $topSrcDir; then
 	    sleep 10
 	done
 
-	trap 'rm -f remote-checks.ln' HUP INT QUIT TERM
+	trap 'rm -f check-commit.ln' HUP INT QUIT TERM
 
-	if test -f remote-checks.pid; then
-	    pid=`cat remote-checks.pid`
+	if test -f check-commit.pid; then
+	    pid=`cat check-commit.pid`
 	    kill -- -$pid 2>/dev/null
 	    wait $pid 2>/dev/null
 	fi
 
-	trap 'rm -f remote-checks.ln remote-checks.pid' HUP INT QUIT TERM
-	echo $$ >remote-checks.pid
+	trap 'rm -f check-commit.ln check-commit.pid' HUP INT QUIT TERM
+	echo $$ >check-commit.pid
 	rm remote-checks.ln
 	sleep 300
 	make remote-checks 2>&1 | ssh zero mailx \
 	    -s '"UDUNITS-2: \"make remote-checks\" output"' \
 	    $USER@unidata.ucar.edu
 
-	rm -f remote-checks.ln remote-checks.pid
+	rm -f check-commit.ln check-commit.pid
     ) &
 fi
