@@ -8,7 +8,7 @@ for arg in "$@"; do
     echo arg=\"$arg\"
 done
 
-set -m
+set -x -m
 
 topSrcDir=`dirname $0`
 
@@ -24,12 +24,12 @@ if cd $topSrcDir; then
 
 	if test -f check-commit.pid; then
 	    pid=`cat check-commit.pid`
-	    kill -- -$pid 2>/dev/null
-	    wait $pid 2>/dev/null
+	    kill -- '-$pid' 2>/dev/null
+	    wait '$pid' 2>/dev/null
 	fi
 
 	trap 'rm -f check-commit.ln check-commit.pid' EXIT
-	echo $$ >check-commit.pid
+	echo '$$' >check-commit.pid
 	rm check-commit.ln
 	sleep 300
 	make remote-checks 2>&1 | ssh zero mailx \
