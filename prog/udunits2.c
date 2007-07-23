@@ -2,7 +2,7 @@
  * This program prints definitions of units of physical qantities and converts
  * values between such units.
  *
- * $Id: udunits2.c,v 1.7 2007/07/10 22:29:43 steve Exp $
+ * $Id: udunits2.c,v 1.8 2007/07/23 19:09:36 steve Exp $
  */
 
 #ifndef	_XOPEN_SOURCE
@@ -121,76 +121,80 @@ static void
 setEncoding(
     char*	value)
 {
-    typedef struct {
-	const char*	pattern;
-	ut_encoding	encoding;
-	regex_t		reg;
-    }			Entry;
+    if (value != NULL) {
+	typedef struct {
+	    const char*	pattern;
+	    ut_encoding	encoding;
+	    regex_t		reg;
+	}			Entry;
 
-    static Entry	entries[] = {
-	{"^c$",			UT_ASCII},
-	{"^posix$",		UT_ASCII},
-	{"ascii",		UT_ASCII},
-	{"latin.?1[^0-9]",	UT_LATIN1},
-	{"8859.?1[^0-9]",	UT_LATIN1},
-	{"utf.?8[^0-9]",	UT_UTF8},
-    };
-    static int		initialized = 0;
-    static int		entryCount = sizeof(entries)/sizeof(entries[0]);
+	static Entry	entries[] = {
+	    {"^c$",			UT_ASCII},
+	    {"^posix$",		UT_ASCII},
+	    {"ascii",		UT_ASCII},
+	    {"latin.?1[^0-9]",	UT_LATIN1},
+	    {"8859.?1[^0-9]",	UT_LATIN1},
+	    {"utf.?8[^0-9]",	UT_UTF8},
+	};
+	static int		initialized = 0;
+	static int		entryCount = sizeof(entries)/sizeof(entries[0]);
 
-    if (!initialized) {
-	int		status = 0;
-	int		i;
+	if (!initialized) {
+	    int		status = 0;
+	    int		i;
 
-	for (i = 0; i < entryCount; i++) {
-	    Entry*	entry = entries + i;
-	    regex_t*	reg = &entry->reg;
-	    const char*	pattern = entry->pattern;
+	    for (i = 0; i < entryCount; i++) {
+		Entry*	entry = entries + i;
+		regex_t*	reg = &entry->reg;
+		const char*	pattern = entry->pattern;
 
-	    status = regcomp(reg, entries[i].pattern, REG_ICASE | REG_NOSUB);
+		status =
+		    regcomp(reg, entries[i].pattern, REG_ICASE | REG_NOSUB);
 
-	    if (status != 0) {
-		char	buf[132];
+		if (status != 0) {
+		    char	buf[132];
 
-		(void)regerror(status, reg, buf, sizeof(buf));
-		(void)fprintf(stderr, "%s: Unable to compile regular "
-		    "expression \"%s\": %s\n", _progname, pattern, buf);
+		    (void)regerror(status, reg, buf, sizeof(buf));
+		    (void)fprintf(stderr, "%s: Unable to compile regular "
+			"expression \"%s\": %s\n", _progname, pattern, buf);
 
-		break;
+		    break;
+		}
 	    }
-	}
-
-	if (status == 0)
-	    initialized = 1;
-    }
-
-    if (initialized) {
-	int	i;
-	int	status = 0;
-
-	for (i = 0; i < entryCount; i++) {
-	    Entry*	entry = entries + i;
-	    regex_t*	reg = &entry->reg;
-
-	    status = regexec(reg, value, 0, NULL, 0);
 
 	    if (status == 0)
-		break;
-
-	    if (status != REG_NOMATCH) {
-		char	buf[132];
-
-		(void)regerror(status, reg, buf, sizeof(buf));
-		(void)fprintf(stderr, "%s: Unable to execute regular "
-		    "expression \"%s\": %s\n", _progname, entry->pattern, buf);
-
-		break;
-	    }
+		initialized = 1;
 	}
 
-	if (status == 0 && i < entryCount) {
-	    _encoding = entries[i].encoding;
-	    _encodingSet = 1;
+	if (initialized) {
+	    int	i;
+	    int	status = 0;
+
+	    for (i = 0; i < entryCount; i++) {
+		Entry*	entry = entries + i;
+		regex_t*	reg = &entry->reg;
+
+		status = regexec(reg, value, 0, NULL, 0);
+
+		if (status == 0)
+		    break;
+
+		if (status != REG_NOMATCH) {
+		    char	buf[132];
+
+		    (void)regerror(status, reg, buf, sizeof(buf));
+		    (void)fprintf(stderr,
+			"%s: Unable to execute regular expression \"%s\": %s\n",
+			_progname, entry->pattern, buf);
+
+		    break;
+		}
+	    }
+
+	    if (status == 0 && i < entryCount) {
+		_encoding = entries[i].encoding;
+		_encodingSet = 1;
+	    }
 	}
     }
 }

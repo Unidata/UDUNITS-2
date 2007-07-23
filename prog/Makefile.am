@@ -21,4 +21,3 @@ EXTRA_DIST = udunits2prog.html udunits2prog.pdf
 
 debug:		udunits2
 	libtool --mode=execute gdb udunits2
-

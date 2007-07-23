@@ -377,7 +377,7 @@ utf8PrintProduct(
 		    /*
 		     * Append mid-dot separator.
 		     */
-		    n = snprintf(buf+nchar, max-nchar, "\xc2\xb7");
+		    n = snprintf(buf+nchar, max-nchar, "%s", "\xc2\xb7");
 
 		    if (n < 0) {
 			nchar = n;
@@ -421,7 +421,8 @@ utf8PrintProduct(
 			/*
 			 * Append superscript minus sign.
 			 */
-			n = snprintf(buf+nchar, max-nchar, "\xe2\x81\xbb");
+			n = snprintf(buf+nchar, max-nchar, "%s",
+                            "\xe2\x81\xbb");
 
 			if (n < 0) {
 			    nchar = n;
@@ -451,7 +452,7 @@ utf8PrintProduct(
 				digit[idig++] = power % 10;
 
 			    while (idig-- > 0) {
-				n = snprintf(buf+nchar, max-nchar,
+				n = snprintf(buf+nchar, max-nchar, "%s",
 					exponentStrings[digit[idig]]);
 
 				if (n < 0) {
@@ -574,7 +575,7 @@ latin1PrintBasics(
 
 	if (power != 0) {
 	    if (needSeparator) {
-		n = snprintf(buf+nchar, max-nchar, "·");	/* 0xb7 */
+		n = snprintf(buf+nchar, max-nchar, "%s", "·");	/* 0xb7 */
 
 		if (n < 0) {
 		    nchar = n;
@@ -602,7 +603,7 @@ latin1PrintBasics(
 	     * Append exponent if appropriate.
 	     */
 	    if (power != 1) {
-		n = snprintf(buf+nchar, max-nchar,
+		n = snprintf(buf+nchar, max-nchar, "%s",
 		    power == 2 ? "²" : "³");	/* 0xb2 0xb3 */
 
 		if (n < 0) {
@@ -677,7 +678,7 @@ latin1PrintProduct(
 		int		n;
 
 		if (positiveCount == 0) {
-		    n = snprintf(buf+nchar, max-nchar, "1");
+		    n = snprintf(buf+nchar, max-nchar, "%s", "1");
 		    nchar = n < 0 ? n : nchar + n;
 		}
 		else {
@@ -687,7 +688,7 @@ latin1PrintProduct(
 		}
 
 		if (nchar >= 0 && negativeCount > 0) {
-		    n = snprintf(buf+nchar, max-nchar,
+		    n = snprintf(buf+nchar, max-nchar, "%s", 
 			negativeCount == 1 ? "/" : "/(");
 		    nchar = n < 0 ? n : nchar + n;
 
@@ -697,7 +698,7 @@ latin1PrintProduct(
 			nchar = n < 0 ? n : nchar + n;
 
 			if (nchar >= 0 && negativeCount > 1) {
-			    n = snprintf(buf+nchar, max-nchar, ")");
+			    n = snprintf(buf+nchar, max-nchar, "%s", ")");
 			    nchar = n < 0 ? n : nchar + n;
 			}
 		    }			/* solidus appended */
@@ -825,7 +826,7 @@ printGalilean(
 
 	    if (nchar >= 0) {
 		if (needParens) {
-		    n = snprintf(buf+nchar, max-nchar, ")");
+		    n = snprintf(buf+nchar, max-nchar, "%s", ")");
 		    nchar = n < 0 ? n : nchar + n;
 		}
 	    }				/* printed offset if appropriate */
@@ -932,7 +933,7 @@ printTimestamp(
     int		nchar = 0;
 
     if (addParens) {
-	n = snprintf(buf, max, "(");
+	n = snprintf(buf, max, "%s", "(");
 	nchar = n < 0 ? n : nchar + n;
     }
 
@@ -963,7 +964,7 @@ printTimestamp(
 		}			/* sufficient precision for seconds */
 
 		if (nchar >= 0) {
-		    n = snprintf(buf+nchar, max-nchar, 
+		    n = snprintf(buf+nchar, max-nchar, "%s",
 			addParens ? " UTC)" : " UTC");
 		    nchar = n < 0 ? n : nchar + n;
 		}			/* printed seconds if appropriate */

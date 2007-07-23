@@ -1,6 +1,6 @@
 %{
 /*
- * $Id: parser.y,v 1.12 2007/07/16 16:56:27 steve Exp $
+ * $Id: parser.y,v 1.13 2007/07/23 19:09:36 steve Exp $
  *
  * yacc(1)-based parser for decoding formatted unit specifications.
  *
@@ -83,7 +83,7 @@ void
 uterror(
     char        	*s)
 {
-    static char*	nomem = "ut_error(): out of memory";
+    static char*	nomem = "uterror(): out of memory";
 
     if (_errorMessage != NULL && _errorMessage != nomem)
 	free(_errorMessage);

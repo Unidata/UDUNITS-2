@@ -12,6 +12,7 @@ EXTRA_DIST = \
     CHANGE_LOG
 AM_MAKEINFOHTMLFLAGS = --no-split
 # DISTCHECK_CONFIGURE_FLAGS = 
+RSYNC_FLAGS	= --rsh=ssh --rsync-path=/opt/bin/rsync
 
 # The following rule is executed on the remote system.
 hostcheck:
@@ -24,7 +25,7 @@ hostcheck:
 		$(SHARED_OPT) CC='$(CC)'; \
 	    status=$$?; \
 	    if test $$status -eq 0; then \
-		$(MAKE) all check install install-info install-html \
+		$(MAKE) all check install install-html \
 		    install-pdf uninstall; \
 		status=$$?; \
 	    fi; \
@@ -84,7 +85,8 @@ results.tab:
 	done >$@
 
 success.texi:	results.tab
-	sort -t : -k +2 results.tab | \
+	sleep 1
+	sort -t : -k 2 results.tab | \
 	awk -F: ' \
 	    BEGIN { \
 		print "@multitable {@code{Linux 2.6.18-1.2257.fc5smp}} {@code{/opt/csw/gcc4/bin/gcc}} {@code{--disable-shared}}"; \
@@ -97,9 +99,11 @@ success.texi:	results.tab
 	    END { \
 		print "@end multitable"; \
 	    }' >success.texi
+	sleep 1
 
 failure.texi:	results.tab
-	sort -t : -k +2 results.tab | \
+	sleep 1
+	sort -t : -k 2 results.tab | \
 	awk -F: ' \
 	    BEGIN { \
 		print "@multitable {@code{Linux 2.6.18-1.2257.fc5smp}} {@code{/opt/SUNWspro/bin/c99}} {@code{--disable-shared}}"; \
@@ -112,8 +116,10 @@ failure.texi:	results.tab
 	    END { \
 		print "@end multitable"; \
 	    }' >failure.texi
+	sleep 1
 
 make.texi:	results.tab
+	sleep 1
 	awk -F: '$$6 == 1 {printf "%s:%s\n", $$2, $$3}' results.tab | \
 	sort -t : -u | \
 	awk -F: ' \
@@ -127,10 +133,16 @@ make.texi:	results.tab
 	    END { \
 		print "@end multitable"; \
 	    }' >$@
+	sleep 1
 
-remote-checks:	distcheck hostchecks udunits2.info udunits2.html udunits2.pdf
+remote-checks:	distcheck hostchecks results.tab
 
-.PHONY:	hostchecks hostcheck remote-checks
+web-update:	install-html
+	rsync $(RSYNC_FLAGS) -aCu --delete --delete-excluded \
+	    $(DESTDIR)$(htmldir)/*.html \
+	    conan:/content/software/$(PACKAGE)-new/$(PACKAGE_TARNAME)-$(PACKAGE_VERSION)
+
+.PHONY:	hostchecks hostcheck remote-checks web-update
 
 udunits2.info:	success.texi failure.texi make.texi
 udunits2.html:	success.texi failure.texi make.texi

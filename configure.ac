@@ -119,6 +119,5 @@ AC_CONFIG_FILES([Makefile
                  lib/Makefile
                  lib/xmlFailure/Makefile
                  lib/xmlSuccess/Makefile
-                 installdirs.texi
 		 prog/Makefile])
 AC_OUTPUT

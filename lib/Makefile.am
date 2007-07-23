@@ -77,4 +77,3 @@ debug:		testUnits
 endif
 
 parser.o: scanner.c
-

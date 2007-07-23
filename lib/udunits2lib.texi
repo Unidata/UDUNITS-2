@@ -3,7 +3,6 @@
 @setfilename udunits2lib.info
 @settitle The UDUNITS-2 C API Guide
 @c %**end of header
-@include ../installdirs.texi
 @dircategory Software libraries
 @direntry
 * UDUNITS-2: (udunits2lib).     The Unidata units library.
@@ -52,7 +51,7 @@ units.
 The library comes with an extensive database of units all referenced to the
 SI system of units.
 
-CVS keywords: $Date: 2007/07/16 16:57:55 $, Revision: 1.3 $
+CVS keywords: $Date: 2007/07/23 19:09:36 $, Revision: 1.3 $
 
 @insertcopying
 @end ifnottex
@@ -147,13 +146,19 @@ Coding:
 
 Compiling:
 @example
-c89 -I @value{includedir} ...
+c89 -I @emph{includedir} ...
 @end example
+
+Where @emph{includedir} is the installation-directory for C header
+files (e.g., @code{/usr/local/include}).
 
 Linking:
 @example
-c89 ... -L @value{libdir} -l udunits2 ... -l m
+c89 ... -L @emph{libdir} -l udunits2 ... -l m
 @end example
+
+Where @emph{libdir} is the installation-directory for object code
+libraries (e.g., @code{/usr/local/lib}).
 
 @node Why, Unit-Systems, Synopsis, Top
 @chapter What's a Unit Package Good For?
@@ -1663,9 +1668,11 @@ The database of units that comes with the UDUNITS-2 package is an
 XML-formatted file that is based on the SI system of units.
 It contains the names and symbols of most of the units that you will ever
 encounter.
-The pathname of the installed file was @code{@value{datadir}/udunits2.xml}
-when the package was installed.
-This is the default pathname that @code{@ref{ut_read_xml()}} uses.
+The pathname of the installed file is
+@code{@emph{datadir}/udunits2.xml}, where @emph{datadir} is the
+installation-directory for read-only, architecture-independent data
+(e.g., @code{/usr/local/share}).
+This pathname is the default that @code{@ref{ut_read_xml()}} uses.
 
 Naturally, because the database is a regular file, it can be edited
 to add new units or remove existing ones.
