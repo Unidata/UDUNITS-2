@@ -9,6 +9,7 @@ EXTRA_DIST = \
     success.texi \
     failure.texi \
     make.texi \
+    ANNOUNCEMENT \
     CHANGE_LOG
 AM_MAKEINFOHTMLFLAGS = --no-split
 # DISTCHECK_CONFIGURE_FLAGS = 
