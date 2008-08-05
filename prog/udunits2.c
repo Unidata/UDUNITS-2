@@ -2,7 +2,7 @@
  * This program prints definitions of units of physical qantities and converts
  * values between such units.
  *
- * $Id: udunits2.c,v 1.8 2007/07/23 19:09:36 steve Exp $
+ * $Id: udunits2.c,v 1.9 2008/08/05 18:39:27 steve Exp $
  */
 
 #ifndef	_XOPEN_SOURCE
@@ -130,11 +130,11 @@ setEncoding(
 
 	static Entry	entries[] = {
 	    {"^c$",			UT_ASCII},
-	    {"^posix$",		UT_ASCII},
-	    {"ascii",		UT_ASCII},
-	    {"latin.?1[^0-9]",	UT_LATIN1},
-	    {"8859.?1[^0-9]",	UT_LATIN1},
-	    {"utf.?8[^0-9]",	UT_UTF8},
+	    {"^posix$",			UT_ASCII},
+	    {"ascii",			UT_ASCII},
+	    {"latin.?1([^0-9]|$)",	UT_LATIN1},
+	    {"8859.?1([^0-9]|$)",	UT_LATIN1},
+	    {"utf.?8([^0-9]|$)",	UT_UTF8},
 	};
 	static int		initialized = 0;
 	static int		entryCount = sizeof(entries)/sizeof(entries[0]);
@@ -149,7 +149,8 @@ setEncoding(
 		const char*	pattern = entry->pattern;
 
 		status =
-		    regcomp(reg, entries[i].pattern, REG_ICASE | REG_NOSUB);
+		    regcomp(reg, entries[i].pattern,
+			REG_EXTENDED | REG_ICASE | REG_NOSUB);
 
 		if (status != 0) {
 		    char	buf[132];
