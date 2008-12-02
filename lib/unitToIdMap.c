@@ -1,7 +1,7 @@
 /*
  * Unit-to-identifier map.
  *
- * $Id: unitToIdMap.c,v 1.8 2007/07/10 22:29:22 steve Exp $
+ * $Id: unitToIdMap.c,v 1.9 2008/12/02 17:32:10 steve Exp $
  */
 
 /*LINTLIBRARY*/
@@ -269,8 +269,9 @@ utimAdd(
     assert(id != NULL);
 
     if (adjustEncoding(&encoding, id)) {
-	ut_handle_error_message("Identifier not in given encoding");
 	status = UT_BAD_ARG;
+        ut_set_status(status);
+	ut_handle_error_message("Identifier not in given encoding");
     }
     else {
 	UnitAndId*	targetEntry = uaiNew(unit, id);
@@ -281,16 +282,18 @@ utimAdd(
 	    UnitAndId**	treeEntry = tsearch(targetEntry, rootp, compareUnits);
 
 	    if (treeEntry == NULL) {
+		status = UT_OS;
+                ut_set_status(status);
 		ut_handle_error_message(strerror(errno));
 		ut_handle_error_message("Couldn't add search-tree entry");
 		uaiFree(targetEntry);
-		status = UT_OS;
 	    }
 	    else {
 		if (strcmp((*treeEntry)->id, id) != 0) {
+		    status = UT_EXISTS;
+                    ut_set_status(status);
 		    ut_handle_error_message("Unit already maps to \"%s\"",
 			(*treeEntry)->id);
-		    status = UT_EXISTS;
 		}
 		else {
 		    status = UT_SUCCESS;
@@ -441,10 +444,10 @@ utimFindUtf8ByUnit(
 	    char* const	id = latin1ToUtf8((*treeEntry)->id);
 
 	    if (id == NULL) {
+		ut_set_status(UT_OS);
 		ut_handle_error_message(strerror(errno));
 		ut_handle_error_message(
 		    "Couldn't convert identifier from ISO-8859-1 to UTF-8");
-		ut_set_status(UT_OS);
 		treeEntry = NULL;
 	    }
 	    else {
@@ -455,10 +458,10 @@ utimFindUtf8ByUnit(
 
 		    if (treeEntry == NULL) {
 			uaiFree(newEntry);
+			ut_set_status(UT_OS);
 			ut_handle_error_message(strerror(errno));
 			ut_handle_error_message(
                             "Couldn't add unit-and-identifier to search-tree");
-			ut_set_status(UT_OS);
 		    }
 		}
 
@@ -595,8 +598,8 @@ getId(
     const char*	id = NULL;		/* failure */
 
     if (unit == NULL) {
-	ut_handle_error_message("NULL unit argument");
 	ut_set_status(UT_BAD_ARG);
+	ut_handle_error_message("NULL unit argument");
     }
     else {
 	UnitToIdMap** const	unitToId = 

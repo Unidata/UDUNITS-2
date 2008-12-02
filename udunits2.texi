@@ -46,20 +46,21 @@ This manual introduces the UDUNITS-2 package, which contains
 a C library for units of physical quantities and a unit-definition
 and value-conversion utility.
 
-CVS keywords: $Date: 2007/07/23 19:09:27 $, Revision: 1.3 $
+CVS keywords: $Date: 2008/12/02 17:31:59 $, Revision: 1.3 $
 
 @insertcopying
 @end ifnottex
 
 @menu
 * Introduction::        Introduction
-* Previous::		How this package differs from previous UDUNITS
+* Differences::		How this package differs from the original UDUNITS
 * Obtain::              Obtaining this package
 * Install::             Installing this package
+* Support::             Support for this package
 * Complete Index::      Complete index
 @end menu
 
-@node Introduction, Previous, Top, Top
+@node Introduction, Differences, Top, Top
 @chapter Introduction
 @cindex Introduction
 
@@ -71,10 +72,10 @@ for obtaining the definition of a unit and for
 converting numeric values between compatible units;
 and 3) an extensive database of units.
 
-@node Previous, Obtain, Introduction, Top
-@chapter How This Package Differs from the Previous @code{UDUNITS} Package
+@node Differences, Obtain, Introduction, Top
+@chapter How This Package Differs from the Original @code{UDUNITS} Package
 
-The @code{UDUNIT-2} package differs from the previous @code{UDUNITS}
+The @code{UDUNIT-2} package differs from the original @code{UDUNITS}
 package in the following ways:
 @itemize @bullet
 
@@ -108,13 +109,18 @@ human-readable XML rather than a custom format.  The XML
 parser included in the package supports an @emph{<import>} element to
 allow easy and convenient customization.
 
+@item @strong{No Fortran or Perl API}.  Interfaces for these languages
+have not yet been created.  Contact
+@email{support-udunits@@unidata.ucar.edu} if you are interested in
+helping to create these interfaces.
+
 @end itemize
 
 One thing that has not changed is that all unit string specifications
 understood by the original @code{UDUNITS} package are also
 understood by the new @code{UDUNITS-2} package.
 
-@node Obtain, Install, Previous, Top
+@node Obtain, Install, Differences, Top
 @chapter Obtaining this Package
 @cindex obtaining this package
 
@@ -127,7 +133,7 @@ cd /usr/local/src
 gunzip -c udunits-@value{VERSION}.tar.gz | pax -r
 @end example
 
-@node Install, Complete Index, Obtain, Top
+@node Install, Support, Obtain, Top
 @chapter Installing this Package
 @cindex installing this package
 
@@ -174,8 +180,7 @@ cd udunits-@value{VERSION}
 @item
 Because some @code{make} utilities cannot build this package correctly,
 locate the operating system that is closest to yours in the following table
-and determine the @var{make} utility that you will use from the
-potential candidates.
+and determine the @var{make} utility that you will use.
 @quotation
 @include make.texi
 @end quotation
@@ -201,7 +206,7 @@ a static library only: a sharable library is not created.
 This option is necessary if the @code{libtool} utility that's included
 in this package can't build a sharable library using the given compiler.
 
-The following table shows the build environments that do not work ---
+The following table lists the build environments that do not work ---
 so don't use them:
 @quotation
 @include failure.texi
@@ -318,7 +323,18 @@ udunits2lib.info        # INFO documentation on the unit @ref{Top, , library, ud
 udunits2prog.info       # INFO documentation on the unit @ref{Top, , utility, udunits2prog}
 @end example
 
-@node Complete Index, , Install, Top
+@node Support, Complete Index, Install, Top
+@chapter Support for this Package
+@cindex support
+@cindex package, support
+
+Fora for this package can be found at
+@uref{http://www.unidata.ucar.edu/forums/}.
+
+Bug reports should be sent to
+@email{support-udunits@@unidata.ucar.edu}.
+
+@node Complete Index, , Support, Top
 @unnumbered Index
 
 @printindex cp

@@ -1,7 +1,7 @@
 /*
  * Searchable unit-and-identifier tree.
  *
- * $Id: unitAndId.c,v 1.7 2007/07/10 22:29:22 steve Exp $
+ * $Id: unitAndId.c,v 1.8 2008/12/02 17:32:10 steve Exp $
  */
 
 /*LINTLIBRARY*/
@@ -37,25 +37,25 @@ uaiNew(
     UnitAndId*	entry = NULL;		/* failure */
 
     if (id == NULL || unit == NULL) {
-	ut_handle_error_message("uaiNew(): NULL argument");
 	ut_set_status(UT_BAD_ARG);
+	ut_handle_error_message("uaiNew(): NULL argument");
     }
     else {
 	entry = malloc(sizeof(UnitAndId));
 
 	if (entry == NULL) {
+	    ut_set_status(UT_OS);
 	    ut_handle_error_message(strerror(errno));
 	    ut_handle_error_message("Couldn't allocate %lu-byte data-structure",
 		sizeof(UnitAndId));
-	    ut_set_status(UT_OS);
 	}
 	else {
 	    entry->id = strdup(id);
 
 	    if (entry->id == NULL) {
+		ut_set_status(UT_OS);
 		ut_handle_error_message(strerror(errno));
 		ut_handle_error_message("Couldn't duplicate identifier");
-		ut_set_status(UT_OS);
 	    }
 	    else {
 		entry->unit = ut_clone(unit);

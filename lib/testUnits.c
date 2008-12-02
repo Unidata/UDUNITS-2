@@ -1569,19 +1569,37 @@ test_parsing(void)
     CU_ASSERT_EQUAL(ut_compare(unit, meter), 0);
     ut_free(unit);
 
-    spec = "s@19700101T000000 UTC";
-    unit = ut_parse(unitSystem, spec, UT_ASCII);
-    CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(ut_compare(unit, secondsSinceTheEpoch), 0);
-    ut_free(unit);
-
     spec = "s @ 19700101T000000";
     unit = ut_parse(unitSystem, spec, UT_ASCII);
     CU_ASSERT_PTR_NOT_NULL(unit);
     CU_ASSERT_EQUAL(ut_compare(unit, secondsSinceTheEpoch), 0);
     ut_free(unit);
 
+    spec = "s@19700101T000000 UTC";
+    unit = ut_parse(unitSystem, spec, UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    CU_ASSERT_EQUAL(ut_compare(unit, secondsSinceTheEpoch), 0);
+    ut_free(unit);
+
+    spec = "s@19700101T000000Z";
+    unit = ut_parse(unitSystem, spec, UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    CU_ASSERT_EQUAL(ut_compare(unit, secondsSinceTheEpoch), 0);
+    ut_free(unit);
+
+    spec = "s@19700101T000000 Z";
+    unit = ut_parse(unitSystem, spec, UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    CU_ASSERT_EQUAL(ut_compare(unit, secondsSinceTheEpoch), 0);
+    ut_free(unit);
+
     spec = "s @ 1970-01-01 00:00:00";
+    unit = ut_parse(unitSystem, spec, UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    CU_ASSERT_EQUAL(ut_compare(unit, secondsSinceTheEpoch), 0);
+    ut_free(unit);
+
+    spec = "s @ 1970-01-01T00:00:00";
     unit = ut_parse(unitSystem, spec, UT_ASCII);
     CU_ASSERT_PTR_NOT_NULL(unit);
     CU_ASSERT_EQUAL(ut_compare(unit, secondsSinceTheEpoch), 0);

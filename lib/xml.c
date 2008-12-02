@@ -2,7 +2,7 @@
  * This module is thread-compatible but not thread-safe.  Multi-threaded
  * access must be externally synchronized.
  *
- * $Id: xml.c,v 1.10 2007/07/16 16:58:58 steve Exp $
+ * $Id: xml.c,v 1.11 2008/12/02 17:32:10 steve Exp $
  */
 
 /*LINTLIBRARY*/
@@ -102,6 +102,7 @@ formPlural(
         int     length = strlen(singular);
 
 	if (length + 3 >= sizeof(buf)) {
+            ut_set_status(UT_SYNTAX);
 	    ut_handle_error_message("Singular form is too long");
 	    XML_StopParser(currFile->parser, 0);
 	}
@@ -183,6 +184,7 @@ substitute(
             nbytes = strlen(in);
 
             if (out + nbytes >= beyond) {
+                ut_set_status(UT_SYNTAX);
                 ut_handle_error_message("String \"%s\" is too long", inString);
                 return 0;
             }
@@ -197,6 +199,7 @@ substitute(
             nbytes = (size_t)(cp - in);
 
             if (out + nbytes + replLen >= beyond) {
+                ut_set_status(UT_SYNTAX);
                 ut_handle_error_message("String \"%s\" is too long", inString);
                 return 0;
             }
@@ -253,6 +256,7 @@ latin1_to_utf8(
             numSpecial++;
 
     if (size < ((size_t)((char*)in - (char*)inString) + numSpecial + 1)) {
+        ut_set_status(UT_SYNTAX);
         ut_handle_error_message("Identifier \"%s\" is too long", inString);
         return 0;
     }
@@ -316,6 +320,7 @@ utf8_to_latin1(
     }
 
     if (size < ((size_t)((char*)in - (char*)inString) - numSpecial + 1)) {
+        ut_set_status(UT_SYNTAX);
         ut_handle_error_message("Identifier \"%s\" is too long", inString);
         return -1;
     }
@@ -446,6 +451,7 @@ makeDerivatives(
     assert(ids != NULL);
 
     if (strlen(id) > NAME_SIZE - 1) {
+        ut_set_status(UT_SYNTAX);
         ut_handle_error_message("Identifier \"%s\" is too long", id);
         success = 0;
     }
@@ -527,6 +533,7 @@ mapUnitToId(
     }
 
     if (func(unit, id, encoding) != UT_SUCCESS) {
+        ut_set_status(UT_PARSE);
         ut_handle_error_message("Couldn't map unit to %s \"%s\"", desc, id);
     }
     else {
@@ -653,6 +660,7 @@ mapIdToUnit(
 	int	nchar = ut_format(prev, buf, sizeof(buf),
 	    UT_ASCII | UT_DEFINITION | UT_NAMES);
 
+        ut_set_status(UT_PARSE);
 	ut_handle_error_message(
 	    "Duplicate definition for \"%s\" at \"%s\":%d", id,
             currFile->path, XML_GetCurrentLineNumber(currFile->parser));
@@ -664,6 +672,7 @@ mapIdToUnit(
 	if (nchar >= 0 && nchar < sizeof(buf)) {
 	    buf[nchar] = 0;
 
+            ut_set_status(UT_PARSE);
 	    ut_handle_error_message("Previous definition was \"%s\"", buf);
 	}
 
@@ -680,6 +689,7 @@ mapIdToUnit(
                     ? ut_map_name_to_unit(id, encoding, unit)
                     : ut_map_symbol_to_unit(id, encoding, unit))
                 != UT_SUCCESS) {
+            ut_set_status(UT_PARSE);
 	    ut_handle_error_message("Couldn't map %s \"%s\" to unit",
 		isName ? "name" : "symbol", id);
 	    XML_StopParser(currFile->parser, 0);
@@ -695,6 +705,7 @@ mapIdToUnit(
 			UT_ASCII | UT_DEFINITION);
 
 		if (nchar < 0 || nchar >= sizeof(buf)) {
+                    ut_set_status(UT_PARSE);
 		    ut_handle_error_message("Definition of \"%s\" in \"%s\", "
                         "line %d, overrides prefixed-unit", id,
                         currFile->path,
@@ -703,6 +714,7 @@ mapIdToUnit(
 		else {
 		    buf[nchar] = 0;
 
+                    ut_set_status(UT_PARSE);
 		    ut_handle_error_message("Definition of \"%s\" in \"%s\", "
                         "line %d, overrides prefixed-unit \"%s\"",
                         id, currFile->path,
@@ -906,6 +918,7 @@ accumulateText(
     char*	tmp = realloc(text, nbytes + len + 1);
 
     if (tmp == NULL) {
+        ut_set_status(UT_OS);
 	ut_handle_error_message(strerror(errno));
 	ut_handle_error_message("Couldn't reallocate %lu-byte text buffer",
 	    nbytes+len+1);
@@ -948,6 +961,7 @@ convertText(void)
             /* EMPTY */;
 
         if (*cp) {
+            ut_set_status(UT_SYNTAX);
             ut_handle_error_message("Character isn't US-ASCII: %#x", *cp);
             XML_StopParser(currFile->parser, 0);
 
@@ -971,6 +985,7 @@ convertText(void)
                     *out |= (unsigned char)(*in & 0x3F);
                 }
                 else {
+                    ut_set_status(UT_SYNTAX);
                     ut_handle_error_message(
                         "Character is not representable in ISO-8859-1 "
                         "(Latin-1): %d", 1+(int)((char*)out - text));
@@ -1002,8 +1017,8 @@ startUnitSystem(
     const char**	atts)
 {
     if (currFile->context != START) {
-	ut_handle_error_message("Wrong place for <unit-system> element");
 	ut_set_status(UT_PARSE);
+	ut_handle_error_message("Wrong place for <unit-system> element");
 	XML_StopParser(currFile->parser, 0);
     }
 
@@ -1029,6 +1044,7 @@ startPrefix(
     const char* const*	atts)
 {
     if (currFile->context != UNIT_SYSTEM) {
+        ut_set_status(UT_PARSE);
 	ut_handle_error_message("Wrong place for <prefix> element");
     }
     else {
@@ -1048,6 +1064,7 @@ endPrefix(
     void*		data)
 {
     if (!currFile->haveValue || !currFile->prefixAdded) {
+        ut_set_status(UT_PARSE);
 	ut_handle_error_message("Prefix incompletely specified");
 	XML_StopParser(currFile->parser, 0);
     }
@@ -1068,6 +1085,7 @@ startUnit(
     const char**	atts)
 {
     if (currFile->context != UNIT_SYSTEM) {
+        ut_set_status(UT_PARSE);
 	ut_handle_error_message("Wrong place for <unit> element");
 	XML_StopParser(currFile->parser, 0);
     }
@@ -1096,10 +1114,12 @@ endUnit(
 {
     if (currFile->isBase) {
         if (!currFile->nameSeen) {
+            ut_set_status(UT_PARSE);
             ut_handle_error_message("Base unit needs a name");
             XML_StopParser(currFile->parser, 0);
         }
         if (!currFile->symbolSeen) {
+            ut_set_status(UT_PARSE);
             ut_handle_error_message("Base unit needs a symbol");
             XML_StopParser(currFile->parser, 0);
         }
@@ -1120,20 +1140,24 @@ startBase(
     const char**	atts)
 {
     if (currFile->context != UNIT) {
+        ut_set_status(UT_PARSE);
 	ut_handle_error_message("Wrong place for <base> element");
 	XML_StopParser(currFile->parser, 0);
     }
     else {
 	if (currFile->isDimensionless) {
+            ut_set_status(UT_PARSE);
 	    ut_handle_error_message(
 		"<dimensionless> and <base> are mutually exclusive");
 	    XML_StopParser(currFile->parser, 0);
 	}
 	else if (currFile->unit != NULL) {
+            ut_set_status(UT_PARSE);
 	    ut_handle_error_message("<base> and <def> are mutually exclusive");
 	    XML_StopParser(currFile->parser, 0);
 	}
 	else if (currFile->isBase) {
+            ut_set_status(UT_PARSE);
 	    ut_handle_error_message("<base> element already seen");
 	    XML_StopParser(currFile->parser, 0);
 	}
@@ -1151,6 +1175,7 @@ endBase(
     currFile->unit = ut_new_base_unit(unitSystem);
 
     if (currFile->unit == NULL) {
+        ut_set_status(UT_PARSE);
 	ut_handle_error_message("Couldn't create new base unit");
 	XML_StopParser(currFile->parser, 0);
     }
@@ -1169,21 +1194,25 @@ startDimensionless(
     const char**	atts)
 {
     if (currFile->context != UNIT) {
+        ut_set_status(UT_PARSE);
 	ut_handle_error_message("Wrong place for <dimensionless> element");
 	XML_StopParser(currFile->parser, 0);
     }
     else {
 	if (currFile->isBase) {
+            ut_set_status(UT_PARSE);
 	    ut_handle_error_message(
 		"<dimensionless> and <base> are mutually exclusive");
 	    XML_StopParser(currFile->parser, 0);
 	}
 	else if (currFile->unit != NULL) {
+            ut_set_status(UT_PARSE);
 	    ut_handle_error_message(
 		"<dimensionless> and <def> are mutually exclusive");
 	    XML_StopParser(currFile->parser, 0);
 	}
 	else if (currFile->isDimensionless) {
+            ut_set_status(UT_PARSE);
 	    ut_handle_error_message("<dimensionless> element already seen");
 	    XML_StopParser(currFile->parser, 0);
 	}
@@ -1201,6 +1230,7 @@ endDimensionless(
     currFile->unit = ut_new_dimensionless_unit(unitSystem);
 
     if (currFile->unit == NULL) {
+        ut_set_status(UT_PARSE);
 	ut_handle_error_message("Couldn't create new dimensionless unit");
 	XML_StopParser(currFile->parser, 0);
     }
@@ -1219,20 +1249,24 @@ startDef(
     const char**	atts)
 {
     if (currFile->context != UNIT) {
+        ut_set_status(UT_PARSE);
 	ut_handle_error_message("Wrong place for <def> element");
 	XML_StopParser(currFile->parser, 0);
     }
     else if (currFile->isBase) {
+        ut_set_status(UT_PARSE);
 	ut_handle_error_message(
 	    "<base> and <def> are mutually exclusive");
 	XML_StopParser(currFile->parser, 0);
     }
     else if (currFile->isDimensionless) {
+        ut_set_status(UT_PARSE);
 	ut_handle_error_message(
 	    "<dimensionless> and <def> are mutually exclusive");
 	XML_StopParser(currFile->parser, 0);
     }
     else if (currFile->unit != NULL) {
+        ut_set_status(UT_PARSE);
 	ut_handle_error_message("<def> element already seen");
 	XML_StopParser(currFile->parser, 0);
     }
@@ -1251,6 +1285,7 @@ endDef(
     void*		data)
 {
     if (nbytes == 0) {
+        ut_set_status(UT_PARSE);
 	ut_handle_error_message("Empty unit definition");
 	XML_StopParser(currFile->parser, 0);
     }
@@ -1258,6 +1293,7 @@ endDef(
 	currFile->unit = ut_parse(unitSystem, text, currFile->textEncoding);
 
 	if (currFile->unit == NULL) {
+            ut_set_status(UT_PARSE);
 	    ut_handle_error_message(
                 "Couldn't parse unit specification \"%s\"", text);
 	    XML_StopParser(currFile->parser, 0);
@@ -1276,6 +1312,7 @@ startName(
 {
     if (currFile->context == PREFIX) {
         if (!currFile->haveValue) {
+            ut_set_status(UT_PARSE);
             ut_handle_error_message("No previous <value> element");
             XML_StopParser(currFile->parser, 0);
         }
@@ -1286,6 +1323,7 @@ startName(
     }
     else if (currFile->context == UNIT || currFile->context == ALIASES) {
         if (currFile->unit == NULL) {
+            ut_set_status(UT_PARSE);
             ut_handle_error_message(
                 "No previous <base>, <dimensionless>, or <def> element");
             XML_StopParser(currFile->parser, 0);
@@ -1299,6 +1337,7 @@ startName(
         }
     }
     else {
+        ut_set_status(UT_PARSE);
         ut_handle_error_message("Wrong place for <name> element");
         XML_StopParser(currFile->parser, 0);
     }
@@ -1314,12 +1353,14 @@ endName(
 {
     if (currFile->context == PREFIX) {
 	if (!currFile->haveValue) {
+            ut_set_status(UT_PARSE);
 	    ut_handle_error_message("No previous <value> element");
 	    XML_StopParser(currFile->parser, 0);
 	}
 	else {
 	    if (ut_add_name_prefix(unitSystem, text, currFile->value) !=
                     UT_SUCCESS) {
+                ut_set_status(UT_PARSE);
 		ut_handle_error_message(
 		    "Couldn't map name-prefix \"%s\" to value %g", text,
                     currFile->value);
@@ -1332,6 +1373,7 @@ endName(
     }
     else if (currFile->context == UNIT_NAME) {
         if (currFile->singular[0] == 0) {
+            ut_set_status(UT_PARSE);
             ut_handle_error_message("<name> needs a <singular>");
             XML_StopParser(currFile->parser, 0);
         }
@@ -1351,6 +1393,7 @@ endName(
                         plural = formPlural(currFile->singular);
 
                         if (plural == NULL) {
+                            ut_set_status(UT_PARSE);
                             ut_handle_error_message("Couldn't form plural of "
                                 "\"%s\"", currFile->singular);
                             XML_StopParser(currFile->parser, 0);
@@ -1376,6 +1419,7 @@ endName(
     }					/* defining name for unit */
     else if (currFile->context == ALIAS_NAME) {
 	if (currFile->singular[0] == 0) {
+            ut_set_status(UT_PARSE);
             ut_handle_error_message("<name> needs a <singular>");
             XML_StopParser(currFile->parser, 0);
         }
@@ -1395,6 +1439,7 @@ endName(
                     plural = formPlural(currFile->singular);
 
                     if (plural == NULL) {
+                        ut_set_status(UT_PARSE);
                         ut_handle_error_message("Couldn't form plural of "
                             "\"%s\"", currFile->singular);
                         XML_StopParser(currFile->parser, 0);
@@ -1426,10 +1471,12 @@ startSingular(
     const char**	atts)
 {
     if (currFile->context != UNIT_NAME && currFile->context != ALIAS_NAME) {
+        ut_set_status(UT_PARSE);
 	ut_handle_error_message("Wrong place for <singular> element");
 	XML_StopParser(currFile->parser, 0);
     }
     else if (currFile->singular[0] != 0) {
+        ut_set_status(UT_PARSE);
 	ut_handle_error_message("<singular> element already seen");
 	XML_StopParser(currFile->parser, 0);
     }
@@ -1448,6 +1495,7 @@ endSingular(
     void*		data)
 {
     if (nbytes >= NAME_SIZE) {
+        ut_set_status(UT_PARSE);
         ut_handle_error_message("Name \"%s\" is too long", text);
         XML_StopParser(currFile->parser, 0);
     }
@@ -1466,10 +1514,12 @@ startPlural(
     const char**	atts)
 {
     if (currFile->context != UNIT_NAME && currFile->context != ALIAS_NAME ) {
+        ut_set_status(UT_PARSE);
 	ut_handle_error_message("Wrong place for <plural> element");
 	XML_StopParser(currFile->parser, 0);
     }
     else if (currFile->noPLural || currFile->plural[0] != 0) {
+        ut_set_status(UT_PARSE);
 	ut_handle_error_message("<plural> or <noplural> element already seen");
 	XML_StopParser(currFile->parser, 0);
     }
@@ -1488,10 +1538,12 @@ endPlural(
     void*		data)
 {
     if (nbytes == 0) {
+        ut_set_status(UT_PARSE);
         ut_handle_error_message("Empty <plural> element");
         XML_StopParser(currFile->parser, 0);
     }
     else if (nbytes >= NAME_SIZE) {
+        ut_set_status(UT_PARSE);
         ut_handle_error_message("Plural name \"%s\" is too long", text);
         XML_StopParser(currFile->parser, 0);
     }
@@ -1510,10 +1562,12 @@ startNoPlural(
     const char**	atts)
 {
     if (currFile->context != UNIT_NAME || currFile->context != ALIAS_NAME) {
+        ut_set_status(UT_PARSE);
 	ut_handle_error_message("Wrong place for <noplural> element");
 	XML_StopParser(currFile->parser, 0);
     }
     else if (currFile->plural[0] != 0) {
+        ut_set_status(UT_PARSE);
 	ut_handle_error_message("<plural> element already seen");
 	XML_StopParser(currFile->parser, 0);
     }
@@ -1541,6 +1595,7 @@ startSymbol(
 {
     if (currFile->context == PREFIX) {
         if (!currFile->haveValue) {
+            ut_set_status(UT_PARSE);
             ut_handle_error_message("No previous <value> element");
             XML_StopParser(currFile->parser, 0);
         }
@@ -1551,6 +1606,7 @@ startSymbol(
     }
     else if (currFile->context == UNIT || currFile->context == ALIASES) {
         if (currFile->unit == NULL) {
+            ut_set_status(UT_PARSE);
             ut_handle_error_message(
                 "No previous <base>, <dimensionless>, or <def> element");
             XML_StopParser(currFile->parser, 0);
@@ -1561,6 +1617,7 @@ startSymbol(
         }
     }
     else {
+        ut_set_status(UT_PARSE);
         ut_handle_error_message("Wrong place for <symbol> element");
         XML_StopParser(currFile->parser, 0);
     }
@@ -1577,6 +1634,7 @@ endSymbol(
     if (currFile->context == PREFIX) {
         if (ut_add_symbol_prefix(unitSystem, text, currFile->value) !=
                 UT_SUCCESS) {
+            ut_set_status(UT_PARSE);
             ut_handle_error_message(
                 "Couldn't map symbol-prefix \"%s\" to value %g",
                 text, currFile->value);
@@ -1608,10 +1666,12 @@ startValue(
     const char**	atts)
 {
     if (currFile->context != PREFIX) {
+        ut_set_status(UT_PARSE);
 	ut_handle_error_message("Wrong place for <value> element");
 	XML_StopParser(currFile->parser, 0);
     }
     else if (currFile->haveValue) {
+        ut_set_status(UT_PARSE);
 	ut_handle_error_message("<value> element already seen");
 	XML_StopParser(currFile->parser, 0);
     }
@@ -1635,12 +1695,14 @@ endValue(
     currFile->value = strtod(text, &endPtr);
 
     if (errno != 0) {
+        ut_set_status(UT_PARSE);
 	ut_handle_error_message(strerror(errno));
 	ut_handle_error_message("Couldn't decode numeric prefix value \"%s\"",
             text);
 	XML_StopParser(currFile->parser, 0);
     }
     else if (*endPtr != 0) {
+        ut_set_status(UT_PARSE);
 	ut_handle_error_message("Invalid numeric prefix value \"%s\"", text);
 	XML_StopParser(currFile->parser, 0);
     }
@@ -1659,6 +1721,7 @@ startAliases(
     const char**	atts)
 {
     if (currFile->context != UNIT) {
+        ut_set_status(UT_PARSE);
 	ut_handle_error_message("Wrong place for <aliases> element");
 	XML_StopParser(currFile->parser, 0);
     }
@@ -1687,6 +1750,7 @@ startImport(
     const char**	atts)
 {
     if (currFile->context != UNIT_SYSTEM) {
+        ut_set_status(UT_PARSE);
 	ut_handle_error_message("Wrong place for <import> element");
 	XML_StopParser(currFile->parser, 0);
     }
@@ -1838,6 +1902,7 @@ endElement(
 	    endImport(data);
 	}
 	else {
+            ut_set_status(UT_PARSE);
 	    ut_handle_error_message("Unknown element \"<%s>\"", name);
 	    XML_StopParser(currFile->parser, 0);
 	}
@@ -1867,6 +1932,7 @@ declareXml(
 	currFile->xmlEncoding = UT_UTF8;
     }
     else {
+        ut_set_status(UT_PARSE);
 	ut_handle_error_message("Unknown XML encoding \"%s\"", encoding);
 	XML_StopParser(currFile->parser, 0);
     }
@@ -1901,9 +1967,10 @@ readXmlWithParser(
     file.fd = open(path, O_RDONLY);
 
     if (file.fd == -1) {
+        status = UT_OPEN_ARG;
+        ut_set_status(status);
         ut_handle_error_message(strerror(errno));
         ut_handle_error_message("Couldn't open file \"%s\"", path);
-        status = UT_OPEN_ARG;
     }
     else {
         int	        nbytes;
@@ -1919,16 +1986,17 @@ readXmlWithParser(
             nbytes = read(file.fd, buf, sizeof(buf));
 
             if (nbytes < 0) {
-                ut_handle_error_message(strerror(errno));
                 status = UT_OS;
+                ut_set_status(status);
+                ut_handle_error_message(strerror(errno));
             }
             else {
                 if (XML_Parse(file.parser, buf, nbytes, nbytes == 0)
                         != XML_STATUS_OK) {
+                    status = UT_PARSE;
+                    ut_set_status(status);
                     ut_handle_error_message(
                         XML_ErrorString(XML_GetErrorCode(file.parser)));
-
-                    status = UT_PARSE;
                 }
             }
         } while (status == UT_SUCCESS && nbytes > 0);
@@ -1971,24 +2039,24 @@ readXml(
     XML_Parser      parser = XML_ParserCreate(NULL);
 
     if (parser == NULL) {
+        status = UT_OS;
+        ut_set_status(status);
         ut_handle_error_message(strerror(errno));
         ut_handle_error_message("Couldn't create XML parser");
-
-        status = UT_OS;
     }
     else {
         char        base[_POSIX_PATH_MAX];
 
         (void)strncpy(base, path, sizeof(base));
         base[sizeof(base)-1] = 0;
-        (void)strncpy(base, dirname(base), sizeof(base));
+        (void)memmove(base, dirname(base), sizeof(base));
         base[sizeof(base)-1] = 0;
 
         if (XML_SetBase(parser, base) != XML_STATUS_OK) {
+            status = UT_OS;
+            ut_set_status(status);
             ut_handle_error_message(strerror(errno));
             ut_handle_error_message("XML_SetBase(\"%s\") failure", base);
-
-            status = UT_OS;
         }
         else {
             XML_SetXmlDeclHandler(parser, declareXml);

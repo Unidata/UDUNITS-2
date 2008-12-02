@@ -1,7 +1,7 @@
 /*
  * lex(1) specification for tokens for the Unidata units package, UDUNITS2.
  *
- * $Id: scanner.l,v 1.8 2007/07/12 16:16:16 steve Exp $
+ * $Id: scanner.l,v 1.9 2008/12/02 17:32:10 steve Exp $
  */
 
 %option noyywrap
@@ -159,7 +159,7 @@ per                     [Pp][Ee][Rr]
     return status;
 }
 
-{broken_date}{space}* {
+{broken_date}(T|{space}*) {
     int		year;
     int		month;
     int		day = 1;
@@ -193,8 +193,8 @@ per                     [Pp][Ee][Rr]
     int		minute = 0;
     double	second	= 0.0;
 
-    (void) sscanf((char*)yytext, "%4d%2d%2dT%2d%2d%lf", &year, &month, &day,
-	&hour, &minute, &second);
+    (void) sscanf((char*)yytext, "%4d%2d%2dT%2d%2d%lf", &year, &month,
+        &day, &hour, &minute, &second);
 
     yylval.rval	= ut_encode_time(year, month, day, hour, minute, second);
 

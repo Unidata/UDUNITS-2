@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
-AC_INIT(UDUNITS, 2.0.0, support-udunits@unidata.ucar.edu)
+AC_INIT(UDUNITS, 2.0.2, support-udunits@unidata.ucar.edu)
 AC_CONFIG_AUX_DIR([.])
 AC_CONFIG_SRCDIR([lib/converter.c])
 AM_INIT_AUTOMAKE([foreign subdir-objects no-installinfo])

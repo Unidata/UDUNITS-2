@@ -25,7 +25,7 @@
  * This module is thread-compatible but not thread-safe: multi-thread access to
  * this module must be externally synchronized.
  *
- * $Id: unitcore.c,v 1.4 2007/07/10 22:29:22 steve Exp $
+ * $Id: unitcore.c,v 1.5 2008/12/02 17:32:10 steve Exp $
  */
 
 /*LINTLIBRARY*/
@@ -602,19 +602,19 @@ basicNew(
     product = productNew(system, &shortIndex, &power, 1);
 
     if (product == NULL) {
+	ut_set_status(UT_OS);
 	ut_handle_error_message(
 	    "basicNew(): Couldn't create new product-unit");
-	ut_set_status(UT_OS);
     }
     else {
 	basicUnit = malloc(sizeof(BasicUnit));
 
 	if (basicUnit == NULL) {
+	    ut_set_status(UT_OS);
 	    ut_handle_error_message(strerror(errno));
 	    ut_handle_error_message(
 		"basicNew(): Couldn't allocate %lu-byte basic-unit",
 		sizeof(BasicUnit));
-	    ut_set_status(UT_OS);
 	}
 	else if (commonInit(&basicUnit->common, &basicOps, system,
 		BASIC) == 0) {
@@ -854,11 +854,11 @@ productNew(
     productUnit = malloc(sizeof(ProductUnit));
 
     if (productUnit == NULL) {
+	ut_set_status(UT_OS);
 	ut_handle_error_message(strerror(errno));
 	ut_handle_error_message(
 	    "productNew(): Couldn't allocate %d-byte product-unit",
 	    sizeof(ProductUnit));
-	ut_set_status(UT_OS);
     }
     else {
 	int	error = 1;
@@ -876,10 +876,10 @@ productNew(
                 short*	newIndexes = malloc(nbytes*2);
 
                 if (count > 0 && newIndexes == NULL) {
+                    ut_set_status(UT_OS);
                     ut_handle_error_message(strerror(errno));
                     ut_handle_error_message("productNew(): "
                         "Couldn't allocate %d-element index array", count);
-                    ut_set_status(UT_OS);
                 }
                 else {
                     short*	newPowers = newIndexes + count;
@@ -1051,10 +1051,10 @@ productMultiply(
 	    indexes = realloc(indexes, sizeof(short)*sumCount);
 
 	    if (indexes == NULL) {
+		ut_set_status(UT_OS);
 		ut_handle_error_message(strerror(errno));
 		ut_handle_error_message("productMultiply(): "
 		    "Couldn't allocate %d-element index array", sumCount);
-		ut_set_status(UT_OS);
 	    }
 	    else {
 		static short*	powers = NULL;
@@ -1062,11 +1062,11 @@ productMultiply(
 		powers = realloc(powers, sizeof(short)*sumCount);
 
 		if (powers == NULL) {
+		    ut_set_status(UT_OS);
 		    ut_handle_error_message(strerror(errno));
 		    ut_handle_error_message("productMultiply(): "
 			"Couldn't allocate %d-element power array",
 			sumCount);
-		    ut_set_status(UT_OS);
 		}
 		else {
 		    int				count = 0;
@@ -1150,10 +1150,10 @@ productRaise(
         newPowers = malloc(sizeof(short)*count);
 
         if (newPowers == NULL) {
+            ut_set_status(UT_OS);
             ut_handle_error_message(strerror(errno));
             ut_handle_error_message("productRaise(): "
                 "Couldn't allocate %d-element powers-buffer", count);
-            ut_set_status(UT_OS);
         }
         else {
             const short* const	oldPowers = product->powers;
@@ -1347,19 +1347,19 @@ productAcceptVisitor(
     assert(visitor != NULL);
 
     if (basicUnits == NULL) {
+	ut_set_status(UT_OS);
 	ut_handle_error_message(strerror(errno));
 	ut_handle_error_message("productAcceptVisitor(): "
 	    "Couldn't allocate %d-element basic-unit array", count);
-	ut_set_status(UT_OS);
     }
     else {
 	int*	powers = malloc(sizeof(int)*count);
 
 	if (powers == NULL) {
+	    ut_set_status(UT_OS);
 	    ut_handle_error_message(strerror(errno));
 	    ut_handle_error_message("productAcceptVisitor(): "
 		"Couldn't allocate %d-element power array", count);
-	    ut_set_status(UT_OS);
 	}
 	else {
 	    const ProductUnit*	prodUnit = &unit->product;
@@ -1479,10 +1479,10 @@ galileanNew(
 	GalileanUnit*	galileanUnit = malloc(sizeof(GalileanUnit));
 
 	if (galileanUnit == NULL) {
+	    ut_set_status(UT_OS);
 	    ut_handle_error_message("galileanNew(): "
 		"Couldn't allocate %lu-byte Galilean unit",
 		sizeof(GalileanUnit));
-	    ut_set_status(UT_OS);
 	}
 	else {
 	    int	error = 1;
@@ -1710,10 +1710,10 @@ galileanInitConverterToProduct(
 	unit->galilean.scale, unit->galilean.offset * unit->galilean.scale);
 
     if (toUnderlying == NULL) {
+	ut_set_status(UT_OS);
 	ut_handle_error_message(strerror(errno));
 	ut_handle_error_message("galileanInitConverterToProduct(): "
 	    "Couldn't get converter to underlying unit");
-	ut_set_status(UT_OS);
     }
     else {
 	if (ENSURE_CONVERTER_TO_PRODUCT(unit->galilean.unit)) {
@@ -1723,10 +1723,10 @@ galileanInitConverterToProduct(
 		toUnderlying, unit->galilean.unit->common.toProduct);
 
 	    if (unit->common.toProduct == NULL) {
+		ut_set_status(UT_OS);
 		ut_handle_error_message(strerror(errno));
 		ut_handle_error_message("galileanInitConverterToProduct(): "
 		    "Couldn't combine converters");
-		ut_set_status(UT_OS);
 	    }
 	    else {
 		retCode = 0;
@@ -1765,10 +1765,10 @@ galileanInitConverterFromProduct(
 	1.0/unit->galilean.scale, -unit->galilean.offset);
 
     if (fromUnderlying == NULL) {
+	ut_set_status(UT_OS);
 	ut_handle_error_message(strerror(errno));
 	ut_handle_error_message("galileanInitConverterFromProduct(): "
 	    "Couldn't get converter from underlying unit");
-	ut_set_status(UT_OS);
     }
     else {
 	if (ENSURE_CONVERTER_FROM_PRODUCT(unit->galilean.unit)) {
@@ -1778,10 +1778,10 @@ galileanInitConverterFromProduct(
 		unit->galilean.unit->common.fromProduct, fromUnderlying);
 
 	    if (unit->common.fromProduct == NULL) {
+		ut_set_status(UT_OS);
 		ut_handle_error_message(strerror(errno));
 		ut_handle_error_message("galileanInitConverterFromProduct(): "
 		    "Couldn't combine converters");
-		ut_set_status(UT_OS);
 	    }
 	    else {
 		retCode = 0;
@@ -1860,19 +1860,19 @@ timestampNewOrigin(
     secondUnit = unit->common.system->second;
 
     if (secondUnit == NULL) {
+	ut_set_status(UT_NO_SECOND);
 	ut_handle_error_message("galileanInitConverterFromProduct(): "
 	    "No \"second\" unit defined");
-	ut_set_status(UT_NO_SECOND);
     }
     else if (ut_are_convertible(secondUnit, unit)) {
 	TimestampUnit*	timestampUnit = malloc(sizeof(TimestampUnit));
 
 	if (timestampUnit == NULL) {
+	    ut_set_status(UT_OS);
 	    ut_handle_error_message(strerror(errno));
 	    ut_handle_error_message("timestampNewOrigin(): "
 		"Couldn't allocate %lu-byte timestamp-unit",
 		sizeof(TimestampUnit));
-	    ut_set_status(UT_OS);
 	}
 	else {
 	    if (commonInit(&timestampUnit->common, &timestampOps,
@@ -2156,11 +2156,11 @@ logNew(
     logUnit = malloc(sizeof(LogUnit));
 
     if (logUnit == NULL) {
+	ut_set_status(UT_OS);
 	ut_handle_error_message(strerror(errno));
 	ut_handle_error_message(
 	    "logNew(): Couldn't allocate %lu-byte logarithmic-unit",
 	    sizeof(LogUnit));
-	ut_set_status(UT_OS);
     }
     else {
 	if (commonInit(&logUnit->common, &logOps, reference->common.system,
@@ -2277,8 +2277,8 @@ logMultiply(
     assert(unit2 != NULL);
 
     if (!ut_is_dimensionless(unit2)) {
-	ut_handle_error_message("logMultiply(): Second unit not dimensionless");
 	ut_set_status(UT_MEANINGLESS);
+	ut_handle_error_message("logMultiply(): Second unit not dimensionless");
     }
     else if (IS_BASIC(unit2) || IS_PRODUCT(unit2)) {
 	result = CLONE(unit1);
@@ -2287,8 +2287,8 @@ logMultiply(
 	result = galileanNew(unit2->galilean.scale, unit1, 0);
     }
     else {
-	ut_handle_error_message("logMultiply(): can't multiply second unit");
 	ut_set_status(UT_MEANINGLESS);
+	ut_handle_error_message("logMultiply(): can't multiply second unit");
     }
 
     return result;
@@ -2320,9 +2320,9 @@ logRaise(
     /*
      * We don't know how to raise a logarithmic unit to a non-zero power.
      */
+    ut_set_status(UT_MEANINGLESS);
     ut_handle_error_message(
 	"logRaise(): Can't raise logarithmic-unit to non-zero power");
-    ut_set_status(UT_MEANINGLESS);
 
     return NULL;
 }
@@ -2352,10 +2352,10 @@ logInitConverterToProduct(
     toUnderlying = cv_get_pow(unit->log.base);
 
     if (toUnderlying == NULL) {
+	ut_set_status(UT_OS);
 	ut_handle_error_message(strerror(errno));
 	ut_handle_error_message("logInitConverterToProduct(): "
 	    "Couldn't get converter to underlying unit");
-	ut_set_status(UT_OS);
     }
     else {
 	if (ENSURE_CONVERTER_TO_PRODUCT(unit->log.reference)) {
@@ -2365,10 +2365,10 @@ logInitConverterToProduct(
 		toUnderlying, unit->log.reference->common.toProduct);
 
 	    if (unit->common.toProduct == NULL) {
+		ut_set_status(UT_OS);
 		ut_handle_error_message(strerror(errno));
 		ut_handle_error_message("logInitConverterToProduct(): "
 		    "Couldn't combine converters");
-		ut_set_status(UT_OS);
 	    }
 	    else {
 		retCode = 0;
@@ -2406,10 +2406,10 @@ logInitConverterFromProduct(
     fromUnderlying = cv_get_log(unit->log.base);
 
     if (fromUnderlying == NULL) {
+	ut_set_status(UT_OS);
 	ut_handle_error_message(strerror(errno));
 	ut_handle_error_message("logInitConverterFromProduct(): "
 	    "Couldn't get converter from underlying unit");
-	ut_set_status(UT_OS);
     }
     else {
 	if (ENSURE_CONVERTER_FROM_PRODUCT(unit->log.reference)) {
@@ -2419,10 +2419,10 @@ logInitConverterFromProduct(
 		unit->log.reference->common.fromProduct, fromUnderlying);
 
 	    if (unit->common.fromProduct == NULL) {
+		ut_set_status(UT_OS);
 		ut_handle_error_message(strerror(errno));
 		ut_handle_error_message("logInitConverterFromProduct(): "
 		    "Couldn't combine converters");
-		ut_set_status(UT_OS);
 	    }
 	    else {
 		retCode = 0;
@@ -2486,11 +2486,11 @@ ut_new_system(void)
     ut_set_status(UT_SUCCESS);
 
     if (system == NULL) {
+	ut_set_status(UT_OS);
 	ut_handle_error_message(strerror(errno));
 	ut_handle_error_message(
 	    "ut_new_system(): Couldn't allocate %lu-byte unit-system",
 	    sizeof(ut_system));
-	ut_set_status(UT_OS);
     }
     else {
 	system->second = NULL;
@@ -2562,9 +2562,9 @@ ut_get_dimensionless_unit_one(
 
     if (system == NULL) {
 	one = NULL;
+	ut_set_status(UT_BAD_ARG);
 	ut_handle_error_message(
 	    "ut_get_dimensionless_unit_one(): NULL unit-system argument");
-	ut_set_status(UT_BAD_ARG);
     }
     else {
 	one = system->one;
@@ -2594,8 +2594,8 @@ ut_get_system(
 
     if (unit == NULL) {
 	system = NULL;
-	ut_handle_error_message("ut_get_system(): NULL unit argument");
 	ut_set_status(UT_BAD_ARG);
+	ut_handle_error_message("ut_get_system(): NULL unit argument");
     }
     else {
 	system = unit->common.system;
@@ -2627,8 +2627,8 @@ ut_same_system(
     int	sameSystem = 0;
 
     if (unit1 == NULL || unit2 == NULL) {
-	ut_handle_error_message("ut_same_system(): NULL argument");
 	ut_set_status(UT_BAD_ARG);
+	ut_handle_error_message("ut_same_system(): NULL argument");
     }
     else {
 	ut_set_status(UT_SUCCESS);
@@ -2660,8 +2660,8 @@ newBasicUnit(
     BasicUnit*	basicUnit = NULL;	/* failure */
 
     if (system == NULL) {
-	ut_handle_error_message("newBasicUnit(): NULL unit-system argument");
 	ut_set_status(UT_BAD_ARG);
+	ut_handle_error_message("newBasicUnit(): NULL unit-system argument");
     }
     else {
 	basicUnit = basicNew(system, isDimensionless, system->basicCount);
@@ -2671,21 +2671,21 @@ newBasicUnit(
 	    BasicUnit*	save = (BasicUnit*)basicClone((ut_unit*)basicUnit);
 
 	    if (save == NULL) {
+		ut_set_status(UT_OS);
 		ut_handle_error_message(strerror(errno));
 		ut_handle_error_message(
 		    "newBasicUnit(): Couldn't clone basic-unit");
-		ut_set_status(UT_OS);
 	    }
 	    else {
 		BasicUnit**	basicUnits = realloc(system->basicUnits,
 		    (system->basicCount+1)*sizeof(BasicUnit*));
 
 		if (basicUnits == NULL) {
+		    ut_set_status(UT_OS);
 		    ut_handle_error_message(strerror(errno));
 		    ut_handle_error_message("newBasicUnit(): "
 			"Couldn't allocate %d-element basic-unit array",
 			system->basicCount+1);
-		    ut_set_status(UT_OS);
 		}
 		else {
 		    basicUnits[system->basicCount++] = save;
@@ -2776,9 +2776,9 @@ ut_set_second(
     ut_set_status(UT_SUCCESS);
 
     if (second == NULL) {
+	ut_set_status(UT_BAD_ARG);
 	ut_handle_error_message(
             "ut_set_second(): NULL \"second\" unit argument");
-	ut_set_status(UT_BAD_ARG);
     }
     else {
 	ut_system*	system = second->common.system;
@@ -2788,10 +2788,10 @@ ut_set_second(
 	}
 	else {
 	    if (ut_compare(system->second, second) != 0) {
+		ut_set_status(UT_EXISTS);
 		ut_handle_error_message(
 		    "ut_set_second(): Different \"second\" unit already "
                     "defined");
-		ut_set_status(UT_EXISTS);
 	    }
 	}
     }
@@ -2875,13 +2875,13 @@ ut_scale(
     ut_set_status(UT_SUCCESS);
 
     if (unit == NULL) {
-	ut_handle_error_message("ut_scale(): NULL unit argument");
 	ut_set_status(UT_BAD_ARG);
+	ut_handle_error_message("ut_scale(): NULL unit argument");
     }
     else {
 	if (factor == 0) {
-	    ut_handle_error_message("ut_scale(): NULL factor argument");
 	    ut_set_status(UT_BAD_ARG);
+	    ut_handle_error_message("ut_scale(): NULL factor argument");
 	}
 	else {
 	    result = factor == 1
@@ -2922,8 +2922,8 @@ ut_offset(
     ut_set_status(UT_SUCCESS);
 
     if (unit == NULL) {
-	ut_handle_error_message("ut_offset(): NULL unit argument");
 	ut_set_status(UT_BAD_ARG);
+	ut_handle_error_message("ut_offset(): NULL unit argument");
     }
     else {
 	result = offset == 0
@@ -2967,8 +2967,8 @@ ut_offset_by_time(
     ut_set_status(UT_SUCCESS);
 
     if (unit == NULL) {
-	ut_handle_error_message("ut_offset_by_time(): NULL unit argument");
 	ut_set_status(UT_BAD_ARG);
+	ut_handle_error_message("ut_offset_by_time(): NULL unit argument");
     }
     else {
 	result = timestampNewOrigin(unit, origin);
@@ -3003,12 +3003,13 @@ ut_multiply(
     ut_set_status(UT_SUCCESS);
 
     if (unit1 == NULL || unit2 == NULL) {
-	ut_handle_error_message("ut_multiply(): NULL argument");
 	ut_set_status(UT_BAD_ARG);
+	ut_handle_error_message("ut_multiply(): NULL argument");
     }
     else if (unit1->common.system != unit2->common.system) {
-	ut_handle_error_message("ut_multiply(): Units in different unit-systems");
 	ut_set_status(UT_NOT_SAME_SYSTEM);
+	ut_handle_error_message(
+            "ut_multiply(): Units in different unit-systems");
     }
     else {
 	result = MULTIPLY(unit1, unit2);
@@ -3070,12 +3071,12 @@ ut_divide(
     ut_set_status(UT_SUCCESS);
 
     if (numer == NULL || denom == NULL) {
-	ut_handle_error_message("ut_divide(): NULL argument");
 	ut_set_status(UT_BAD_ARG);
+	ut_handle_error_message("ut_divide(): NULL argument");
     }
     else if (numer->common.system != denom->common.system) {
-	ut_handle_error_message("ut_divide(): Units in different unit-systems");
 	ut_set_status(UT_NOT_SAME_SYSTEM);
+	ut_handle_error_message("ut_divide(): Units in different unit-systems");
     }
     else {
 	ut_unit*	inverse = RAISE(denom, -1);
@@ -3115,12 +3116,12 @@ ut_raise(
     ut_set_status(UT_SUCCESS);
 
     if (unit == NULL) {
-	ut_handle_error_message("ut_raise(): NULL unit argument");
 	ut_set_status(UT_BAD_ARG);
+	ut_handle_error_message("ut_raise(): NULL unit argument");
     }
     else if (power < -255 || power > 255) {
-	ut_handle_error_message("ut_raise(): Invalid power argument");
 	ut_set_status(UT_BAD_ARG);
+	ut_handle_error_message("ut_raise(): Invalid power argument");
     }
     else {
 	result = 
@@ -3184,12 +3185,12 @@ ut_log(
     ut_set_status(UT_SUCCESS);
 
     if (base <= 1) {
-	ut_handle_error_message("ut_log(): Invalid logarithmic base, %g", base);
 	ut_set_status(UT_BAD_ARG);
+	ut_handle_error_message("ut_log(): Invalid logarithmic base, %g", base);
     }
     else if (reference == NULL) {
-	ut_handle_error_message("ut_log(): NULL reference argument");
 	ut_set_status(UT_BAD_ARG);
+	ut_handle_error_message("ut_log(): NULL reference argument");
     }
     else {
 	result = logNew(base, reference);
@@ -3226,13 +3227,13 @@ ut_are_convertible(
     int			areConvertible = 0;
 
     if (unit1 == NULL || unit2 == NULL) {
-	ut_handle_error_message("ut_are_convertible(): NULL unit argument");
 	ut_set_status(UT_BAD_ARG);
+	ut_handle_error_message("ut_are_convertible(): NULL unit argument");
     }
     else if (unit1->common.system != unit2->common.system) {
+	ut_set_status(UT_NOT_SAME_SYSTEM);
 	ut_handle_error_message(
 	    "ut_are_convertible(): Units in different unit-systems");
-	ut_set_status(UT_NOT_SAME_SYSTEM);
     }
     else {
 	ut_set_status(UT_SUCCESS);
@@ -3284,13 +3285,13 @@ ut_get_converter(
     cv_converter*	converter = NULL;	/* failure */
 
     if (from == NULL || to == NULL) {
-	ut_handle_error_message("ut_get_converter(): NULL unit argument");
 	ut_set_status(UT_BAD_ARG);
+	ut_handle_error_message("ut_get_converter(): NULL unit argument");
     }
     else if (from->common.system != to->common.system) {
+	ut_set_status(UT_NOT_SAME_SYSTEM);
 	ut_handle_error_message(
 	    "ut_get_converter(): Units in different unit-systems");
-	ut_set_status(UT_NOT_SAME_SYSTEM);
     }
     else {
 	ut_set_status(UT_SUCCESS);
@@ -3300,8 +3301,9 @@ ut_get_converter(
 		productRelationship(GET_PRODUCT(from), GET_PRODUCT(to));
 
 	    if (relationship == PRODUCT_UNCONVERTIBLE) {
-		ut_handle_error_message("ut_get_converter(): Units not convertible");
 		ut_set_status(UT_MEANINGLESS);
+		ut_handle_error_message(
+                    "ut_get_converter(): Units not convertible");
 	    }
 	    else if (ENSURE_CONVERTER_TO_PRODUCT(from) &&
 			ENSURE_CONVERTER_FROM_PRODUCT(to)) {
@@ -3332,62 +3334,63 @@ ut_get_converter(
 		}			/* reciprocal product-units */
 
 		if (converter == NULL) {
+		    ut_set_status(UT_OS);
 		    ut_handle_error_message(strerror(errno));
 		    ut_handle_error_message(
 			"ut_get_converter(): Couldn't get converter");
-		    ut_set_status(UT_OS);
 		}
 	    }				/* got necessary product converters */
 	}				/* neither unit is a timestamp */
 	else {
-	    cv_converter*	toSeconds = ut_get_converter(from->timestamp.unit,
-		from->common.system->second);
+	    cv_converter*	toSeconds =
+                ut_get_converter(from->timestamp.unit,
+                    from->common.system->second);
 
 	    if (toSeconds == NULL) {
+		ut_set_status(UT_OS);
 		ut_handle_error_message(strerror(errno));
 		ut_handle_error_message(
 		    "ut_get_converter(): Couldn't get converter to seconds");
-		ut_set_status(UT_OS);
 	    }
 	    else {
 		cv_converter*	shiftOrigin =
 		    cv_get_offset(from->timestamp.origin - to->timestamp.origin);
 
 		if (shiftOrigin == NULL) {
+		    ut_set_status(UT_OS);
 		    ut_handle_error_message(strerror(errno));
 		    ut_handle_error_message(
 			"ut_get_converter(): Couldn't get offset-converter");
-		    ut_set_status(UT_OS);
 		}
 		else {
 		    cv_converter*	toToUnit =
 			cv_combine(toSeconds, shiftOrigin);
 
 		    if (toToUnit == NULL) {
+			ut_set_status(UT_OS);
 			ut_handle_error_message(strerror(errno));
 			ut_handle_error_message(
 			    "ut_get_converter(): Couldn't combine converters");
-			ut_set_status(UT_OS);
 		    }
 		    else {
 			cv_converter*	fromSeconds = ut_get_converter(
 			    to->common.system->second, to->timestamp.unit); 
 
 			if (fromSeconds == NULL) {
+			    ut_set_status(UT_OS);
 			    ut_handle_error_message(strerror(errno));
 			    ut_handle_error_message(
 				"ut_get_converter(): Couldn't get converter from "
 				"seconds");
-			    ut_set_status(UT_OS);
 			}
 			else {
 			    converter = cv_combine(toToUnit, fromSeconds);
 
 			    if (converter == NULL) {
+				ut_set_status(UT_OS);
 				ut_handle_error_message(strerror(errno));
 				ut_handle_error_message("ut_get_converter(): "
 				    "Couldn't combine converters");
-				ut_set_status(UT_OS);
 			    }
 
 			    cv_free(fromSeconds);
@@ -3430,8 +3433,8 @@ ut_is_dimensionless(
     ut_set_status(UT_SUCCESS);
 
     if (unit == NULL) {
-	ut_handle_error_message("ut_is_dimensionless(): NULL unit argument");
 	ut_set_status(UT_BAD_ARG);
+	ut_handle_error_message("ut_is_dimensionless(): NULL unit argument");
     }
     else {
 	/*
@@ -3470,8 +3473,8 @@ ut_clone(
     ut_set_status(UT_SUCCESS);
 
     if (unit == NULL) {
-	ut_handle_error_message("ut_clone(): NULL unit argument");
 	ut_set_status(UT_BAD_ARG);
+	ut_handle_error_message("ut_clone(): NULL unit argument");
     }
     else {
 	clone =
@@ -3526,8 +3529,8 @@ ut_accept_visitor(
     ut_set_status(UT_SUCCESS);
 
     if (unit == NULL || visitor == NULL) {
-	ut_handle_error_message("ut_accept_visitor(): NULL argument");
 	ut_set_status(UT_BAD_ARG);
+	ut_handle_error_message("ut_accept_visitor(): NULL argument");
     }
     else {
 	ut_set_status(ACCEPT_VISITOR(unit, visitor, arg));

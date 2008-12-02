@@ -1,2 +1,15 @@
+2.0.2	2008-12-02
+	Changed order of calls to ut_set_status() and
+	ut_handle_error_message() so that the status value is always set
+	before the error-message handler is called.  This allows error
+	handlers to determine the cause of the message.
+
+2.0.1	2008-11-13
+	Added parsing of timestamps that have dashes and colons but also
+	use "T" (e.g., "seconds since 1970-01-01T00:00:00Z").
+
+	Corrected the regular expressions for matching the character-set
+	specifier in the udunits2(1) program.
+
 2.0.0	2007-07-18
 	Initial release.

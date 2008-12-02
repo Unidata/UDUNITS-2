@@ -86,8 +86,7 @@ results.tab:
 	done >$@
 
 success.texi:	results.tab
-	sleep 1
-	sort -t : -k 2 results.tab | \
+	sort -u -t : -k 2,2 -k 4,4 -k 5,5 results.tab | \
 	awk -F: ' \
 	    BEGIN { \
 		print "@multitable {@code{Linux 2.6.18-1.2257.fc5smp}} {@code{/opt/csw/gcc4/bin/gcc}} {@code{--disable-shared}}"; \
@@ -100,11 +99,9 @@ success.texi:	results.tab
 	    END { \
 		print "@end multitable"; \
 	    }' >success.texi
-	sleep 1
 
 failure.texi:	results.tab
-	sleep 1
-	sort -t : -k 2 results.tab | \
+	sort -u -t : -k 2,2 -k 4,4 -k 5,5 results.tab | \
 	awk -F: ' \
 	    BEGIN { \
 		print "@multitable {@code{Linux 2.6.18-1.2257.fc5smp}} {@code{/opt/SUNWspro/bin/c99}} {@code{--disable-shared}}"; \
@@ -117,10 +114,8 @@ failure.texi:	results.tab
 	    END { \
 		print "@end multitable"; \
 	    }' >failure.texi
-	sleep 1
 
 make.texi:	results.tab
-	sleep 1
 	awk -F: '$$6 == 1 {printf "%s:%s\n", $$2, $$3}' results.tab | \
 	sort -t : -u | \
 	awk -F: ' \
@@ -134,14 +129,14 @@ make.texi:	results.tab
 	    END { \
 		print "@end multitable"; \
 	    }' >$@
-	sleep 1
 
 remote-checks:	distcheck hostchecks results.tab
 
 web-update:	install-html
+	cd $(DESTDIR)$(htmldir) && \
 	rsync $(RSYNC_FLAGS) -aCu --delete --delete-excluded \
-	    $(DESTDIR)$(htmldir)/*.html \
-	    conan:/content/software/$(PACKAGE)-new/$(PACKAGE_TARNAME)-$(PACKAGE_VERSION)
+	    *.html \
+	    conan:/content/software/$(PACKAGE)/$(PACKAGE_TARNAME)-$(PACKAGE_VERSION)
 
 .PHONY:	hostchecks hostcheck remote-checks web-update
 

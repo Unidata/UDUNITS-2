@@ -1,7 +1,7 @@
 /*
  * Identifier-to-unit map.
  *
- * $Id: idToUnitMap.c,v 1.10 2007/07/16 16:55:59 steve Exp $
+ * $Id: idToUnitMap.c,v 1.11 2008/12/02 17:32:10 steve Exp $
  */
 
 /*LINTLIBRARY*/
@@ -128,9 +128,10 @@ itumAdd(
 		status = UT_SUCCESS;
 	    }
 	    else {
+		status = UT_EXISTS;
+                ut_set_status(status);
 		ut_handle_error_message(
 		    "\"%s\" already maps to existing but different unit", id);
-		status = UT_EXISTS;
 	    }
 
             if (targetEntry != *treeEntry)
@@ -436,12 +437,12 @@ getUnitById(
     ut_unit*	unit = NULL;		/* failure */
 
     if (system == NULL) {
-	ut_handle_error_message("getUnitById(): NULL unit-system argument");
 	ut_set_status(UT_BAD_ARG);
+	ut_handle_error_message("getUnitById(): NULL unit-system argument");
     }
     else if (id == NULL) {
-	ut_handle_error_message("getUnitById(): NULL identifier argument");
 	ut_set_status(UT_BAD_ARG);
+	ut_handle_error_message("getUnitById(): NULL identifier argument");
     }
     else if (systemMap != NULL) {
 	IdToUnitMap** const	idToUnit =

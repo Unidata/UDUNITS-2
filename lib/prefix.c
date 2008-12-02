@@ -1,7 +1,7 @@
 /*
  * Module for handling unit prefixes -- both names and symbols.
  *
- * $Id: prefix.c,v 1.7 2007/07/10 22:29:22 steve Exp $
+ * $Id: prefix.c,v 1.8 2008/12/02 17:32:10 steve Exp $
  */
 
 /*LINTLIBRARY*/
@@ -48,11 +48,11 @@ pseNew(
     PrefixSearchEntry*	entry = malloc(sizeof(PrefixSearchEntry));
 
     if (entry == NULL) {
+	ut_set_status(UT_OS);
 	ut_handle_error_message(strerror(errno));
 	ut_handle_error_message(
             "Couldn't allocate %lu-byte prefix-search-entry",
 	    sizeof(PrefixSearchEntry));
-	ut_set_status(UT_OS);
     }
     else {
 	entry->character = character;

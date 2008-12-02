@@ -153,12 +153,12 @@ format(
     int	nchar = -1;	/* failure */
 
     if (unit == NULL) {
-	ut_handle_error_message("format(): NULL unit argument");
 	ut_set_status(UT_BAD_ARG);
+	ut_handle_error_message("format(): NULL unit argument");
     }
     else if (buf == NULL) {
-	ut_handle_error_message("format(): NULL buffer argument");
 	ut_set_status(UT_BAD_ARG);
+	ut_handle_error_message("format(): NULL buffer argument");
     }
     else {
 	FormatPar	formatPar;
@@ -1208,19 +1208,19 @@ ut_format(
         (ut_encoding)(opts & (unsigned)(UT_ASCII | UT_LATIN1 | UT_UTF8));
 
     if (unit == NULL || buf == NULL) {
-	ut_handle_error_message("NULL argument");
 	ut_set_status(UT_BAD_ARG);
+	ut_handle_error_message("NULL argument");
     }
     else if ((encoding & UT_LATIN1) && (encoding & UT_UTF8)) {
-	ut_handle_error_message("Both UT_LATIN1 and UT_UTF8 specified");
 	ut_set_status(UT_BAD_ARG);
+	ut_handle_error_message("Both UT_LATIN1 and UT_UTF8 specified");
     }
     else {
 	nchar = format(unit, buf, size, useNames, getDefinition, encoding, 0);
 
 	if (nchar < 0) {
-	    ut_handle_error_message("Couldn't format unit");
 	    ut_set_status(UT_CANT_FORMAT);
+	    ut_handle_error_message("Couldn't format unit");
 	}
 	else {
 	    ut_set_status(UT_SUCCESS);
