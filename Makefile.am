@@ -132,6 +132,9 @@ make.texi:	results.tab
 
 remote-checks:	distcheck hostchecks results.tab
 
+ftp:	$(PACKAGE_TARNAME)-$(PACKAGE_VERSION).tar.gz
+	scp $(PACKAGE_TARNAME)-$(PACKAGE_VERSION).tar.gz conan:/web/ftp/pub/$(PACKAGE_TARNAME)/
+
 web-update:	install-html
 	cd $(DESTDIR)$(htmldir) && \
 	rsync $(RSYNC_FLAGS) -aCu --delete --delete-excluded \
