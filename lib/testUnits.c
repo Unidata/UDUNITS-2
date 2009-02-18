@@ -760,6 +760,35 @@ test_utRaise(void)
 
 
 static void
+test_utRoot(void)
+{
+    ut_unit*	perCubicMeter;
+    ut_unit*	celsiusCubed;
+    ut_unit*	kilometersSquaredPerMinuteSquared;
+    ut_unit*	unit;
+    char	buf[80];
+    int		nchar;
+
+    CU_ASSERT_PTR_NULL(ut_root(watt, -1));
+    CU_ASSERT_PTR_NULL(ut_root(watt, 0));
+    CU_ASSERT_EQUAL(ut_compare(watt, ut_root(watt, 1)), 0);
+
+    unit = ut_get_dimensionless_unit_one(unitSystem);
+    CU_ASSERT_EQUAL(ut_compare(unit, ut_root(unit, 1)), 0);
+    CU_ASSERT_EQUAL(ut_compare(watt, ut_root(watt, 1)), 0);
+
+    CU_ASSERT_EQUAL(ut_compare(watt, ut_root(ut_raise(watt, 2), 2)), 0);
+
+    CU_ASSERT_EQUAL(ut_compare(kelvin, ut_root(ut_raise(celsius, 2), 2)), 0);
+
+    CU_ASSERT_EQUAL(ut_compare(second, ut_root(ut_raise(secondsSinceTheEpoch,
+        2), 2)), 0);
+
+    CU_ASSERT_PTR_NULL(ut_root(BZ, 2));
+}
+
+
+static void
 test_utLog(void)
 {
     ut_unit*	bel_1_mW = ut_log(10, ut_scale(0.001, watt));
@@ -1605,6 +1634,18 @@ test_parsing(void)
     CU_ASSERT_EQUAL(ut_compare(unit, secondsSinceTheEpoch), 0);
     ut_free(unit);
 
+    spec = "s @ 1970-01-01T00:00:00Z";
+    unit = ut_parse(unitSystem, spec, UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    CU_ASSERT_EQUAL(ut_compare(unit, secondsSinceTheEpoch), 0);
+    ut_free(unit);
+
+    spec = "s@1970-01-01T00:00:00Z";
+    unit = ut_parse(unitSystem, spec, UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    CU_ASSERT_EQUAL(ut_compare(unit, secondsSinceTheEpoch), 0);
+    ut_free(unit);
+
     spec = "kg·m²/s³";
     unit = ut_parse(unitSystem, spec, UT_LATIN1);
     CU_ASSERT_PTR_NOT_NULL(unit);
@@ -1931,6 +1972,7 @@ main(
 	    CU_ADD_TEST(testSuite, test_utInvert);
 	    CU_ADD_TEST(testSuite, test_utDivide);
 	    CU_ADD_TEST(testSuite, test_utRaise);
+	    CU_ADD_TEST(testSuite, test_utRoot);
 	    CU_ADD_TEST(testSuite, test_utLog);
 	    CU_ADD_TEST(testSuite, test_utMapUnitToName);
 	    CU_ADD_TEST(testSuite, test_utGetName);

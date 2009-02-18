@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
-AC_INIT(UDUNITS, 2.0.2, support-udunits@unidata.ucar.edu)
+AC_INIT(UDUNITS, 2.0.3, support-udunits@unidata.ucar.edu)
 AC_CONFIG_AUX_DIR([.])
 AC_CONFIG_SRCDIR([lib/converter.c])
 AM_INIT_AUTOMAKE([foreign subdir-objects no-installinfo])
@@ -10,8 +10,9 @@ AC_CONFIG_HEADERS([config.h expat/expat_config.h])
 
 CFLAGS_COVERAGE=''
 LIBS_COVERAGE=''
+
 AC_ARG_ENABLE([coverage],
-[  --enable-coverage       Turn on code-coverage support],
+[AS_HELP_STRING([--enable-coverage],[Turn on code-coverage support])],
 [case "${enableval}" in
   yes) CFLAGS_COVERAGE='--coverage'
        LIBS_COVERAGE=-lgcov
@@ -23,7 +24,7 @@ AC_SUBST(CFLAGS_COVERAGE)
 AC_SUBST(LIBS_COVERAGE)
 
 AC_ARG_ENABLE([debug],
-[  --enable-debug          Turn on debugging support],
+[AS_HELP_STRING([--enable-debug],[Turn on debugging support])],
 [case "${enableval}" in
   yes)
     CFLAGS="${CFLAGS:+$CFLAGS }-g"

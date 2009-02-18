@@ -1,3 +1,7 @@
+2.0.3	2009-02-18
+        Added the function ut_root(const ut_unit* unit, int root) to
+        return a root of a unit (e.g., "m2/s2" -> "m/s").
+
 2.0.2	2008-12-02
 	Changed order of calls to ut_set_status() and
 	ut_handle_error_message() so that the status value is always set

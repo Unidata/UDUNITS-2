@@ -25,7 +25,7 @@
  * This module is thread-compatible but not thread-safe: multi-thread access to
  * this module must be externally synchronized.
  *
- * $Id: unitcore.c,v 1.5 2008/12/02 17:32:10 steve Exp $
+ * $Id: unitcore.c,v 1.6 2009/02/18 17:09:32 steve Exp $
  */
 
 /*LINTLIBRARY*/
@@ -80,6 +80,7 @@ typedef struct {
     int			(*compare)(const ut_unit*, const ut_unit*);
     ut_unit*		(*multiply)(ut_unit*, ut_unit*);
     ut_unit*		(*raise)(ut_unit*, const int power);
+    ut_unit*		(*root)(ut_unit*, const int root);
     int			(*initConverterToProduct)(ut_unit*);
     int			(*initConverterFromProduct)(ut_unit*);
     ut_status		(*acceptVisitor)(const ut_unit*, const ut_visitor*,
@@ -108,6 +109,8 @@ typedef enum {
 			((unit1)->common.ops->multiply(unit1, unit2))
 #define RAISE(unit, power) \
 			((unit)->common.ops->raise(unit, power))
+#define ROOT(unit, root) \
+			((unit)->common.ops->root(unit, root))
 #define FREE(unit)	((unit)->common.ops->free(unit))
 #define COMPARE(unit1, unit2) \
 			((unit1)->common.ops->compare(unit1, unit2))
@@ -193,6 +196,9 @@ static ut_unit*		productMultiply(
 static ut_unit*		productRaise(
     ut_unit* const		unit,
     const int			power);
+static ut_unit*		productRoot(
+    ut_unit* const		unit,
+    const int			root);
 
 static long		juldayOrigin = 0;
 
@@ -747,6 +753,31 @@ basicRaise(
 
 
 /*
+ * Returns the result of taking a root of a basic-unit.
+ *
+ * Arguments:
+ *	unit	The basic-unit.
+ *	root	The root to take.
+ * Returns:
+ *	NULL	Failure.  "ut_get_status()" will be:
+ *		    UT_MEANINGLESS	The operation on the given unit is
+ *					meaningless.
+ *	else	The resulting unit.
+ */
+static ut_unit*
+basicRoot(
+    ut_unit* const	unit,
+    const int		root)
+{
+    assert(unit != NULL);
+    assert(IS_BASIC(unit));
+    assert(root > 1);
+
+    return productRoot((ut_unit*)unit->basic.product, root);
+}
+
+
+/*
  * Initializes the converter of numeric from the given product-unit to the
  * underlying product-unit (i.e., to itself).
  *
@@ -813,6 +844,7 @@ static UnitOps	basicOps = {
     basicCompare,
     basicMultiply,
     basicRaise,
+    basicRoot,
     basicInitConverterToProduct,
     basicInitConverterFromProduct,
     basicAcceptVisitor
@@ -1174,6 +1206,88 @@ productRaise(
 
 
 /*
+ * Returns the result of taking a root of a unit.
+ *
+ * Arguments:
+ *	unit	The product unit.
+ *	root	The root.  Must be greater than 1 and less than 256.
+ * Returns:
+ *	NULL	Failure.  "ut_get_status()" will be:
+ *		    UT_MEANINGLESS	The operation on the given unit is
+ *					meaningless.
+ *	else	The resulting unit.
+ */
+static ut_unit*
+productRoot(
+    ut_unit* const	unit,
+    const int		root)
+{
+    ut_unit*		result = NULL;	/* failure */
+    const ProductUnit*	product;
+    int			count;
+    short*		newPowers;
+
+    assert(unit != NULL);
+    assert(IS_PRODUCT(unit));
+    assert(root > 1 && root <= 255);
+
+    product = &unit->product;
+    count = product->count;
+
+    if (count == 0) {
+        result = unit->common.system->one;
+    }
+    else {
+        newPowers = malloc(sizeof(short)*count);
+
+        if (newPowers == NULL) {
+            ut_set_status(UT_OS);
+            ut_handle_error_message(strerror(errno));
+            ut_handle_error_message("productRoot(): "
+                "Couldn't allocate %d-element powers-buffer", count);
+        }
+        else {
+            const short* const	oldPowers = product->powers;
+            int			i;
+
+            for (i = 0; i < count; i++) {
+                if ((oldPowers[i] % root) != 0) {
+                    break;
+                }
+                newPowers[i] = (short)(oldPowers[i] / root);
+            }
+
+            if (i < count) {
+                char buf[80];
+
+                if (ut_format(unit, buf, sizeof(buf), UT_ASCII) == -1) {
+                    ut_set_status(UT_MEANINGLESS);
+                    ut_handle_error_message("productRoot(): "
+                        "Can't take root of unit");
+                }
+                else {
+                    ut_set_status(UT_MEANINGLESS);
+                    buf[sizeof(buf)-1] = 0;
+                    ut_handle_error_message("productRoot(): "
+                        "It's meaningless to take the %d%s root of \"%s\"",
+                        root, root == 2 ? "nd" : root == 3 ? "rd" : "th",
+                        buf);
+                }
+            }
+            else {
+                result = (ut_unit*)productNew(unit->common.system,
+                    product->indexes, newPowers, count);
+            }
+
+            free(newPowers);
+        }				/* "newPowers" allocated */
+    }				        /* "count > 0" */
+
+    return result;
+}
+
+
+/*
  * Initializes a converter of numeric values between the given product-unit and
  * the underlying product-unit (i.e., to itself).
  *
@@ -1391,6 +1505,7 @@ static UnitOps	productOps = {
     productCompare,
     productMultiply,
     productRaise,
+    productRoot,
     productInitConverterToProduct,
     productInitConverterFromProduct,
     productAcceptVisitor
@@ -1686,6 +1801,45 @@ galileanRaise(
 
 
 /*
+ * Returns the result of taking a root of a Galilean-unit.  Any offset is
+ * ignored.
+ *
+ * Arguments:
+ *	unit	The Galilean-unit.
+ *	root	The root.  Must be greater than 1 and less than 256.
+ * Returns:
+ *	NULL	Failure.  "ut_get_status()" will be:
+ *		    UT_MEANINGLESS	The operation on the given units is
+ *					meaningless.
+ *	else	The resulting unit.
+ */
+static ut_unit*
+galileanRoot(
+    ut_unit* const	unit,
+    const int		root)
+{
+    GalileanUnit*	galilean;
+    ut_unit*             tmp;
+    ut_unit*             result = NULL;  /* failure */
+
+    assert(unit != NULL);
+    assert(IS_GALILEAN(unit));
+    assert(root > 1 && root <= 255);
+
+    galilean = &unit->galilean;
+    tmp = ROOT(galilean->unit, root);
+
+    if (tmp != NULL) {
+        result = galileanNew(pow(galilean->scale, 1.0/root), tmp, 0);
+
+        ut_free(tmp);
+    }
+
+    return result;
+}
+
+
+/*
  * Initializes the converter of numeric values from the given Galilean unit to
  * the underlying product-unit.
  *
@@ -1817,6 +1971,7 @@ static UnitOps	galileanOps = {
     galileanCompare,
     galileanMultiply,
     galileanRaise,
+    galileanRoot,
     galileanInitConverterToProduct,
     galileanInitConverterFromProduct,
     galileanAcceptVisitor
@@ -2052,6 +2207,32 @@ timestampRaise(
 
 
 /*
+ * Returns the result of taking a root of a Timestamp-unit.  The origin is
+ * ignored.
+ *
+ * Arguments:
+ *	unit	The Timestamp-unit.
+ *	root	The root.  Must be greater than 1 and less than 256.
+ * Returns:
+ *	NULL	Failure.  "ut_get_status()" will be:
+ *		    UT_MEANINGLESS	The operation on the given units is
+ *					meaningless.
+ *	else	The resulting unit.
+ */
+static ut_unit*
+timestampRoot(
+    ut_unit* const	unit,
+    const int		root)
+{
+    assert(unit != NULL);
+    assert(IS_TIMESTAMP(unit));
+    assert(root > 1 && root < 256);
+
+    return ROOT(unit->timestamp.unit, root);
+}
+
+
+/*
  * Initializes the converter of numeric values from the given Timestamp unit to
  * the underlying product-unit.
  *
@@ -2117,6 +2298,7 @@ static UnitOps	timestampOps = {
     timestampCompare,
     timestampMultiply,
     timestampRaise,
+    timestampRoot,
     timestampInitConverterToProduct,
     timestampInitConverterFromProduct,
     timestampAcceptVisitor
@@ -2329,6 +2511,38 @@ logRaise(
 
 
 /*
+ * Returns the result of taking a root of a logarithmic-unit.
+ *
+ * Arguments:
+ *	unit	The logarithmic-unit.
+ *	root	The root.  Must be greater than 1 and less than 256.
+ * Returns:
+ *	NULL	Failure.  "ut_get_status()" will be:
+ *		    UT_MEANINGLESS	The operation on the given units is
+ *					meaningless.
+ *	else	The resulting unit.
+ */
+static ut_unit*
+logRoot(
+    ut_unit* const	unit,
+    const int		root)
+{
+    assert(unit != NULL);
+    assert(IS_LOG(unit));
+    assert(root > 1 && root < 256);
+
+    /*
+     * We don't know how to take a root of a logarithmic unit.
+     */
+    ut_set_status(UT_MEANINGLESS);
+    ut_handle_error_message(
+	"logRoot(): Can't take a non-unity root of a logarithmic-unit");
+
+    return NULL;
+}
+
+
+/*
  * Initializes the converter of numeric values from the given logarithmic unit
  * to the underlying product-unit.
  *
@@ -2458,6 +2672,7 @@ static UnitOps	logOps = {
     logCompare,
     logMultiply,
     logRaise,
+    logRoot,
     logInitConverterToProduct,
     logInitConverterFromProduct,
     logAcceptVisitor
@@ -3130,6 +3345,51 @@ ut_raise(
 		: power == 1
 		    ? CLONE(unit)
 		    : RAISE(unit, power);
+    }
+
+    return result;
+}
+
+
+/*
+ * Returns the result of taking the root of a unit.
+ *
+ * Arguments:
+ *	unit	Pointer to the unit.
+ *	root	The root to take of "unit".  Must be greater than or 
+ *		equal to 1 and less than or equal to 255.
+ * Returns:
+ *	NULL	Failure.  "ut_get_status()" will be:
+ *		    UT_BAD_ARG		"unit" is NULL, or "root" is invalid.
+ *		                        In particular, all powers of base units
+ *		                        in "unit" must be integral multiples of
+ *		                        "root".
+ *		    UT_OS		Operating-system error. See "errno".
+ *	else	Pointer to the resulting unit.  The pointer should be passed to
+ *		ut_free() when the unit is no longer needed by the client.
+ */
+ut_unit*
+ut_root(
+    ut_unit* const	unit,
+    const int		root)
+{
+    ut_unit*		result = NULL;	/* failure */
+
+    ut_set_status(UT_SUCCESS);
+
+    if (unit == NULL) {
+	ut_set_status(UT_BAD_ARG);
+	ut_handle_error_message("ut_root(): NULL unit argument");
+    }
+    else if (root < 1 || root > 255) {
+	ut_set_status(UT_BAD_ARG);
+	ut_handle_error_message("ut_root(): Invalid root argument");
+    }
+    else {
+	result = 
+	    root == 1
+		? CLONE(unit)
+                : ROOT(unit, root);
     }
 
     return result;

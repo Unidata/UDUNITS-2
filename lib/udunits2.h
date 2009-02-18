@@ -915,6 +915,29 @@ ut_raise(
 
 
 /*
+ * Returns the result of taking the root of a unit.
+ *
+ * Arguments:
+ *	unit	Pointer to the unit.
+ *	root	The root to take of "unit".  Must be greater than or 
+ *		equal to 1 and less than or equal to 255.
+ * Returns:
+ *	NULL	Failure.  "ut_get_status()" will be:
+ *		    UT_BAD_ARG		"unit" is NULL, or "root" is invalid.
+ *		                        In particular, all powers of base units
+ *		                        in "unit" must be integral multiples of
+ *		                        "root".
+ *		    UT_OS		Operating-system error. See "errno".
+ *	else	Pointer to the resulting unit.  The pointer should be passed to
+ *		ut_free() when the unit is no longer needed by the client.
+ */
+ut_unit*
+ut_root(
+    ut_unit* const	unit,
+    const int		root);
+
+
+/*
  * Returns the logarithmic unit corresponding to a logarithmic base and a
  * reference level.  For example, the following creates a decibel unit with a
  * one milliwatt reference level:

@@ -51,7 +51,7 @@ units.
 The library comes with an extensive database of units all referenced to the
 SI system of units.
 
-CVS keywords: $Date: 2007/07/23 19:09:36 $, Revision: 1.3 $
+CVS keywords: $Date: 2009/02/18 17:09:32 $, Revision: 1.3 $
 
 @insertcopying
 @end ifnottex
@@ -119,6 +119,7 @@ Coding:
 @item ut_unit* @tab ut_invert(ut_unit* @var{unit});
 @item ut_unit* @tab ut_divide(ut_unit* @var{numer}, ut_unit* @var{denom});
 @item ut_unit* @tab ut_raise(ut_unit* @var{unit}, int @var{power});
+@item ut_unit* @tab ut_root(ut_unit* @var{unit}, int @var{root});
 @item ut_unit* @tab ut_log(double @var{base}, ut_unit* @var{reference});
 @item ut_unit* @tab ut_parse(ut_system* @var{system}, const char* @var{string}, ut_encoding @var{encoding});
 @item char*   @tab ut_trim(char* @var{string}, ut_encoding @var{encoding});
@@ -1098,6 +1099,30 @@ Operating-system error. See @code{errno} for the reason.
 @end table
 @end deftypefun
 
+@anchor{ut_root()}
+@deftypefun @code{ut_unit*} ut_root @code{(ut_unit* @var{unit}, int @var{root})}
+Returns the unit equal to the @var{root} root of unit @var{unit}.
+You should pass the returned pointer to @code{ut_free()} when you
+no longer need the unit.
+If an error occurs,
+then this function writes an error-message using
+@code{@ref{ut_handle_error_message()}}
+and returns @code{NULL}.
+Also, @code{@ref{ut_get_status()}} will return one of the following:
+
+@table @code
+@item UT_BAD_ARG
+@var{unit} is @code{NULL}.
+@item UT_MEANINGLESS
+It's meaningless to take the given root of the given unit.
+This could be because the
+resulting unit would have fractional (i.e., non-integral) dimensionality,
+or because the unit is, for example, a logarithmic unit.
+@item UT_OS
+Operating-system error. See @code{errno} for the reason.
+@end table
+@end deftypefun
+
 @anchor{ut_log()}
 @deftypefun @code{ut_unit*} ut_log @code{(double @var{base}, ut_unit* @var{reference})}
 Returns the logarithmic unit corresponding to the logarithmic base
@@ -1530,7 +1555,7 @@ You probably won't use this function.
 @deftypefun @code{void} ut_decode_time @code{(double @var{time}, int* @var{year}, int* @var{month}, int* @var{day}, int* @var{hour}, int* @var{minute}, double* @var{second}, double* @var{resolution})}
 Decodes a time from a double-precision value into its individual components.
 The variable referenced by @var{resolution} will be set to the resolution
-(i.e., uncerainty) of the time in seconds.
+(i.e., uncertainty) of the time in seconds.
 @end deftypefun
 
 @node Errors, Database, Time, Top
