@@ -1,0 +1,13 @@
+.deps
+expat_config.h
+*.gcno
+*.i
+libexpat.la
+.libs
+*.lo
+*.log
+*.loT
+Makefile
+*.o
+stamp-h2
+.vimrc

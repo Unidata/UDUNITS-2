@@ -1,0 +1,6 @@
+uname -sr:/usr/bin/bash --login -c
+/usr/ccs/bin/make:/opt/SUNWspro/bin/c89
+/usr/ccs/bin/make:/opt/SUNWspro/bin/c99
+/usr/xpg4/bin/make:/opt/SUNWspro/bin/cc
+/opt/gnu/bin/gmake:/opt/csw/gcc3/bin/gcc
+/opt/gnu/bin/gmake:/opt/csw/gcc4/bin/gcc

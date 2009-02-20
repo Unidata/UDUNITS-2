@@ -1,0 +1,17 @@
+*.aux
+*.cp
+*.cps
+.deps/
+.exrc
+*.fn
+*.ky
+*.log
+Makefile
+*.o
+*.pg
+tags
+*.toc
+*.tp
+udunits2
+.vimrc
+*.vr

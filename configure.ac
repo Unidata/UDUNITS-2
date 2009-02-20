@@ -118,7 +118,8 @@ AC_PROG_LIBTOOL
 AC_CONFIG_FILES([Makefile
 		 expat/Makefile
                  lib/Makefile
-                 lib/xmlFailure/Makefile
-                 lib/xmlSuccess/Makefile
-		 prog/Makefile])
+                 lib/xmlFailures/Makefile
+                 lib/xmlSuccesses/Makefile
+		 prog/Makefile
+		 test/Makefile])
 AC_OUTPUT

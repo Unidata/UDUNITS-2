@@ -1,0 +1,4 @@
+uname -sr:/bin/bash --login -c
+/usr/bin/make:/usr/bin/c89
+/usr/bin/make:/usr/bin/cc
+/usr/bin/gnumake:/usr/bin/gcc

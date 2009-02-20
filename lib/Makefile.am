@@ -1,5 +1,5 @@
 ## Process this file with automake to produce Makefile.in
-SUBDIRS	= xmlFailure xmlSuccess
+SUBDIRS	= xmlFailures xmlSuccesses
 lib_LTLIBRARIES = libudunits2.la
 libudunits2_la_SOURCES = unitcore.c converter.c formatter.c \
     idToUnitMap.c idToUnitMap.h \

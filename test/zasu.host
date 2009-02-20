@@ -1,0 +1,5 @@
+uname -srv:/opt/gnu/bin/bash -login -c
+/bin/make:/usr/vac/bin/cc
+/usr/ccs/bin/make:/usr/vac/bin/c89
+/usr/ccs/bin/make:/usr/vac/bin/xlc
+/opt/gnu/bin/make:/opt/gnu/bin/gcc
