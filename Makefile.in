@@ -220,6 +220,9 @@ EXTRA_DIST = \
 AM_MAKEINFOHTMLFLAGS = --no-split
 # DISTCHECK_CONFIGURE_FLAGS = 
 RSYNC_FLAGS = --rsh=ssh --rsync-path=/opt/bin/rsync
+distName = $(PACKAGE)-$(VERSION)
+distArchive = $(distName).tar.gz
+DISTCLEANFILES = *.log $(distArchive)
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 
@@ -747,6 +750,7 @@ clean-generic:
 
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
+	-test -z "$(DISTCLEANFILES)" || rm -f $(DISTCLEANFILES)
 
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
@@ -958,14 +962,14 @@ make.texi:
 remote-checks:	distcheck
 	cd test && $(MAKE) $(AM_MAKEFLAGS) $@
 
-ftp:	$(PACKAGE)-$(VERSION).tar.gz
-	scp $(PACKAGE)-$(VERSION).tar.gz conan:/web/ftp/pub/$(PACKAGE)/
+ftp:	$(distArchive)
+	scp $(distArchive) conan:/web/ftp/pub/$(PACKAGE)/
 
 web-update:	install-html
 	cd $(DESTDIR)$(htmldir) && \
 	rsync $(RSYNC_FLAGS) -aCu --delete --delete-excluded \
 	    *.html \
-	    conan:/content/software/$(PACKAGE)/$(PACKAGE)-$(VERSION)
+	    conan:/content/software/$(PACKAGE)/$(distName)
 
 .PHONY:	hostchecks hostcheck remote-checks web-update
 

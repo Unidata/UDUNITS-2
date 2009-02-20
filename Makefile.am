@@ -10,6 +10,9 @@ EXTRA_DIST = \
 AM_MAKEINFOHTMLFLAGS = --no-split
 # DISTCHECK_CONFIGURE_FLAGS = 
 RSYNC_FLAGS	= --rsh=ssh --rsync-path=/opt/bin/rsync
+distName = $(PACKAGE)-$(VERSION)
+distArchive = $(distName).tar.gz
+DISTCLEANFILES	= *.log $(distArchive)
 
 success.texi:	
 	sort -u -t : -k 2,2 -k 4,4 -k 5,5 test/results.tab | \
@@ -59,14 +62,14 @@ make.texi:
 remote-checks:	distcheck
 	cd test && $(MAKE) $(AM_MAKEFLAGS) $@
 
-ftp:	$(PACKAGE)-$(VERSION).tar.gz
-	scp $(PACKAGE)-$(VERSION).tar.gz conan:/web/ftp/pub/$(PACKAGE)/
+ftp:	$(distArchive)
+	scp $(distArchive) conan:/web/ftp/pub/$(PACKAGE)/
 
 web-update:	install-html
 	cd $(DESTDIR)$(htmldir) && \
 	rsync $(RSYNC_FLAGS) -aCu --delete --delete-excluded \
 	    *.html \
-	    conan:/content/software/$(PACKAGE)/$(PACKAGE)-$(VERSION)
+	    conan:/content/software/$(PACKAGE)/$(distName)
 
 .PHONY:	hostchecks hostcheck remote-checks web-update
 
