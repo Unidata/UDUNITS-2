@@ -20,7 +20,7 @@ distName = $(PACKAGE)-$(VERSION)
 distArchive = $(distName).tar.gz
 DISTCLEANFILES	= *.log $(distArchive)
 
-success.texi:	
+success.texi:	test/results.tab
 	sort -u -t : -k 2,2 -k 4,4 -k 5,5 test/results.tab | \
 	awk -F: ' \
 	    BEGIN { \
@@ -35,7 +35,7 @@ success.texi:
 		print "@end multitable"; \
 	    }' >success.texi
 
-failure.texi:	
+failure.texi:	test/results.tab
 	sort -u -t : -k 2,2 -k 4,4 -k 5,5 test/results.tab | \
 	awk -F: ' \
 	    BEGIN { \
@@ -50,7 +50,7 @@ failure.texi:
 		print "@end multitable"; \
 	    }' >failure.texi
 
-make.texi:	
+make.texi:	test/results.tab
 	awk -F: '$$6 == 1 {printf "%s:%s\n", $$2, $$3}' test/results.tab | \
 	sort -t : -u | \
 	awk -F: ' \

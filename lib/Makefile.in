@@ -38,7 +38,7 @@ host_triplet = @host@
 @HAVE_CUNIT_TRUE@TESTS = testUnits$(EXEEXT)
 subdir = lib
 DIST_COMMON = $(include_HEADERS) $(srcdir)/Makefile.am \
-	$(srcdir)/Makefile.in $(udunits2lib_TEXINFOS) parser.c
+	$(srcdir)/Makefile.in parser.c
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
@@ -269,7 +269,6 @@ data_DATA = \
     udunits2-prefixes.xml
 
 info_TEXINFOS = udunits2lib.texi
-udunits2lib_TEXINFOS = ../LICENSE.texi
 #html_DATA = udunits2lib.html
 #pdf_DATA = udunits2lib.pdf
 AM_MAKEINFOFLAGS = -I ..
@@ -579,10 +578,10 @@ clean-libtool:
 	    rm -rf $(@:.html=); else rm -Rf $(@:.html=.htp) $@; fi; \
 	  exit 1; \
 	fi
-$(srcdir)/udunits2lib.info: udunits2lib.texi $(udunits2lib_TEXINFOS)
-udunits2lib.dvi: udunits2lib.texi $(udunits2lib_TEXINFOS)
-udunits2lib.pdf: udunits2lib.texi $(udunits2lib_TEXINFOS)
-udunits2lib.html: udunits2lib.texi $(udunits2lib_TEXINFOS)
+$(srcdir)/udunits2lib.info: udunits2lib.texi 
+udunits2lib.dvi: udunits2lib.texi 
+udunits2lib.pdf: udunits2lib.texi 
+udunits2lib.html: udunits2lib.texi 
 .dvi.ps:
 	TEXINPUTS="$(am__TEXINFO_TEX_DIR)$(PATH_SEPARATOR)$$TEXINPUTS" \
 	$(DVIPS) -o $@ $<

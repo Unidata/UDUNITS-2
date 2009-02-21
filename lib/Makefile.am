@@ -27,7 +27,6 @@ data_DATA = \
     udunits2-derived.xml \
     udunits2-prefixes.xml
 info_TEXINFOS = udunits2lib.texi
-udunits2lib_TEXINFOS	= ../LICENSE.texi
 #html_DATA = udunits2lib.html
 #pdf_DATA = udunits2lib.pdf
 AM_MAKEINFOFLAGS = -I ..

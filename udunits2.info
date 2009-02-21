@@ -153,7 +153,7 @@ Get this package from its download-page at
 appropriate place, e.g.,
 
      cd /usr/local/src
-     gunzip -c udunits-2.0.3.tar.gz | pax -r
+     gunzip -c udunits-2.0.4.tar.gz | pax -r
 
 
 File: udunits2.info,  Node: Install,  Next: Support,  Prev: Obtain,  Up: Top
@@ -199,7 +199,7 @@ File: udunits2.info,  Node: Long,  Next: What,  Prev: Short,  Up: Install
 ==================================
 
   1. Go to the top-level source-directory of this package, e.g.,
-          cd udunits-2.0.3
+          cd udunits-2.0.4
 
   2. Because some `make' utilities cannot build this package correctly,
      locate the operating system that is closest to yours in the
@@ -207,6 +207,33 @@ File: udunits2.info,  Node: Long,  Next: What,  Prev: Short,  Up: Install
 
           O/S                            `make' Utility
           ------------------------------------------------------- 
+          `AIX 1 5'                      `/bin/make'
+          `AIX 1 5'                      `/opt/gnu/bin/make'
+          `AIX 1 5'                      `/usr/ccs/bin/make'
+          `Darwin 8.11.0'                `/usr/bin/gnumake'
+          `Darwin 8.11.0'                `/usr/bin/make'
+          `Darwin 9.6.0'                 `/usr/bin/gnumake'
+          `Darwin 9.6.0'                 `/usr/bin/make'
+          `IRIX64 6.5'                   `/bin/make'
+          `IRIX64 6.5'                   `/opt/gnu/bin/make'
+          `Linux                         `/usr/bin/gmake'
+          2.6.27.7-134.fc10.x86_64'      
+          `Linux                         `/usr/bin/make'
+          2.6.27.7-134.fc10.x86_64'      
+          `Linux                         `/usr/bin/gmake'
+          2.6.27.9-73.fc9.x86_64'        
+          `Linux                         `/usr/bin/make'
+          2.6.27.9-73.fc9.x86_64'        
+          `OSF1 V5.1'                    `/bin/make'
+          `OSF1 V5.1'                    `/opt/gnu/bin/gmake'
+          `OSF1 V5.1'                    `/usr/bin/posix/make'
+          `OSF1 V5.1'                    `/usr/ccs/bin/make'
+          `SunOS 5.10'                   `/opt/csw/bin/gmake'
+          `SunOS 5.10'                   `/usr/ccs/bin/make'
+          `SunOS 5.10'                   `/usr/xpg4/bin/make'
+          `SunOS 5.9'                    `/opt/gnu/bin/gmake'
+          `SunOS 5.9'                    `/usr/ccs/bin/make'
+          `SunOS 5.9'                    `/usr/xpg4/bin/make'
 
   3. If necessary, clean-up from a previous installation attempt by
      making the `distclean' target using the MAKE utility from step 2:
@@ -219,6 +246,42 @@ File: udunits2.info,  Node: Long,  Next: What,  Prev: Short,  Up: Install
 
           O/S                            Compiler                  `configure' Option
           ------------------------------------------------------------------------------ 
+          `AIX 1 5'                      `/opt/gnu/bin/gcc'        `'
+          `AIX 1 5'                      `/usr/vac/bin/c89'        `'
+          `AIX 1 5'                      `/usr/vac/bin/cc'         `'
+          `AIX 1 5'                      `/usr/vac/bin/xlc'        `'
+          `Darwin 8.11.0'                `/usr/bin/cc'             `'
+          `Darwin 8.11.0'                `/usr/bin/gcc'            `'
+          `Darwin 9.6.0'                 `/usr/bin/cc'             `'
+          `Darwin 9.6.0'                 `/usr/bin/gcc'            `'
+          `IRIX64 6.5'                   `/bin/c89'                `'
+          `IRIX64 6.5'                   `/bin/cc'                 `'
+          `IRIX64 6.5'                   `/opt/gnu/bin/gcc'        `'
+          `Linux                         `/usr/bin/c89'            `'
+          2.6.27.7-134.fc10.x86_64'                                
+          `Linux                         `/usr/bin/cc'             `'
+          2.6.27.7-134.fc10.x86_64'                                
+          `Linux                         `/usr/bin/gcc'            `'
+          2.6.27.7-134.fc10.x86_64'                                
+          `Linux                         `/usr/bin/c89'            `'
+          2.6.27.9-73.fc9.x86_64'                                  
+          `Linux                         `/usr/bin/cc'             `'
+          2.6.27.9-73.fc9.x86_64'                                  
+          `Linux                         `/usr/bin/gcc'            `'
+          2.6.27.9-73.fc9.x86_64'                                  
+          `OSF1 V5.1'                    `/bin/c89'                `'
+          `OSF1 V5.1'                    `/bin/cc'                 `'
+          `OSF1 V5.1'                    `/opt/gnu/bin/gcc'        `'
+          `OSF1 V5.1'                    `/usr/ccs/bin/c89'        `'
+          `OSF1 V5.1'                    `/usr/ccs/bin/cc'         `'
+          `SunOS 5.10'                   `/opt/csw/gcc3/bin/gcc'   `'
+          `SunOS 5.10'                   `/opt/csw/gcc4/bin/gcc'   `'
+          `SunOS 5.10'                   `/opt/SUNWspro/bin/c89'   `'
+          `SunOS 5.10'                   `/opt/SUNWspro/bin/cc'    `'
+          `SunOS 5.9'                    `/opt/csw/gcc3/bin/gcc'   `'
+          `SunOS 5.9'                    `/opt/csw/gcc4/bin/gcc'   `'
+          `SunOS 5.9'                    `/opt/SUNWspro/bin/c89'   `'
+          `SunOS 5.9'                    `/opt/SUNWspro/bin/cc'    `'
 
      The option `--disable-shared' causes the build process to create a
      static library only: a sharable library is not created.  This
@@ -231,6 +294,14 @@ File: udunits2.info,  Node: Long,  Next: What,  Prev: Short,  Up: Install
 
           O/S                            Compiler                  `configure' Option
           ------------------------------------------------------------------------------ 
+          `Darwin 8.11.0'                `/usr/bin/c89'            `'
+          `Darwin 8.11.0'                `/usr/bin/c89'            `--disable-shared'
+          `Darwin 9.6.0'                 `/usr/bin/c89'            `'
+          `Darwin 9.6.0'                 `/usr/bin/c89'            `--disable-shared'
+          `SunOS 5.10'                   `/opt/SUNWspro/bin/c99'   `'
+          `SunOS 5.10'                   `/opt/SUNWspro/bin/c99'   `--disable-shared'
+          `SunOS 5.9'                    `/opt/SUNWspro/bin/c99'   `'
+          `SunOS 5.9'                    `/opt/SUNWspro/bin/c99'   `--disable-shared'
 
   5. Execute the `configure' script.  Specify the installation prefix,
      the compiler from the previous step, and any required option.  For
@@ -356,8 +427,8 @@ Node: Obtain6966
 Node: Install7308
 Node: Short7584
 Node: Long8360
-Node: What11638
-Node: Support13906
-Node: Complete Index14216
+Node: What16300
+Node: Support18568
+Node: Complete Index18878
 
 End Tag Table
