@@ -1,7 +1,12 @@
 /*
- * Value converters for the udunits(3) library.
+ * Copyright 2008, 2009 University Corporation for Atmospheric Research
  *
- * $Id: converter.c,v 1.7 2007/04/11 20:28:17 steve Exp $
+ * This file is part of the UDUNITS-2 package.  See the file LICENSE
+ * in the top-level source-directory of the package for copying and
+ * redistribution conditions.
+ */
+/*
+ * Value converters for the udunits(3) library.
  */
 
 /*LINTLIBRARY*/

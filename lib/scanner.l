@@ -1,7 +1,12 @@
 /*
- * lex(1) specification for tokens for the Unidata units package, UDUNITS2.
+ * Copyright 2008, 2009 University Corporation for Atmospheric Research
  *
- * $Id: scanner.l,v 1.9 2008/12/02 17:32:10 steve Exp $
+ * This file is part of the UDUNITS-2 package.  See the file LICENSE
+ * in the top-level source-directory of the package for copying and
+ * redistribution conditions.
+ */
+/*
+ * lex(1) specification for tokens for the Unidata units package, UDUNITS2.
  */
 
 %option noyywrap

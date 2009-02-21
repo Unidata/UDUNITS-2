@@ -1,7 +1,12 @@
 /*
- * Searchable unit-and-identifier tree.
+ * Copyright 2008, 2009 University Corporation for Atmospheric Research
  *
- * $Id: unitAndId.c,v 1.8 2008/12/02 17:32:10 steve Exp $
+ * This file is part of the UDUNITS-2 package.  See the file LICENSE
+ * in the top-level source-directory of the package for copying and
+ * redistribution conditions.
+ */
+/*
+ * Searchable unit-and-identifier tree.
  */
 
 /*LINTLIBRARY*/

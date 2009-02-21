@@ -1,3 +1,9 @@
+# Copyright 2008, 2009 University Corporation for Atmospheric Research
+#
+# This file is part of the UDUNITS-2 package.  See the file LICENSE
+# in the top-level source-directory of the package for copying and
+# redistribution conditions.
+#
 ## Process this file with automake to produce Makefile.in
 SUBDIRS	= xmlFailures xmlSuccesses
 lib_LTLIBRARIES = libudunits2.la
@@ -21,9 +27,11 @@ data_DATA = \
     udunits2-derived.xml \
     udunits2-prefixes.xml
 info_TEXINFOS = udunits2lib.texi
+udunits2lib_TEXINFOS	= ../LICENSE.texi
 #html_DATA = udunits2lib.html
 #pdf_DATA = udunits2lib.pdf
-AM_MAKEINFOHTMLFLAGS = --no-split
+AM_MAKEINFOFLAGS = -I ..
+AM_MAKEINFOHTMLFLAGS = --no-split -I ..
 AM_CPPFLAGS    = -DDEFAULT_UDUNITS2_XML_PATH='"$(datadir)/udunits2.xml"'
 
 lex_prefix = ut

@@ -1,3 +1,6 @@
+2.0.4	2009-02-21
+	Added copyright notices and LICENSE file.
+
 2.0.3	2009-02-18
         Added the function ut_root(const ut_unit* unit, int root) to
         return a root of a unit (e.g., "m2/s2" -> "m/s").

@@ -1,3 +1,9 @@
+# Copyright 2008, 2009 University Corporation for Atmospheric Research
+#
+# This file is part of the UDUNITS-2 package.  See the file LICENSE
+# in the top-level source-directory of the package for copying and
+# redistribution conditions.
+#
 ## Process this file with automake to produce Makefile.in
 bin_PROGRAMS	= udunits2
 LDADD		= ../lib/libudunits2.la \
@@ -5,7 +11,8 @@ LDADD		= ../lib/libudunits2.la \
 info_TEXINFOS = udunits2prog.texi
 #html_DATA = udunits2prog.html
 #pdf_DATA = udunits2prog.pdf
-AM_MAKEINFOHTMLFLAGS = --no-split
+AM_MAKEINFOFLAGS = -I ..
+AM_MAKEINFOHTMLFLAGS = --no-split -I ..
 AM_CPPFLAGS	= -I$(top_srcdir)/lib
 MOSTLYCLEANFILES	= lint.log *.ln
 LINTFLAGS	= -u

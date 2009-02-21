@@ -1,4 +1,11 @@
 /*
+ * Copyright 2008, 2009 University Corporation for Atmospheric Research
+ *
+ * This file is part of the UDUNITS-2 package.  See the file LICENSE
+ * in the top-level source-directory of the package for copying and
+ * redistribution conditions.
+ */
+/*
  * Unit creation and manipulation routines for the udunits(3) library.
  *
  * The following data-structures exist in this module:
@@ -24,8 +31,6 @@
  *
  * This module is thread-compatible but not thread-safe: multi-thread access to
  * this module must be externally synchronized.
- *
- * $Id: unitcore.c,v 1.6 2009/02/18 17:09:32 steve Exp $
  */
 
 /*LINTLIBRARY*/

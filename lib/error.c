@@ -1,8 +1,13 @@
 /*
+ * Copyright 2008, 2009 University Corporation for Atmospheric Research
+ *
+ * This file is part of the UDUNITS-2 package.  See the file LICENSE
+ * in the top-level source-directory of the package for copying and
+ * redistribution conditions.
+ */
+/*
  * This module is thread-compatible but not thread-safe.  Multi-threaded
  * access must be externally synchronized.
- *
- * $Id: error.c,v 1.2 2007/04/11 20:28:17 steve Exp $
  */
 
 /*LINTLIBRARY*/

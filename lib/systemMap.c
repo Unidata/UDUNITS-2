@@ -1,9 +1,14 @@
 /*
+ * Copyright 2008, 2009 University Corporation for Atmospheric Research
+ *
+ * This file is part of the UDUNITS-2 package.  See the file LICENSE
+ * in the top-level source-directory of the package for copying and
+ * redistribution conditions.
+ */
+/*
  * Module for system-to-pointer maps.
  *
  * This module is thread-compatible but not thread-safe.
- *
- * $Id: systemMap.c,v 1.4 2007/04/11 20:28:17 steve Exp $
  */
 
 /*LINTLIBRARY*/

@@ -1,7 +1,12 @@
 %{
 /*
- * $Id: parser.y,v 1.13 2007/07/23 19:09:36 steve Exp $
+ * Copyright 2008, 2009 University Corporation for Atmospheric Research
  *
+ * This file is part of the UDUNITS-2 package.  See the file LICENSE
+ * in the top-level source-directory of the package for copying and
+ * redistribution conditions.
+ */
+/*
  * yacc(1)-based parser for decoding formatted unit specifications.
  *
  * This module is thread-compatible but not thread-safe.  Multi-threaded

@@ -1,5 +1,9 @@
 /*
- * $Id: ut_free_system.c,v 1.1 2007/04/11 20:28:18 steve Exp $
+ * Copyright 2008, 2009 University Corporation for Atmospheric Research
+ *
+ * This file is part of the UDUNITS-2 package.  See the file LICENSE
+ * in the top-level source-directory of the package for copying and
+ * redistribution conditions.
  */
 
 /*LINTLIBRARY*/

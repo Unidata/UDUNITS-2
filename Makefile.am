@@ -1,3 +1,9 @@
+# Copyright 2008, 2009 University Corporation for Atmospheric Research
+#
+# This file is part of the UDUNITS-2 package.  See the file LICENSE
+# in the top-level source-directory of the package for copying and
+# redistribution conditions.
+#
 ## Process this file with automake to produce Makefile.in
 SUBDIRS	= expat lib prog test
 info_TEXINFOS = udunits2.texi
@@ -5,8 +11,8 @@ udunits2_TEXINFOS = success.texi failure.texi make.texi
 EXTRA_DIST = \
     udunits2.html \
     udunits2.pdf \
-    ANNOUNCEMENT \
-    CHANGE_LOG
+    CHANGE_LOG \
+    LICENSE
 AM_MAKEINFOHTMLFLAGS = --no-split
 # DISTCHECK_CONFIGURE_FLAGS = 
 RSYNC_FLAGS	= --rsh=ssh --rsync-path=/opt/bin/rsync

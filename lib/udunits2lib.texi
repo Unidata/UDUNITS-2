@@ -10,22 +10,7 @@
 @syncodeindex fn cp
 @syncodeindex tp cp
 @copying
-Copyright @copyright{} 2007 University Corporation for Atmospheric Research
-
-@quotation
-Permission to use, copy, modify, and distribute this software and its
-documentation for any purpose without fee is hereby granted, provided
-that the above copyright notice appears in all copies, that both that
-copyright notice and this permission notice appear in supporting
-documentation, and that the name of the University Corporation for
-Atmospheric Research (UCAR) not be used in advertising or publicity
-pertaining to distribution of the software without specific, written
-prior permission.  UCAR makes no representations about the suitability
-of this software for any purpose.  It is provided ``as is'' without
-express or implied warranty.  It is provided with no support and without
-obligation on the part of UCAR to assist in its use, correction,
-modification, or enhancement.
-@end quotation
+@include LICENSE
 @end copying
 
 @titlepage
@@ -50,8 +35,6 @@ units.
 
 The library comes with an extensive database of units all referenced to the
 SI system of units.
-
-CVS keywords: $Date: 2009/02/18 17:09:32 $, Revision: 1.3 $
 
 @insertcopying
 @end ifnottex

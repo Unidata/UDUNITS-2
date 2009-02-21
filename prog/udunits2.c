@@ -1,8 +1,13 @@
 /*
+ * Copyright 2007, 2008, 2009 University Corporation for Atmospheric Research
+ *
+ * This file is part of the UDUNITS-2 package.  See the file LICENSE
+ * in the top-level source-directory of the package for copying and
+ * redistribution conditions.
+ */
+/*
  * This program prints definitions of units of physical qantities and converts
  * values between such units.
- *
- * $Id: udunits2.c,v 1.9 2008/08/05 18:39:27 steve Exp $
  */
 
 #ifndef	_XOPEN_SOURCE
