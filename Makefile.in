@@ -971,14 +971,29 @@ remote-checks:	distcheck
 
 ftp:	$(distArchive)
 	scp $(distArchive) conan:/web/ftp/pub/$(PACKAGE)/
+	mailx -s '$(distName) now available' ed@unidata.ucar.edu
 
 web-update:	install-html
 	cd $(DESTDIR)$(htmldir) && \
 	rsync $(RSYNC_FLAGS) -aCu --delete --delete-excluded \
 	    *.html \
 	    conan:/content/software/$(PACKAGE)/$(distName)
+	ssh conan rm /content/software/$(PACKAGE)/$(PACKAGE)-2
+	ssh conan ln -s /content/software/$(PACKAGE)/$(distname) \
+	    /content/software/$(PACKAGE)/$(PACKAGE)-2
 
-.PHONY:	hostchecks hostcheck remote-checks web-update
+download-update:
+	ssh conan sed -e \
+	    's/"%current%" value="[0-9.]*"/"%current%" value="$(VERSION)"' \
+	    /content/downloads/$(PACKAGE)/toc.xml \
+	    > /content/downloads/$(PACKAGE)/toc.xml.new
+	ssh conan mv -f /content/downloads/$(PACKAGE)/toc.xml.new \
+	    /content/downloads/$(PACKAGE)/toc.xml
+
+available:	ftp web-update download-update
+
+.PHONY:	hostchecks hostcheck remote-checks web-update ftp \
+	download-update available
 
 udunits2.info:	success.texi failure.texi make.texi
 udunits2.html:	success.texi failure.texi make.texi

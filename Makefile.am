@@ -70,6 +70,7 @@ remote-checks:	distcheck
 
 ftp:	$(distArchive)
 	scp $(distArchive) conan:/web/ftp/pub/$(PACKAGE)/
+	mailx -s '$(distName) now available' ed@unidata.ucar.edu
 
 web-update:	install-html
 	cd $(DESTDIR)$(htmldir) && \
