@@ -5,8 +5,8 @@
  * in the top-level source-directory of the package for copying and
  * redistribution conditions.
  */
-#ifndef UT_UNITS_H_INCLUDED
-#define UT_UNITS_H_INCLUDED
+#ifndef UT_UNITS2_H_INCLUDED
+#define UT_UNITS2_H_INCLUDED
 
 #include <stdarg.h>
 #include <stddef.h>
@@ -233,7 +233,7 @@ ut_get_system(
  */
 ut_unit*
 ut_get_dimensionless_unit_one(
-    ut_system* const	system);
+    const ut_system* const	system);
 
 
 /*
@@ -254,8 +254,8 @@ ut_get_dimensionless_unit_one(
  */
 ut_unit*
 ut_get_unit_by_name(
-    ut_system* const	system,
-    const char* const	name);
+    const ut_system* const	system,
+    const char* const		name);
 
 
 /*
@@ -277,8 +277,8 @@ ut_get_unit_by_name(
  */
 ut_unit*
 ut_get_unit_by_symbol(
-    ut_system* const	system,
-    const char* const	symbol);
+    const ut_system* const	system,
+    const char* const		symbol);
 
 
 /*
@@ -296,7 +296,7 @@ ut_get_unit_by_symbol(
  */
 ut_status
 ut_set_second(
-    ut_unit* const	second);
+    const ut_unit* const	second);
 
 
 /******************************************************************************
@@ -447,7 +447,7 @@ ut_free(
 const char*
 ut_get_name(
     const ut_unit* const	unit,
-    const ut_encoding	encoding);
+    const ut_encoding		encoding);
 
 
 /*
@@ -467,9 +467,9 @@ ut_get_name(
  */
 ut_status
 ut_map_name_to_unit(
-    const char* const	name,
-    const ut_encoding   encoding,
-    ut_unit* const	unit);
+    const char* const		name,
+    const ut_encoding		encoding,
+    const ut_unit* const	unit);
 
 
 /*
@@ -509,9 +509,9 @@ ut_unmap_name_to_unit(
  */
 ut_status
 ut_map_unit_to_name(
-    ut_unit* const	unit,
-    const char* const	name,
-    ut_encoding		encoding);
+    const ut_unit* const	unit,
+    const char* const		name,
+    ut_encoding			encoding);
 
 
 /*
@@ -527,8 +527,8 @@ ut_map_unit_to_name(
  */
 ut_status
 ut_unmap_unit_to_name(
-    ut_unit* const	unit,
-    ut_encoding		encoding);
+    const ut_unit* const	unit,
+    ut_encoding			encoding);
 
 
 /******************************************************************************
@@ -573,9 +573,9 @@ ut_get_symbol(
  */
 ut_status
 ut_map_symbol_to_unit(
-    const char* const	symbol,
-    const ut_encoding   encoding,
-    ut_unit* const	unit);
+    const char* const		symbol,
+    const ut_encoding		encoding,
+    const ut_unit* const	unit);
 
 
 /*
@@ -614,9 +614,9 @@ ut_unmap_symbol_to_unit(
  */
 ut_status
 ut_map_unit_to_symbol(
-    ut_unit*		unit,
-    const char* const	symbol,
-    ut_encoding		encoding);
+    const ut_unit*		unit,
+    const char* const		symbol,
+    ut_encoding			encoding);
 
 
 /*
@@ -633,8 +633,8 @@ ut_map_unit_to_symbol(
  */
 ut_status
 ut_unmap_unit_to_symbol(
-    ut_unit* const	unit,
-    ut_encoding		encoding);
+    const ut_unit* const	unit,
+    ut_encoding			encoding);
 
 
 /******************************************************************************
@@ -657,7 +657,7 @@ ut_unmap_unit_to_symbol(
  */
 int
 ut_is_dimensionless(
-    ut_unit* const	unit);
+    const ut_unit* const	unit);
 
 
 /*
@@ -721,8 +721,8 @@ ut_compare(
  */
 int
 ut_are_convertible(
-    ut_unit* const	unit1,
-    ut_unit* const	unit2);
+    const ut_unit* const	unit1,
+    const ut_unit* const	unit2);
 
 
 /*
@@ -779,8 +779,8 @@ ut_get_converter(
  */
 ut_unit*
 ut_scale(
-    const double	factor,
-    ut_unit* const	unit);
+    const double		factor,
+    const ut_unit* const	unit);
 
 
 /*
@@ -803,7 +803,7 @@ ut_scale(
  */
 ut_unit*
 ut_offset(
-    ut_unit* const	unit,
+    const ut_unit* const	unit,
     const double	offset);
 
 
@@ -831,7 +831,7 @@ ut_offset(
  */
 ut_unit*
 ut_offset_by_time(
-    ut_unit* const	unit,
+    const ut_unit* const	unit,
     const double	origin);
 
 
@@ -852,8 +852,8 @@ ut_offset_by_time(
  */
 ut_unit*
 ut_multiply(
-    ut_unit* const	unit1,
-    ut_unit* const	unit2);
+    const ut_unit* const	unit1,
+    const ut_unit* const	unit2);
 
 
 /*
@@ -871,7 +871,7 @@ ut_multiply(
  */
 ut_unit*
 ut_invert(
-    ut_unit* const	unit);
+    const ut_unit* const	unit);
 
 
 /*
@@ -897,8 +897,8 @@ ut_invert(
  */
 ut_unit*
 ut_divide(
-    ut_unit* const	numer,
-    ut_unit* const	denom);
+    const ut_unit* const	numer,
+    const ut_unit* const	denom);
 
 
 /*
@@ -917,8 +917,8 @@ ut_divide(
  */
 ut_unit*
 ut_raise(
-    ut_unit* const	unit,
-    const int		power);
+    const ut_unit* const	unit,
+    const int			power);
 
 
 /*
@@ -940,8 +940,8 @@ ut_raise(
  */
 ut_unit*
 ut_root(
-    ut_unit* const	unit,
-    const int		root);
+    const ut_unit* const	unit,
+    const int			root);
 
 
 /*
@@ -985,8 +985,8 @@ ut_root(
  */
 ut_unit*
 ut_log(
-    const double	base,
-    ut_unit* const	reference);
+    const double		base,
+    const ut_unit* const	reference);
 
 
 /******************************************************************************
@@ -1018,9 +1018,9 @@ ut_log(
  */
 ut_unit*
 ut_parse(
-    ut_system* const	system,
-    const char* const	string,
-    const ut_encoding	encoding);
+    const ut_system* const	system,
+    const char* const		string,
+    const ut_encoding		encoding);
 
 
 /*

@@ -9,7 +9,7 @@
 #
 
 AC_PREREQ(2.59)
-AC_INIT(UDUNITS, 2.0.4, support-udunits@unidata.ucar.edu)
+AC_INIT(UDUNITS, 2.1.0, support-udunits@unidata.ucar.edu)
 AC_CONFIG_AUX_DIR([.])
 AC_CONFIG_SRCDIR([lib/converter.c])
 AM_INIT_AUTOMAKE([foreign subdir-objects no-installinfo])
@@ -49,6 +49,19 @@ else
 fi
 ])
 AM_CONDITIONAL([DEBUG], [test x$debug = xtrue])
+
+UDUNITS_1_LO='../udunits-1/udunits.lo'
+AM_CONDITIONAL([ENABLE_UDUNITS_1], [true])
+AC_ARG_ENABLE([udunits-1],
+[AS_HELP_STRING([--enable-udunits-1],[Turn on support for the UDUNITS-1 API])],
+[case "${enableval}" in
+  no)   UDUNITS_1_LO=''
+	AM_CONDITIONAL([ENABLE_UDUNITS_1], [false])
+	;;
+  yes)  ;;
+  *) AC_MSG_ERROR([bad value ${enableval} for --enable-udunits-1]) ;;
+esac])
+AC_SUBST(UDUNITS_1_LO)
 
 # Ensure that compilation is optimized and with assertions disabled by default.
 if test x$debug \!= xtrue; then
@@ -123,6 +136,7 @@ AC_CHECK_FUNCS([floor memmove memset modf pow strcasecmp strdup strpbrk])
 AC_PROG_LIBTOOL
 
 AC_CONFIG_FILES([Makefile
+		 udunits-1/Makefile
 		 expat/Makefile
                  lib/Makefile
                  lib/xmlFailures/Makefile

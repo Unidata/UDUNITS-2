@@ -1,0 +1,12 @@
+core.*
+.deps
+.exrc
+*.la
+.libs
+*.lo
+*.log
+Makefile
+*.o
+tags
+testUnits
+.vimrc

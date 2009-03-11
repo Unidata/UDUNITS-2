@@ -57,7 +57,11 @@ am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(datadir)" \
 	"$(DESTDIR)$(includedir)"
 libLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(lib_LTLIBRARIES)
-libudunits2_la_DEPENDENCIES = ../expat/libexpat.la
+@ENABLE_UDUNITS_1_FALSE@libudunits2_la_DEPENDENCIES =  \
+@ENABLE_UDUNITS_1_FALSE@	../expat/libexpat.la
+@ENABLE_UDUNITS_1_TRUE@libudunits2_la_DEPENDENCIES =  \
+@ENABLE_UDUNITS_1_TRUE@	../expat/libexpat.la \
+@ENABLE_UDUNITS_1_TRUE@	../udunits-1/libudunits1.la
 am_libudunits2_la_OBJECTS = libudunits2_la-unitcore.lo \
 	libudunits2_la-converter.lo libudunits2_la-formatter.lo \
 	libudunits2_la-idToUnitMap.lo libudunits2_la-unitToIdMap.lo \
@@ -183,6 +187,7 @@ SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
+UDUNITS_1_LO = @UDUNITS_1_LO@
 VERSION = @VERSION@
 YACC = @YACC@
 YFLAGS = @YFLAGS@
@@ -279,7 +284,8 @@ LFLAGS = -d -P$(lex_prefix)
 LDADD = libudunits2.la @LIBS_CUNIT@ -lm @LIBS_COVERAGE@
 AM_LDFLAGS = @CFLAGS_COVERAGE@ @LIBS_COVERAGE@
 libudunits2_la_CFLAGS = @CFLAGS_COVERAGE@
-libudunits2_la_LIBADD = ../expat/libexpat.la -lm
+@ENABLE_UDUNITS_1_FALSE@libudunits2_la_LIBADD = ../expat/libexpat.la -lm
+@ENABLE_UDUNITS_1_TRUE@libudunits2_la_LIBADD = ../expat/libexpat.la -lm ../udunits-1/libudunits1.la
 include_HEADERS = udunits2.h converter.h
 EXTRA_DIST = \
     scanner.l \
@@ -295,6 +301,7 @@ EXTRA_DIST = \
 
 AM_YFLAGS = -t -p ut
 @HAVE_CUNIT_TRUE@testUnits_CPPFLAGS = @CPPFLAGS_CUNIT@
+DISTCLEANFILES = *.log
 MOSTLYCLEANFILES = lint.log *.ln *.i core core.[0-9]* *.gcov *.gcda *.gcno
 TAGS_FILES = parser.c ../expat/*.c ../expat/*.h
 LINTFLAGS = -u
@@ -990,6 +997,7 @@ clean-generic:
 
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
+	-test -z "$(DISTCLEANFILES)" || rm -f $(DISTCLEANFILES)
 
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"

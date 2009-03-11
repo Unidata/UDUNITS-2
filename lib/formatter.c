@@ -952,12 +952,14 @@ printTimestamp(
 	nchar = n < 0 ? n : nchar + n;
 
 	if (nchar >= 0) {
-	    n = useNames
-		? snprintf(buf+nchar, max-nchar,
-		    " since %d-%02d-%02d %02d:%02d", year, month, day, hour,
-		    minute)
-		: snprintf(buf+nchar, max-nchar, " @ %d%02d%02dT%02d%02d",
-		    year, month, day, hour, minute);
+	    int	useSeparators = useNames || year < 1000 || year > 9999;
+
+	    n =  snprintf(buf+nchar, max-nchar,
+		useSeparators
+		    ? " %s %d-%02d-%02d %02d:%02d"
+		    : " %s %d%02d%02dT%02d%02d",
+		useNames ? "since" : "@",
+		year, month, day, hour, minute);
 	    nchar = n < 0 ? n : nchar + n;
 
 	    if (nchar >= 0) {
@@ -965,7 +967,7 @@ printTimestamp(
 
 		if (decimalCount > -2) {
 		    n = snprintf(buf+nchar, max-nchar, 
-			    useNames ? ":%0*.*f": "%0*.*f",
+			    useSeparators ? ":%0*.*f" : "%0*.*f",
 			    decimalCount+3, decimalCount, second);
 		    nchar = n < 0 ? n : nchar + n;
 		}			/* sufficient precision for seconds */
@@ -999,8 +1001,8 @@ static ut_status
 formatTimestamp(
     const ut_unit* const	unit,
     const ut_unit* const	underlyingUnit,
-    const double        origin,
-    void*		arg)
+    const double		origin,
+    void*			arg)
 {
     FormatPar*  	formatPar = (FormatPar*)arg;
     int 		nchar;

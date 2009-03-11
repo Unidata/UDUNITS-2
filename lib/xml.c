@@ -96,8 +96,8 @@ static size_t           nbytes = 0;
  *      Pointer to the plural form of "singular".  Client must not free.  May be
  *      overwritten by subsequent calls.
  */
-static const char*
-formPlural(
+const char*
+ut_form_plural(
     const char*	singular)
 {
     static char	buf[NAME_SIZE];
@@ -525,7 +525,7 @@ mapUnitToId(
     int                   isName)
 {
     int                 success = 0;             /* failure */
-    ut_status           (*func)(ut_unit*, const char*, ut_encoding);
+    ut_status           (*func)(const ut_unit*, const char*, ut_encoding);
     const char*         desc;
 
     if (isName) {
@@ -1395,7 +1395,7 @@ endName(
                         plural = currFile->plural;
                     }
                     else if (currFile->singular[0] != 0) {
-                        plural = formPlural(currFile->singular);
+                        plural = ut_form_plural(currFile->singular);
 
                         if (plural == NULL) {
                             ut_set_status(UT_PARSE);
@@ -1441,7 +1441,7 @@ endName(
                     plural = currFile->plural;
                 }
                 else if (currFile->singular[0] != 0) {
-                    plural = formPlural(currFile->singular);
+                    plural = ut_form_plural(currFile->singular);
 
                     if (plural == NULL) {
                         ut_set_status(UT_PARSE);

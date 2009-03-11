@@ -1,7 +1,7 @@
 Dear UDUNITS user,
 
-The UDUNITS-2 package is now available from the UDUNITS homepage at
-<http://www.unidata.ucar.edu/software/udunits/>.
+Version 2.1.0 of the UDUNITS-2 package is now available from the UDUNITS
+homepage at <http://www.unidata.ucar.edu/software/udunits/>.
 
 The UDUNITS-2 package differs from the previous UDUNITS package in the
 following ways:
@@ -24,8 +24,15 @@ following ways:
     be float, double, or one-dimensional arrays of floats or doubles.
 
     Improved API. Due to the above changes, it was not possible to keep
-    the application programming interface of the original UDUNITS package.
-    The new interface, however, is easily understood and easy to use.
+    the application programming interface of the original UDUNITS
+    package.  Beginning with version 2.1.0, however, the package
+    contains a thin UDUNITS API to the UDUNITS-2 library, so code
+    written to the original API can simply be recompiled and relinked
+    against the new package.  Because the original UDUNITS API uses the
+    "utUnit" data-structure and the UDUNITS-2 API uses pointers to
+    "ut_unit" data-structures, a small memory-leak is possible in code
+    that creates many units.  This leak can be avoided by calling the
+    new method utFree(utUnit*) when the unit is no longer needed.
 
     XML unit database. The unit database is encoded using human-readable
     XML rather than a custom format. The XML parser included in the

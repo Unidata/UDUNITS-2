@@ -16,6 +16,7 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <unistd.h>
 #include <CUnit/CUnit.h>
 #include <CUnit/Basic.h>
@@ -23,6 +24,7 @@
 #include "udunits2.h"
 
 
+static char		xmlPath[80];
 static ut_system*	unitSystem;
 static ut_unit*		kilogram;
 static ut_unit*		meter;
@@ -57,6 +59,7 @@ static int
 setup(
     void)
 {
+    (void)strcat(strcpy(xmlPath, getenv("srcdir")), "/udunits2.xml");
     unitSystem = ut_new_system();
 
     return unitSystem == NULL ? -1 : 0;
@@ -283,6 +286,7 @@ test_utToString(void)
     char	buf[80];
     int		nchar = ut_format(meter, buf, sizeof(buf)-1, asciiSymbolDef);
     int		n;
+    ut_unit*	unit;
 
     CU_ASSERT_EQUAL(nchar, 1);
     CU_ASSERT_STRING_EQUAL(buf, "m");
@@ -293,6 +297,12 @@ test_utToString(void)
     n = ut_format(celsius, buf, sizeof(buf)-1, asciiName);
     CU_ASSERT_TRUE(n > 0);
     CU_ASSERT_STRING_EQUAL(buf, "degrees_celsius");
+
+    unit = ut_parse(unitSystem, "second since 1-01-01T00:00:00Z", UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    CU_ASSERT(ut_format(unit, buf, sizeof(buf), asciiSymbolDef) != -1);
+    CU_ASSERT_STRING_EQUAL(buf, "s @ 1-01-01 00:00:00.000000 UTC");
+    ut_free(unit);
 }
 
 
@@ -769,12 +779,7 @@ test_utRaise(void)
 static void
 test_utRoot(void)
 {
-    ut_unit*	perCubicMeter;
-    ut_unit*	celsiusCubed;
-    ut_unit*	kilometersSquaredPerMinuteSquared;
     ut_unit*	unit;
-    char	buf[80];
-    int		nchar;
 
     CU_ASSERT_PTR_NULL(ut_root(watt, -1));
     CU_ASSERT_PTR_NULL(ut_root(watt, 0));
@@ -1641,13 +1646,31 @@ test_parsing(void)
     CU_ASSERT_EQUAL(ut_compare(unit, secondsSinceTheEpoch), 0);
     ut_free(unit);
 
+    spec = "s@1970-01-01T00:00:00Z";
+    unit = ut_parse(unitSystem, spec, UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    CU_ASSERT_EQUAL(ut_compare(unit, secondsSinceTheEpoch), 0);
+    ut_free(unit);
+
     spec = "s @ 1970-01-01T00:00:00Z";
     unit = ut_parse(unitSystem, spec, UT_ASCII);
     CU_ASSERT_PTR_NOT_NULL(unit);
     CU_ASSERT_EQUAL(ut_compare(unit, secondsSinceTheEpoch), 0);
     ut_free(unit);
 
-    spec = "s@1970-01-01T00:00:00Z";
+    spec = "second@1970-01-01T00:00:00Z";
+    unit = ut_parse(unitSystem, spec, UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    CU_ASSERT_EQUAL(ut_compare(unit, secondsSinceTheEpoch), 0);
+    ut_free(unit);
+
+    spec = "second @ 1970-01-01T00:00:00Z";
+    unit = ut_parse(unitSystem, spec, UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    CU_ASSERT_EQUAL(ut_compare(unit, secondsSinceTheEpoch), 0);
+    ut_free(unit);
+
+    spec = "second since 1970-01-01T00:00:00Z";
     unit = ut_parse(unitSystem, spec, UT_ASCII);
     CU_ASSERT_PTR_NOT_NULL(unit);
     CU_ASSERT_EQUAL(ut_compare(unit, secondsSinceTheEpoch), 0);
@@ -1747,12 +1770,32 @@ test_xml(void)
     ut_unit*            unit1;
     ut_unit*            unit2;
     cv_converter*	converter;
-
-    chdir(getenv("srcdir"));
+    char*		spec;
+    ut_unit*		unit;
 
     ut_set_error_message_handler(ut_write_to_stderr);
-    xmlSystem = ut_read_xml("udunits2.xml");
+    xmlSystem = ut_read_xml(xmlPath);
     CU_ASSERT_PTR_NOT_NULL_FATAL(xmlSystem);
+
+    spec = "seconds@1970-01-01T00:00:00Z";
+    unit = ut_parse(xmlSystem, spec, UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    ut_free(unit);
+
+    spec = "seconds @ 1970-01-01T00:00:00Z";
+    unit = ut_parse(xmlSystem, spec, UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    ut_free(unit);
+
+    spec = "seconds since 1970-01-01T00:00:00Z";
+    unit = ut_parse(xmlSystem, spec, UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    ut_free(unit);
+
+    spec = "seconds since 1970-01-01T00:00:00Z";
+    unit = ut_parse(xmlSystem, spec, UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    ut_free(unit);
 
     unit1 = ut_get_unit_by_symbol(unitSystem, "\xb0K"); /* Latin-1 degree sym */
     CU_ASSERT_PTR_NOT_NULL(unit1);
@@ -1946,7 +1989,7 @@ test_xml(void)
      * Test again to ensure any persistent state doesn't interfere.
      */
     ut_set_error_message_handler(ut_ignore);
-    xmlSystem = ut_read_xml("udunits2.xml");
+    xmlSystem = ut_read_xml(xmlPath);
     CU_ASSERT_PTR_NOT_NULL(xmlSystem);
     ut_free_system(xmlSystem);
 }

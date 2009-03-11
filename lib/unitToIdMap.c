@@ -497,10 +497,10 @@ utimFindUtf8ByUnit(
  */
 static ut_status
 mapUnitToId(
-    SystemMap** const	systemMap,
-    ut_unit* const	unit,
-    const char* const	id,
-    ut_encoding		encoding)
+    SystemMap** const		systemMap,
+    const ut_unit* const	unit,
+    const char* const		id,
+    ut_encoding			encoding)
 {
     ut_status		status;
 
@@ -557,9 +557,9 @@ mapUnitToId(
  */
 static ut_status
 unmapUnitToId(
-    SystemMap* const	systemMap,
-    ut_unit* const	unit,
-    ut_encoding		encoding)
+    SystemMap* const		systemMap,
+    const ut_unit* const	unit,
+    ut_encoding			encoding)
 {
     ut_status		status;
 
@@ -650,9 +650,9 @@ getId(
  */
 ut_status
 ut_map_unit_to_name(
-    ut_unit* const	unit,
-    const char* const	name,
-    ut_encoding		encoding)
+    const ut_unit* const	unit,
+    const char* const		name,
+    ut_encoding			encoding)
 {
     ut_set_status(mapUnitToId(&systemToUnitToName, unit, name, encoding));
 
@@ -673,8 +673,8 @@ ut_map_unit_to_name(
  */
 ut_status
 ut_unmap_unit_to_name(
-    ut_unit* const	unit,
-    ut_encoding		encoding)
+    const ut_unit* const	unit,
+    ut_encoding			encoding)
 {
     ut_set_status(unmapUnitToId(systemToUnitToName, unit, encoding));
 
@@ -699,9 +699,9 @@ ut_unmap_unit_to_name(
  */
 ut_status
 ut_map_unit_to_symbol(
-    ut_unit*		unit,
-    const char* const	symbol,
-    ut_encoding		encoding)
+    const ut_unit*		unit,
+    const char* const		symbol,
+    ut_encoding			encoding)
 {
     ut_set_status(mapUnitToId(&systemToUnitToSymbol, unit, symbol, encoding));
 
@@ -723,8 +723,8 @@ ut_map_unit_to_symbol(
  */
 ut_status
 ut_unmap_unit_to_symbol(
-    ut_unit* const	unit,
-    ut_encoding		encoding)
+    const ut_unit* const	unit,
+    ut_encoding			encoding)
 {
     ut_set_status(unmapUnitToId(systemToUnitToSymbol, unit, encoding));
 

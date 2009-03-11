@@ -5,10 +5,11 @@
 # redistribution conditions.
 #
 ## Process this file with automake to produce Makefile.in
-SUBDIRS	= expat lib prog test
+SUBDIRS	= udunits-1 expat lib prog test
 info_TEXINFOS = udunits2.texi
 udunits2_TEXINFOS = success.texi failure.texi make.texi
 EXTRA_DIST = \
+    ANNOUNCEMENT \
     udunits2.html \
     udunits2.pdf \
     CHANGE_LOG \
@@ -68,9 +69,10 @@ make.texi:	test/results.tab
 remote-checks:	distcheck
 	cd test && $(MAKE) $(AM_MAKEFLAGS) $@
 
-ftp:	$(distArchive)
+ftp:	dist
 	scp $(distArchive) conan:/web/ftp/pub/$(PACKAGE)/
-	mailx -s '$(distName) now available' ed@unidata.ucar.edu
+	mailx -s '$(distName) now available' -a ANNOUNCEMENT -a CHANGE_LOG \
+	    ed@unidata.ucar.edu
 
 web-update:	install-html
 	cd $(DESTDIR)$(htmldir) && \

@@ -73,6 +73,7 @@ hostchecks:	$(distArchive)
 	done
 	touch redo-results
 
+# hostname:os:make:cc:config_opts:exit_status
 results.tab:
 	ls *.results | sed 's/.results//' | \
 	while read host; do \

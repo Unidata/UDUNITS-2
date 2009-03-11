@@ -107,9 +107,9 @@ itumFree(
  */
 static ut_status
 itumAdd(
-    IdToUnitMap*	map,
-    const char* const	id,
-    ut_unit* const	unit)
+    IdToUnitMap*		map,
+    const char* const		id,
+    const ut_unit* const	unit)
 {
     ut_status		status;
     UnitAndId*		targetEntry;
@@ -231,10 +231,10 @@ itumFind(
  */
 static ut_status
 mapIdToUnit(
-    SystemMap** const	systemMap,
-    const char* const	id,
-    ut_unit* const	unit,
-    int			(*compare)(const void*, const void*))
+    SystemMap** const		systemMap,
+    const char* const		id,
+    const ut_unit* const	unit,
+    int				(*compare)(const void*, const void*))
 {
     ut_status		status = UT_SUCCESS;
 
@@ -332,9 +332,9 @@ unmapId(
  */
 ut_status
 ut_map_name_to_unit(
-    const char* const	name,
-    const ut_encoding   encoding,
-    ut_unit* const	unit)
+    const char* const		name,
+    const ut_encoding		encoding,
+    const ut_unit* const	unit)
 {
     ut_set_status(
 	mapIdToUnit(&systemToNameToUnit, name, unit, insensitiveCompare));
@@ -384,9 +384,9 @@ ut_unmap_name_to_unit(
  */
 ut_status
 ut_map_symbol_to_unit(
-    const char* const	symbol,
-    const ut_encoding   encoding,
-    ut_unit* const	unit)
+    const char* const		symbol,
+    const ut_encoding		encoding,
+    const ut_unit* const	unit)
 {
     ut_set_status(
 	mapIdToUnit(&systemToSymbolToUnit, symbol, unit, sensitiveCompare));
@@ -435,9 +435,9 @@ ut_unmap_symbol_to_unit(
  */
 static ut_unit*
 getUnitById(
-    SystemMap* const	systemMap,
-    ut_system* const	system,
-    const char* const	id)
+    const SystemMap* const	systemMap,
+    const ut_system* const	system,
+    const char* const		id)
 {
     ut_unit*	unit = NULL;		/* failure */
 
@@ -483,8 +483,8 @@ getUnitById(
  */
 ut_unit*
 ut_get_unit_by_name(
-    ut_system* const	system,
-    const char* const	name)
+    const ut_system* const	system,
+    const char* const		name)
 {
     ut_set_status(UT_SUCCESS);
 
@@ -511,8 +511,8 @@ ut_get_unit_by_name(
  */
 ut_unit*
 ut_get_unit_by_symbol(
-    ut_system* const	system,
-    const char* const	symbol)
+    const ut_system* const	system,
+    const char* const		symbol)
 {
     ut_set_status(UT_SUCCESS);
 

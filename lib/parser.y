@@ -309,7 +309,17 @@ timestamp:	DATE {
 		    $$ = $1 + ($2 - $3);
 		} |
 		DATE CLOCK INT {
-		    $$ = $1 + ($2 - ut_encode_clock($3/60, $3%60, 0));
+		    int	mag = $3 >= 0 ? $3 : -$3;
+		    if (mag <= 24) {
+			$$ = $1 + ($2 - ut_encode_clock($3, 0, 0));
+		    }
+		    else if (mag >= 100 && mag <= 2400) {
+			$$ = $1 + ($2 - ut_encode_clock($3/100, $3%100, 0));
+		    }
+		    else {
+			ut_set_status(UT_SYNTAX);
+			YYABORT;
+		    }
 		} |
 		DATE CLOCK ID {
 		    int	error = 0;
@@ -337,7 +347,17 @@ timestamp:	DATE {
 		    $$ = $1 - $2;
 		} |
 		TIMESTAMP INT {
-		    $$ = $1 - ut_encode_clock($2/60, $2%60, 0);
+		    int	mag = $2 >= 0 ? $2 : -$2;
+		    if (mag <= 24) {
+			$$ = $1 - ut_encode_clock($2, 0, 0);
+		    }
+		    else if (mag >= 100 && mag <= 2400) {
+			$$ = $1 - ut_encode_clock($2/100, $2%100, 0);
+		    }
+		    else {
+			ut_set_status(UT_SYNTAX);
+			YYABORT;
+		    }
 		} |
 		TIMESTAMP ID {
 		    int	error = 0;
@@ -486,9 +506,9 @@ latin1ToUtf8(
  */
 ut_unit*
 ut_parse(
-    ut_system* const	system,
-    const char* const	string,
-    ut_encoding	        encoding)
+    const ut_system* const	system,
+    const char* const		string,
+    ut_encoding			encoding)
 {
     ut_unit*	unit = NULL;		/* failure */
 
@@ -514,7 +534,7 @@ ut_parse(
         if (utf8String != NULL) {
             YY_BUFFER_STATE	buf = ut_scan_string(utf8String);
 
-            _unitSystem = system;
+            _unitSystem = (ut_system*)system;
             _encoding = encoding;
             _restartScanner = 1;
 

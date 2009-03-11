@@ -1,3 +1,21 @@
+2.1.0	2009-03-11
+	Added UDUNITS-1 API.  This thin interface uses the UDUNITS-2
+	library.  Users will have to recompile their UDUNITS-1-based 
+	code using the new "udunits.h" header-file and rebuild their
+	programs using the new UDUNITS-2 library.  Because the UDUNITS-1
+	API uses the "utUnit" data-structure and the UDUNITS-2 API uses
+	pointers to "ut_unit" data-structures, a small memory-leak is 
+	possible in code that creates many units.  This leak can be 
+	avoided by calling the new method utFree(utUnit*) when the unit
+	is no longer needed.
+
+	Added some "const" qualifiers to the API.
+
+	Modified ut_format() for timestamp units.  It now prints the
+	long form (with hyphens and colons) if the year of the origin is
+	less than 1000 or greater than 9999.  This was done to make
+	ut_format() compatible with ut_parse().
+
 2.0.4	2009-02-21
 	Added copyright notices and LICENSE file.
 

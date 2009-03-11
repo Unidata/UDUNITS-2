@@ -40,7 +40,11 @@ LFLAGS = -d -P$(lex_prefix)
 LDADD = libudunits2.la @LIBS_CUNIT@ -lm @LIBS_COVERAGE@
 AM_LDFLAGS = @CFLAGS_COVERAGE@ @LIBS_COVERAGE@
 libudunits2_la_CFLAGS = @CFLAGS_COVERAGE@
+if ENABLE_UDUNITS_1
+libudunits2_la_LIBADD = ../expat/libexpat.la -lm ../udunits-1/libudunits1.la
+else
 libudunits2_la_LIBADD = ../expat/libexpat.la -lm
+endif
 include_HEADERS = udunits2.h converter.h
 EXTRA_DIST = \
     scanner.l \
@@ -61,6 +65,7 @@ testUnits_CPPFLAGS = @CPPFLAGS_CUNIT@
 TESTS = testUnits
 endif
 
+DISTCLEANFILES	= *.log
 MOSTLYCLEANFILES = lint.log *.ln *.i core core.[0-9]* *.gcov *.gcda *.gcno
 TAGS_FILES = parser.c ../expat/*.c ../expat/*.h
 

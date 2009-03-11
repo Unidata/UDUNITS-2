@@ -83,9 +83,9 @@ typedef struct {
      * belong to the same unit system.
      */
     int			(*compare)(const ut_unit*, const ut_unit*);
-    ut_unit*		(*multiply)(ut_unit*, ut_unit*);
-    ut_unit*		(*raise)(ut_unit*, const int power);
-    ut_unit*		(*root)(ut_unit*, const int root);
+    ut_unit*		(*multiply)(const ut_unit*, const ut_unit*);
+    ut_unit*		(*raise)(const ut_unit*, const int power);
+    ut_unit*		(*root)(const ut_unit*, const int root);
     int			(*initConverterToProduct)(ut_unit*);
     int			(*initConverterFromProduct)(ut_unit*);
     ut_status		(*acceptVisitor)(const ut_unit*, const ut_visitor*,
@@ -196,13 +196,13 @@ static ProductUnit*	productNew(
 static void		productFree(
     ut_unit* const		unit);
 static ut_unit*		productMultiply(
-    ut_unit* const		unit1,
-    ut_unit* const		unit2);
+    const ut_unit* const	unit1,
+    const ut_unit* const	unit2);
 static ut_unit*		productRaise(
-    ut_unit* const		unit,
+    const ut_unit* const	unit,
     const int			power);
 static ut_unit*		productRoot(
-    ut_unit* const		unit,
+    const ut_unit* const	unit,
     const int			root);
 
 static long		juldayOrigin = 0;
@@ -720,14 +720,14 @@ basicCompare(
  */
 static ut_unit*
 basicMultiply(
-    ut_unit* const	unit1,
-    ut_unit* const	unit2)
+    const ut_unit* const	unit1,
+    const ut_unit* const	unit2)
 {
     assert(unit1 != NULL);
     assert(unit2 != NULL);
     assert(IS_BASIC(unit1));
 
-    return productMultiply((ut_unit*)unit1->basic.product, unit2);
+    return productMultiply((const ut_unit*)unit1->basic.product, unit2);
 }
 
 
@@ -745,8 +745,8 @@ basicMultiply(
  */
 static ut_unit*
 basicRaise(
-    ut_unit* const	unit,
-    const int		power)
+    const ut_unit* const	unit,
+    const int			power)
 {
     assert(unit != NULL);
     assert(IS_BASIC(unit));
@@ -771,8 +771,8 @@ basicRaise(
  */
 static ut_unit*
 basicRoot(
-    ut_unit* const	unit,
-    const int		root)
+    const ut_unit* const	unit,
+    const int			root)
 {
     assert(unit != NULL);
     assert(IS_BASIC(unit));
@@ -1056,8 +1056,8 @@ productFree(
  */
 static ut_unit*
 productMultiply(
-    ut_unit* const	unit1,
-    ut_unit* const	unit2)
+    const ut_unit* const	unit1,
+    const ut_unit* const	unit2)
 {
     ut_unit*		result = NULL;	/* failure */
 
@@ -1163,8 +1163,8 @@ productMultiply(
  */
 static ut_unit*
 productRaise(
-    ut_unit* const	unit,
-    const int		power)
+    const ut_unit* const	unit,
+    const int			power)
 {
     ut_unit*		result = NULL;	/* failure */
     const ProductUnit*	product;
@@ -1224,8 +1224,8 @@ productRaise(
  */
 static ut_unit*
 productRoot(
-    ut_unit* const	unit,
-    const int		root)
+    const ut_unit* const	unit,
+    const int			root)
 {
     ut_unit*		result = NULL;	/* failure */
     const ProductUnit*	product;
@@ -1577,9 +1577,9 @@ static UnitOps	galileanOps;
  */
 static ut_unit*
 galileanNew(
-    double	scale,
-    ut_unit*	unit,
-    double	offset)
+    double		scale,
+    const ut_unit*	unit,
+    double		offset)
 {
     ut_unit*	newUnit = NULL;	/* failure */
 
@@ -1724,11 +1724,11 @@ galileanFree(
  */
 static ut_unit*
 galileanMultiply(
-    ut_unit* const	unit1,
-    ut_unit* const	unit2)
+    const ut_unit* const	unit1,
+    const ut_unit* const	unit2)
 {
     ut_unit*		result = NULL;	/* failure */
-    GalileanUnit*	galilean1;
+    const GalileanUnit*	galilean1;
 
     assert(unit1 != NULL);
     assert(unit2 != NULL);
@@ -1779,10 +1779,10 @@ galileanMultiply(
  */
 static ut_unit*
 galileanRaise(
-    ut_unit* const	unit,
-    const int		power)
+    const ut_unit* const	unit,
+    const int			power)
 {
-    GalileanUnit*	galilean;
+    const GalileanUnit*	 galilean;
     ut_unit*             tmp;
     ut_unit*             result = NULL;  /* failure */
 
@@ -1820,10 +1820,10 @@ galileanRaise(
  */
 static ut_unit*
 galileanRoot(
-    ut_unit* const	unit,
-    const int		root)
+    const ut_unit* const	unit,
+    const int			root)
 {
-    GalileanUnit*	galilean;
+    const GalileanUnit*	 galilean;
     ut_unit*             tmp;
     ut_unit*             result = NULL;  /* failure */
 
@@ -2008,7 +2008,7 @@ static UnitOps	timestampOps;
  */
 static ut_unit*
 timestampNewOrigin(
-    ut_unit*		unit,
+    const ut_unit*	unit,
     const double	origin)
 {
     ut_unit*		newUnit = NULL;	/* failure */
@@ -2173,8 +2173,8 @@ timestampFree(
  */
 static ut_unit*
 timestampMultiply(
-    ut_unit* const	unit1,
-    ut_unit* const	unit2)
+    const ut_unit* const	unit1,
+    const ut_unit* const	unit2)
 {
     assert(unit1 != NULL);
     assert(IS_TIMESTAMP(unit1));
@@ -2199,8 +2199,8 @@ timestampMultiply(
  */
 static ut_unit*
 timestampRaise(
-    ut_unit* const	unit,
-    const int		power)
+    const ut_unit* const	unit,
+    const int			power)
 {
     assert(unit != NULL);
     assert(IS_TIMESTAMP(unit));
@@ -2226,8 +2226,8 @@ timestampRaise(
  */
 static ut_unit*
 timestampRoot(
-    ut_unit* const	unit,
-    const int		root)
+    const ut_unit* const	unit,
+    const int			root)
 {
     assert(unit != NULL);
     assert(IS_TIMESTAMP(unit));
@@ -2332,8 +2332,8 @@ static UnitOps	logOps;
  */
 static ut_unit*
 logNew(
-    const double	base,
-    ut_unit* const	reference)
+    const double		base,
+    const ut_unit* const	reference)
 {
     LogUnit*	logUnit;
 
@@ -2454,8 +2454,8 @@ logFree(
  */
 static ut_unit*
 logMultiply(
-    ut_unit* const	unit1,
-    ut_unit* const	unit2)
+    const ut_unit* const	unit1,
+    const ut_unit* const	unit2)
 {
     ut_unit*	result = NULL;		/* failure */
 
@@ -2496,8 +2496,8 @@ logMultiply(
  */
 static ut_unit*
 logRaise(
-    ut_unit* const	unit,
-    const int		power)
+    const ut_unit* const	unit,
+    const int			power)
 {
     assert(unit != NULL);
     assert(IS_LOG(unit));
@@ -2529,8 +2529,8 @@ logRaise(
  */
 static ut_unit*
 logRoot(
-    ut_unit* const	unit,
-    const int		root)
+    const ut_unit* const	unit,
+    const int			root)
 {
     assert(unit != NULL);
     assert(IS_LOG(unit));
@@ -2774,7 +2774,7 @@ coreFreeSystem(
  */
 ut_unit*
 ut_get_dimensionless_unit_one(
-    ut_system* const	system)
+    const ut_system* const	system)
 {
     ut_unit*	one;
 
@@ -2991,7 +2991,7 @@ ut_new_dimensionless_unit(
  */
 ut_status
 ut_set_second(
-    ut_unit* const	second)
+    const ut_unit* const	second)
 {
     ut_set_status(UT_SUCCESS);
 
@@ -3087,8 +3087,8 @@ ut_compare(
  */
 ut_unit*
 ut_scale(
-    const double	factor,
-    ut_unit* const	unit)
+    const double		factor,
+    const ut_unit* const	unit)
 {
     ut_unit*		result = NULL;	/* failure */
 
@@ -3134,8 +3134,8 @@ ut_scale(
  */
 ut_unit*
 ut_offset(
-    ut_unit* const	unit,
-    const double	offset)
+    const ut_unit* const	unit,
+    const double		offset)
 {
     ut_unit*		result = NULL;	/* failure */
 
@@ -3179,8 +3179,8 @@ ut_offset(
  */
 ut_unit*
 ut_offset_by_time(
-    ut_unit* const	unit,
-    const double	origin)
+    const ut_unit* const	unit,
+    const double		origin)
 {
     ut_unit*		result = NULL;	/* failure */
 
@@ -3215,8 +3215,8 @@ ut_offset_by_time(
  */
 ut_unit*
 ut_multiply(
-    ut_unit* const	unit1,
-    ut_unit* const	unit2)
+    const ut_unit* const	unit1,
+    const ut_unit* const	unit2)
 {
     ut_unit*	result = NULL;	/* failure */
 
@@ -3254,7 +3254,7 @@ ut_multiply(
  */
 ut_unit*
 ut_invert(
-    ut_unit* const	unit)
+    const ut_unit* const	unit)
 {
     return ut_raise(unit, -1);
 }
@@ -3283,8 +3283,8 @@ ut_invert(
  */
 ut_unit*
 ut_divide(
-    ut_unit* const	numer,
-    ut_unit* const	denom)
+    const ut_unit* const	numer,
+    const ut_unit* const	denom)
 {
     ut_unit*	result = NULL;		/* failure */
 
@@ -3328,8 +3328,8 @@ ut_divide(
  */
 ut_unit*
 ut_raise(
-    ut_unit* const	unit,
-    const int		power)
+    const ut_unit* const	unit,
+    const int			power)
 {
     ut_unit*		result = NULL;	/* failure */
 
@@ -3375,8 +3375,8 @@ ut_raise(
  */
 ut_unit*
 ut_root(
-    ut_unit* const	unit,
-    const int		root)
+    const ut_unit* const	unit,
+    const int			root)
 {
     ut_unit*		result = NULL;	/* failure */
 
@@ -3442,8 +3442,8 @@ ut_root(
  */
 ut_unit*
 ut_log(
-    const double	base,
-    ut_unit* const	reference)
+    const double		base,
+    const ut_unit* const	reference)
 {
     ut_unit*		result = NULL;	/* failure */
 
@@ -3486,8 +3486,8 @@ ut_log(
  */
 int
 ut_are_convertible(
-    ut_unit* const	unit1,
-    ut_unit* const	unit2)
+    const ut_unit* const	unit1,
+    const ut_unit* const	unit2)
 {
     int			areConvertible = 0;
 
@@ -3521,8 +3521,8 @@ ut_are_convertible(
 
 /*
  * Returns a converter of numeric values in one unit to numeric values in
- * another unit.  The returned converter should be passed to cv_free() when it is
- * no longer needed by the client.
+ * another unit.  The returned converter should be passed to cv_free() when it
+ * is no longer needed by the client.
  *
  * NOTE:  Leap seconds are not taken into account when converting between
  * timestamp units.
@@ -3619,7 +3619,8 @@ ut_get_converter(
 	    }
 	    else {
 		cv_converter*	shiftOrigin =
-		    cv_get_offset(from->timestamp.origin - to->timestamp.origin);
+		    cv_get_offset(
+			from->timestamp.origin - to->timestamp.origin);
 
 		if (shiftOrigin == NULL) {
 		    ut_set_status(UT_OS);
@@ -3645,8 +3646,8 @@ ut_get_converter(
 			    ut_set_status(UT_OS);
 			    ut_handle_error_message(strerror(errno));
 			    ut_handle_error_message(
-				"ut_get_converter(): Couldn't get converter from "
-				"seconds");
+				"ut_get_converter(): Couldn't get converter "
+				"from seconds");
 			}
 			else {
 			    converter = cv_combine(toToUnit, fromSeconds);
@@ -3691,7 +3692,7 @@ ut_get_converter(
  */
 int
 ut_is_dimensionless(
-    ut_unit* const	unit)
+    const ut_unit* const	unit)
 {
     int		isDimensionless = 0;
 

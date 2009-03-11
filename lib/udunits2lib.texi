@@ -70,10 +70,10 @@ Coding:
 @item ut_system* @tab ut_new_system(void);
 @item void      @tab ut_free_system(ut_system* @var{system});
 @item ut_system* @tab ut_get_system(const ut_unit* @var{unit});
-@item ut_unit*   @tab ut_get_dimensionless_unit_one(ut_system* @var{system});
-@item ut_unit*   @tab ut_get_unit_by_name(ut_system* @var{system}, const char* @var{name});
-@item ut_unit*   @tab ut_get_unit_by_symbol(ut_system* @var{system}, const char* @var{symbol});
-@item ut_status @tab  ut_set_second(ut_unit* @var{second});
+@item ut_unit*   @tab ut_get_dimensionless_unit_one(const ut_system* @var{system});
+@item ut_unit*   @tab ut_get_unit_by_name(const ut_system* @var{system}, const char* @var{name});
+@item ut_unit*   @tab ut_get_unit_by_symbol(const ut_system* @var{system}, const char* @var{symbol});
+@item ut_status @tab  ut_set_second(const ut_unit* @var{second});
 @item ut_status @tab  ut_add_name_prefix(ut_system* @var{system}, const char* @var{name}, double @var{value});
 @item ut_status @tab  ut_add_symbol_prefix(ut_system* @var{system}, const char* @var{symbol}, double @var{value});
 @item ut_unit*   @tab ut_new_base_unit(ut_system* @var{system});
@@ -81,30 +81,30 @@ Coding:
 @item ut_unit*   @tab ut_clone(const ut_unit* @var{unit});
 @item void      @tab ut_free(ut_unit* @var{unit});
 @item const char* @tab ut_get_name(const ut_unit* @var{unit}, ut_encoding @var{encoding});
-@item ut_status @tab ut_map_name_to_unit(const char* @var{name}, const ut_encoding @var{encoding}, ut_unit* @var{unit});
+@item ut_status @tab ut_map_name_to_unit(const char* @var{name}, const ut_encoding @var{encoding}, const ut_unit* @var{unit});
 @item ut_status @tab ut_unmap_name_to_unit(ut_system* @var{system}, const char* @var{name}, const ut_encoding @var{encoding});
-@item ut_status @tab ut_map_unit_to_name(ut_unit* @var{unit}, const char* @var{name}, ut_encoding @var{encoding});
-@item ut_status @tab ut_unmap_unit_to_name(ut_unit* @var{unit}, ut_encoding @var{encoding});
+@item ut_status @tab ut_map_unit_to_name(const ut_unit* @var{unit}, const char* @var{name}, ut_encoding @var{encoding});
+@item ut_status @tab ut_unmap_unit_to_name(const ut_unit* @var{unit}, ut_encoding @var{encoding});
 @item const char* @tab ut_get_symbol(const ut_unit* @var{unit}, ut_encoding @var{encoding});
-@item ut_status @tab ut_map_symbol_to_unit(const char* @var{symbol}, const ut_encoding @var{encoding}, ut_unit* @var{unit});
+@item ut_status @tab ut_map_symbol_to_unit(const char* @var{symbol}, const ut_encoding @var{encoding}, const ut_unit* @var{unit});
 @item ut_status @tab ut_unmap_symbol_to_unit(ut_system* @var{system}, const char* @var{symbol}, const ut_encoding @var{encoding});
-@item ut_status @tab ut_map_unit_to_symbol(ut_unit* @var{unit}, const char* @var{symbol}, ut_encoding @var{encoding});
-@item ut_status @tab ut_unmap_unit_to_symbol(ut_unit* @var{unit}, ut_encoding @var{encoding});
-@item int @tab ut_is_dimensionless(ut_unit* @var{unit});
+@item ut_status @tab ut_map_unit_to_symbol(const ut_unit* @var{unit}, const char* @var{symbol}, ut_encoding @var{encoding});
+@item ut_status @tab ut_unmap_unit_to_symbol(const ut_unit* @var{unit}, ut_encoding @var{encoding});
+@item int @tab ut_is_dimensionless(const ut_unit* @var{unit});
 @item int @tab ut_same_system(const ut_unit* @var{unit1}, const ut_unit* @var{unit2});
 @item int @tab ut_compare(const ut_unit* @var{unit1}, const ut_unit* @var{unit2});
-@item int @tab ut_are_convertible(ut_unit* @var{unit1}, ut_unit* @var{unit2});
+@item int @tab ut_are_convertible(const ut_unit* @var{unit1}, const ut_unit* @var{unit2});
 @item cv_converter* @tab ut_get_converter(ut_unit* @var{from}, ut_unit* @var{to});
-@item ut_unit* @tab ut_scale(double @var{factor}, ut_unit* @var{unit});
-@item ut_unit* @tab ut_offset(ut_unit* @var{unit}, double @var{offset});
-@item ut_unit* @tab ut_offset_by_time(ut_unit* @var{unit}, double @var{origin});
-@item ut_unit* @tab ut_multiply(ut_unit* @var{unit1}, ut_unit* @var{unit2});
-@item ut_unit* @tab ut_invert(ut_unit* @var{unit});
-@item ut_unit* @tab ut_divide(ut_unit* @var{numer}, ut_unit* @var{denom});
-@item ut_unit* @tab ut_raise(ut_unit* @var{unit}, int @var{power});
-@item ut_unit* @tab ut_root(ut_unit* @var{unit}, int @var{root});
-@item ut_unit* @tab ut_log(double @var{base}, ut_unit* @var{reference});
-@item ut_unit* @tab ut_parse(ut_system* @var{system}, const char* @var{string}, ut_encoding @var{encoding});
+@item ut_unit* @tab ut_scale(double @var{factor}, const ut_unit* @var{unit});
+@item ut_unit* @tab ut_offset(const ut_unit* @var{unit}, double @var{offset});
+@item ut_unit* @tab ut_offset_by_time(const ut_unit* @var{unit}, double @var{origin});
+@item ut_unit* @tab ut_multiply(const ut_unit* @var{unit1}, const ut_unit* @var{unit2});
+@item ut_unit* @tab ut_invert(const ut_unit* @var{unit});
+@item ut_unit* @tab ut_divide(const ut_unit* @var{numer}, const ut_unit* @var{denom});
+@item ut_unit* @tab ut_raise(const ut_unit* @var{unit}, int @var{power});
+@item ut_unit* @tab ut_root(const ut_unit* @var{unit}, int @var{root});
+@item ut_unit* @tab ut_log(double @var{base}, const ut_unit* @var{reference});
+@item ut_unit* @tab ut_parse(const ut_system* @var{system}, const char* @var{string}, ut_encoding @var{encoding});
 @item char*   @tab ut_trim(char* @var{string}, ut_encoding @var{encoding});
 @item int @tab ut_format(const ut_unit* @var{unit}, char* @var{buf}, size_t @var{size}, unsigned @var{opts});
 @item ut_status @tab ut_accept_visitor(const ut_unit* @var{unit}, const ut_visitor* @var{visitor}, void* @var{arg});
@@ -123,7 +123,7 @@ Coding:
 @item double @tab cv_convert_double(const cv_converter* @var{converter}, double @var{value});
 @item float* @tab cv_convert_floats(const cv_converter* @var{converter}, const float* @var{in}, size_t @var{count}, float* @var{out});
 @item double* @tab cv_convert_doubles(const cv_converter* @var{converter}, const double* @var{const} in, @var{size_t} count, @var{double}* out);
-@item void @tab cv_free(cv_converter* const @var{conv});
+@item void @tab cv_free(cv_converter* @var{conv});
 @end multitable
 @end quotation
 @end example
@@ -319,7 +319,7 @@ the function @code{@ref{ut_get_unit_by_name()}} or
 @cindex getting a unit by its name
 @cindex unit, getting by name
 @anchor{ut_get_unit_by_name()}
-@deftypefun @code{ut_unit*} ut_get_unit_by_name @code{(ut_system* @var{system}, const char* @var{name})}
+@deftypefun @code{ut_unit*} ut_get_unit_by_name @code{(const ut_system* @var{system}, const char* @var{name})}
 Returns the unit to which @var{name} maps from the unit-system referenced by
 @var{system} or @code{NULL} if no such unit exists.
 Name comparisons are case-insensitive.
@@ -338,7 +338,7 @@ one of the following:
 @cindex getting a unit by its symbol
 @cindex unit, getting by symbol
 @anchor{ut_get_unit_by_symbol()}
-@deftypefun @code{ut_unit*} ut_get_unit_by_symbol @code{(ut_system* @var{system}, const char* @var{symbol})}
+@deftypefun @code{ut_unit*} ut_get_unit_by_symbol @code{(const ut_system* @var{system}, const char* @var{symbol})}
 Returns the unit to which @var{symbol} maps from the unit-system referenced by
 @var{system} or @code{NULL} if no such unit exists.
 Symbol comparisons are case-sensitive.
@@ -355,7 +355,7 @@ one of the following:
 @end deftypefun
 
 @anchor{ut_get_dimensionless_unit_one()}
-@deftypefun @code{ut_unit*} ut_get_dimensionless_unit_one @code{(ut_system* @var{system})}
+@deftypefun @code{ut_unit*} ut_get_dimensionless_unit_one @code{(const ut_system* @var{system})}
 Returns the dimensionless unit one of the unit-system referenced by
 @var{system}.
 While not necessary, the returned pointer may be passed to @code{ut_free()}
@@ -497,7 +497,7 @@ function returns results in undefined behavior.
 @end deftypefun
 
 @anchor{ut_set_second()}
-@deftypefun @code{@ref{ut_status}} ut_set_second @code{(ut_unit* @var{second})}
+@deftypefun @code{@ref{ut_status}} ut_set_second @code{(const ut_unit* @var{second})}
 Sets the ``second'' unit of a unit-system.  This function must be called before
 the first call to @code{ut_offset_by_time()} for a unit in the same unit-system.
 @code{@ref{ut_read_xml()}} calls this function if the
@@ -540,7 +540,7 @@ which is automatically included by the UDUNITS-2 header-file
 (@code{<udunits2.h>}) so you don't need to explicitly include it.
 
 @anchor{ut_are_convertible()}
-@deftypefun @code{int} ut_are_convertible @code{(ut_unit* @var{unit1}, ut_unit* @var{unit2})}
+@deftypefun @code{int} ut_are_convertible @code{(const ut_unit* @var{unit1}, uconst t_unit* @var{unit2})}
 Indicates if numeric values in unit @var{unit1} are convertible to numeric
 values in unit @var{unit2} via @ref{ut_get_converter()}.
 In making this determination, dimensionless units are ignored.
@@ -644,7 +644,7 @@ its binary representation:
 @end example
 
 @anchor{ut_parse()}
-@deftypefun @code{ut_unit*} ut_parse @code{(ut_system* @var{system}, const char* @var{string}, ut_encoding @var{encoding})}
+@deftypefun @code{ut_unit*} ut_parse @code{(const ut_system* @var{system}, const char* @var{string}, ut_encoding @var{encoding})}
 Returns the binary unit representation corresponding to the string unit
 representation @var{string} in the character-set @var{encoding} using the
 unit-system @var{system}.
@@ -964,7 +964,7 @@ return from this function results in undefined behavior.
 @end deftypefun
 
 @anchor{ut_scale()}
-@deftypefun @code{ut_unit*} ut_scale @code{(double @var{factor}, ut_unit* @var{unit})}
+@deftypefun @code{ut_unit*} ut_scale @code{(double @var{factor}, const ut_unit* @var{unit})}
 Returns a unit equivalent to another unit scaled by a numeric factor.
 For example:
 @example
@@ -978,7 +978,7 @@ no longer need the unit.
 @end deftypefun
 
 @anchor{ut_offset()}
-@deftypefun @code{ut_unit*} ut_offset @code{(ut_unit* @var{unit}, double @var{offset})}
+@deftypefun @code{ut_unit*} ut_offset @code{(const ut_unit* @var{unit}, double @var{offset})}
 Returns a unit equivalent to another unit relative to a particular
 origin.
 For example:
@@ -1002,7 +1002,7 @@ Operating-system error.  See @code{errno} for the reason.
 @end deftypefun
 
 @anchor{ut_offset_by_time()}
-@deftypefun @code{ut_unit*} ut_offset_by_time @code{(ut_unit* const @var{unit}, const double @var{origin})}
+@deftypefun @code{ut_unit*} ut_offset_by_time @code{(const ut_unit* const @var{unit}, const double @var{origin})}
 Returns a timestamp-unit equivalent to the time unit @var{unit}
 referenced to the time-origin @var{origin} (as returned by
 @code{@ref{ut_encode_time()}}).
@@ -1043,7 +1043,7 @@ Please be careful about using timestamp-units.
 @end deftypefun
 
 @anchor{ut_invert()}
-@deftypefun @code{ut_unit*} ut_invert @code{(ut_unit* @var{unit})}
+@deftypefun @code{ut_unit*} ut_invert @code{(const ut_unit* @var{unit})}
 Returns the inverse (i.e., reciprocal) of the unit @var{unit}.
 This convenience function is equal to 
 @code{@ref{ut_raise(),ut_raise(@var{unit}@comma{}-1)}}.
@@ -1064,7 +1064,7 @@ Operating-system error. See @code{errno} for the reason.
 @end deftypefun
 
 @anchor{ut_raise()}
-@deftypefun @code{ut_unit*} ut_raise @code{(ut_unit* @var{unit}, int @var{power})}
+@deftypefun @code{ut_unit*} ut_raise @code{(const ut_unit* @var{unit}, int @var{power})}
 Returns the unit equal to unit @var{unit} raised to the power @var{power}.
 You should pass the returned pointer to @code{ut_free()} when you
 no longer need the unit.
@@ -1083,7 +1083,7 @@ Operating-system error. See @code{errno} for the reason.
 @end deftypefun
 
 @anchor{ut_root()}
-@deftypefun @code{ut_unit*} ut_root @code{(ut_unit* @var{unit}, int @var{root})}
+@deftypefun @code{ut_unit*} ut_root @code{(const ut_unit* @var{unit}, int @var{root})}
 Returns the unit equal to the @var{root} root of unit @var{unit}.
 You should pass the returned pointer to @code{ut_free()} when you
 no longer need the unit.
@@ -1107,7 +1107,7 @@ Operating-system error. See @code{errno} for the reason.
 @end deftypefun
 
 @anchor{ut_log()}
-@deftypefun @code{ut_unit*} ut_log @code{(double @var{base}, ut_unit* @var{reference})}
+@deftypefun @code{ut_unit*} ut_log @code{(double @var{base}, const ut_unit* @var{reference})}
 Returns the logarithmic unit corresponding to the logarithmic base
 @var{base} and a reference level specified as the unit @var{reference}.
 For example, the following creates a decibel unit with a
@@ -1188,7 +1188,7 @@ Also, @code{@ref{ut_get_status()}} will return @code{UT_BAD_ARG}.
 @end deftypefun
 
 @anchor{ut_is_dimensionless()}
-@deftypefun @code{int} ut_is_dimensionless @code{(ut_unit* @var{unit})}
+@deftypefun @code{int} ut_is_dimensionless @code{(const ut_unit* @var{unit})}
 Indicates if unit @var{unit} is dimensionless (like ``radian'').
 This function returns a non-zero value if the unit is dimensionfull;
 otherwise, @code{0} is returned and
@@ -1284,10 +1284,10 @@ Binary unit operations act on two units.  The functions
 binary unit operations but they are documented elsewhere.
 
 @anchor{ut_multiply()}
-@deftypefun @code{ut_unit*} ut_multiply @code{(ut_unit* @var{unit1}, ut_unit* @var{unit2})}
+@deftypefun @code{ut_unit*} ut_multiply @code{(const ut_unit* @var{unit1}, const ut_unit* @var{unit2})}
 Returns the result of multiplying unit @var{unit1} by unit @var{unit2}.
 You should pass the pointer to @ref{ut_free()} when you no longer need the unit
-On failure, this function returns @code{NUL} and @ref{ut_get_status()}
+On failure, this function returns @code{NULL} and @ref{ut_get_status()}
 will return one of the following:
 
 @table @code
@@ -1301,7 +1301,7 @@ Operating-system error. See @var{errno} for the reason.
 @end deftypefun
 
 @anchor{ut_divide}
-@deftypefun @code{ut_unit*} ut_divide @code{(ut_unit* @var{numer}, ut_unit* @var{denom})}
+@deftypefun @code{ut_unit*} ut_divide @code{(const ut_unit* @var{numer}, const ut_unit* @var{denom})}
 Returns the result of dividing unit @var{numer} by unit @var{denom}.
 You should pass the pointer to @ref{ut_free()} when you no longer need the unit
 On failure, this function returns @code{NULL} and @ref{ut_get_status()} 
@@ -1369,7 +1369,7 @@ You can map a name to a unit and vice versa.  If you use
 @code{@ref{ut_read_xml()}}, then you shouldn't normally need to do this.
 
 @anchor{ut_map_name_to_unit()}
-@deftypefun @code{@ref{ut_status}} ut_map_name_to_unit @code{(const char* @var{name}, const ut_encoding @var{encoding}, ut_unit* @var{unit})}
+@deftypefun @code{@ref{ut_status}} ut_map_name_to_unit @code{(const char* @var{name}, const ut_encoding @var{encoding}, const ut_unit* @var{unit})}
 Maps the name referenced by @var{name}, in character-set @var{encoding},
 to the unit referenced by @var{unit}
 in the unit-system that contains @var{unit}.
@@ -1401,7 +1401,7 @@ Success.
 @end deftypefun
 
 @anchor{ut_map_unit_to_name()}
-@deftypefun @code{@ref{ut_status}} ut_map_unit_to_name @code{(ut_unit* @var{unit}, const char* @var{name}, ut_encoding @var{encoding})}
+@deftypefun @code{@ref{ut_status}} ut_map_unit_to_name @code{(const ut_unit* @var{unit}, const char* @var{name}, ut_encoding @var{encoding})}
 Maps the unit @var{unit} to the name @var{name}, which is in character-set
 @var{encoding}, in the unit-system that contains the unit.
 This function returns one of the following:
@@ -1420,7 +1420,7 @@ Operating-system failure.  See @code{errno}.
 @end deftypefun
 
 @anchor{ut_unmap_unit_to_name()}
-@deftypefun @code{@ref{ut_status}} ut_unmap_unit_to_name @code{(ut_unit* @var{unit}, ut_encoding @var{encoding})}
+@deftypefun @code{@ref{ut_status}} ut_unmap_unit_to_name @code{(const ut_unit* @var{unit}, ut_encoding @var{encoding})}
 Removes any mapping from unit @var{unit} to a name in character-set
 @var{encoding} from the unit-system that contains the unit.
 This function returns one of the following:
@@ -1441,7 +1441,7 @@ You can map a symbol to a unit and vice versa.  If you use
 @code{@ref{ut_read_xml()}}, then you shouldn't normally need to do this.
 
 @anchor{ut_map_symbol_to_unit()}
-@deftypefun @code{@ref{ut_status}} ut_map_symbol_to_unit @code{(const char* @var{symbol}, const ut_encoding @var{encoding}, ut_unit* @var{unit})}
+@deftypefun @code{@ref{ut_status}} ut_map_symbol_to_unit @code{(const char* @var{symbol}, const ut_encoding @var{encoding}, const ut_unit* @var{unit})}
 Maps the symbol referenced by @var{symbol}, in character-set @var{encoding},
 to the unit referenced by @var{unit}
 in the unit-system that contains @var{unit}.
@@ -1473,7 +1473,7 @@ Success.
 @end deftypefun
 
 @anchor{ut_map_unit_to_symbol()}
-@deftypefun @code{@ref{ut_status}} ut_map_unit_to_symbol @code{(ut_unit* @var{unit}, const char* @var{symbol}, ut_encoding @var{encoding})}
+@deftypefun @code{@ref{ut_status}} ut_map_unit_to_symbol @code{(const ut_unit* @var{unit}, const char* @var{symbol}, ut_encoding @var{encoding})}
 Maps the unit @var{unit} to the symbol @var{symbol}, which is in character-set
 @var{encoding}, in the unit-system that contains the unit.
 This function returns one of the following:
@@ -1493,7 +1493,7 @@ Operating-system failure.  See @code{errno}.
 @end deftypefun
 
 @anchor{ut_unmap_unit_to_symbol()}
-@deftypefun @code{@ref{ut_status}} ut_unmap_unit_to_symbol @code{(ut_unit* @var{unit}, ut_encoding @var{encoding})}
+@deftypefun @code{@ref{ut_status}} ut_unmap_unit_to_symbol @code{(const ut_unit* @var{unit}, ut_encoding @var{encoding})}
 Removes any mapping from unit @var{unit} to a symbol in character-set
 @var{encoding} from the unit-system that contains the unit.
 This function returns one of the following:
