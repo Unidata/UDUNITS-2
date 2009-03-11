@@ -72,12 +72,16 @@ remote-checks:	distcheck
 ftp:	dist
 	scp $(distArchive) conan:/web/ftp/pub/$(PACKAGE)/
 	mailx -s '$(distName) now available' -a ANNOUNCEMENT -a CHANGE_LOG \
-	    ed@unidata.ucar.edu
+	    ed@unidata.ucar.edu </dev/null
 
-web-update:	install-html
-	cd $(DESTDIR)$(htmldir) && \
-	rsync $(RSYNC_FLAGS) -aCu --delete --delete-excluded \
+web-update:	install install-html
+	cd $(DESTDIR)$(htmldir) \
+	&& rsync $(RSYNC_FLAGS) -aCu --delete --delete-excluded \
 	    *.html \
+	    conan:/content/software/$(PACKAGE)/$(distName)
+	cd $(datarootdir) \
+	&& rsync $(RSYNC_FLAGS) -aCu --delete \
+	    *.xml \
 	    conan:/content/software/$(PACKAGE)/$(distName)
 	ssh conan rm /content/software/$(PACKAGE)/$(PACKAGE)-2
 	ssh conan ln -s /content/software/$(PACKAGE)/$(distname) \
@@ -85,11 +89,14 @@ web-update:	install-html
 
 download-update:
 	ssh conan sed -e \
-	    's/"%current%" value="[0-9.]*"/"%current%" value="$(VERSION)"' \
-	    /content/downloads/$(PACKAGE)/toc.xml \
-	    > /content/downloads/$(PACKAGE)/toc.xml.new
+	    "'s/\"%current%\" value=\".*\"/\"%current%\" value=$(VERSION)/'" \
+	    /content/downloads/udunits/toc.xml >toc.xml.new
+	scp toc.xml.new conan:/content/downloads/udunits/toc.xml.new
+	ssh conan mv -f /content/downloads/$(PACKAGE)/toc.xml \
+	    /content/downloads/$(PACKAGE)/toc.xml.old
 	ssh conan mv -f /content/downloads/$(PACKAGE)/toc.xml.new \
 	    /content/downloads/$(PACKAGE)/toc.xml
+	rm toc.xml.new
 
 available:	ftp web-update download-update
 

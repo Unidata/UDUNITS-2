@@ -1,3 +1,10 @@
+2.1.1
+	Corrected the in-house make(1) targets "ftp" and
+	"download-update".
+
+	Added publication of the XML database on the UDUNITS website to
+	the target "web-update".
+
 2.1.0	2009-03-11
 	Added UDUNITS-1 API.  This thin interface uses the UDUNITS-2
 	library.  Users will have to recompile their UDUNITS-1-based 
