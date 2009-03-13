@@ -84,7 +84,7 @@ web-update:	install install-html
 	    *.xml \
 	    conan:/content/software/$(PACKAGE)/$(distName)
 	ssh conan rm /content/software/$(PACKAGE)/$(PACKAGE)-2
-	ssh conan ln -s /content/software/$(PACKAGE)/$(distname) \
+	ssh conan ln -s /content/software/$(PACKAGE)/$(distName) \
 	    /content/software/$(PACKAGE)/$(PACKAGE)-2
 
 download-update:

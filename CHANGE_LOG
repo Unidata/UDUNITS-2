@@ -1,3 +1,7 @@
+2.1.2
+	Corrected rule for target "web-update": changed "distname" to
+	"distName".
+
 2.1.1	2009-03-13
 	Corrected and improved the in-house-only make(1) targets "ftp"
 	and "download-update".
