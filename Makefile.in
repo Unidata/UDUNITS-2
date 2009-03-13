@@ -990,9 +990,10 @@ web-update:	install install-html
 	    /content/software/$(PACKAGE)/$(PACKAGE)-2
 
 download-update:
-	ssh conan sed -e \
-	    "'s/\"%current%\" value=\".*\"/\"%current%\" value=$(VERSION)/'" \
-	    /content/downloads/udunits/toc.xml >toc.xml.new
+	ssh conan cat /content/downloads/udunits/toc.xml \
+	    | sed -e \
+		's/"%current%" value=".*"/"%current%" value="$(VERSION)"/' \
+		>toc.xml.new
 	scp toc.xml.new conan:/content/downloads/udunits/toc.xml.new
 	ssh conan mv -f /content/downloads/$(PACKAGE)/toc.xml \
 	    /content/downloads/$(PACKAGE)/toc.xml.old
