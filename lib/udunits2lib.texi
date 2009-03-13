@@ -1684,7 +1684,7 @@ This pathname is the default that @code{@ref{ut_read_xml()}} uses.
 
 Naturally, because the database is a regular file, it can be edited
 to add new units or remove existing ones.
-Be very careful about doing this, however, because you might loose
+Be very careful about doing this, however, because you might lose
 the benefit of exchanging unit-based information with others who
 haven't modified their database.
 
