@@ -153,7 +153,7 @@ Get this package from its download-page at
 appropriate place, e.g.,
 
      cd /usr/local/src
-     gunzip -c udunits-2.1.1.tar.gz | pax -r
+     gunzip -c udunits-2.1.2.tar.gz | pax -r
 
 
 File: udunits2.info,  Node: Install,  Next: Support,  Prev: Obtain,  Up: Top
@@ -199,7 +199,7 @@ File: udunits2.info,  Node: Long,  Next: What,  Prev: Short,  Up: Install
 ==================================
 
   1. Go to the top-level source-directory of this package, e.g.,
-          cd udunits-2.1.1
+          cd udunits-2.1.2
 
   2. Because some `make' utilities cannot build this package correctly,
      locate the operating system that is closest to yours in the
@@ -207,6 +207,7 @@ File: udunits2.info,  Node: Long,  Next: What,  Prev: Short,  Up: Install
 
           O/S                            `make' Utility
           ------------------------------------------------------- 
+          `AIX 1 5'                      `/bin/make'
           `AIX 1 5'                      `/opt/gnu/bin/make'
           `AIX 1 5'                      `/usr/ccs/bin/make'
           `Darwin 8.11.0'                `/usr/bin/gnumake'
@@ -246,40 +247,79 @@ File: udunits2.info,  Node: Long,  Next: What,  Prev: Short,  Up: Install
           O/S                            Compiler                  `configure' Option
           ------------------------------------------------------------------------------ 
           `AIX 1 5'                      `/opt/gnu/bin/gcc'        `'
+          `AIX 1 5'                      `/opt/gnu/bin/gcc'        `--disable-shared'
           `AIX 1 5'                      `/usr/vac/bin/c89'        `'
+          `AIX 1 5'                      `/usr/vac/bin/c89'        `--disable-shared'
+          `AIX 1 5'                      `/usr/vac/bin/cc'         `'
+          `AIX 1 5'                      `/usr/vac/bin/cc'         `--disable-shared'
           `AIX 1 5'                      `/usr/vac/bin/xlc'        `'
+          `AIX 1 5'                      `/usr/vac/bin/xlc'        `--disable-shared'
+          `Darwin 8.11.0'                `/usr/bin/c89'            `--disable-shared'
           `Darwin 8.11.0'                `/usr/bin/cc'             `'
+          `Darwin 8.11.0'                `/usr/bin/cc'             `--disable-shared'
           `Darwin 8.11.0'                `/usr/bin/gcc'            `'
+          `Darwin 8.11.0'                `/usr/bin/gcc'            `--disable-shared'
+          `Darwin 9.6.0'                 `/usr/bin/c89'            `--disable-shared'
           `Darwin 9.6.0'                 `/usr/bin/cc'             `'
+          `Darwin 9.6.0'                 `/usr/bin/cc'             `--disable-shared'
           `Darwin 9.6.0'                 `/usr/bin/gcc'            `'
+          `Darwin 9.6.0'                 `/usr/bin/gcc'            `--disable-shared'
           `IRIX64 6.5'                   `/bin/c89'                `'
+          `IRIX64 6.5'                   `/bin/c89'                `--disable-shared'
           `IRIX64 6.5'                   `/bin/cc'                 `'
+          `IRIX64 6.5'                   `/bin/cc'                 `--disable-shared'
           `IRIX64 6.5'                   `/opt/gnu/bin/gcc'        `'
+          `IRIX64 6.5'                   `/opt/gnu/bin/gcc'        `--disable-shared'
           `Linux                         `/usr/bin/c89'            `'
+          2.6.27.7-134.fc10.x86_64'                                
+          `Linux                         `/usr/bin/c89'            `--disable-shared'
           2.6.27.7-134.fc10.x86_64'                                
           `Linux                         `/usr/bin/cc'             `'
           2.6.27.7-134.fc10.x86_64'                                
+          `Linux                         `/usr/bin/cc'             `--disable-shared'
+          2.6.27.7-134.fc10.x86_64'                                
           `Linux                         `/usr/bin/gcc'            `'
+          2.6.27.7-134.fc10.x86_64'                                
+          `Linux                         `/usr/bin/gcc'            `--disable-shared'
           2.6.27.7-134.fc10.x86_64'                                
           `Linux                         `/usr/bin/c89'            `'
           2.6.27.9-73.fc9.x86_64'                                  
+          `Linux                         `/usr/bin/c89'            `--disable-shared'
+          2.6.27.9-73.fc9.x86_64'                                  
           `Linux                         `/usr/bin/cc'             `'
           2.6.27.9-73.fc9.x86_64'                                  
+          `Linux                         `/usr/bin/cc'             `--disable-shared'
+          2.6.27.9-73.fc9.x86_64'                                  
           `Linux                         `/usr/bin/gcc'            `'
+          2.6.27.9-73.fc9.x86_64'                                  
+          `Linux                         `/usr/bin/gcc'            `--disable-shared'
           2.6.27.9-73.fc9.x86_64'                                  
           `OSF1 V5.1'                    `/bin/c89'                `'
+          `OSF1 V5.1'                    `/bin/c89'                `--disable-shared'
           `OSF1 V5.1'                    `/bin/cc'                 `'
+          `OSF1 V5.1'                    `/bin/cc'                 `--disable-shared'
           `OSF1 V5.1'                    `/opt/gnu/bin/gcc'        `'
+          `OSF1 V5.1'                    `/opt/gnu/bin/gcc'        `--disable-shared'
           `OSF1 V5.1'                    `/usr/ccs/bin/c89'        `'
+          `OSF1 V5.1'                    `/usr/ccs/bin/c89'        `--disable-shared'
           `OSF1 V5.1'                    `/usr/ccs/bin/cc'         `'
+          `OSF1 V5.1'                    `/usr/ccs/bin/cc'         `--disable-shared'
           `SunOS 5.10'                   `/opt/csw/gcc3/bin/gcc'   `'
+          `SunOS 5.10'                   `/opt/csw/gcc3/bin/gcc'   `--disable-shared'
           `SunOS 5.10'                   `/opt/csw/gcc4/bin/gcc'   `'
+          `SunOS 5.10'                   `/opt/csw/gcc4/bin/gcc'   `--disable-shared'
           `SunOS 5.10'                   `/opt/SUNWspro/bin/c89'   `'
+          `SunOS 5.10'                   `/opt/SUNWspro/bin/c89'   `--disable-shared'
           `SunOS 5.10'                   `/opt/SUNWspro/bin/cc'    `'
+          `SunOS 5.10'                   `/opt/SUNWspro/bin/cc'    `--disable-shared'
           `SunOS 5.9'                    `/opt/csw/gcc3/bin/gcc'   `'
+          `SunOS 5.9'                    `/opt/csw/gcc3/bin/gcc'   `--disable-shared'
           `SunOS 5.9'                    `/opt/csw/gcc4/bin/gcc'   `'
+          `SunOS 5.9'                    `/opt/csw/gcc4/bin/gcc'   `--disable-shared'
           `SunOS 5.9'                    `/opt/SUNWspro/bin/c89'   `'
+          `SunOS 5.9'                    `/opt/SUNWspro/bin/c89'   `--disable-shared'
           `SunOS 5.9'                    `/opt/SUNWspro/bin/cc'    `'
+          `SunOS 5.9'                    `/opt/SUNWspro/bin/cc'    `--disable-shared'
 
      The option `--disable-shared' causes the build process to create a
      static library only: a sharable library is not created.  This
@@ -292,12 +332,8 @@ File: udunits2.info,  Node: Long,  Next: What,  Prev: Short,  Up: Install
 
           O/S                            Compiler                  `configure' Option
           ------------------------------------------------------------------------------ 
-          `AIX 1 5'                      `/usr/vac/bin/cc'         `'
-          `AIX 1 5'                      `/usr/vac/bin/cc'         `--disable-shared'
           `Darwin 8.11.0'                `/usr/bin/c89'            `'
-          `Darwin 8.11.0'                `/usr/bin/c89'            `--disable-shared'
           `Darwin 9.6.0'                 `/usr/bin/c89'            `'
-          `Darwin 9.6.0'                 `/usr/bin/c89'            `--disable-shared'
           `SunOS 5.10'                   `/opt/SUNWspro/bin/c99'   `'
           `SunOS 5.10'                   `/opt/SUNWspro/bin/c99'   `--disable-shared'
           `SunOS 5.9'                    `/opt/SUNWspro/bin/c99'   `'
@@ -427,8 +463,8 @@ Node: Obtain6966
 Node: Install7308
 Node: Short7584
 Node: Long8360
-Node: What16333
-Node: Support18601
-Node: Complete Index18911
+Node: What19288
+Node: Support21556
+Node: Complete Index21866
 
 End Tag Table

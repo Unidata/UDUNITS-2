@@ -310,31 +310,30 @@ getInputValue(void)
 	    break;
 
 	if (nbytes > 0) {
-            int         n = sscanf(buf, "%lg %s", &_haveNumber, _haveUnitSpec);
+	    int		nchar;
+            int         n = sscanf(buf, "%lg %n", &_haveNumber, &nchar);
+
+	    if (n == 0) {
+		_haveNumber = 1;
+	    }
+
+	    (void)strcpy(_haveUnitSpec, buf+nchar);
+
+	    if (_haveUnitSpec[0] == 0) {
+		(void)strcpy(_haveUnitSpec, "1");
+	    }
 
 	    ut_free(_haveUnit);
+	    _haveUnit = ut_parse(_unitSystem, _haveUnitSpec, _encoding);
 
-            if (n == 1) {
-                _haveUnitSpec[0] = 0;
-                _haveUnit = ut_get_dimensionless_unit_one(_unitSystem);
-            }
-            else if (n != EOF) {
-                if (n == 0) {
-                    _haveNumber = 1;
-                    (void)strcpy(_haveUnitSpec, buf);
-                }
-
-                _haveUnit = ut_parse(_unitSystem, _haveUnitSpec, _encoding);
-
-                if (_haveUnit == NULL) {
-                    (void)fprintf(stderr, "%s: Don't recognize \"%s\"\n",
-                        _progname, _haveUnitSpec);
-                }
-                else {
-                    success = 1;
-                    break;
-                }
-            }
+	    if (_haveUnit == NULL) {
+		(void)fprintf(stderr, "%s: Don't recognize \"%s\"\n",
+		    _progname, _haveUnitSpec);
+	    }
+	    else {
+		success = 1;
+		break;
+	    }
 	}
     }
 

@@ -21,6 +21,7 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 
 #include "udunits2.h"
@@ -736,7 +737,7 @@ latin1PrintProduct(
  */
 static ut_status
 formatProduct(
-    const ut_unit* const		unit,
+    const ut_unit* const	unit,
     const int			count,
     const ut_unit* const* const	basicUnits,
     const int* const		powers,
@@ -745,20 +746,29 @@ formatProduct(
     FormatPar*	formatPar = (FormatPar*)arg;
     int		nchar;
 
-    if (formatPar->getDefinition) {
-	nchar = formatPar->printProduct(basicUnits, powers, count,
-	    formatPar->buf, formatPar->size, formatPar->getId);
+    if (ut_compare(unit,
+	    ut_get_dimensionless_unit_one(ut_get_system(unit))) == 0) {
+	/*
+	 * The dimensionless unit one is special.
+	 */
+	(void)strncpy(formatPar->buf, "1", formatPar->size);
+	nchar = formatPar->size > 0 ? 1 : 0;
     }
     else {
-	const char*	id = formatPar->getId(unit, formatPar->encoding);
+	if (formatPar->getDefinition) {
+	    nchar = formatPar->printProduct(basicUnits, powers, count,
+		formatPar->buf, formatPar->size, formatPar->getId);
+	}
+	else {
+	    const char*	id = formatPar->getId(unit, formatPar->encoding);
 
-	nchar = 
-	    id == NULL
-		? formatPar->printProduct(basicUnits, powers, count,
-		    formatPar->buf, formatPar->size, formatPar->getId)
-		: snprintf(formatPar->buf, formatPar->size, "%s", id);
+	    nchar = 
+		id == NULL
+		    ? formatPar->printProduct(basicUnits, powers, count,
+			formatPar->buf, formatPar->size, formatPar->getId)
+		    : snprintf(formatPar->buf, formatPar->size, "%s", id);
+	}
     }
-
     formatPar->nchar = nchar < 0 ? nchar : formatPar->nchar + nchar;
 
     return nchar < 0 ? UT_VISIT_ERROR : UT_SUCCESS;
@@ -1075,29 +1085,29 @@ printLogarithmic(
     const ut_encoding	encoding,
     const int		addParens)
 {
-    char	tmp[512];
-    int		nchar = format(reference, tmp, sizeof(tmp)-1,
+    char	refSpec[512];
+    int		nchar = format(reference, refSpec, sizeof(refSpec)-1,
 	RETURNS_NAME(getId), getDefinition, encoding, 0);
 
     if (nchar >= 0) {
 	const char*	amount;
 
-	tmp[nchar] = 0;
-	amount = isalpha(tmp[0]) ? "1 " : "";
+	refSpec[nchar] = 0;
+	amount = isalpha(refSpec[0]) ? "1 " : "";
 
 	if (base == 2) {
-	    nchar = snprintf(buf, max, "lb(re %s%s)", amount, tmp);
+	    nchar = snprintf(buf, max, "lb(re %s%s)", amount, refSpec);
 	}
 	else if (base == M_E) {
-	    nchar = snprintf(buf, max, "ln(re %s%s)", amount, tmp);
+	    nchar = snprintf(buf, max, "ln(re %s%s)", amount, refSpec);
 	}
 	else if (base == 10) {
-	    nchar = snprintf(buf, max, "lg(re %s%s)", amount, tmp);
+	    nchar = snprintf(buf, max, "lg(re %s%s)", amount, refSpec);
 	}
 	else {
 	    nchar = snprintf(buf, max,
 		addParens ? "(%.*g ln(re %s%s))" : "%.*g ln(re %s%s)",
-		DBL_DIG, 1/log(base), amount, tmp);
+		DBL_DIG, 1/log(base), amount, refSpec);
 	}
     }					/* printed reference unit */
 

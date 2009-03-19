@@ -5,6 +5,7 @@
 .exrc
 *.fn
 *.ky
+.libs
 *.log
 Makefile
 *.o
@@ -13,7 +14,7 @@ tags
 *.toc
 *.tp
 udunits2
-.vimrc
-*.vr
 udunits2prog.html
 udunits2prog.pdf
+.vimrc
+*.vr

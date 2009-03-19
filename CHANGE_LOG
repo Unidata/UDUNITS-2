@@ -1,9 +1,18 @@
-2.1.2
+2.1.2	2009-03-19
+	Corrected program udunits2(1): it now correctly parses units
+	like "0.1 lg(re 1.0e-12 W.m-2)".
+
+	Made the dimensionless unit one format as "1".
+
 	Corrected rule for target "web-update": changed "distname" to
 	"distName".
 
+	Corrected the development make(1) target "hostcheck": added
+	setting of MAKEFLAGS to the empty string before invoking
+	make(1).
+
 2.1.1	2009-03-13
-	Corrected and improved the in-house-only make(1) targets "ftp"
+	Corrected and improved the development make(1) targets "ftp"
 	and "download-update".
 
 	Added publication of the XML database on the UDUNITS website to

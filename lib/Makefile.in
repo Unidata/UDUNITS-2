@@ -301,6 +301,7 @@ EXTRA_DIST = \
 
 AM_YFLAGS = -t -p ut
 @HAVE_CUNIT_TRUE@testUnits_CPPFLAGS = @CPPFLAGS_CUNIT@
+@HAVE_CUNIT_TRUE@TESTS_ENVIRONMENT = UDUNITS2_XML_PATH='$(srcdir)/udunits2.xml'
 DISTCLEANFILES = *.log
 MOSTLYCLEANFILES = lint.log *.ln *.i core core.[0-9]* *.gcov *.gcda *.gcno
 TAGS_FILES = parser.c ../expat/*.c ../expat/*.h
@@ -1175,7 +1176,8 @@ uninstall-am: uninstall-dataDATA uninstall-dvi-am uninstall-html-am \
 	gcov -o .libs/libudunits2_la-$<.o $<.c
 
 @HAVE_CUNIT_TRUE@debug:		testUnits
-@HAVE_CUNIT_TRUE@	libtool --mode=execute gdb testUnits
+@HAVE_CUNIT_TRUE@	UDUNITS2_XML_PATH='$(srcdir)/udunits2.xml' \
+@HAVE_CUNIT_TRUE@	    libtool --mode=execute gdb testUnits
 
 parser.o: scanner.c
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

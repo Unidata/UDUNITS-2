@@ -1465,7 +1465,7 @@ productAcceptVisitor(
     assert(IS_PRODUCT(unit));
     assert(visitor != NULL);
 
-    if (basicUnits == NULL) {
+    if (count != 0 && basicUnits == NULL) {
 	ut_set_status(UT_OS);
 	ut_handle_error_message(strerror(errno));
 	ut_handle_error_message("productAcceptVisitor(): "
@@ -1474,7 +1474,7 @@ productAcceptVisitor(
     else {
 	int*	powers = malloc(sizeof(int)*count);
 
-	if (powers == NULL) {
+	if (count != 0 && powers == NULL) {
 	    ut_set_status(UT_OS);
 	    ut_handle_error_message(strerror(errno));
 	    ut_handle_error_message("productAcceptVisitor(): "
@@ -1496,7 +1496,8 @@ productAcceptVisitor(
 	    free(powers);
 	}
 
-	free(basicUnits);
+	if (count > 0)
+	    free(basicUnits);
     }
 
     return ut_get_status();

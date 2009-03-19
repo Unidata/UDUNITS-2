@@ -11,26 +11,28 @@ distName = $(PACKAGE)-$(VERSION)
 distArchive = $(top_srcdir)/$(distName).tar.gz
 topTmpDir = /tmp/$(distName)
 
-# The following rule is executed on the remote system.
+# The following rule is executed on the remote system.  Setting
+# MAKEFILES to the empty string on the make(1) invocation line appears
+# to be necessary due to a bug in the AIX 5.1 make(1).
 hostcheck: $(distArchive)
 	-test -d $(topTmpDir) && \
 	    (chmod -R +w $(topTmpDir) && rm -rf $(topTmpDir))
 	gunzip -c $(distArchive) | \
 	    (mkdir $(topTmpDir) && cd $(topTmpDir) && pax -r)
 	if cd $(topTmpDir)/$(distName); then \
-	    eval ./configure --prefix=$(topTmpDir) --enable-debug \
-		$(SHARED_OPT) CC='$(CC)'; \
+	    ./configure --prefix=$(topTmpDir) $(SHARED_OPT) CC='$(CC)'; \
 	    status=$$?; \
 	    if test $$status -eq 0; then \
-		$(MAKE) all check install install-html \
+		MAKEFLAGS= $(MAKE) all check install install-html \
 		    install-pdf uninstall; \
 		status=$$?; \
 	    fi; \
-	    cd /tmp && rm -rf $(topTmpDir); \
+	    cd /tmp; \
+	    rm -rf $(topTmpDir); \
 	    exit $$status; \
 	fi
 
-# The following rule starts multiple, parallel, asynchronous builds.
+# The following rule starts multiple, concurrent, asynchronous builds.
 hostchecks:	$(distArchive)
 	rm -f $@ results.tab
 	hosts=`ls *.host | sed 's/.host//'`; \
@@ -54,21 +56,29 @@ hostchecks:	$(distArchive)
 	echo "Done waiting"; \
 	exit $$status
 
-# The following rule starts a build process on a remote system.
+# The following rule starts a single synchronous build process on a remote
+# system.
+singleCheck:
+	ssh $(host) $(shell) "'cd $$PWD && $(make) MAKE=\"$(make)\" CC=\"$(cc)\" SHARED_OPT=$(sharedOpt) hostcheck'" </dev/null
+
+# The following rule starts multiple, synchronous build processes on a remote
+# system.
 .host.check:
 	rm -f $*.results
 	IFS=':' read uname shell <$<; \
 	sed -n '2,$$p' $< | \
 	while IFS=':' read make cc; do \
-	    if ssh $* "$$shell \"cd $$PWD && $$make hostcheck MAKE="$$make" CC='$$cc'\"" </dev/null; then \
+	    if $(MAKE) host="$*" shell="$$shell" make="$$make" \
+		    cc="$$cc" sharedOpt='' singleCheck; then \
 		echo "$$make:$$cc::1" >>$*.results; \
 	    else \
 		echo $$make:$$cc::0 >>$*.results; \
-		if ssh $* "$$shell \"cd $$PWD && $$make hostcheck MAKE="$$make" CC='$$cc' SHARED_OPT=--disable-shared \"" </dev/null; then \
-		    echo $$make:$$cc:--disable-shared:1 >>$*.results; \
-		else \
-		    echo $$make:$$cc:--disable-shared:0 >>$*.results; \
-		fi; \
+	    fi; \
+	    if $(MAKE) host="$*" shell="$$shell" make="$$make" \
+		    cc="$$cc" sharedOpt=--disable-shared singleCheck; then \
+		echo $$make:$$cc:--disable-shared:1 >>$*.results; \
+	    else \
+		echo $$make:$$cc:--disable-shared:0 >>$*.results; \
 	    fi; \
 	done
 	touch redo-results
@@ -84,7 +94,7 @@ results.tab:
 
 remote-checks:	hostchecks results.tab
 
-.PHONY:	hostchecks hostcheck remote-checks
+.PHONY:	singleCheck hostchecks hostcheck remote-checks
 
 ## The following entries are necessary to stop make(1)s that don't
 ## understand the .PHONY target from trying to create the given files.

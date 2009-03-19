@@ -59,10 +59,17 @@ static int
 setup(
     void)
 {
-    (void)strcat(strcpy(xmlPath, getenv("srcdir")), "/udunits2.xml");
-    unitSystem = ut_new_system();
+    int		status = -1;	/* failure */
+    const char*	path = getenv("UDUNITS2_XML_PATH");
 
-    return unitSystem == NULL ? -1 : 0;
+    if (path != NULL) {
+	(void)strcpy(xmlPath, path);
+	unitSystem = ut_new_system();
+	if (unitSystem != NULL)
+	    status = 0;
+    }
+
+    return status;
 }
 
 
@@ -81,12 +88,17 @@ test_unitSystem(void)
 {
     ut_system*	system = ut_new_system();
     ut_unit*	unit;
+    char	buf[80];
 
     CU_ASSERT_PTR_NOT_NULL(system);
     ut_set_status(UT_SUCCESS);
     unit = ut_new_base_unit(system);
     CU_ASSERT_PTR_NOT_NULL(unit);
     CU_ASSERT_EQUAL(ut_map_unit_to_name(unit, "name", UT_ASCII), UT_SUCCESS);
+    unit = ut_get_dimensionless_unit_one(system);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(unit);
+    CU_ASSERT_EQUAL(ut_format(unit, buf, sizeof(buf)-1, asciiSymbolDef), 1);
+    CU_ASSERT_STRING_EQUAL(buf, "1");
     ut_free_system(system);
     CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
 }

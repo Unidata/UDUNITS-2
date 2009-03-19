@@ -1,6 +1,5 @@
 uname -sr:/opt/gnu/bin/bash --login -c
 /usr/bin/posix/make:/bin/c89
-/bin/make:/bin/c89
 /bin/make:/bin/cc
 /usr/ccs/bin/make:/usr/ccs/bin/c89
 /usr/ccs/bin/make:/usr/ccs/bin/cc

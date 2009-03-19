@@ -62,6 +62,7 @@ AM_YFLAGS = -t -p ut
 if HAVE_CUNIT
 check_PROGRAMS = testUnits
 testUnits_CPPFLAGS = @CPPFLAGS_CUNIT@
+TESTS_ENVIRONMENT = UDUNITS2_XML_PATH='$(srcdir)/udunits2.xml'
 TESTS = testUnits
 endif
 
@@ -85,7 +86,8 @@ SUFFIXES = .c .l
 
 if HAVE_CUNIT
 debug:		testUnits
-	libtool --mode=execute gdb testUnits
+	UDUNITS2_XML_PATH='$(srcdir)/udunits2.xml' \
+	    libtool --mode=execute gdb testUnits
 endif
 
 parser.o: scanner.c
