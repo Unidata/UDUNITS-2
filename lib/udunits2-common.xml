@@ -337,7 +337,7 @@ elements appear only within <aliases>.
             <def>(1200/3937) m></def>
             <aliases>
                 <name>
-                    <singular>US_survey_foot"</singular>
+                    <singular>US_survey_foot</singular>
                     <plural>US_survey_feet</plural>
                 </name>
             </aliases>
@@ -383,7 +383,7 @@ elements appear only within <aliases>.
             <def>12 international_inches</def>
             <aliases>
                 <name>
-                    <singular>international_foot"</singular>
+                    <singular>international_foot</singular>
                     <plural>international_feet</plural>
                 </name>
                 <name>

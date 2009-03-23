@@ -1,3 +1,7 @@
+2.1.3	2009-03-23
+	Corrected typos in XML units database for "US_survey_foot" and
+	"international_foot": removed embedded quotation marks.
+
 2.1.2	2009-03-19
 	Corrected program udunits2(1): it now correctly parses units
 	like "0.1 lg(re 1.0e-12 W.m-2)".
