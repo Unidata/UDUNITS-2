@@ -1,3 +1,8 @@
+2.1.5	2009-03-24
+	Fixed bug in udunits2(1) utility introduced in version 2.1.2.
+	Entering a "have" unit that didn't have a numerical first
+	component risked a segmentation violation.
+
 2.1.4	2009-03-24
 	Documented the change in meaning of the symbol "g" from the
 	original package (standard free fall) to this package (gram).

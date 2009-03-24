@@ -5,8 +5,7 @@ INFO-DIR-SECTION Science
 START-INFO-DIR-ENTRY
 * udunits-2: (udunits2).  The Unidata package for units of physical quantities.
 END-INFO-DIR-ENTRY
-   Copyright 2007, 2008, 2009 University Corporation for Atmospheric
-Research
+   Copyright 2008, 2009 University Corporation for Atmospheric Research
 
    Access and use of this software shall impose the following
 obligations and understandings on the user. The user is granted the
@@ -45,8 +44,7 @@ This manual introduces the UDUNITS-2 package, which contains a C
 library for units of physical quantities and a unit-definition and
 value-conversion utility.
 
-   Copyright 2007, 2008, 2009 University Corporation for Atmospheric
-Research
+   Copyright 2008, 2009 University Corporation for Atmospheric Research
 
    Access and use of this software shall impose the following
 obligations and understandings on the user. The user is granted the
@@ -156,7 +154,7 @@ Get this package from its download-page at
 appropriate place, e.g.,
 
      cd /usr/local/src
-     gunzip -c udunits-2.1.4.tar.gz | pax -r
+     gunzip -c udunits-2.1.5.tar.gz | pax -r
 
 
 File: udunits2.info,  Node: Install,  Next: Support,  Prev: Obtain,  Up: Top
@@ -202,7 +200,7 @@ File: udunits2.info,  Node: Long,  Next: What,  Prev: Short,  Up: Install
 ==================================
 
   1. Go to the top-level source-directory of this package, e.g.,
-          cd udunits-2.1.4
+          cd udunits-2.1.5
 
   2. Because some `make' utilities cannot build this package correctly,
      locate the operating system that is closest to yours in the
@@ -469,15 +467,15 @@ Index
 
 
 Tag Table:
-Node: Top1992
-Node: Introduction4321
-Node: Differences4795
-Node: Obtain7160
-Node: Install7502
-Node: Short7778
-Node: Long8554
-Node: What20220
-Node: Support22488
-Node: Complete Index22798
+Node: Top1986
+Node: Introduction4309
+Node: Differences4783
+Node: Obtain7148
+Node: Install7490
+Node: Short7766
+Node: Long8542
+Node: What20208
+Node: Support22476
+Node: Complete Index22786
 
 End Tag Table

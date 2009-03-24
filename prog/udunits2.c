@@ -315,6 +315,7 @@ getInputValue(void)
 
 	    if (n == 0) {
 		_haveNumber = 1;
+		nchar = 0;
 	    }
 
 	    (void)strcpy(_haveUnitSpec, buf+nchar);

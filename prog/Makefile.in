@@ -733,7 +733,8 @@ uninstall-am: uninstall-binPROGRAMS uninstall-dvi-am uninstall-html-am \
 	$(CPP) $(CPPFLAGS) $< >$@
 
 debug:		udunits2
-	libtool --mode=execute gdb udunits2
+	UDUNITS2_XML_PATH=$(top_srcdir)/lib/udunits2.xml libtool \
+	    --mode=execute gdb udunits2
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

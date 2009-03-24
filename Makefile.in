@@ -973,7 +973,7 @@ remote-checks:	distcheck
 
 ftp:	dist
 	scp $(distArchive) conan:/web/ftp/pub/$(PACKAGE)/
-	mailx -s '$(distName) now available' -a ANNOUNCEMENT -a CHANGE_LOG \
+	mailx -s '$(distName) now available' -a CHANGE_LOG \
 	    ed@unidata.ucar.edu </dev/null
 
 web-update:	install install-html
