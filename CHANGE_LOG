@@ -1,5 +1,8 @@
-2.1.4
-	Documented change in meaning of "g" from original package.
+2.1.4	2009-03-24
+	Documented the change in meaning of the symbol "g" from the
+	original package (standard free fall) to this package (gram).
+
+	Returned HP-UX to the set of tested operating systems.
 
 2.1.3	2009-03-23
 	Corrected typos in XML units database for "US_survey_foot" and
