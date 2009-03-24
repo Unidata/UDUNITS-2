@@ -99,9 +99,12 @@ helping to create these interfaces.
 
 @end itemize
 
-One thing that has not changed is that all unit string specifications
+One thing that has not changed is that almost all unit string specifications
 understood by the original @code{UDUNITS} package are also
-understood by the new @code{UDUNITS-2} package.
+understood by the new @code{UDUNITS-2} package.  The one exception is
+the symbol @code{g}, which in the original package was associated with
+standard free fall (a unit of accelleration) but which is associated
+with gram in the new package.
 
 @node Obtain, Install, Differences, Top
 @chapter Obtaining this Package
