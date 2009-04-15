@@ -62,7 +62,7 @@ The @code{UDUNIT-2} package differs from the original @code{UDUNITS}
 package in the following ways:
 @itemize @bullet
 
-@item @strong{Support for non-ASCII characters.}  
+@item @strong{Support for non-ASCII characters:}  
 The original @code{UDUNITS}
 package only supports the ASCII character set.  The @code{UDUNITS-2}
 package supports the following character sets: ASCII, ISO 8859-1 (Latin-1),
@@ -70,29 +70,31 @@ and the UTF-8 encoding of ISO 10646 (Unicode).  This means that unit
 string specifications like "@code{µ°F·Ω⁻¹}" are now supported (your
 viewer must support UTF-8 to display this string correctly).
 
-@item @strong{Support for logarithmic units.}  The unit string
+@item @strong{Support for logarithmic units:}  The unit string
 specification "@code{0.1 lg(re 1 mW)}" specifies a deciBel unit with a
 one milliwatt reference level.
 Such units are fully integrated into the package and all meaningful
 operations and conversions are supported.
 
-@item @strong{Persistent value converters.}
+@item @strong{Persistent value converters:}
 It is now possible to obtain a @emph{converter} data-object, which can
 be used to convert numeric values in one unit to numeric values in another,
 compatible unit.  The values can be @code{float}, @code{double}, or
 one-dimensional arrays of @code{float}s or @code{double}s.
 
-@item @strong{Improved API}.  Due to the above changes, it was not
-possible to keep the application programming interface of the
-original @code{UDUNITS} package.  The new interface, however, is
-easily understood and easy to use.
+@item @strong{Improved API:}  Due to the above changes, it was not
+possible to keep the application programming interface (API) of the original
+@code{UDUNITS} package.  The new interface, however, is easily
+understood and easy to use.  To support backward comptibility,
+the package does contain a version 1 C API, which uses the version 2
+library.
 
-@item @strong{XML unit database}.  The unit database is encoded using
+@item @strong{XML unit database:}  The unit database is encoded using
 human-readable XML rather than a custom format.  The XML
 parser included in the package supports an @emph{<import>} element to
 allow easy and convenient customization.
 
-@item @strong{No Fortran or Perl API}.  Interfaces for these languages
+@item @strong{No Fortran or Perl API:}  Interfaces for these languages
 have not yet been created.  Contact
 @email{support-udunits@@unidata.ucar.edu} if you are interested in
 helping to create these interfaces.

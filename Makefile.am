@@ -5,7 +5,7 @@
 # redistribution conditions.
 #
 ## Process this file with automake to produce Makefile.in
-SUBDIRS	= udunits-1 expat lib prog test
+SUBDIRS	= expat lib prog test
 info_TEXINFOS = udunits2.texi
 udunits2_TEXINFOS = success.texi failure.texi make.texi
 EXTRA_DIST = \

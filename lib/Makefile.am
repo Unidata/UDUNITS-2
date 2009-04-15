@@ -38,13 +38,8 @@ LEX_OUTPUT_ROOT = lex.$(lex_prefix)
 LFLAGS = -d -P$(lex_prefix)
 
 LDADD = libudunits2.la @LIBS_CUNIT@ -lm @LIBS_COVERAGE@
-AM_LDFLAGS = @CFLAGS_COVERAGE@ @LIBS_COVERAGE@
+libudunits2_la_LIBADD = ../expat/libexpat.la
 libudunits2_la_CFLAGS = @CFLAGS_COVERAGE@
-if ENABLE_UDUNITS_1
-libudunits2_la_LIBADD = ../expat/libexpat.la -lm ../udunits-1/libudunits1.la
-else
-libudunits2_la_LIBADD = ../expat/libexpat.la -lm
-endif
 include_HEADERS = udunits2.h converter.h
 EXTRA_DIST = \
     scanner.l \
@@ -64,6 +59,16 @@ check_PROGRAMS = testUnits
 testUnits_CPPFLAGS = @CPPFLAGS_CUNIT@
 TESTS_ENVIRONMENT = UDUNITS2_XML_PATH='$(srcdir)/udunits2.xml'
 TESTS = testUnits
+endif
+
+if ENABLE_UDUNITS_1
+libudunits2_la_SOURCES += udunits-1.c
+include_HEADERS += udunits.h
+testUnits_1_CPPFLAGS = $(AM_CPPFLAGS) @CPPFLAGS_CUNIT@
+if HAVE_CUNIT
+check_PROGRAMS += testUnits-1
+TESTS += testUnits-1
+endif
 endif
 
 DISTCLEANFILES	= *.log

@@ -153,7 +153,6 @@ SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
-UDUNITS_1_LO = @UDUNITS_1_LO@
 VERSION = @VERSION@
 YACC = @YACC@
 YFLAGS = @YFLAGS@
@@ -216,7 +215,7 @@ top_srcdir = @top_srcdir@
 # in the top-level source-directory of the package for copying and
 # redistribution conditions.
 #
-SUBDIRS = udunits-1 expat lib prog test
+SUBDIRS = expat lib prog test
 info_TEXINFOS = udunits2.texi
 udunits2_TEXINFOS = success.texi failure.texi make.texi
 EXTRA_DIST = \

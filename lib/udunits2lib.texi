@@ -668,7 +668,7 @@ Operating-system failure.  See @code{errno} for the reason.
 @anchor{ut_trim()}
 @deftypefun @code{size_t} ut_trim @code{(char* @var{string}, ut_encoding @var{encoding})}
 Removes all leading and trailing whitespace from the NUL-terminated string
-@var{string}.  Returns @var{string}, which is modified if it contains leading
+@var{string}.  Returns @var{string}, which is modified if it contained leading
 or trailing whitespace.
 @end deftypefun
 

@@ -103,35 +103,37 @@ File: udunits2.info,  Node: Differences,  Next: Obtain,  Prev: Introduction,  Up
 
 The `UDUNIT-2' package differs from the original `UDUNITS' package in
 the following ways:
-   * *Support for non-ASCII characters.* The original `UDUNITS' package
+   * *Support for non-ASCII characters:* The original `UDUNITS' package
      only supports the ASCII character set.  The `UDUNITS-2' package
      supports the following character sets: ASCII, ISO 8859-1 (Latin-1),
      and the UTF-8 encoding of ISO 10646 (Unicode).  This means that
      unit string specifications like "`µ°F·Ω⁻¹'" are now supported (your
      viewer must support UTF-8 to display this string correctly).
 
-   * *Support for logarithmic units.*  The unit string specification
+   * *Support for logarithmic units:*  The unit string specification
      "`0.1 lg(re 1 mW)'" specifies a deciBel unit with a one milliwatt
      reference level.  Such units are fully integrated into the package
      and all meaningful operations and conversions are supported.
 
-   * *Persistent value converters.* It is now possible to obtain a
+   * *Persistent value converters:* It is now possible to obtain a
      _converter_ data-object, which can be used to convert numeric
      values in one unit to numeric values in another, compatible unit.
      The values can be `float', `double', or one-dimensional arrays of
      `float's or `double's.
 
-   * *Improved API*.  Due to the above changes, it was not possible to
-     keep the application programming interface of the original
+   * *Improved API:*  Due to the above changes, it was not possible to
+     keep the application programming interface (API) of the original
      `UDUNITS' package.  The new interface, however, is easily
-     understood and easy to use.
+     understood and easy to use.  To support backward comptibility, the
+     package does contain a version 1 C API, which uses the version 2
+     library.
 
-   * *XML unit database*.  The unit database is encoded using
+   * *XML unit database:*  The unit database is encoded using
      human-readable XML rather than a custom format.  The XML parser
      included in the package supports an _<import>_ element to allow
      easy and convenient customization.
 
-   * *No Fortran or Perl API*.  Interfaces for these languages have not
+   * *No Fortran or Perl API:*  Interfaces for these languages have not
      yet been created.  Contact <support-udunits@unidata.ucar.edu> if
      you are interested in helping to create these interfaces.
 
@@ -154,7 +156,7 @@ Get this package from its download-page at
 appropriate place, e.g.,
 
      cd /usr/local/src
-     gunzip -c udunits-2.1.5.tar.gz | pax -r
+     gunzip -c udunits-2.1.6.tar.gz | pax -r
 
 
 File: udunits2.info,  Node: Install,  Next: Support,  Prev: Obtain,  Up: Top
@@ -200,7 +202,7 @@ File: udunits2.info,  Node: Long,  Next: What,  Prev: Short,  Up: Install
 ==================================
 
   1. Go to the top-level source-directory of this package, e.g.,
-          cd udunits-2.1.5
+          cd udunits-2.1.6
 
   2. Because some `make' utilities cannot build this package correctly,
      locate the operating system that is closest to yours in the
@@ -470,12 +472,12 @@ Tag Table:
 Node: Top1986
 Node: Introduction4309
 Node: Differences4783
-Node: Obtain7148
-Node: Install7490
-Node: Short7766
-Node: Long8542
-Node: What20208
-Node: Support22476
-Node: Complete Index22786
+Node: Obtain7277
+Node: Install7619
+Node: Short7895
+Node: Long8671
+Node: What20337
+Node: Support22605
+Node: Complete Index22915
 
 End Tag Table
