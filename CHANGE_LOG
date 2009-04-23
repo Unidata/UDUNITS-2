@@ -1,3 +1,6 @@
+2.1.7
+	Added "make check" to git pre-commit hook.
+
 2.1.6	2009-04-15
 	Added to the installed, top-level, UDUNITS-2 documentation,
 	commentary about the existence of a version 1 C API in the

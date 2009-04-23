@@ -251,13 +251,9 @@ File: udunits2.info,  Node: Long,  Next: What,  Prev: Short,  Up: Install
 
           O/S                            Compiler                  `configure' Option
           ------------------------------------------------------------------------------ 
-          `AIX 1 5'                      `/opt/gnu/bin/gcc'        `'
           `AIX 1 5'                      `/opt/gnu/bin/gcc'        `--disable-shared'
-          `AIX 1 5'                      `/usr/vac/bin/c89'        `'
           `AIX 1 5'                      `/usr/vac/bin/c89'        `--disable-shared'
-          `AIX 1 5'                      `/usr/vac/bin/cc'         `'
           `AIX 1 5'                      `/usr/vac/bin/cc'         `--disable-shared'
-          `AIX 1 5'                      `/usr/vac/bin/xlc'        `'
           `AIX 1 5'                      `/usr/vac/bin/xlc'        `--disable-shared'
           `Darwin 8.11.0'                `/usr/bin/c89'            `--disable-shared'
           `Darwin 8.11.0'                `/usr/bin/cc'             `'
@@ -341,6 +337,10 @@ File: udunits2.info,  Node: Long,  Next: What,  Prev: Short,  Up: Install
 
           O/S                            Compiler                  `configure' Option
           ------------------------------------------------------------------------------ 
+          `AIX 1 5'                      `/opt/gnu/bin/gcc'        `'
+          `AIX 1 5'                      `/usr/vac/bin/c89'        `'
+          `AIX 1 5'                      `/usr/vac/bin/cc'         `'
+          `AIX 1 5'                      `/usr/vac/bin/xlc'        `'
           `Darwin 8.11.0'                `/usr/bin/c89'            `'
           `Darwin 9.6.0'                 `/usr/bin/c89'            `'
           `HP-UX B.11.00'                `/bin/c89'                `'
