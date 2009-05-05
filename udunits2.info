@@ -1,5 +1,5 @@
-This is udunits2.info, produced by makeinfo version 4.12 from
-udunits2.texi.
+This is ../udunits2.info, produced by makeinfo version 4.12 from
+../udunits2.texi.
 
 INFO-DIR-SECTION Science
 START-INFO-DIR-ENTRY
@@ -156,7 +156,7 @@ Get this package from its download-page at
 appropriate place, e.g.,
 
      cd /usr/local/src
-     gunzip -c udunits-2.1.6.tar.gz | pax -r
+     gunzip -c udunits-2.1.7.tar.gz | pax -r
 
 
 File: udunits2.info,  Node: Install,  Next: Support,  Prev: Obtain,  Up: Top
@@ -202,7 +202,7 @@ File: udunits2.info,  Node: Long,  Next: What,  Prev: Short,  Up: Install
 ==================================
 
   1. Go to the top-level source-directory of this package, e.g.,
-          cd udunits-2.1.6
+          cd udunits-2.1.7
 
   2. Because some `make' utilities cannot build this package correctly,
      locate the operating system that is closest to yours in the
@@ -211,7 +211,6 @@ File: udunits2.info,  Node: Long,  Next: What,  Prev: Short,  Up: Install
           O/S                            `make' Utility
           ------------------------------------------------------- 
           `AIX 1 5'                      `/bin/make'
-          `AIX 1 5'                      `/opt/gnu/bin/make'
           `AIX 1 5'                      `/usr/ccs/bin/make'
           `Darwin 8.11.0'                `/usr/bin/gnumake'
           `Darwin 8.11.0'                `/usr/bin/make'
@@ -251,10 +250,11 @@ File: udunits2.info,  Node: Long,  Next: What,  Prev: Short,  Up: Install
 
           O/S                            Compiler                  `configure' Option
           ------------------------------------------------------------------------------ 
-          `AIX 1 5'                      `/opt/gnu/bin/gcc'        `--disable-shared'
+          `AIX 1 5'                      `/usr/vac/bin/c89'        `'
           `AIX 1 5'                      `/usr/vac/bin/c89'        `--disable-shared'
+          `AIX 1 5'                      `/usr/vac/bin/cc'         `'
           `AIX 1 5'                      `/usr/vac/bin/cc'         `--disable-shared'
-          `AIX 1 5'                      `/usr/vac/bin/xlc'        `--disable-shared'
+          `AIX 1 5'                      `/usr/vac/bin/xlc'        `'
           `Darwin 8.11.0'                `/usr/bin/c89'            `--disable-shared'
           `Darwin 8.11.0'                `/usr/bin/cc'             `'
           `Darwin 8.11.0'                `/usr/bin/cc'             `--disable-shared'
@@ -338,9 +338,8 @@ File: udunits2.info,  Node: Long,  Next: What,  Prev: Short,  Up: Install
           O/S                            Compiler                  `configure' Option
           ------------------------------------------------------------------------------ 
           `AIX 1 5'                      `/opt/gnu/bin/gcc'        `'
-          `AIX 1 5'                      `/usr/vac/bin/c89'        `'
-          `AIX 1 5'                      `/usr/vac/bin/cc'         `'
-          `AIX 1 5'                      `/usr/vac/bin/xlc'        `'
+          `AIX 1 5'                      `/opt/gnu/bin/gcc'        `--disable-shared'
+          `AIX 1 5'                      `/usr/vac/bin/xlc'        `--disable-shared'
           `Darwin 8.11.0'                `/usr/bin/c89'            `'
           `Darwin 9.6.0'                 `/usr/bin/c89'            `'
           `HP-UX B.11.00'                `/bin/c89'                `'
@@ -469,15 +468,15 @@ Index
 
 
 Tag Table:
-Node: Top1986
-Node: Introduction4309
-Node: Differences4783
-Node: Obtain7277
-Node: Install7619
-Node: Short7895
-Node: Long8671
-Node: What20337
-Node: Support22605
-Node: Complete Index22915
+Node: Top1992
+Node: Introduction4315
+Node: Differences4789
+Node: Obtain7283
+Node: Install7625
+Node: Short7901
+Node: Long8677
+Node: What20282
+Node: Support22550
+Node: Complete Index22860
 
 End Tag Table

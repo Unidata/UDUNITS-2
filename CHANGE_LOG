@@ -1,4 +1,19 @@
-2.1.7
+2.1.7	2009-05-05
+	Replaced angle brackets with quotation marks in inclusion of the
+	UDUNITS-2 header-file by the UDUNITS-1 header-file.  This was
+	done to accomodate ncview's configure-script and because it's
+	the right thing to do because both header-files are installed in the
+	same directory.
+
+	Added test for math library to configure script to support
+	systems whose C library doesn't have them.
+
+	Improved the process for making the "results.tab" target in the
+	test/ subdirectory.
+
+	Added delays to process for creating documentation source to
+	accomodate broken HP-UX B.11.00 make(1).
+
 	Added "make check" to git pre-commit hook.
 
 2.1.6	2009-04-15

@@ -6,7 +6,8 @@
 #
 ## Process this file with automake to produce Makefile.in
 EXTRA_DIST = \
-    results.tab
+    results.tab \
+    redo-results
 distName = $(PACKAGE)-$(VERSION)
 distArchive = $(top_srcdir)/$(distName).tar.gz
 topTmpDir = /tmp/$(distName)
@@ -34,7 +35,7 @@ hostcheck: $(distArchive)
 
 # The following rule starts multiple, concurrent, asynchronous builds.
 hostchecks:	$(distArchive)
-	rm -f $@ results.tab
+	-rm -f $@
 	hosts=`ls *.host | sed 's/.host//'`; \
 	for host in $$hosts; do \
 	    $(MAKE) -s $$host.check >$$host.log 2>&1 & pid="$$!"; \
@@ -84,7 +85,8 @@ singleCheck:
 	touch redo-results
 
 # hostname:os:make:cc:config_opts:exit_status
-results.tab:
+results.tab:	redo-results
+	sleep 2	# to accomodate broken HP-UX B.11.00 make(1)
 	ls *.results | sed 's/.results//' | \
 	while read host; do \
 	    IFS=':' read uname shell <$$host.host || break; \

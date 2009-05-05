@@ -86,6 +86,8 @@ AM_PROG_LEX
 # Checks for libraries.
 AC_SEARCH_LIBS([dirname], [gen], , 
     AC_MSG_ERROR([cannot find function dirname]))
+AC_SEARCH_LIBS([log10], [m], , 
+    AC_MSG_ERROR([cannot find function log10]))
 
 # Checks for header files.
 AC_HEADER_STDC

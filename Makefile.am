@@ -22,6 +22,7 @@ distArchive = $(distName).tar.gz
 DISTCLEANFILES	= *.log $(distArchive)
 
 success.texi:	test/results.tab
+	sleep 2	# to accomodate broken HP-UX B.11.00 make(1)
 	sort -u -t : -k 2,2 -k 4,4 -k 5,5 test/results.tab | \
 	awk -F: ' \
 	    BEGIN { \
@@ -35,8 +36,10 @@ success.texi:	test/results.tab
 	    END { \
 		print "@end multitable"; \
 	    }' >success.texi
+	sleep 2	# to accomodate broken HP-UX B.11.00 make(1)
 
 failure.texi:	test/results.tab
+	sleep 2	# to accomodate broken HP-UX B.11.00 make(1)
 	sort -u -t : -k 2,2 -k 4,4 -k 5,5 test/results.tab | \
 	awk -F: ' \
 	    BEGIN { \
@@ -50,8 +53,10 @@ failure.texi:	test/results.tab
 	    END { \
 		print "@end multitable"; \
 	    }' >failure.texi
+	sleep 2	# to accomodate broken HP-UX B.11.00 make(1)
 
 make.texi:	test/results.tab
+	sleep 2	# to accomodate broken HP-UX B.11.00 make(1)
 	awk -F: '$$6 == 1 {printf "%s:%s\n", $$2, $$3}' test/results.tab | \
 	sort -t : -u | \
 	awk -F: ' \
@@ -65,6 +70,7 @@ make.texi:	test/results.tab
 	    END { \
 		print "@end multitable"; \
 	    }' >$@
+	sleep 2	# to accomodate broken HP-UX B.11.00 make(1)
 
 remote-checks:	distcheck
 	cd test && $(MAKE) $(AM_MAKEFLAGS) $@
@@ -104,9 +110,9 @@ available:	ftp web-update download-update
 .PHONY:	hostchecks hostcheck remote-checks web-update ftp \
 	download-update available
 
-udunits2.info:	success.texi failure.texi make.texi
-udunits2.html:	success.texi failure.texi make.texi
-udunits2.pdf:	success.texi failure.texi make.texi
+udunits2.info:	success.texi failure.texi make.texi LICENSE
+udunits2.html:	success.texi failure.texi make.texi LICENSE
+udunits2.pdf:	success.texi failure.texi make.texi LICENSE
 
 $(srcdir)/version.texi:  $(srcdir)/stamp-vti
 	@cp $(srcdir)/stamp-vti $@

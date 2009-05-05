@@ -12,7 +12,7 @@
 #ifndef UT_UNITS_H_INCLUDED
 #define UT_UNITS_H_INCLUDED
 
-#include <udunits2.h>
+#include "udunits2.h"
 
 #define UT_NAMELEN              32      /* maximum length of a unit string
 					 * (including all prefixes and EOS) */
