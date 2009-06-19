@@ -966,6 +966,7 @@ elements appear only within <aliases>.
                     <singular>pound_force</singular>
                     <plural>pounds_force</plural>
                 </name>
+                <symbol>lbf</symbol>
             </aliases>
         </unit>
         <unit>
@@ -995,7 +996,6 @@ elements appear only within <aliases>.
                     <singular>ton_force</singular>
                     <plural>tons_force</plural>
                 </name>
-                <symbol>lbf</symbol>
             </aliases>
         </unit>
         <unit>
