@@ -1,3 +1,8 @@
+2.1.9
+	Changed installation directory for units database files from
+	$(datadir) (default: /usr/local/share) to $(pkgdatadir)
+	(default: /usr/local/share/udunits).
+
 2.1.8	2009-06-19
 	Corrected definition of "lbf": was "2000 force_pounds"; is now
 	"1 force_pound".

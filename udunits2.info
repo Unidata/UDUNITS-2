@@ -156,7 +156,7 @@ Get this package from its download-page at
 appropriate place, e.g.,
 
      cd /usr/local/src
-     gunzip -c udunits-2.1.7.tar.gz | pax -r
+     gunzip -c udunits-2.1.9.tar.gz | pax -r
 
 
 File: udunits2.info,  Node: Install,  Next: Support,  Prev: Obtain,  Up: Top
@@ -202,7 +202,7 @@ File: udunits2.info,  Node: Long,  Next: What,  Prev: Short,  Up: Install
 ==================================
 
   1. Go to the top-level source-directory of this package, e.g.,
-          cd udunits-2.1.7
+          cd udunits-2.1.9
 
   2. Because some `make' utilities cannot build this package correctly,
      locate the operating system that is closest to yours in the
@@ -416,12 +416,7 @@ installation directory:
      share/:
      doc                     # Directory. Created if it doesn't exist
      info                    # Directory. Created if it doesn't exist
-     udunits2.xml            # Default unit database
-     udunits2-accepted.xml   # Units accepted for use with the SI
-     udunits2-base.xml       # SI base units
-     udunits2-common.xml     # Common, non-SI units
-     udunits2-derived.xml    # Derived units of the SI
-     udunits2-prefixes.xml   # SI unit prefixes
+     udunits                 # Directory. Created if it doesn't exist
 
      share/doc:
      udunits                 # Directory. Created if it doesn't exist
@@ -439,6 +434,14 @@ installation directory:
      udunits2.info           # INFO documentation on this package
      udunits2lib.info        # INFO documentation on the unit *note library: (udunits2lib)Top.
      udunits2prog.info       # INFO documentation on the unit *note utility: (udunits2prog)Top.
+
+     share/udunits:
+     udunits2.xml            # Default unit database
+     udunits2-accepted.xml   # Units accepted for use with the SI
+     udunits2-base.xml       # SI base units
+     udunits2-common.xml     # Common, non-SI units
+     udunits2-derived.xml    # Derived units of the SI
+     udunits2-prefixes.xml   # SI unit prefixes
 
 
 File: udunits2.info,  Node: Support,  Next: Complete Index,  Prev: Install,  Up: Top
@@ -477,7 +480,7 @@ Node: Install7619
 Node: Short7895
 Node: Long8671
 Node: What20337
-Node: Support22605
-Node: Complete Index22915
+Node: Support22696
+Node: Complete Index23006
 
 End Tag Table

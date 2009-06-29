@@ -19,7 +19,7 @@ libudunits2_la_SOURCES = unitcore.c converter.c formatter.c \
     error.c \
     ut_free_system.c
 BUILT_SOURCES = parser.c scanner.c
-data_DATA = \
+pkgdata_DATA = \
     udunits2.xml \
     udunits2-accepted.xml \
     udunits2-base.xml \
@@ -31,7 +31,7 @@ info_TEXINFOS = udunits2lib.texi
 #pdf_DATA = udunits2lib.pdf
 AM_MAKEINFOFLAGS = -I ..
 AM_MAKEINFOHTMLFLAGS = --no-split -I ..
-AM_CPPFLAGS    = -DDEFAULT_UDUNITS2_XML_PATH='"$(datadir)/udunits2.xml"'
+AM_CPPFLAGS    = -DDEFAULT_UDUNITS2_XML_PATH='"$(pkgdatadir)/udunits2.xml"'
 
 lex_prefix = ut
 LEX_OUTPUT_ROOT = lex.$(lex_prefix)
