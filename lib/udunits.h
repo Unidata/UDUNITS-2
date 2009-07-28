@@ -54,7 +54,7 @@ typedef double	UtFactor;       /* conversion-factor datatype */
  *  Unit-structure.  Don't rely on or mess with the members!
  */
 typedef struct utUnit {
-    ut_unit*		ut_unit;
+    ut_unit*		unit2;
 } utUnit;
 
 #ifdef __cplusplus

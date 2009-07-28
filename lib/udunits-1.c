@@ -78,10 +78,10 @@ void
 utFree(
     utUnit* const	unit)
 {
-    if (tdelete(unit->ut_unit, &ut_units, compare) != NULL) {
-	ut_free(unit->ut_unit);
+    if (tdelete(unit->unit2, &ut_units, compare) != NULL) {
+	ut_free(unit->unit2);
     }
-    unit->ut_unit = NULL;
+    unit->unit2 = NULL;
 }
 
 static void
@@ -103,7 +103,7 @@ setUnit(
     }
     else {
 	freeIfAllocated(unit);
-	unit->ut_unit = ut_unit;
+	unit->unit2 = ut_unit;
 	status = 0;
     }
     return status;
@@ -165,7 +165,7 @@ utCalendar(
 {
     int		status = 0;	/* success */
 
-    cv_converter* converter = ut_get_converter(unit->ut_unit, encodedTimeUnit);
+    cv_converter* converter = ut_get_converter(unit->unit2, encodedTimeUnit);
     if (converter == NULL) {
 	status = encodedTimeUnit == NULL ? UT_ENOINIT : UT_EINVALID;
     }
@@ -198,7 +198,7 @@ utInvCalendar(
 {
     int		status = 0;	/* success */
 
-    cv_converter* converter = ut_get_converter(encodedTimeUnit, unit->ut_unit);
+    cv_converter* converter = ut_get_converter(encodedTimeUnit, unit->unit2);
     if (converter == NULL) {
 	status = encodedTimeUnit == NULL ? UT_ENOINIT : UT_EINVALID;
     }
@@ -290,7 +290,7 @@ utIsTime(
     visitor.visit_galilean = isTimeVisitGalilean;
     visitor.visit_timestamp = isTimeVisitTimestamp;
     visitor.visit_logarithmic = isTimeVisitLogarithmic;
-    return ut_accept_visitor(up->ut_unit, &visitor, NULL);
+    return ut_accept_visitor(up->unit2, &visitor, NULL);
 }
 
 static ut_status
@@ -356,7 +356,7 @@ utHasOrigin(
     visitor.visit_galilean = hasOriginVisitGalilean;
     visitor.visit_timestamp = hasOriginVisitTimestamp;
     visitor.visit_logarithmic = hasOriginVisitLogarithmic;
-    return ut_accept_visitor(up->ut_unit, &visitor, NULL);
+    return ut_accept_visitor(up->unit2, &visitor, NULL);
 }
 
 static utUnit*
@@ -393,7 +393,7 @@ utCopy(
     const utUnit	*source,
     utUnit		*dest)
 {
-    return source == NULL ? NULL : resultingUnit(dest, ut_clone(source->ut_unit));
+    return source == NULL ? NULL : resultingUnit(dest, ut_clone(source->unit2));
 }
 
 /*
@@ -407,7 +407,7 @@ utMultiply(
 {
     return term1 == NULL || term2 == NULL
 	? NULL
-	: resultingUnit(result, ut_multiply(term1->ut_unit, term2->ut_unit));
+	: resultingUnit(result, ut_multiply(term1->unit2, term2->unit2));
 }
 
 /*
@@ -421,7 +421,7 @@ utDivide(
 {
     return numer == NULL || denom == NULL
 	? NULL
-	: resultingUnit(result, ut_divide(numer->ut_unit, denom->ut_unit));
+	: resultingUnit(result, ut_divide(numer->unit2, denom->unit2));
 }
 
 /*
@@ -432,7 +432,7 @@ utInvert(
     const utUnit	*unit,
     utUnit		*result)
 {
-    return unit == NULL ? NULL : resultingUnit(result, ut_invert(unit->ut_unit));
+    return unit == NULL ? NULL : resultingUnit(result, ut_invert(unit->unit2));
 }
 
 /*
@@ -446,7 +446,7 @@ utRaise(
 {
     return unit == NULL
 	? NULL
-	: resultingUnit(result, ut_raise(unit->ut_unit, power));
+	: resultingUnit(result, ut_raise(unit->unit2, power));
 }
 
 /*
@@ -460,7 +460,7 @@ utShift(
 {
     return unit == NULL
 	? NULL
-	: resultingUnit(result, ut_offset(unit->ut_unit, amount));
+	: resultingUnit(result, ut_offset(unit->unit2, amount));
 }
 
 /*
@@ -474,7 +474,7 @@ utScale(
 {
     return unit == NULL
 	? NULL
-	: resultingUnit(result, ut_scale(factor, unit->ut_unit));
+	: resultingUnit(result, ut_scale(factor, unit->unit2));
 }
 
 /*
@@ -488,7 +488,7 @@ utConvert(
     double		*intercept)
 {
     int			status;
-    cv_converter*	converter = ut_get_converter(from->ut_unit, to->ut_unit);
+    cv_converter*	converter = ut_get_converter(from->unit2, to->unit2);
 
     if (converter == NULL) {
 	status = ut_get_status();
@@ -525,7 +525,7 @@ utPrint(
     int	status;
 
     for (;;) {
-	int	len = ut_format(unit->ut_unit, buffer, buflen, UT_ASCII);
+	int	len = ut_format(unit->unit2, buffer, buflen, UT_ASCII);
 	if (len == -1) {
 	    status = ut_get_status();
 
@@ -566,10 +566,10 @@ utAdd(
     int			hasPlural,
     const utUnit	*unit)
 {
-    int	status = ut_map_name_to_unit(name, UT_ASCII, unit->ut_unit);
+    int	status = ut_map_name_to_unit(name, UT_ASCII, unit->unit2);
 
     if (status == UT_SUCCESS) {
-	status = ut_map_unit_to_name(unit->ut_unit, name, UT_ASCII);
+	status = ut_map_unit_to_name(unit->unit2, name, UT_ASCII);
 	if (status == UT_SUCCESS) {
 	    if (!hasPlural) {
 		status = UT_SUCCESS;
@@ -578,10 +578,10 @@ utAdd(
 		extern const char*	ut_form_plural(const char*);
 		const char*	plural = ut_form_plural(name);
 
-		status = ut_map_name_to_unit(plural, UT_ASCII, unit->ut_unit);
+		status = ut_map_name_to_unit(plural, UT_ASCII, unit->unit2);
 	    }				/* unit has plural name */
 	    if (status != UT_SUCCESS) {
-		(void)ut_unmap_unit_to_name(unit->ut_unit, UT_ASCII);
+		(void)ut_unmap_unit_to_name(unit->unit2, UT_ASCII);
 	    }
 	}				/* unit mapped to name */
 	if (status != UT_SUCCESS) {

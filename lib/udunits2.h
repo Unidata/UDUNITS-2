@@ -13,7 +13,7 @@
 
 #include "converter.h"
 
-typedef struct ut_system		ut_system;
+typedef struct ut_system	ut_system;
 typedef union ut_unit		ut_unit;
 
 typedef enum {
