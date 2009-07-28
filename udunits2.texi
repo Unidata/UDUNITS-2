@@ -1,7 +1,10 @@
 \input texinfo  @c -*-texinfo-*-
 @c %**start of header
 @setfilename udunits2.info
-@settitle UDUNITS-2 Manual
+
+@include version.texi
+
+@settitle UDUNITS @value{VERSION} Manual
 @c %**end of header
 @dircategory Science
 @direntry
@@ -10,8 +13,6 @@
 @copying
 @include LICENSE
 @end copying
-
-@include version.texi
 
 @titlepage
 @title The UDUNITS-2 Package
@@ -27,7 +28,7 @@
 @ifnottex
 @node Top, Introduction, (dir), (dir)
 @top UDUNITS-2
-This manual introduces the UDUNITS-2 package, which contains
+This manual describes the UDUNITS-2 package, which contains
 a C library for units of physical quantities and a unit-definition
 and value-conversion utility.
 

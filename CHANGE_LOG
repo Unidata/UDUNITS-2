@@ -3,6 +3,14 @@
 	$(datadir) (default: /usr/local/share) to $(pkgdatadir)
 	(default: /usr/local/share/udunits).
 
+	Changed name of "ut_unit*" member in the UDUNITS-1 "utUnit"
+	backward-compatibility structure from "ut_unit" to "unit2"
+	because, unlike C, the g++ compiler doesn't allow a member to
+	have the same name as a typedef.
+
+	Added version specification to the top-level UDUNITS-2
+	documentation.
+
 2.1.8	2009-06-19
 	Corrected definition of "lbf": was "2000 force_pounds"; is now
 	"1 force_pound".
