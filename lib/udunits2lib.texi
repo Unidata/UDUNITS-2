@@ -309,6 +309,11 @@ Operating-system error.  See @code{errno}.
 @node Extracting, Adding, Obtaining, Unit-Systems
 @section Extracting Units from a Unit-System
 
+@strong{NOTE:} This section covers low-level access to the units of a
+@ref{unit-system}.
+General parsing of arbitrary unit specifications is coverted in
+the section @ref{Parsing}.
+
 A @ref{unit-system} contains mappings from identifiers to units (and
 vice versa).
 Consequently, once you have a unit-system, you can easily
