@@ -147,7 +147,7 @@ Units accepted for use with the SI
         </unit>
         <unit>
             <def>100 are</def>
-            <aliases> <name><singular>hectare></singular></name> </aliases>
+            <aliases> <name><singular>hectare</singular></name> </aliases>
         </unit>
         <unit>
             <def>100 fm^2</def>			<!-- exact -->
