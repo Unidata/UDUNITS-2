@@ -1432,6 +1432,7 @@ productRelationship(
 		    }
 		    else {
 			relationship = PRODUCT_UNCONVERTIBLE;
+			break;
 		    }
 		}
 

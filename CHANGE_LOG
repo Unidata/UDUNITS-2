@@ -1,4 +1,7 @@
-2.1.9
+2.1.9	2009-09-09
+	Fixed bug in ut_are_convertible() that caused it to return true
+	for m2.s-2 and m.s-2.
+
 	Changed installation directory for units database files from
 	$(datadir) (default: /usr/local/share) to $(pkgdatadir)
 	(default: /usr/local/share/udunits).

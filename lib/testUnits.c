@@ -37,6 +37,9 @@ static ut_unit*		micron;
 static ut_unit*		rankine;
 static ut_unit*		celsius;
 static ut_unit*		fahrenheit;
+static ut_unit*		meterPerSecondSquared;
+static ut_unit*		meterSquaredPerSecondSquared;
+static ut_unit*		joulePerKilogram;
 static ut_unit*		watt;
 static ut_unit*		wattSquared;
 static ut_unit*		cubicMeter;
@@ -697,8 +700,38 @@ test_utDivide(void)
     buf[nchar] = 0;
     CU_ASSERT_STRING_EQUAL(buf, "m.K-1");
 
-    watt = ut_divide(ut_multiply(kilogram, ut_raise(ut_divide(meter, second), 2)),
-	second);
+    meterPerSecondSquared = ut_divide(meter, ut_raise(second, 2));
+    CU_ASSERT_PTR_NOT_NULL(meterPerSecondSquared);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
+    nchar = ut_format(meterPerSecondSquared, buf, sizeof(buf)-1,
+	asciiSymbolDef);
+    CU_ASSERT_TRUE_FATAL(nchar > 0);
+    CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
+    buf[nchar] = 0;
+    CU_ASSERT_STRING_EQUAL(buf, "m.s-2");
+
+    meterSquaredPerSecondSquared = ut_raise(ut_divide(meter, second), 2);
+    CU_ASSERT_PTR_NOT_NULL(meterSquaredPerSecondSquared);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
+    nchar = ut_format(meterSquaredPerSecondSquared, buf, sizeof(buf)-1,
+	asciiSymbolDef);
+    CU_ASSERT_TRUE_FATAL(nchar > 0);
+    CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
+    buf[nchar] = 0;
+    CU_ASSERT_STRING_EQUAL(buf, "m2.s-2");
+
+    joulePerKilogram = ut_divide(ut_multiply(kilogram, ut_raise(ut_divide(
+	meter, second), 2)), kilogram);
+    CU_ASSERT_PTR_NOT_NULL(joulePerKilogram);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
+    nchar = ut_format(joulePerKilogram, buf, sizeof(buf)-1, asciiSymbolDef);
+    CU_ASSERT_TRUE_FATAL(nchar > 0);
+    CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
+    buf[nchar] = 0;
+    CU_ASSERT_STRING_EQUAL(buf, "m2.s-2");
+
+    watt = ut_divide(ut_multiply(kilogram, ut_raise(ut_divide(meter, second),
+	2)), second);
     CU_ASSERT_PTR_NOT_NULL(watt);
     CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
     nchar = ut_format(watt, buf, sizeof(buf)-1, asciiSymbolDef);
@@ -1012,6 +1045,10 @@ test_utAreConvertible(void)
     CU_ASSERT_EQUAL(ut_are_convertible(secondsSinceTheEpoch,
 	secondsSinceTheEpoch), 1);
     CU_ASSERT_EQUAL(ut_are_convertible(secondsSinceTheEpoch, second), 0);
+    CU_ASSERT_EQUAL(ut_are_convertible(joulePerKilogram, 
+	meterSquaredPerSecondSquared), 1);
+    CU_ASSERT_EQUAL(ut_are_convertible(joulePerKilogram, 
+	meterPerSecondSquared), 0);
 
     unit = ut_raise(radian, 2);
     CU_ASSERT_EQUAL(ut_are_convertible(radian, unit), 1);
