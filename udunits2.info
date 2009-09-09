@@ -40,8 +40,8 @@ File: udunits2.info,  Node: Top,  Next: Introduction,  Prev: (dir),  Up: (dir)
 UDUNITS-2
 *********
 
-This manual introduces the UDUNITS-2 package, which contains a C
-library for units of physical quantities and a unit-definition and
+This manual describes the UDUNITS-2 package, which contains a C library
+for units of physical quantities and a unit-definition and
 value-conversion utility.
 
    Copyright 2008, 2009 University Corporation for Atmospheric Research
@@ -213,22 +213,22 @@ File: udunits2.info,  Node: Long,  Next: What,  Prev: Short,  Up: Install
           `AIX 1 5'                      `/bin/make'
           `AIX 1 5'                      `/opt/gnu/bin/make'
           `AIX 1 5'                      `/usr/ccs/bin/make'
+          `Darwin 10.0.0'                `/usr/bin/gnumake'
+          `Darwin 10.0.0'                `/usr/bin/make'
           `Darwin 8.11.0'                `/usr/bin/gnumake'
           `Darwin 8.11.0'                `/usr/bin/make'
-          `Darwin 9.6.0'                 `/usr/bin/gnumake'
-          `Darwin 9.6.0'                 `/usr/bin/make'
           `HP-UX B.11.00'                `/bin/make'
           `HP-UX B.11.00'                `/opt/gnu/bin/make'
           `IRIX64 6.5'                   `/bin/make'
           `IRIX64 6.5'                   `/opt/gnu/bin/make'
           `Linux                         `/usr/bin/gmake'
-          2.6.27.7-134.fc10.x86_64'      
+          2.6.27.24-78.2.53.fc9.x86_64'  
           `Linux                         `/usr/bin/make'
-          2.6.27.7-134.fc10.x86_64'      
+          2.6.27.24-78.2.53.fc9.x86_64'  
           `Linux                         `/usr/bin/gmake'
-          2.6.27.9-73.fc9.x86_64'        
+          2.6.27.25-170.2.72.fc10.x86_64'
           `Linux                         `/usr/bin/make'
-          2.6.27.9-73.fc9.x86_64'        
+          2.6.27.25-170.2.72.fc10.x86_64'
           `OSF1 V5.1'                    `/bin/make'
           `OSF1 V5.1'                    `/opt/gnu/bin/gmake'
           `OSF1 V5.1'                    `/usr/bin/posix/make'
@@ -259,16 +259,16 @@ File: udunits2.info,  Node: Long,  Next: What,  Prev: Short,  Up: Install
           `AIX 1 5'                      `/usr/vac/bin/cc'         `--disable-shared'
           `AIX 1 5'                      `/usr/vac/bin/xlc'        `'
           `AIX 1 5'                      `/usr/vac/bin/xlc'        `--disable-shared'
+          `Darwin 10.0.0'                `/usr/bin/c89'            `--disable-shared'
+          `Darwin 10.0.0'                `/usr/bin/cc'             `'
+          `Darwin 10.0.0'                `/usr/bin/cc'             `--disable-shared'
+          `Darwin 10.0.0'                `/usr/bin/gcc'            `'
+          `Darwin 10.0.0'                `/usr/bin/gcc'            `--disable-shared'
           `Darwin 8.11.0'                `/usr/bin/c89'            `--disable-shared'
           `Darwin 8.11.0'                `/usr/bin/cc'             `'
           `Darwin 8.11.0'                `/usr/bin/cc'             `--disable-shared'
           `Darwin 8.11.0'                `/usr/bin/gcc'            `'
           `Darwin 8.11.0'                `/usr/bin/gcc'            `--disable-shared'
-          `Darwin 9.6.0'                 `/usr/bin/c89'            `--disable-shared'
-          `Darwin 9.6.0'                 `/usr/bin/cc'             `'
-          `Darwin 9.6.0'                 `/usr/bin/cc'             `--disable-shared'
-          `Darwin 9.6.0'                 `/usr/bin/gcc'            `'
-          `Darwin 9.6.0'                 `/usr/bin/gcc'            `--disable-shared'
           `HP-UX B.11.00'                `/bin/c89'                `--disable-shared'
           `HP-UX B.11.00'                `/bin/cc'                 `--disable-shared'
           `HP-UX B.11.00'                `/opt/gnu/bin/gcc'        `'
@@ -280,29 +280,29 @@ File: udunits2.info,  Node: Long,  Next: What,  Prev: Short,  Up: Install
           `IRIX64 6.5'                   `/opt/gnu/bin/gcc'        `'
           `IRIX64 6.5'                   `/opt/gnu/bin/gcc'        `--disable-shared'
           `Linux                         `/usr/bin/c89'            `'
-          2.6.27.7-134.fc10.x86_64'                                
+          2.6.27.24-78.2.53.fc9.x86_64'                            
           `Linux                         `/usr/bin/c89'            `--disable-shared'
-          2.6.27.7-134.fc10.x86_64'                                
+          2.6.27.24-78.2.53.fc9.x86_64'                            
           `Linux                         `/usr/bin/cc'             `'
-          2.6.27.7-134.fc10.x86_64'                                
+          2.6.27.24-78.2.53.fc9.x86_64'                            
           `Linux                         `/usr/bin/cc'             `--disable-shared'
-          2.6.27.7-134.fc10.x86_64'                                
+          2.6.27.24-78.2.53.fc9.x86_64'                            
           `Linux                         `/usr/bin/gcc'            `'
-          2.6.27.7-134.fc10.x86_64'                                
+          2.6.27.24-78.2.53.fc9.x86_64'                            
           `Linux                         `/usr/bin/gcc'            `--disable-shared'
-          2.6.27.7-134.fc10.x86_64'                                
+          2.6.27.24-78.2.53.fc9.x86_64'                            
           `Linux                         `/usr/bin/c89'            `'
-          2.6.27.9-73.fc9.x86_64'                                  
+          2.6.27.25-170.2.72.fc10.x86_64'                          
           `Linux                         `/usr/bin/c89'            `--disable-shared'
-          2.6.27.9-73.fc9.x86_64'                                  
+          2.6.27.25-170.2.72.fc10.x86_64'                          
           `Linux                         `/usr/bin/cc'             `'
-          2.6.27.9-73.fc9.x86_64'                                  
+          2.6.27.25-170.2.72.fc10.x86_64'                          
           `Linux                         `/usr/bin/cc'             `--disable-shared'
-          2.6.27.9-73.fc9.x86_64'                                  
+          2.6.27.25-170.2.72.fc10.x86_64'                          
           `Linux                         `/usr/bin/gcc'            `'
-          2.6.27.9-73.fc9.x86_64'                                  
+          2.6.27.25-170.2.72.fc10.x86_64'                          
           `Linux                         `/usr/bin/gcc'            `--disable-shared'
-          2.6.27.9-73.fc9.x86_64'                                  
+          2.6.27.25-170.2.72.fc10.x86_64'                          
           `OSF1 V5.1'                    `/bin/c89'                `'
           `OSF1 V5.1'                    `/bin/c89'                `--disable-shared'
           `OSF1 V5.1'                    `/bin/cc'                 `'
@@ -341,8 +341,8 @@ File: udunits2.info,  Node: Long,  Next: What,  Prev: Short,  Up: Install
 
           O/S                            Compiler                  `configure' Option
           ------------------------------------------------------------------------------ 
+          `Darwin 10.0.0'                `/usr/bin/c89'            `'
           `Darwin 8.11.0'                `/usr/bin/c89'            `'
-          `Darwin 9.6.0'                 `/usr/bin/c89'            `'
           `HP-UX B.11.00'                `/bin/c89'                `'
           `HP-UX B.11.00'                `/bin/cc'                 `'
           `HP-UX B.11.00'                `/usr/ccs/bin/cc'         `'
@@ -473,14 +473,14 @@ Index
 
 Tag Table:
 Node: Top1986
-Node: Introduction4309
-Node: Differences4783
-Node: Obtain7277
-Node: Install7619
-Node: Short7895
-Node: Long8671
-Node: What20337
-Node: Support22696
-Node: Complete Index23006
+Node: Introduction4308
+Node: Differences4782
+Node: Obtain7276
+Node: Install7618
+Node: Short7894
+Node: Long8670
+Node: What20336
+Node: Support22695
+Node: Complete Index23005
 
 End Tag Table

@@ -85,7 +85,7 @@ web-update:	install install-html
 	&& rsync $(RSYNC_FLAGS) -aCu --delete --delete-excluded \
 	    *.html \
 	    conan:/content/software/$(PACKAGE)/$(distName)
-	cd $(datarootdir) \
+	cd $(pkgdatarootdir) \
 	&& rsync $(RSYNC_FLAGS) -aCu --delete \
 	    *.xml \
 	    conan:/content/software/$(PACKAGE)/$(distName)
