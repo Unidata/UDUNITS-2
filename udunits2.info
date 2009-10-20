@@ -156,7 +156,7 @@ Get this package from its download-page at
 appropriate place, e.g.,
 
      cd /usr/local/src
-     gunzip -c udunits-2.1.9.tar.gz | pax -r
+     gunzip -c udunits-2.1.10.tar.gz | pax -r
 
 
 File: udunits2.info,  Node: Install,  Next: Support,  Prev: Obtain,  Up: Top
@@ -202,7 +202,7 @@ File: udunits2.info,  Node: Long,  Next: What,  Prev: Short,  Up: Install
 ==================================
 
   1. Go to the top-level source-directory of this package, e.g.,
-          cd udunits-2.1.9
+          cd udunits-2.1.10
 
   2. Because some `make' utilities cannot build this package correctly,
      locate the operating system that is closest to yours in the
@@ -476,11 +476,11 @@ Node: Top1986
 Node: Introduction4308
 Node: Differences4782
 Node: Obtain7276
-Node: Install7618
-Node: Short7894
-Node: Long8670
-Node: What20336
-Node: Support22695
-Node: Complete Index23005
+Node: Install7619
+Node: Short7895
+Node: Long8671
+Node: What20338
+Node: Support22697
+Node: Complete Index23007
 
 End Tag Table

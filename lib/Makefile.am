@@ -42,6 +42,7 @@ libudunits2_la_LIBADD = ../expat/libexpat.la
 libudunits2_la_CFLAGS = @CFLAGS_COVERAGE@
 include_HEADERS = udunits2.h converter.h
 EXTRA_DIST = \
+    parser.c \
     scanner.l \
     scanner.c \
     udunits2.xml \
@@ -90,9 +91,32 @@ SUFFIXES = .c .l
 	gcov -o .libs/libudunits2_la-$<.o $<.c
 
 if HAVE_CUNIT
-debug:		testUnits
+check-2:	testUnits
+	UDUNITS2_XML_PATH='$(srcdir)/udunits2.xml' ./testUnits
+
+check-1:	testUnits-1
+	UDUNITS2_XML_PATH='$(srcdir)/udunits2.xml' ./testUnits-1
+
+debug:		debug-2
+
+debug-2:	testUnits
 	UDUNITS2_XML_PATH='$(srcdir)/udunits2.xml' \
-	    libtool --mode=execute gdb testUnits
+	    $(LIBTOOL) --mode=execute gdb testUnits
+
+debug-1:	testUnits-1
+	UDUNITS2_XML_PATH='$(srcdir)/udunits2.xml' \
+	    $(LIBTOOL) --mode=execute gdb testUnits-1
+
+valgrind-2:	testUnits
+	UDUNITS2_XML_PATH='$(srcdir)/udunits2.xml' \
+	    $(LIBTOOL) --mode=execute valgrind --leak-check=yes testUnits
+
+valgrind-1:	testUnits-1
+	UDUNITS2_XML_PATH='$(srcdir)/udunits2.xml' \
+	    $(LIBTOOL) --mode=execute valgrind --leak-check=yes testUnits-1
+
+.PHONY:		check-1 check-2 debug debug-1 debug-2 valgrind-1 valgrind-2
 endif
 
 parser.o: scanner.c
+

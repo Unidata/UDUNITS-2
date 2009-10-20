@@ -9,7 +9,7 @@
 #
 
 AC_PREREQ(2.59)
-AC_INIT(UDUNITS, 2.1.9, support-udunits@unidata.ucar.edu)
+AC_INIT(UDUNITS, 2.1.10, support-udunits@unidata.ucar.edu)
 AC_CONFIG_AUX_DIR([.])
 AC_CONFIG_SRCDIR([lib/converter.c])
 AM_INIT_AUTOMAKE([foreign subdir-objects no-installinfo])
@@ -34,7 +34,7 @@ AC_ARG_ENABLE([debug],
 [AS_HELP_STRING([--enable-debug],[Turn on debugging support])],
 [case "${enableval}" in
   yes)
-    CFLAGS="${CFLAGS:+$CFLAGS }-g"
+    CFLAGS="${CFLAGS:+$CFLAGS }-g -O0"
     debug=true ;;
   no)
     CFLAGS="${CFLAGS:+$CFLAGS }-O"
@@ -42,7 +42,7 @@ AC_ARG_ENABLE([debug],
   *) AC_MSG_ERROR([bad value ${enableval} for --enable-debug]) ;;
 esac],
 [if test "$coverage_enabled" = true; then
-    CFLAGS="${CFLAGS:+$CFLAGS }-g"
+    CFLAGS="${CFLAGS:+$CFLAGS }-g -O0"
     debug=true
 else
     debug=false

@@ -75,6 +75,13 @@ extern int	utIsInit	PROTO((
 ));
 
 /*
+ * Initialize a unit-structure.
+ */
+extern void	utIni		PROTO((
+    utUnit* const	unit
+));
+
+/*
  *	Decode a formatted unit specification into a unit-structure.
  */
 extern int	utScan		PROTO((
@@ -223,11 +230,17 @@ extern int	utAdd		PROTO((
 
 /*
  *  Return the unit-structure corresponding to a unit-specification.
- *
  */
 extern int	utFind		PROTO((
     char	*spec,
     utUnit	*up
+));
+
+/*
+ * Free the resources of a unit-structure.
+ */
+extern void	utFree		PROTO((
+    utUnit* const	unit
 ));
 
 /*

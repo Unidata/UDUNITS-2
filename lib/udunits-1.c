@@ -20,7 +20,7 @@ static ut_unit*		encodedTimeUnit = NULL;
 static ut_unit*		second = NULL;
 static char*		buffer;
 static int		buflen = 80;
-static void*		ut_units = NULL;
+static void*		unit2s = NULL;
 
 /*
  * Initialize the units(3) package.
@@ -74,36 +74,45 @@ compare(
     return key1 < key2 ? -1 : key1 == key2 ? 0 : 1;
 }
 
-void
-utFree(
+static void
+freeIfAllocated(
     utUnit* const	unit)
 {
-    if (tdelete(unit->unit2, &ut_units, compare) != NULL) {
+    if (tdelete(unit->unit2, &unit2s, compare) != NULL) {
 	ut_free(unit->unit2);
     }
     unit->unit2 = NULL;
 }
 
-static void
-freeIfAllocated(
+void
+utFree(
     utUnit* const	unit)
 {
-    utFree(unit);
+    freeIfAllocated(unit);
+}
+
+void
+utIni(
+    utUnit* const	unit)
+{
+    if (unit != NULL) {
+	unit->unit2 = NULL;
+    }
 }
 
 static int
 setUnit(
     utUnit* const	unit,
-    ut_unit* const	ut_unit)
+    ut_unit* const	unit2)
 {
     int	status;
 
-    if (tsearch(ut_unit, &ut_units, compare) == NULL) {
+    if (tsearch(unit2, &unit2s, compare) == NULL) {
 	status = UT_EALLOC;
     }
     else {
 	freeIfAllocated(unit);
-	unit->unit2 = ut_unit;
+	unit->unit2 = unit2;
 	status = 0;
     }
     return status;
@@ -362,13 +371,13 @@ utHasOrigin(
 static utUnit*
 resultingUnit(
     utUnit*		result,
-    ut_unit* const	unit)
+    ut_unit* const	unit2)
 {
-    if (unit == NULL) {
+    if (unit2 == NULL) {
 	result = NULL;
     }
     else if (result != NULL) {
-	if (setUnit(result, unit) != 0) {
+	if (setUnit(result, unit2) != 0) {
 	    result == NULL;
 	}
     }
@@ -393,7 +402,11 @@ utCopy(
     const utUnit	*source,
     utUnit		*dest)
 {
-    return source == NULL ? NULL : resultingUnit(dest, ut_clone(source->unit2));
+    return source == NULL
+	? NULL
+	: dest == NULL
+	    ? NULL
+	    : resultingUnit(dest, ut_clone(source->unit2));
 }
 
 /*
@@ -635,10 +648,10 @@ utFind(
 void
 utTerm()
 {
-    ut_free_system(unitSystem);
-    unitSystem = NULL;
     ut_free(second);
     second = NULL;
     ut_free(encodedTimeUnit);
     encodedTimeUnit = NULL;
+    ut_free_system(unitSystem);
+    unitSystem = NULL;
 }

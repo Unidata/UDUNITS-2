@@ -671,6 +671,7 @@ basicFree(
     if (unit != NULL) {
 	assert(IS_BASIC(unit));
 	productFree((ut_unit*)unit->basic.product);
+	unit->basic.product = NULL;
 	free(unit);
     }
 }
@@ -1027,6 +1028,11 @@ productReallyFree(
     if (unit != NULL) {
 	assert(IS_PRODUCT(unit));
 	free(unit->product.indexes);
+	unit->product.indexes = NULL;
+	cv_free(unit->common.toProduct);
+	unit->common.toProduct = NULL;
+	cv_free(unit->common.fromProduct);
+	unit->common.fromProduct = NULL;
 	free(unit);
     }
 }
@@ -1455,7 +1461,7 @@ productRelationship(
 
 static ut_status
 productAcceptVisitor(
-    const ut_unit* const		unit,
+    const ut_unit* const	unit,
     const ut_visitor* const	visitor,
     void* const			arg)
 {
@@ -1495,11 +1501,10 @@ productAcceptVisitor(
 		(const ut_unit**)basicUnits, powers, arg));
 
 	    free(powers);
-	}
+	}				/* "powers" allocated */
 
-	if (count > 0)
-	    free(basicUnits);
-    }
+	free(basicUnits);
+    }					/* "basicUnits" allocated */
 
     return ut_get_status();
 }
@@ -1707,6 +1712,10 @@ galileanFree(
     if (unit != NULL) {
 	assert(IS_GALILEAN(unit));
 	FREE(unit->galilean.unit);
+	cv_free(unit->common.toProduct);
+	unit->common.toProduct = NULL;
+	cv_free(unit->common.fromProduct);
+	unit->common.fromProduct = NULL;
 	free((void*)unit);
     }
 }
@@ -2156,6 +2165,11 @@ timestampFree(
     if (unit != NULL) {
 	assert(IS_TIMESTAMP(unit));
 	FREE(unit->timestamp.unit);
+	unit->timestamp.unit = NULL;
+	cv_free(unit->common.toProduct);
+	unit->common.toProduct = NULL;
+	cv_free(unit->common.fromProduct);
+	unit->common.fromProduct = NULL;
 	free((void*)unit);
     }
 }
@@ -2437,6 +2451,11 @@ logFree(
     if (unit != NULL) {
 	assert(IS_LOG(unit));
 	FREE(unit->log.reference);
+	unit->log.reference = NULL;
+	cv_free(unit->common.toProduct);
+	unit->common.toProduct = NULL;
+	cv_free(unit->common.fromProduct);
+	unit->common.fromProduct = NULL;
 	free((void*)unit);
     }
 }

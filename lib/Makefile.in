@@ -338,6 +338,7 @@ libudunits2_la_LIBADD = ../expat/libexpat.la
 libudunits2_la_CFLAGS = @CFLAGS_COVERAGE@
 include_HEADERS = udunits2.h converter.h $(am__append_2)
 EXTRA_DIST = \
+    parser.c \
     scanner.l \
     scanner.c \
     udunits2.xml \
@@ -1328,9 +1329,31 @@ uninstall-am: uninstall-dvi-am uninstall-html-am \
 .c.gcov:
 	gcov -o .libs/libudunits2_la-$<.o $<.c
 
-@HAVE_CUNIT_TRUE@debug:		testUnits
+@HAVE_CUNIT_TRUE@check-2:	testUnits
+@HAVE_CUNIT_TRUE@	UDUNITS2_XML_PATH='$(srcdir)/udunits2.xml' ./testUnits
+
+@HAVE_CUNIT_TRUE@check-1:	testUnits-1
+@HAVE_CUNIT_TRUE@	UDUNITS2_XML_PATH='$(srcdir)/udunits2.xml' ./testUnits-1
+
+@HAVE_CUNIT_TRUE@debug:		debug-2
+
+@HAVE_CUNIT_TRUE@debug-2:	testUnits
 @HAVE_CUNIT_TRUE@	UDUNITS2_XML_PATH='$(srcdir)/udunits2.xml' \
-@HAVE_CUNIT_TRUE@	    libtool --mode=execute gdb testUnits
+@HAVE_CUNIT_TRUE@	    $(LIBTOOL) --mode=execute gdb testUnits
+
+@HAVE_CUNIT_TRUE@debug-1:	testUnits-1
+@HAVE_CUNIT_TRUE@	UDUNITS2_XML_PATH='$(srcdir)/udunits2.xml' \
+@HAVE_CUNIT_TRUE@	    $(LIBTOOL) --mode=execute gdb testUnits-1
+
+@HAVE_CUNIT_TRUE@valgrind-2:	testUnits
+@HAVE_CUNIT_TRUE@	UDUNITS2_XML_PATH='$(srcdir)/udunits2.xml' \
+@HAVE_CUNIT_TRUE@	    $(LIBTOOL) --mode=execute valgrind --leak-check=yes testUnits
+
+@HAVE_CUNIT_TRUE@valgrind-1:	testUnits-1
+@HAVE_CUNIT_TRUE@	UDUNITS2_XML_PATH='$(srcdir)/udunits2.xml' \
+@HAVE_CUNIT_TRUE@	    $(LIBTOOL) --mode=execute valgrind --leak-check=yes testUnits-1
+
+@HAVE_CUNIT_TRUE@.PHONY:		check-1 check-2 debug debug-1 debug-2 valgrind-1 valgrind-2
 
 parser.o: scanner.c
 
