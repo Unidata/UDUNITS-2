@@ -27,3 +27,7 @@ version.texi
 udunits2.html
 udunits2.pdf
 so_locations
+*~
+vgcore.*
+orgs
+udunits-2.1.10

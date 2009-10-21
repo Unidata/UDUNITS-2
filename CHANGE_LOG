@@ -1,3 +1,11 @@
+2.1.10	2009-10-21
+	Fixed memory-related problems reported by valgrind(1).
+
+	Changed $(pkgdatarootdir) to $(pkgdatadir) in the top-level
+	Makefile.
+
+	Corrected the syntax in the definition of the US survey foot.
+
 2.1.9	2009-09-09
 	Fixed bug in ut_are_convertible() that caused it to return true
 	for m2.s-2 and m.s-2.

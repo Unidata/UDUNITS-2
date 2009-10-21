@@ -99,7 +99,6 @@ AM_RECURSIVE_TARGETS = $(RECURSIVE_TARGETS:-recursive=) \
 	distdir dist dist-all distcheck
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = $(SUBDIRS)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -261,7 +260,8 @@ top_srcdir = @top_srcdir@
 # in the top-level source-directory of the package for copying and
 # redistribution conditions.
 #
-SUBDIRS = expat lib prog test
+DIST_SUBDIRS = expat lib prog test
+SUBDIRS = expat lib prog
 info_TEXINFOS = udunits2.texi
 udunits2_TEXINFOS = success.texi failure.texi make.texi
 EXTRA_DIST = \
