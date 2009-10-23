@@ -96,6 +96,14 @@ elements appear only within <aliases>.
                 <noplural/>
             </aliases>
         </unit>
+        <unit>
+            <def>0.01</def>
+            <aliases>
+                <name><singular>percent</singular></name>
+                <noplural/>
+                <symbol>%</symbol>
+            </aliases>
+        </unit>
 
     <!-- Plane Angle -->
         <unit>
