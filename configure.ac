@@ -93,33 +93,30 @@ AC_SEARCH_LIBS([log10], [m], ,
 AC_HEADER_STDC
 AC_CHECK_HEADERS([float.h inttypes.h stddef.h stdlib.h string.h strings.h])
 
-# Check for CUNIT unit-testing package
-AC_MSG_NOTICE([Checking for CUNIT unit-testing package.])
+# Check for the CUNIT unit-testing package
+AC_MSG_NOTICE([Checking for the CUNIT unit-testing package.])
 AC_CHECK_FILE([/opt/include/CUnit/CUnit.h],
     [CPPFLAGS_CUNIT=-I/opt/include
     AC_SUBST(CPPFLAGS_CUNIT)
     AC_CHECK_FILE([/opt/lib/libcunit.so],
-	[LIBS_CUNIT='-L/opt/lib -lcunit'
-	AC_SUBST(LIBS_CUNIT)],
-	[AC_CHECK_FILE([/opt/lib/libcunit.a],
-	    [LIBS_CUNIT='-L/opt/lib -lcunit'
-	    AC_SUBST(LIBS_CUNIT)])])],
+        [LIBS_CUNIT='-L/opt/lib -lcunit'
+        AC_SUBST(LIBS_CUNIT)], 
+        [AC_CHECK_FILE([/opt/lib/libcunit.a],
+            [LIBS_CUNIT='-L/opt/lib -lcunit'
+            AC_SUBST(LIBS_CUNIT)])])],
     [AC_CHECK_FILE([/usr/local/include/CUnit/CUnit.h],
-	[CPPFLAGS_CUNIT=-I/usr/local/include
-	AC_SUBST(CPPFLAGS_CUNIT)
-	AC_CHECK_FILE([/usr/local/lib/libcunit.so],
-	    [LIBS_CUNIT='-L/usr/local/lib -lcunit'
-	    AC_SUBST(LIBS_CUNIT)],
-	    [AC_CHECK_FILE([/usr/local/lib/libcunit.a],
-		[LIBS_CUNIT='-L/usr/local/lib -lcunit'
-		AC_SUBST(LIBS_CUNIT)])])])])
-if test "$CPPFLAGS_CUNIT" -a "$LIBS_CUNIT"; then
-    AC_MSG_NOTICE([CUNIT found.  Enabling unit-tests.])
-    AM_CONDITIONAL([HAVE_CUNIT], [true])
-else
-    AC_MSG_NOTICE([CUNIT not found.  Disabling unit-tests.])
-    AM_CONDITIONAL([HAVE_CUNIT], [false])
-fi
+        [CPPFLAGS_CUNIT=-I/usr/local/include 
+        AC_SUBST(CPPFLAGS_CUNIT)
+        AC_CHECK_FILE([/usr/local/lib/libcunit.so],
+            [LIBS_CUNIT='-L/usr/local/lib -lcunit'
+            AC_SUBST(LIBS_CUNIT)],
+            [AC_CHECK_FILE([/usr/local/lib/libcunit.a],
+                [LIBS_CUNIT='-L/usr/local/lib -lcunit'
+                AC_SUBST(LIBS_CUNIT)])])])])
+AM_CONDITIONAL([HAVE_CUNIT], [test "$CPPFLAGS_CUNIT" && test "$LIBS_CUNIT"])
+AM_COND_IF([HAVE_CUNIT],
+    [AC_MSG_NOTICE([CUNIT found.  Enabling unit-tests.])],
+    [AC_MSG_NOTICE([CUNIT not found.  Disabling unit-tests.])])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
