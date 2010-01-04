@@ -1284,9 +1284,11 @@ This function returns @code{@ref{ut_status,UT_SUCCESS}} on and only on success.
 @section Binary Unit Operations
 @cindex binary unit operations
 
-Binary unit operations act on two units.  The functions
+Binary unit operations act on two units.
+
+@strong{NOTE:} The functions
 @code{@ref{ut_are_convertible()}} and @code{@ref{ut_get_converter()}} are also
-binary unit operations but they are documented elsewhere.
+binary unit operations but are documented elsewhere.
 
 @anchor{ut_multiply()}
 @deftypefun @code{ut_unit*} ut_multiply @code{(const ut_unit* @var{unit1}, const ut_unit* @var{unit2})}
