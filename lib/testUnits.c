@@ -1557,6 +1557,33 @@ test_utOffsetByTime(void)
 }
 
 
+static void
+test_ut_decode_time(void)
+{
+    double      timeval = ut_encode_time(2001, 1, 1, 0, 0, 0);
+    int         year1, month1, day1, hour1, minute1;
+    int         year2, month2, day2, hour2, minute2;
+    double      second1, resolution1;
+    double      second2, resolution2;
+    ut_unit*    unit;
+
+    ut_decode_time(timeval, &year1, &month1, &day1, &hour1, &minute1,
+        &second1, &resolution1);
+    unit = ut_parse(unitSystem, "second since 2010-01-11T09:08:10Z", UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    ut_free(unit);
+    ut_decode_time(timeval, &year2, &month2, &day2, &hour2, &minute2,
+        &second2, &resolution2);
+    CU_ASSERT_EQUAL(year1, year2);
+    CU_ASSERT_EQUAL(month1, month2);
+    CU_ASSERT_EQUAL(day1, day2);
+    CU_ASSERT_EQUAL(hour1, hour2);
+    CU_ASSERT_EQUAL(minute1, minute2);
+    CU_ASSERT_EQUAL(second1, second2);
+    CU_ASSERT_EQUAL(resolution1, resolution2);
+}
+
+
 
 static void
 test_utSetEncoding(void)
@@ -2111,7 +2138,6 @@ test_xml(void)
     ut_free_system(xmlSystem);
 }
 
-
 int
 main(
     const int		argc,
@@ -2135,6 +2161,7 @@ main(
 	    CU_ADD_TEST(testSuite, test_utScale);
 	    CU_ADD_TEST(testSuite, test_utOffset);
 	    CU_ADD_TEST(testSuite, test_utOffsetByTime);
+	    CU_ADD_TEST(testSuite, test_ut_decode_time);
 	    CU_ADD_TEST(testSuite, test_utMultiply);
 	    CU_ADD_TEST(testSuite, test_utInvert);
 	    CU_ADD_TEST(testSuite, test_utDivide);

@@ -1,3 +1,8 @@
+2.1.12  2010-01-11
+        Corrected initialization of time-origin to prevent inconsistent results
+        from ut_decode_time().  Thanks to David Pierce at the Scripps
+        Institution of Oceanography.
+
 2.1.11	2009-10-23
 	Added missing percent (%) unit.
 

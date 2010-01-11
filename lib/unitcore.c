@@ -205,8 +205,6 @@ static ut_unit*		productRoot(
     const ut_unit* const	unit,
     const int			root);
 
-static long		juldayOrigin = 0;
-
 
 /*
  * The following two functions convert between Julian day number and
@@ -343,6 +341,24 @@ gregorianDateToJulianDay(year, month, day)
     return julday;
 }
 
+/*
+ * Returns the Julian day number that is the origin of all things temporal in
+ * this module.
+ *
+ * Returns:
+ *      The Julian day number that is the origin for time in this module.
+ */
+static long
+getJuldayOrigin()
+{
+    static long juldayOrigin;
+
+    if (juldayOrigin == 0)
+	juldayOrigin = gregorianDateToJulianDay(2001, 1, 1);
+
+    return juldayOrigin;
+}
+
 
 /*
  * Encodes a time as a double-precision value.
@@ -424,11 +440,8 @@ ut_encode_date(
     int		month,
     int		day)
 {
-    if (juldayOrigin == 0)
-	juldayOrigin = gregorianDateToJulianDay(2001, 1, 1);
-
     return 86400.0 *
-	(gregorianDateToJulianDay(year, month, day) - juldayOrigin);
+	(gregorianDateToJulianDay(year, month, day) - getJuldayOrigin());
 }
 
 
@@ -505,7 +518,7 @@ ut_decode_time(
 	}	    ind;
     } Basis;
     Basis		counts;
-    static Basis	basis = {86400, 43200, 3600, 600, 60, 10, 1};
+    static const Basis	basis = {86400, 43200, 3600, 600, 60, 10, 1};
 
     uncer = ldexp(value < 0 ? -value : value, -DBL_MANT_DIG);
 
@@ -536,7 +549,7 @@ ut_decode_time(
     *hour = hours;
     *resolution = uncer;
 
-    julianDayToGregorianDate(juldayOrigin + days, year, month, day);
+    julianDayToGregorianDate(getJuldayOrigin() + days, year, month, day);
 }
 
 
@@ -2022,8 +2035,8 @@ timestampNewOrigin(
     const ut_unit*	unit,
     const double	origin)
 {
-    ut_unit*		newUnit = NULL;	/* failure */
-    ut_unit*	secondUnit;
+    ut_unit*    newUnit = NULL;         /* failure */
+    ut_unit*    secondUnit;
 
     assert(unit != NULL);
     assert(!IS_TIMESTAMP(unit));

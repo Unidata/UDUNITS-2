@@ -25,3 +25,4 @@ udunits2lib.tp
 udunits2lib.vr
 .vimrc
 testUnits-1
+test_decode_time

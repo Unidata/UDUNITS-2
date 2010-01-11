@@ -107,6 +107,10 @@ debug-1:	testUnits-1
 	UDUNITS2_XML_PATH='$(srcdir)/udunits2.xml' \
 	    $(LIBTOOL) --mode=execute gdb testUnits-1
 
+debug-decode-time:	test_decode_time
+	UDUNITS2_XML_PATH='$(srcdir)/udunits2.xml' \
+	    $(LIBTOOL) --mode=execute gdb test_decode_time
+
 valgrind-2:	testUnits
 	UDUNITS2_XML_PATH='$(srcdir)/udunits2.xml' \
 	    $(LIBTOOL) --mode=execute valgrind --leak-check=yes testUnits

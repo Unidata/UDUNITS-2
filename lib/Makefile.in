@@ -1345,6 +1345,10 @@ uninstall-am: uninstall-dvi-am uninstall-html-am \
 @HAVE_CUNIT_TRUE@	UDUNITS2_XML_PATH='$(srcdir)/udunits2.xml' \
 @HAVE_CUNIT_TRUE@	    $(LIBTOOL) --mode=execute gdb testUnits-1
 
+@HAVE_CUNIT_TRUE@debug-decode-time:	test_decode_time
+@HAVE_CUNIT_TRUE@	UDUNITS2_XML_PATH='$(srcdir)/udunits2.xml' \
+@HAVE_CUNIT_TRUE@	    $(LIBTOOL) --mode=execute gdb test_decode_time
+
 @HAVE_CUNIT_TRUE@valgrind-2:	testUnits
 @HAVE_CUNIT_TRUE@	UDUNITS2_XML_PATH='$(srcdir)/udunits2.xml' \
 @HAVE_CUNIT_TRUE@	    $(LIBTOOL) --mode=execute valgrind --leak-check=yes testUnits
