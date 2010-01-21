@@ -156,7 +156,7 @@ Get this package from its download-page at
 appropriate place, e.g.,
 
      cd /usr/local/src
-     gunzip -c udunits-2.1.12.tar.gz | pax -r
+     gunzip -c udunits-2.1.13.tar.gz | pax -r
 
 
 File: udunits2.info,  Node: Install,  Next: Support,  Prev: Obtain,  Up: Top
@@ -185,9 +185,9 @@ in the next section.
 
      ./configure [--prefix=ROOT] [--disable-shared] [CC=PATH]
      make
-     make check    # optional; requires CUNIT installation
-     make install
-     make install-info install-html install-pdf
+     make check                      # optional; requires CUNIT installation
+     make install                    # installs INFO documentation
+     make install-html install-pdf   # optional
      make clean
 
    By default, the installation root is `/usr/local'.
@@ -202,7 +202,7 @@ File: udunits2.info,  Node: Long,  Next: What,  Prev: Short,  Up: Install
 ==================================
 
   1. Go to the top-level source-directory of this package, e.g.,
-          cd udunits-2.1.12
+          cd udunits-2.1.13
 
   2. Because some `make' utilities cannot build this package correctly,
      locate the operating system that is closest to yours in the
@@ -213,8 +213,8 @@ File: udunits2.info,  Node: Long,  Next: What,  Prev: Short,  Up: Install
           `AIX 1 5'                      `/bin/make'
           `AIX 1 5'                      `/opt/gnu/bin/make'
           `AIX 1 5'                      `/usr/ccs/bin/make'
-          `Darwin 10.0.0'                `/usr/bin/gnumake'
-          `Darwin 10.0.0'                `/usr/bin/make'
+          `Darwin 10.2.0'                `/usr/bin/gnumake'
+          `Darwin 10.2.0'                `/usr/bin/make'
           `Darwin 8.11.0'                `/usr/bin/gnumake'
           `Darwin 8.11.0'                `/usr/bin/make'
           `HP-UX B.11.00'                `/bin/make'
@@ -222,13 +222,13 @@ File: udunits2.info,  Node: Long,  Next: What,  Prev: Short,  Up: Install
           `IRIX64 6.5'                   `/bin/make'
           `IRIX64 6.5'                   `/opt/gnu/bin/make'
           `Linux                         `/usr/bin/gmake'
-          2.6.27.24-78.2.53.fc9.x86_64'  
+          2.6.27.38-170.2.113.fc10.x86_64'
           `Linux                         `/usr/bin/make'
-          2.6.27.24-78.2.53.fc9.x86_64'  
+          2.6.27.38-170.2.113.fc10.x86_64'
           `Linux                         `/usr/bin/gmake'
-          2.6.27.25-170.2.72.fc10.x86_64'
+          2.6.31.9-174.fc12.x86_64'      
           `Linux                         `/usr/bin/make'
-          2.6.27.25-170.2.72.fc10.x86_64'
+          2.6.31.9-174.fc12.x86_64'      
           `OSF1 V5.1'                    `/bin/make'
           `OSF1 V5.1'                    `/opt/gnu/bin/gmake'
           `OSF1 V5.1'                    `/usr/bin/posix/make'
@@ -259,15 +259,13 @@ File: udunits2.info,  Node: Long,  Next: What,  Prev: Short,  Up: Install
           `AIX 1 5'                      `/usr/vac/bin/cc'         `--disable-shared'
           `AIX 1 5'                      `/usr/vac/bin/xlc'        `'
           `AIX 1 5'                      `/usr/vac/bin/xlc'        `--disable-shared'
-          `Darwin 10.0.0'                `/usr/bin/c89'            `--disable-shared'
-          `Darwin 10.0.0'                `/usr/bin/cc'             `'
-          `Darwin 10.0.0'                `/usr/bin/cc'             `--disable-shared'
-          `Darwin 10.0.0'                `/usr/bin/gcc'            `'
-          `Darwin 10.0.0'                `/usr/bin/gcc'            `--disable-shared'
+          `Darwin 10.2.0'                `/usr/bin/c89'            `--disable-shared'
+          `Darwin 10.2.0'                `/usr/bin/cc'             `'
+          `Darwin 10.2.0'                `/usr/bin/cc'             `--disable-shared'
+          `Darwin 10.2.0'                `/usr/bin/gcc'            `'
+          `Darwin 10.2.0'                `/usr/bin/gcc'            `--disable-shared'
           `Darwin 8.11.0'                `/usr/bin/c89'            `--disable-shared'
-          `Darwin 8.11.0'                `/usr/bin/cc'             `'
           `Darwin 8.11.0'                `/usr/bin/cc'             `--disable-shared'
-          `Darwin 8.11.0'                `/usr/bin/gcc'            `'
           `Darwin 8.11.0'                `/usr/bin/gcc'            `--disable-shared'
           `HP-UX B.11.00'                `/bin/c89'                `--disable-shared'
           `HP-UX B.11.00'                `/bin/cc'                 `--disable-shared'
@@ -280,29 +278,29 @@ File: udunits2.info,  Node: Long,  Next: What,  Prev: Short,  Up: Install
           `IRIX64 6.5'                   `/opt/gnu/bin/gcc'        `'
           `IRIX64 6.5'                   `/opt/gnu/bin/gcc'        `--disable-shared'
           `Linux                         `/usr/bin/c89'            `'
-          2.6.27.24-78.2.53.fc9.x86_64'                            
+          2.6.27.38-170.2.113.fc10.x86_64'                          
           `Linux                         `/usr/bin/c89'            `--disable-shared'
-          2.6.27.24-78.2.53.fc9.x86_64'                            
+          2.6.27.38-170.2.113.fc10.x86_64'                          
           `Linux                         `/usr/bin/cc'             `'
-          2.6.27.24-78.2.53.fc9.x86_64'                            
+          2.6.27.38-170.2.113.fc10.x86_64'                          
           `Linux                         `/usr/bin/cc'             `--disable-shared'
-          2.6.27.24-78.2.53.fc9.x86_64'                            
+          2.6.27.38-170.2.113.fc10.x86_64'                          
           `Linux                         `/usr/bin/gcc'            `'
-          2.6.27.24-78.2.53.fc9.x86_64'                            
+          2.6.27.38-170.2.113.fc10.x86_64'                          
           `Linux                         `/usr/bin/gcc'            `--disable-shared'
-          2.6.27.24-78.2.53.fc9.x86_64'                            
+          2.6.27.38-170.2.113.fc10.x86_64'                          
           `Linux                         `/usr/bin/c89'            `'
-          2.6.27.25-170.2.72.fc10.x86_64'                          
+          2.6.31.9-174.fc12.x86_64'                                
           `Linux                         `/usr/bin/c89'            `--disable-shared'
-          2.6.27.25-170.2.72.fc10.x86_64'                          
+          2.6.31.9-174.fc12.x86_64'                                
           `Linux                         `/usr/bin/cc'             `'
-          2.6.27.25-170.2.72.fc10.x86_64'                          
+          2.6.31.9-174.fc12.x86_64'                                
           `Linux                         `/usr/bin/cc'             `--disable-shared'
-          2.6.27.25-170.2.72.fc10.x86_64'                          
+          2.6.31.9-174.fc12.x86_64'                                
           `Linux                         `/usr/bin/gcc'            `'
-          2.6.27.25-170.2.72.fc10.x86_64'                          
+          2.6.31.9-174.fc12.x86_64'                                
           `Linux                         `/usr/bin/gcc'            `--disable-shared'
-          2.6.27.25-170.2.72.fc10.x86_64'                          
+          2.6.31.9-174.fc12.x86_64'                                
           `OSF1 V5.1'                    `/bin/c89'                `'
           `OSF1 V5.1'                    `/bin/c89'                `--disable-shared'
           `OSF1 V5.1'                    `/bin/cc'                 `'
@@ -341,8 +339,10 @@ File: udunits2.info,  Node: Long,  Next: What,  Prev: Short,  Up: Install
 
           O/S                            Compiler                  `configure' Option
           ------------------------------------------------------------------------------ 
-          `Darwin 10.0.0'                `/usr/bin/c89'            `'
+          `Darwin 10.2.0'                `/usr/bin/c89'            `'
           `Darwin 8.11.0'                `/usr/bin/c89'            `'
+          `Darwin 8.11.0'                `/usr/bin/cc'             `'
+          `Darwin 8.11.0'                `/usr/bin/gcc'            `'
           `HP-UX B.11.00'                `/bin/c89'                `'
           `HP-UX B.11.00'                `/bin/cc'                 `'
           `HP-UX B.11.00'                `/usr/ccs/bin/cc'         `'
@@ -378,13 +378,15 @@ File: udunits2.info,  Node: Long,  Next: What,  Prev: Short,  Up: Install
      this package.
 
   8. Install the *note library: (udunits2lib)Top, *note utility:
-     (udunits2prog)Top, header-files, and units-database by making the
-     `install' target using the MAKE utility from step 2:
+     (udunits2prog)Top, header-files, units-database, and INFO
+     documentation files by making the `install' target using the MAKE
+     utility from step 2:
           MAKE install
 
-  9. If desired, install the documentation by making one or more of the
-     following targets using the MAKE utility from step 2:
-          MAKE install-info install-html install-pdf
+  9. If desired, install the HTML and PDF documentation files by making
+     one or more of the following targets using the MAKE utility from
+     step 2:
+          MAKE install-html install-pdf
 
  10. Clean up by making the `clean' target using the MAKE utility from
      step 2:
@@ -396,8 +398,8 @@ File: udunits2.info,  Node: What,  Prev: Long,  Up: Install
 4.3 What Gets Installed
 =======================
 
-By default, the following files are created or installed under the
-installation directory:
+The following files are created or installed under the installation
+directory:
 
      bin/:
      udunits2                # Unit *note utility: (udunits2prog)Top.
@@ -478,9 +480,9 @@ Node: Differences4782
 Node: Obtain7276
 Node: Install7619
 Node: Short7895
-Node: Long8671
-Node: What20338
-Node: Support22697
-Node: Complete Index23007
+Node: Long8738
+Node: What20455
+Node: Support22802
+Node: Complete Index23112
 
 End Tag Table

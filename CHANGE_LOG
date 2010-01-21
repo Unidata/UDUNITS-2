@@ -1,3 +1,8 @@
+2.1.13  2010-01-21
+        Modified the build procedure slightly.  It now
+            1) Supports cross-compilation; and
+            2) Installs the info(1) documentation files by default.
+
 2.1.12  2010-01-11
         Corrected initialization of time-origin to prevent inconsistent results
         from ut_decode_time().  Thanks to David Pierce at the Scripps

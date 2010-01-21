@@ -60,7 +60,6 @@ CFLAGS = @CFLAGS@
 CFLAGS_COVERAGE = @CFLAGS_COVERAGE@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
-CPPFLAGS_CUNIT = @CPPFLAGS_CUNIT@
 CXX = @CXX@
 CXXCPP = @CXXCPP@
 CXXDEPMODE = @CXXDEPMODE@
@@ -84,13 +83,13 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 LDFLAGS = @LDFLAGS@
+LD_CUNIT = @LD_CUNIT@
 LEX = @LEX@
 LEXLIB = @LEXLIB@
 LEX_OUTPUT_ROOT = @LEX_OUTPUT_ROOT@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
 LIBS_COVERAGE = @LIBS_COVERAGE@
-LIBS_CUNIT = @LIBS_CUNIT@
 LIBTOOL = @LIBTOOL@
 LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
@@ -179,7 +178,7 @@ topTmpDir = /tmp/$(distName)
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .check .host
+.SUFFIXES: .host .results
 $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -384,7 +383,7 @@ singleCheck:
 
 # The following rule starts multiple, synchronous build processes on a remote
 # system.
-.host.check:
+.host.results:
 	rm -f $*.results $*.log
 	IFS=':' read uname shell <$<; \
 	sed -n '2,$$p' $< | \
@@ -411,7 +410,8 @@ hostchecks:	$(distArchive)
 	-rm -f $@
 	hosts=`ls *.host | sed 's/.host//'`; \
 	for host in $$hosts; do \
-	    $(MAKE) -s $$host.check & pid="$$!"; \
+	    rm $$host.results; \
+	    $(MAKE) -s $$host.results & pid="$$!"; \
 	    echo $$host $$pid >>$@; \
 	    echo "Building on $$host"; \
 	done; \

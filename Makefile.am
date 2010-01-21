@@ -14,9 +14,9 @@ EXTRA_DIST = \
     udunits2.html \
     udunits2.pdf \
     CHANGE_LOG \
-    LICENSE
+    LICENSE \
+    texinfo.tex
 AM_MAKEINFOHTMLFLAGS = --no-split
-# DISTCHECK_CONFIGURE_FLAGS = 
 RSYNC_FLAGS	= --rsh=ssh --rsync-path=/opt/bin/rsync
 distName = $(PACKAGE)-$(VERSION)
 distArchive = $(distName).tar.gz

@@ -46,12 +46,12 @@ CONFIG_HEADER = $(top_builddir)/config.h \
 	$(top_builddir)/expat/expat_config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
-am__installdirs = "$(DESTDIR)$(bindir)"
+am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(infodir)"
 PROGRAMS = $(bin_PROGRAMS)
 udunits2_SOURCES = udunits2.c
 udunits2_OBJECTS = udunits2.$(OBJEXT)
 udunits2_LDADD = $(LDADD)
-udunits2_DEPENDENCIES = ../lib/libudunits2.la
+udunits2_DEPENDENCIES = ../lib/libudunits2.la ../expat/libexpat.la
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir) -I$(top_builddir)/expat
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -68,8 +68,7 @@ LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 SOURCES = udunits2.c
 DIST_SOURCES = udunits2.c
 INFO_DEPS = $(srcdir)/udunits2prog.info
-TEXINFO_TEX = $(top_srcdir)/texinfo.tex
-am__TEXINFO_TEX_DIR = $(top_srcdir)
+am__TEXINFO_TEX_DIR = $(srcdir)/..
 DVIS = udunits2prog.dvi
 PDFS = udunits2prog.pdf
 PSS = udunits2prog.ps
@@ -116,7 +115,6 @@ CFLAGS = @CFLAGS@
 CFLAGS_COVERAGE = @CFLAGS_COVERAGE@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
-CPPFLAGS_CUNIT = @CPPFLAGS_CUNIT@
 CXX = @CXX@
 CXXCPP = @CXXCPP@
 CXXDEPMODE = @CXXDEPMODE@
@@ -140,13 +138,13 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 LDFLAGS = @LDFLAGS@
+LD_CUNIT = @LD_CUNIT@
 LEX = @LEX@
 LEXLIB = @LEXLIB@
 LEX_OUTPUT_ROOT = @LEX_OUTPUT_ROOT@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
 LIBS_COVERAGE = @LIBS_COVERAGE@
-LIBS_CUNIT = @LIBS_CUNIT@
 LIBTOOL = @LIBTOOL@
 LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
@@ -221,19 +219,16 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-LDADD = ../lib/libudunits2.la \
-		  -lm
-
+LDADD = ../lib/libudunits2.la ../expat/libexpat.la
+TEXINFO_TEX = ../texinfo.tex
 info_TEXINFOS = udunits2prog.texi
-#html_DATA = udunits2prog.html
-#pdf_DATA = udunits2prog.pdf
-AM_MAKEINFOFLAGS = -I ..
-AM_MAKEINFOHTMLFLAGS = --no-split -I ..
+AM_MAKEINFOFLAGS = -I $(top_srcdir)
+AM_MAKEINFOHTMLFLAGS = --no-split -I $(top_srcdir)
 AM_CPPFLAGS = -I$(top_srcdir)/lib
 MOSTLYCLEANFILES = lint.log *.ln
 LINTFLAGS = -u
 LINT = lint
-TAGS_FILES = ../lib/*.c ../lib/*.h
+TAGS_FILES = $(top_srcdir)/lib/*.c $(top_srcdir)/lib/*.h
 EXTRA_DIST = udunits2prog.html udunits2prog.pdf
 all: all-am
 
@@ -590,9 +585,9 @@ distdir: $(DISTFILES)
 	  dist-info
 check-am: all-am
 check: check-am
-all-am: Makefile $(PROGRAMS)
+all-am: Makefile $(INFO_DEPS) $(PROGRAMS)
 installdirs:
-	for dir in "$(DESTDIR)$(bindir)"; do \
+	for dir in "$(DESTDIR)$(bindir)" "$(DESTDIR)$(infodir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-am
@@ -644,7 +639,7 @@ info: info-am
 
 info-am: $(INFO_DEPS)
 
-install-data-am:
+install-data-am: install-info-am
 
 install-dvi: install-dvi-am
 
@@ -791,10 +786,10 @@ uninstall-am: uninstall-binPROGRAMS uninstall-dvi-am uninstall-html-am \
 
 
 .c.ln:
-	$(LINT.c) $(AM_CPPFLAGS) -c $<
+	$(LINT.c) $(AM_CPPFLAGS) $(CPPFLAGS) -c $<
 
 .c.i:
-	$(CPP) $(CPPFLAGS) $< >$@
+	$(CPP) $(AM_CPPFLAGS) $(CPPFLAGS) $< >$@
 
 debug:		udunits2
 	UDUNITS2_XML_PATH=$(top_srcdir)/lib/udunits2.xml libtool \

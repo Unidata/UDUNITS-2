@@ -71,6 +71,7 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	install-pdf-recursive install-ps-recursive install-recursive \
 	installcheck-recursive installdirs-recursive pdf-recursive \
 	ps-recursive uninstall-recursive
+am__installdirs = "$(DESTDIR)$(infodir)"
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
 am__vpath_adj = case $$p in \
     $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
@@ -148,7 +149,6 @@ CFLAGS = @CFLAGS@
 CFLAGS_COVERAGE = @CFLAGS_COVERAGE@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
-CPPFLAGS_CUNIT = @CPPFLAGS_CUNIT@
 CXX = @CXX@
 CXXCPP = @CXXCPP@
 CXXDEPMODE = @CXXDEPMODE@
@@ -172,13 +172,13 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 LDFLAGS = @LDFLAGS@
+LD_CUNIT = @LD_CUNIT@
 LEX = @LEX@
 LEXLIB = @LEXLIB@
 LEX_OUTPUT_ROOT = @LEX_OUTPUT_ROOT@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
 LIBS_COVERAGE = @LIBS_COVERAGE@
-LIBS_CUNIT = @LIBS_CUNIT@
 LIBTOOL = @LIBTOOL@
 LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
@@ -269,10 +269,10 @@ EXTRA_DIST = \
     udunits2.html \
     udunits2.pdf \
     CHANGE_LOG \
-    LICENSE
+    LICENSE \
+    texinfo.tex
 
 AM_MAKEINFOHTMLFLAGS = --no-split
-# DISTCHECK_CONFIGURE_FLAGS = 
 RSYNC_FLAGS = --rsh=ssh --rsync-path=/opt/bin/rsync
 distName = $(PACKAGE)-$(VERSION)
 distArchive = $(distName).tar.gz
@@ -821,9 +821,12 @@ distcleancheck: distclean
 	       exit 1; } >&2
 check-am: all-am
 check: check-recursive
-all-am: Makefile config.h
+all-am: Makefile $(INFO_DEPS) config.h
 installdirs: installdirs-recursive
 installdirs-am:
+	for dir in "$(DESTDIR)$(infodir)"; do \
+	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
+	done
 install: install-recursive
 install-exec: install-exec-recursive
 install-data: install-data-recursive
@@ -872,7 +875,7 @@ info: info-recursive
 
 info-am: $(INFO_DEPS)
 
-install-data-am:
+install-data-am: install-info-am
 
 install-dvi: install-dvi-recursive
 

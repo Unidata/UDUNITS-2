@@ -38,7 +38,7 @@ singleCheck:
 
 # The following rule starts multiple, synchronous build processes on a remote
 # system.
-.host.check:
+.host.results:
 	rm -f $*.results $*.log
 	IFS=':' read uname shell <$<; \
 	sed -n '2,$$p' $< | \
@@ -65,7 +65,8 @@ hostchecks:	$(distArchive)
 	-rm -f $@
 	hosts=`ls *.host | sed 's/.host//'`; \
 	for host in $$hosts; do \
-	    $(MAKE) -s $$host.check & pid="$$!"; \
+	    rm $$host.results; \
+	    $(MAKE) -s $$host.results & pid="$$!"; \
 	    echo $$host $$pid >>$@; \
 	    echo "Building on $$host"; \
 	done; \
