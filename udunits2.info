@@ -186,7 +186,7 @@ in the next section.
      ./configure [--prefix=ROOT] [--disable-shared] [CC=PATH]
      make
      make check                      # optional; requires CUNIT installation
-     make install                    # installs INFO documentation
+     make install                    # also installs INFO documentation
      make install-html install-pdf   # optional
      make clean
 
@@ -480,9 +480,9 @@ Node: Differences4782
 Node: Obtain7276
 Node: Install7619
 Node: Short7895
-Node: Long8738
-Node: What20455
-Node: Support22802
-Node: Complete Index23112
+Node: Long8743
+Node: What20460
+Node: Support22807
+Node: Complete Index23117
 
 End Tag Table

@@ -146,7 +146,7 @@ next section.
 ./configure [--prefix=@var{root}] [--disable-shared] [CC=@var{path}]
 make
 make check                      # optional; requires CUNIT installation
-make install                    # installs INFO documentation
+make install                    # also installs INFO documentation
 make install-html install-pdf   # optional
 make clean
 @end example
