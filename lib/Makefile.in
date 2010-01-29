@@ -36,12 +36,13 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
+@COND_EXPAT_TRUE@@HAVE_CUNIT_TRUE@am__append_1 = ../expat/libexpat.la
 @HAVE_CUNIT_TRUE@check_PROGRAMS = testUnits$(EXEEXT) $(am__EXEEXT_1)
 @HAVE_CUNIT_TRUE@TESTS = testUnits$(EXEEXT) $(am__EXEEXT_1)
-@ENABLE_UDUNITS_1_TRUE@am__append_1 = udunits-1.c
-@ENABLE_UDUNITS_1_TRUE@am__append_2 = udunits.h
-@ENABLE_UDUNITS_1_TRUE@@HAVE_CUNIT_TRUE@am__append_3 = testUnits-1
+@ENABLE_UDUNITS_1_TRUE@am__append_2 = udunits-1.c
+@ENABLE_UDUNITS_1_TRUE@am__append_3 = udunits.h
 @ENABLE_UDUNITS_1_TRUE@@HAVE_CUNIT_TRUE@am__append_4 = testUnits-1
+@ENABLE_UDUNITS_1_TRUE@@HAVE_CUNIT_TRUE@am__append_5 = testUnits-1
 subdir = lib
 DIST_COMMON = $(am__include_HEADERS_DIST) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in parser.c
@@ -95,12 +96,12 @@ testUnits_SOURCES = testUnits.c
 testUnits_OBJECTS = testUnits.$(OBJEXT)
 testUnits_LDADD = $(LDADD)
 @HAVE_CUNIT_TRUE@testUnits_DEPENDENCIES = libudunits2.la \
-@HAVE_CUNIT_TRUE@	$(top_builddir)/expat/libexpat.la
+@HAVE_CUNIT_TRUE@	$(am__append_1)
 testUnits_1_SOURCES = testUnits-1.c
 testUnits_1_OBJECTS = testUnits-1.$(OBJEXT)
 testUnits_1_LDADD = $(LDADD)
 @HAVE_CUNIT_TRUE@testUnits_1_DEPENDENCIES = libudunits2.la \
-@HAVE_CUNIT_TRUE@	$(top_builddir)/expat/libexpat.la
+@HAVE_CUNIT_TRUE@	$(am__append_1)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir) -I$(top_builddir)/expat
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -308,7 +309,7 @@ libudunits2_la_SOURCES = unitcore.c converter.c formatter.c \
 	idToUnitMap.c idToUnitMap.h unitToIdMap.c unitToIdMap.h \
 	unitAndId.c unitAndId.h systemMap.c systemMap.h prefix.c \
 	parser.y status.c xml.c error.c ut_free_system.c \
-	$(am__append_1)
+	$(am__append_2)
 BUILT_SOURCES = parser.c scanner.c
 pkgdata_DATA = \
     udunits2.xml \
@@ -327,7 +328,7 @@ AM_MAKEINFOHTMLFLAGS = --no-split -I $(top_srcdir)
 AM_CPPFLAGS = -DDEFAULT_UDUNITS2_XML_PATH='"$(pkgdatadir)/udunits2.xml"'
 lex_prefix = ut
 LFLAGS = -d -P$(lex_prefix)
-include_HEADERS = udunits2.h converter.h $(am__append_2)
+include_HEADERS = udunits2.h converter.h $(am__append_3)
 EXTRA_DIST = \
     parser.c \
     scanner.l \
@@ -342,12 +343,8 @@ EXTRA_DIST = \
     udunits2lib.pdf
 
 AM_YFLAGS = -t -p ut
-@HAVE_CUNIT_TRUE@LDADD = \
-@HAVE_CUNIT_TRUE@    libudunits2.la \
-@HAVE_CUNIT_TRUE@    $(top_builddir)/expat/libexpat.la \
-@HAVE_CUNIT_TRUE@    @LD_CUNIT@ \
-@HAVE_CUNIT_TRUE@    @LIBS_COVERAGE@
-
+@HAVE_CUNIT_TRUE@LDADD = libudunits2.la @LD_CUNIT@ @LIBS_COVERAGE@ \
+@HAVE_CUNIT_TRUE@	$(am__append_1)
 @HAVE_CUNIT_TRUE@TESTS_ENVIRONMENT = UDUNITS2_XML_PATH='$(srcdir)/udunits2.xml'
 DISTCLEANFILES = *.log
 MOSTLYCLEANFILES = lint.log *.ln *.i core core.[0-9]* *.gcov *.gcda *.gcno

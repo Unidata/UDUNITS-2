@@ -138,7 +138,7 @@ files (e.g., @code{/usr/local/include}).
 
 Linking:
 @example
-c89 ... -L @emph{libdir} -l udunits2 ... -l m
+c89 ... -L@emph{libdir} -ludunits2 -lexpat ... -lm
 @end example
 
 Where @emph{libdir} is the installation-directory for object code

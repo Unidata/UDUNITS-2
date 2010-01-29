@@ -253,6 +253,7 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
+@COND_EXPAT_FALSE@SUBDIRS = lib prog
 
 # Copyright 2008, 2009 University Corporation for Atmospheric Research
 #
@@ -260,8 +261,8 @@ top_srcdir = @top_srcdir@
 # in the top-level source-directory of the package for copying and
 # redistribution conditions.
 #
+@COND_EXPAT_TRUE@SUBDIRS = expat lib prog
 DIST_SUBDIRS = expat lib prog test
-SUBDIRS = expat lib prog
 info_TEXINFOS = udunits2.texi
 udunits2_TEXINFOS = success.texi failure.texi make.texi
 EXTRA_DIST = \
@@ -1077,8 +1078,9 @@ make.texi:	test/results.tab
 	    }' >$@
 	sleep 2	# to accomodate broken HP-UX B.11.00 make(1)
 
-remote-checks:	distcheck
+remote-checks:	dist
 	cd test && $(MAKE) $(AM_MAKEFLAGS) $@
+	$(MAKE) udunits2.html
 
 ftp:	dist
 	scp $(distArchive) conan:/web/ftp/pub/$(PACKAGE)/

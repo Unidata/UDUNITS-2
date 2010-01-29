@@ -156,7 +156,7 @@ Get this package from its download-page at
 appropriate place, e.g.,
 
      cd /usr/local/src
-     gunzip -c udunits-2.1.13.tar.gz | pax -r
+     gunzip -c udunits-2.1.14.tar.gz | pax -r
 
 
 File: udunits2.info,  Node: Install,  Next: Support,  Prev: Obtain,  Up: Top
@@ -202,7 +202,7 @@ File: udunits2.info,  Node: Long,  Next: What,  Prev: Short,  Up: Install
 ==================================
 
   1. Go to the top-level source-directory of this package, e.g.,
-          cd udunits-2.1.13
+          cd udunits-2.1.14
 
   2. Because some `make' utilities cannot build this package correctly,
      locate the operating system that is closest to yours in the
@@ -210,9 +210,6 @@ File: udunits2.info,  Node: Long,  Next: What,  Prev: Short,  Up: Install
 
           O/S                            `make' Utility
           ------------------------------------------------------- 
-          `AIX 1 5'                      `/bin/make'
-          `AIX 1 5'                      `/opt/gnu/bin/make'
-          `AIX 1 5'                      `/usr/ccs/bin/make'
           `Darwin 10.2.0'                `/usr/bin/gnumake'
           `Darwin 10.2.0'                `/usr/bin/make'
           `Darwin 8.11.0'                `/usr/bin/gnumake'
@@ -222,17 +219,13 @@ File: udunits2.info,  Node: Long,  Next: What,  Prev: Short,  Up: Install
           `IRIX64 6.5'                   `/bin/make'
           `IRIX64 6.5'                   `/opt/gnu/bin/make'
           `Linux                         `/usr/bin/gmake'
-          2.6.27.38-170.2.113.fc10.x86_64'
+          2.6.27.41-170.2.117.fc10.x86_64'
           `Linux                         `/usr/bin/make'
-          2.6.27.38-170.2.113.fc10.x86_64'
+          2.6.27.41-170.2.117.fc10.x86_64'
           `Linux                         `/usr/bin/gmake'
-          2.6.31.9-174.fc12.x86_64'      
+          2.6.31.12-174.2.3.fc12.x86_64' 
           `Linux                         `/usr/bin/make'
-          2.6.31.9-174.fc12.x86_64'      
-          `OSF1 V5.1'                    `/bin/make'
-          `OSF1 V5.1'                    `/opt/gnu/bin/gmake'
-          `OSF1 V5.1'                    `/usr/bin/posix/make'
-          `OSF1 V5.1'                    `/usr/ccs/bin/make'
+          2.6.31.12-174.2.3.fc12.x86_64' 
           `SunOS 5.10'                   `/opt/csw/bin/gmake'
           `SunOS 5.10'                   `/usr/ccs/bin/make'
           `SunOS 5.10'                   `/usr/xpg4/bin/make'
@@ -251,21 +244,15 @@ File: udunits2.info,  Node: Long,  Next: What,  Prev: Short,  Up: Install
 
           O/S                            Compiler                  `configure' Option
           ------------------------------------------------------------------------------ 
-          `AIX 1 5'                      `/opt/gnu/bin/gcc'        `'
-          `AIX 1 5'                      `/opt/gnu/bin/gcc'        `--disable-shared'
-          `AIX 1 5'                      `/usr/vac/bin/c89'        `'
-          `AIX 1 5'                      `/usr/vac/bin/c89'        `--disable-shared'
-          `AIX 1 5'                      `/usr/vac/bin/cc'         `'
-          `AIX 1 5'                      `/usr/vac/bin/cc'         `--disable-shared'
-          `AIX 1 5'                      `/usr/vac/bin/xlc'        `'
-          `AIX 1 5'                      `/usr/vac/bin/xlc'        `--disable-shared'
           `Darwin 10.2.0'                `/usr/bin/c89'            `--disable-shared'
           `Darwin 10.2.0'                `/usr/bin/cc'             `'
           `Darwin 10.2.0'                `/usr/bin/cc'             `--disable-shared'
           `Darwin 10.2.0'                `/usr/bin/gcc'            `'
           `Darwin 10.2.0'                `/usr/bin/gcc'            `--disable-shared'
           `Darwin 8.11.0'                `/usr/bin/c89'            `--disable-shared'
+          `Darwin 8.11.0'                `/usr/bin/cc'             `'
           `Darwin 8.11.0'                `/usr/bin/cc'             `--disable-shared'
+          `Darwin 8.11.0'                `/usr/bin/gcc'            `'
           `Darwin 8.11.0'                `/usr/bin/gcc'            `--disable-shared'
           `HP-UX B.11.00'                `/bin/c89'                `--disable-shared'
           `HP-UX B.11.00'                `/bin/cc'                 `--disable-shared'
@@ -278,39 +265,29 @@ File: udunits2.info,  Node: Long,  Next: What,  Prev: Short,  Up: Install
           `IRIX64 6.5'                   `/opt/gnu/bin/gcc'        `'
           `IRIX64 6.5'                   `/opt/gnu/bin/gcc'        `--disable-shared'
           `Linux                         `/usr/bin/c89'            `'
-          2.6.27.38-170.2.113.fc10.x86_64'                          
+          2.6.27.41-170.2.117.fc10.x86_64'                          
           `Linux                         `/usr/bin/c89'            `--disable-shared'
-          2.6.27.38-170.2.113.fc10.x86_64'                          
+          2.6.27.41-170.2.117.fc10.x86_64'                          
           `Linux                         `/usr/bin/cc'             `'
-          2.6.27.38-170.2.113.fc10.x86_64'                          
+          2.6.27.41-170.2.117.fc10.x86_64'                          
           `Linux                         `/usr/bin/cc'             `--disable-shared'
-          2.6.27.38-170.2.113.fc10.x86_64'                          
+          2.6.27.41-170.2.117.fc10.x86_64'                          
           `Linux                         `/usr/bin/gcc'            `'
-          2.6.27.38-170.2.113.fc10.x86_64'                          
+          2.6.27.41-170.2.117.fc10.x86_64'                          
           `Linux                         `/usr/bin/gcc'            `--disable-shared'
-          2.6.27.38-170.2.113.fc10.x86_64'                          
+          2.6.27.41-170.2.117.fc10.x86_64'                          
           `Linux                         `/usr/bin/c89'            `'
-          2.6.31.9-174.fc12.x86_64'                                
+          2.6.31.12-174.2.3.fc12.x86_64'                           
           `Linux                         `/usr/bin/c89'            `--disable-shared'
-          2.6.31.9-174.fc12.x86_64'                                
+          2.6.31.12-174.2.3.fc12.x86_64'                           
           `Linux                         `/usr/bin/cc'             `'
-          2.6.31.9-174.fc12.x86_64'                                
+          2.6.31.12-174.2.3.fc12.x86_64'                           
           `Linux                         `/usr/bin/cc'             `--disable-shared'
-          2.6.31.9-174.fc12.x86_64'                                
+          2.6.31.12-174.2.3.fc12.x86_64'                           
           `Linux                         `/usr/bin/gcc'            `'
-          2.6.31.9-174.fc12.x86_64'                                
+          2.6.31.12-174.2.3.fc12.x86_64'                           
           `Linux                         `/usr/bin/gcc'            `--disable-shared'
-          2.6.31.9-174.fc12.x86_64'                                
-          `OSF1 V5.1'                    `/bin/c89'                `'
-          `OSF1 V5.1'                    `/bin/c89'                `--disable-shared'
-          `OSF1 V5.1'                    `/bin/cc'                 `'
-          `OSF1 V5.1'                    `/bin/cc'                 `--disable-shared'
-          `OSF1 V5.1'                    `/opt/gnu/bin/gcc'        `'
-          `OSF1 V5.1'                    `/opt/gnu/bin/gcc'        `--disable-shared'
-          `OSF1 V5.1'                    `/usr/ccs/bin/c89'        `'
-          `OSF1 V5.1'                    `/usr/ccs/bin/c89'        `--disable-shared'
-          `OSF1 V5.1'                    `/usr/ccs/bin/cc'         `'
-          `OSF1 V5.1'                    `/usr/ccs/bin/cc'         `--disable-shared'
+          2.6.31.12-174.2.3.fc12.x86_64'                           
           `SunOS 5.10'                   `/opt/csw/gcc3/bin/gcc'   `'
           `SunOS 5.10'                   `/opt/csw/gcc3/bin/gcc'   `--disable-shared'
           `SunOS 5.10'                   `/opt/csw/gcc4/bin/gcc'   `'
@@ -341,8 +318,6 @@ File: udunits2.info,  Node: Long,  Next: What,  Prev: Short,  Up: Install
           ------------------------------------------------------------------------------ 
           `Darwin 10.2.0'                `/usr/bin/c89'            `'
           `Darwin 8.11.0'                `/usr/bin/c89'            `'
-          `Darwin 8.11.0'                `/usr/bin/cc'             `'
-          `Darwin 8.11.0'                `/usr/bin/gcc'            `'
           `HP-UX B.11.00'                `/bin/c89'                `'
           `HP-UX B.11.00'                `/bin/cc'                 `'
           `HP-UX B.11.00'                `/usr/ccs/bin/cc'         `'
@@ -481,8 +456,8 @@ Node: Obtain7276
 Node: Install7619
 Node: Short7895
 Node: Long8743
-Node: What20460
-Node: Support22807
-Node: Complete Index23117
+Node: What18642
+Node: Support20989
+Node: Complete Index21299
 
 End Tag Table

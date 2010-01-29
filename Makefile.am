@@ -5,8 +5,12 @@
 # redistribution conditions.
 #
 ## Process this file with automake to produce Makefile.in
+if COND_EXPAT
+    SUBDIRS		= expat lib prog
+else
+    SUBDIRS		= lib prog
+endif
 DIST_SUBDIRS		= expat lib prog test
-SUBDIRS			= expat lib prog
 info_TEXINFOS		= udunits2.texi
 udunits2_TEXINFOS	= success.texi failure.texi make.texi
 EXTRA_DIST = \
@@ -73,8 +77,9 @@ make.texi:	test/results.tab
 	    }' >$@
 	sleep 2	# to accomodate broken HP-UX B.11.00 make(1)
 
-remote-checks:	distcheck
+remote-checks:	dist
 	cd test && $(MAKE) $(AM_MAKEFLAGS) $@
+	$(MAKE) udunits2.html
 
 ftp:	dist
 	scp $(distArchive) conan:/web/ftp/pub/$(PACKAGE)/

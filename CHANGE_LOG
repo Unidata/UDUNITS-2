@@ -1,3 +1,12 @@
+2.1.14  2010-01-29
+        Modified the build procedure.  It now
+            1) Builds the Expat (XML parsing) library that's bundled with the
+               UDUNITS-2 package if and only if the host system doesn't have
+               one; and
+            2) Installs the bundled Expat library if that library is built.
+
+        Documented the need for linking against an Expat library.
+
 2.1.13  2010-01-21
         Modified the build procedure slightly.  It now
             1) Supports cross-compilation; and

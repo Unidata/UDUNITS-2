@@ -407,11 +407,11 @@ singleCheck:
 # The following rule starts multiple, concurrent, asynchronous builds on 
 # remote systems.
 hostchecks:	$(distArchive)
-	-rm -f $@
+	rm -f $@
 	hosts=`ls *.host | sed 's/.host//'`; \
 	for host in $$hosts; do \
-	    rm $$host.results; \
-	    $(MAKE) -s $$host.results & pid="$$!"; \
+	    rm -f $$host.results; \
+	    $(MAKE) -s $$host.results >/dev/null & pid="$$!"; \
 	    echo $$host $$pid >>$@; \
 	    echo "Building on $$host"; \
 	done; \

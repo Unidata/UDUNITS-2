@@ -56,9 +56,11 @@ AM_YFLAGS = -t -p ut
 if HAVE_CUNIT
 LDADD			= \
     libudunits2.la \
-    $(top_builddir)/expat/libexpat.la \
     @LD_CUNIT@ \
     @LIBS_COVERAGE@
+if COND_EXPAT
+    LDADD		+= ../expat/libexpat.la
+endif
 check_PROGRAMS		= testUnits
 TESTS_ENVIRONMENT	= UDUNITS2_XML_PATH='$(srcdir)/udunits2.xml'
 TESTS = testUnits

@@ -9,7 +9,7 @@
 #
 
 AC_PREREQ(2.59)
-AC_INIT(UDUNITS, 2.1.13, support-udunits@unidata.ucar.edu)
+AC_INIT(UDUNITS, 2.1.14, support-udunits@unidata.ucar.edu)
 AC_CONFIG_SRCDIR([lib/converter.c])
 AC_CONFIG_AUX_DIR([.])
 AM_INIT_AUTOMAKE([foreign subdir-objects])
@@ -85,6 +85,9 @@ AC_SEARCH_LIBS([dirname], [gen], ,
     AC_MSG_ERROR([cannot find function dirname]))
 AC_SEARCH_LIBS([log10], [m], , 
     AC_MSG_ERROR([cannot find function log10]))
+AC_SEARCH_LIBS([XML_StopParser], [expat], [need_expat=no], 
+    [need_expat=yes])
+AM_CONDITIONAL([COND_EXPAT], test "$need_expat" = yes)
 
 # Checks for header files.
 AC_HEADER_STDC
