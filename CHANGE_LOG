@@ -1,3 +1,10 @@
+2.1.16
+        Added the unit "potential_vorticity_unit" (1e-6 m2 s-1 K kg-1).
+
+2.1.15
+        Added commentary about the hybrid Gregorian/Julian calendar to the
+        library documentation.
+
 2.1.14  2010-01-29
         Modified the build procedure.  It now
             1) Builds the Expat (XML parsing) library that's bundled with the

@@ -1591,4 +1591,11 @@ elements appear only within <aliases>.
                 <name> <singular>work_month</singular> </name>
             </aliases>
         </unit>
+        <unit>
+            <def>1e-6 m^2 s^-1 K kg^-1</def>		<!-- exact -->
+            <aliases>
+                <name> <singular>potential_vorticity_unit</singular> </name>
+                <symbol>PVU</symbol>
+            </aliases>
+        </unit>
 </unit-system>

@@ -210,6 +210,9 @@ File: udunits2.info,  Node: Long,  Next: What,  Prev: Short,  Up: Install
 
           O/S                            `make' Utility
           ------------------------------------------------------- 
+          `AIX 1 5'                      `/bin/make'
+          `AIX 1 5'                      `/opt/gnu/bin/make'
+          `AIX 1 5'                      `/usr/ccs/bin/make'
           `Darwin 10.2.0'                `/usr/bin/gnumake'
           `Darwin 10.2.0'                `/usr/bin/make'
           `Darwin 8.11.0'                `/usr/bin/gnumake'
@@ -226,6 +229,10 @@ File: udunits2.info,  Node: Long,  Next: What,  Prev: Short,  Up: Install
           2.6.31.12-174.2.3.fc12.x86_64' 
           `Linux                         `/usr/bin/make'
           2.6.31.12-174.2.3.fc12.x86_64' 
+          `OSF1 V5.1'                    `/bin/make'
+          `OSF1 V5.1'                    `/opt/gnu/bin/gmake'
+          `OSF1 V5.1'                    `/usr/bin/posix/make'
+          `OSF1 V5.1'                    `/usr/ccs/bin/make'
           `SunOS 5.10'                   `/opt/csw/bin/gmake'
           `SunOS 5.10'                   `/usr/ccs/bin/make'
           `SunOS 5.10'                   `/usr/xpg4/bin/make'
@@ -244,6 +251,14 @@ File: udunits2.info,  Node: Long,  Next: What,  Prev: Short,  Up: Install
 
           O/S                            Compiler                  `configure' Option
           ------------------------------------------------------------------------------ 
+          `AIX 1 5'                      `/opt/gnu/bin/gcc'        `'
+          `AIX 1 5'                      `/opt/gnu/bin/gcc'        `--disable-shared'
+          `AIX 1 5'                      `/usr/vac/bin/c89'        `'
+          `AIX 1 5'                      `/usr/vac/bin/c89'        `--disable-shared'
+          `AIX 1 5'                      `/usr/vac/bin/cc'         `'
+          `AIX 1 5'                      `/usr/vac/bin/cc'         `--disable-shared'
+          `AIX 1 5'                      `/usr/vac/bin/xlc'        `'
+          `AIX 1 5'                      `/usr/vac/bin/xlc'        `--disable-shared'
           `Darwin 10.2.0'                `/usr/bin/c89'            `--disable-shared'
           `Darwin 10.2.0'                `/usr/bin/cc'             `'
           `Darwin 10.2.0'                `/usr/bin/cc'             `--disable-shared'
@@ -288,6 +303,16 @@ File: udunits2.info,  Node: Long,  Next: What,  Prev: Short,  Up: Install
           2.6.31.12-174.2.3.fc12.x86_64'                           
           `Linux                         `/usr/bin/gcc'            `--disable-shared'
           2.6.31.12-174.2.3.fc12.x86_64'                           
+          `OSF1 V5.1'                    `/bin/c89'                `'
+          `OSF1 V5.1'                    `/bin/c89'                `--disable-shared'
+          `OSF1 V5.1'                    `/bin/cc'                 `'
+          `OSF1 V5.1'                    `/bin/cc'                 `--disable-shared'
+          `OSF1 V5.1'                    `/opt/gnu/bin/gcc'        `'
+          `OSF1 V5.1'                    `/opt/gnu/bin/gcc'        `--disable-shared'
+          `OSF1 V5.1'                    `/usr/ccs/bin/c89'        `'
+          `OSF1 V5.1'                    `/usr/ccs/bin/c89'        `--disable-shared'
+          `OSF1 V5.1'                    `/usr/ccs/bin/cc'         `'
+          `OSF1 V5.1'                    `/usr/ccs/bin/cc'         `--disable-shared'
           `SunOS 5.10'                   `/opt/csw/gcc3/bin/gcc'   `'
           `SunOS 5.10'                   `/opt/csw/gcc3/bin/gcc'   `--disable-shared'
           `SunOS 5.10'                   `/opt/csw/gcc4/bin/gcc'   `'
@@ -456,8 +481,8 @@ Node: Obtain7276
 Node: Install7619
 Node: Short7895
 Node: Long8743
-Node: What18642
-Node: Support20989
-Node: Complete Index21299
+Node: What20460
+Node: Support22807
+Node: Complete Index23117
 
 End Tag Table
