@@ -50,6 +50,10 @@ elements appear only within <aliases>.
             <aliases> <name> <singular>candle</singular> </name> </aliases>
         </unit>
         <unit>
+            <def>mole</def>
+            <aliases> <name> <singular>einstein</singular> </name> </aliases>
+        </unit>
+        <unit>
             <def>Hz</def>
             <aliases>
                 <name> <singular>baud</singular> </name>
