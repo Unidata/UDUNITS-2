@@ -6,6 +6,8 @@
             "potential_vorticity_unit" (1e-6 m2 s-1 K kg-1)
             "einstein" (mole)
 
+        Added "u" as a symbol for "micro".
+
 2.1.14  2010-01-29
         Modified the build procedure.  It now
             1) Builds the Expat (XML parsing) library that's bundled with the
