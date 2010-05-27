@@ -1895,6 +1895,11 @@ test_parsing(void)
     CU_ASSERT_PTR_NOT_NULL(unit);
     CU_ASSERT_EQUAL(ut_compare(unit, hertz), 0);
     ut_free(unit);
+
+    spec = "meter @ 100 @ 10";
+    unit = ut_parse(unitSystem, spec, UT_LATIN1);
+    CU_ASSERT_PTR_NULL(unit);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SYNTAX);
 }
 
 

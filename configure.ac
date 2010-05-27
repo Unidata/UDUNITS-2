@@ -9,7 +9,7 @@
 #
 
 AC_PREREQ(2.59)
-AC_INIT(UDUNITS, 2.1.14, support-udunits@unidata.ucar.edu)
+AC_INIT(UDUNITS, 2.1.15, support-udunits@unidata.ucar.edu)
 AC_CONFIG_SRCDIR([lib/converter.c])
 AC_CONFIG_AUX_DIR([.])
 AM_INIT_AUTOMAKE([foreign subdir-objects])

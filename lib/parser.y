@@ -572,17 +572,22 @@ ut_parse(
             _finalUnit = NULL;
 
             if (utparse() == 0) {
+                int     status;
                 int	n = yy_c_buf_p  - buf->yy_ch_buf;
 
                 if (n >= strlen(utf8String)) {
                     unit = _finalUnit;	/* success */
+                    status = UT_SUCCESS;
                 }
                 else {
                     /*
                      * Parsing terminated before the end of the string.
                      */
                     ut_free(_finalUnit);
+                    status = UT_SYNTAX;
                 }
+
+                ut_set_status(status);
             }
 
             ut_delete_buffer(buf);

@@ -71,8 +71,7 @@ extern int	utInit		PROTO((
 /*
  * Indicate if the units(3) package has been initialized.
  */
-extern int	utIsInit	PROTO((
-));
+extern int	utIsInit	PROTO((void));
 
 /*
  * Initialize a unit-structure.
@@ -246,7 +245,7 @@ extern void	utFree		PROTO((
 /*
  *	Terminate use of this package.
  */
-extern void	utTerm		PROTO(());
+extern void	utTerm		PROTO((void));
 
 #ifdef __cplusplus
 }

@@ -1,4 +1,10 @@
-2.1.15
+2.1.15  2010-05-27
+        Corrected return value of ut_get_status() when ut_parse() fails due to
+        a syntax error.
+
+        Added missing "void" parameter to declarations of UDUNITS-1 functions
+        utIsInit() and utTerm().
+
         Added commentary about the hybrid Gregorian/Julian calendar to the
         library documentation.
 
