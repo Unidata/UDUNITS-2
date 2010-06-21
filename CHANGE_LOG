@@ -1,5 +1,5 @@
 2.1.16  2010-06-21
-        Corrected definition of "e" -- the charge of an electron.
+        Corrected and updated definition of "e" -- the charge of an electron.
 
 2.1.15  2010-05-27
         Corrected return value of ut_get_status() when ut_parse() fails due to

@@ -1358,7 +1358,7 @@ elements appear only within <aliases>.
             <aliases> <name> <singular>abvolt</singular> </name> </aliases>
         </unit>
         <unit>
-            <def>1.60217733e-19 C</def>
+            <def>1.602176487e-19 C</def>
             <aliases> <symbol>e</symbol> </aliases>
         </unit>
         <unit>
