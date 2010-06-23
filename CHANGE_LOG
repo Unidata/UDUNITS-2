@@ -1,3 +1,9 @@
+2.1.17
+        Added tagging of version in repository to "make ftp".
+
+        Moved call to ut_set_second() in XML parser from after the XML file is
+        read to as soon as the "second" unit is encountered.
+
 2.1.16  2010-06-21
         Corrected and updated definition of "e" -- the charge of an electron.
 
