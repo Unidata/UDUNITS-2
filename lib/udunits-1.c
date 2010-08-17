@@ -31,6 +31,7 @@ utInit(
 {
     int status;
 
+    (void)ut_set_error_message_handler(ut_ignore);
     if (unitSystem != NULL) {
 	ut_free_system(unitSystem);
 	unitSystem = NULL;

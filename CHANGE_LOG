@@ -1,4 +1,13 @@
-2.1.17
+2.1.19  2010-08-17
+        Moved ut_set_error_message_handler(ut_ignore) call in version 2.1.18
+        to eliminate more messages.
+
+2.1.18  2010-08-13
+        Made the UDUNIT-1 function utInit() call 
+        ut_set_error_message_handler(ut_ignore) to make use of the UDUNITS-1
+        API more backward compatible.
+
+2.1.17  2010-06-23
         Added tagging of version in repository to "make ftp".
 
         Moved call to ut_set_second() in XML parser from after the XML file is

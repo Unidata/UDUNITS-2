@@ -1602,4 +1602,10 @@ elements appear only within <aliases>.
                 <symbol>PVU</symbol>
             </aliases>
         </unit>
+        <unit>
+            <def>1</def>
+            <aliases>
+                <name> <singular>count</singular> </name>
+            </aliases>
+        </unit>
 </unit-system>
