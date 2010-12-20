@@ -1493,6 +1493,7 @@ elements appear only within <aliases>.
             <aliases>
                 <symbol>&#xB0;F</symbol>    <!-- DEGREE SIGN -->
                 <symbol>&#x2109;</symbol>   <!-- DEGREE FAHRENHEIT -->
+                <name> <singular>fahrenheit</singular> </name>
                 <name>
                     <singular>degree_fahrenheit</singular>
                     <plural>degrees_fahrenheit</plural>

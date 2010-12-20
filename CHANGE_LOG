@@ -1,3 +1,9 @@
+2.1.20  2010-12-20
+        Added "fahrenheit" as an alias for "degrees fahrenheit".
+
+        Added hyperlinks from HTML documentation to XML files of the units
+        database.
+
 2.1.19  2010-08-17
         Moved ut_set_error_message_handler(ut_ignore) call in version 2.1.18
         to eliminate more messages.

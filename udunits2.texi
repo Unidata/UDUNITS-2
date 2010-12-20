@@ -41,6 +41,7 @@ and value-conversion utility.
 * Obtain::              Obtaining this package
 * Install::             Installing this package
 * Support::             Support for this package
+* Database::            The unit database
 * Complete Index::      Complete index
 @end menu
 
@@ -122,7 +123,7 @@ cd /usr/local/src
 gunzip -c udunits-@value{VERSION}.tar.gz | pax -r
 @end example
 
-@node Install, Support, Obtain, Top
+@node Install, Database, Obtain, Top
 @chapter Installing this Package
 @cindex installing this package
 
@@ -315,7 +316,22 @@ udunits2-derived.xml    # Derived units of the SI
 udunits2-prefixes.xml   # SI unit prefixes
 @end example
 
-@node Support, Complete Index, Install, Top
+@node Database, Support, Install, Top
+@chapter The Units Database
+@cindex database
+
+The database for the UDUNITS-2 package comprises one XML file containing
+unit prefixes and four XML files containing unit definitions:
+
+@itemize @w
+@item @uref{../../udunits/udunits2-prefixes.xml, SI unit prefixes}
+@item @uref{../../udunits/udunits2-base.xml, SI base units}
+@item @uref{../../udunits/udunits2-derived.xml, SI derived units}
+@item @uref{../../udunits/udunits2-accepted.xml, Units accepted for use with the SI}
+@item @uref{../../udunits/udunits2-common.xml, Non-SI units}
+@end itemize
+
+@node Support, Complete Index, Database, Top
 @chapter Support for this Package
 @cindex support
 @cindex package, support

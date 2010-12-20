@@ -80,6 +80,7 @@ WITH THE ACCESS, USE OR PERFORMANCE OF THIS SOFTWARE.
 * Obtain::              Obtaining this package
 * Install::             Installing this package
 * Support::             Support for this package
+* Database::            The unit database
 * Complete Index::      Complete index
 
 
@@ -156,10 +157,10 @@ Get this package from its download-page at
 appropriate place, e.g.,
 
      cd /usr/local/src
-     gunzip -c udunits-2.1.19.tar.gz | pax -r
+     gunzip -c udunits-2.1.20.tar.gz | pax -r
 
 
-File: udunits2.info,  Node: Install,  Next: Support,  Prev: Obtain,  Up: Top
+File: udunits2.info,  Node: Install,  Next: Database,  Prev: Obtain,  Up: Top
 
 4 Installing this Package
 *************************
@@ -202,7 +203,7 @@ File: udunits2.info,  Node: Long,  Next: What,  Prev: Short,  Up: Install
 ==================================
 
   1. Go to the top-level source-directory of this package, e.g.,
-          cd udunits-2.1.19
+          cd udunits-2.1.20
 
   2. Because some `make' utilities cannot build this package correctly,
      locate the operating system that is closest to yours in the
@@ -446,9 +447,29 @@ directory:
      udunits2-prefixes.xml   # SI unit prefixes
 
 
-File: udunits2.info,  Node: Support,  Next: Complete Index,  Prev: Install,  Up: Top
+File: udunits2.info,  Node: Database,  Next: Support,  Prev: Install,  Up: Top
 
-5 Support for this Package
+5 The Units Database
+********************
+
+The database for the UDUNITS-2 package comprises one XML file containing
+unit prefixes and four XML files containing unit definitions:
+
+     SI unit prefixes (../../udunits/udunits2-prefixes.xml)
+
+     SI base units (../../udunits/udunits2-base.xml)
+
+     SI derived units (../../udunits/udunits2-derived.xml)
+
+     Units accepted for use with the SI
+     (../../udunits/udunits2-accepted.xml)
+
+     Non-SI units (../../udunits/udunits2-common.xml)
+
+
+File: udunits2.info,  Node: Support,  Next: Complete Index,  Prev: Database,  Up: Top
+
+6 Support for this Package
 **************************
 
 The home-page for this package can be found at
@@ -465,6 +486,7 @@ Index
  [index ]
 * Menu:
 
+* database:                              Database.              (line 6)
 * installing this package:               Install.               (line 6)
 * Introduction:                          Introduction.          (line 6)
 * obtaining this package:                Obtain.                (line 6)
@@ -475,14 +497,15 @@ Index
 
 Tag Table:
 Node: Top1986
-Node: Introduction4308
-Node: Differences4782
-Node: Obtain7276
-Node: Install7619
-Node: Short7895
-Node: Long8743
-Node: What20460
-Node: Support22807
-Node: Complete Index23117
+Node: Introduction4350
+Node: Differences4824
+Node: Obtain7318
+Node: Install7661
+Node: Short7938
+Node: Long8786
+Node: What20503
+Node: Database22850
+Node: Support23425
+Node: Complete Index23736
 
 End Tag Table
