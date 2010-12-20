@@ -455,16 +455,16 @@ File: udunits2.info,  Node: Database,  Next: Support,  Prev: Install,  Up: Top
 The database for the UDUNITS-2 package comprises one XML file containing
 unit prefixes and four XML files containing unit definitions:
 
-     SI unit prefixes (../../udunits/udunits2-prefixes.xml)
+   * SI unit prefixes (../../udunits/udunits2-prefixes.xml)
 
-     SI base units (../../udunits/udunits2-base.xml)
+   * SI base units (../../udunits/udunits2-base.xml)
 
-     SI derived units (../../udunits/udunits2-derived.xml)
+   * SI derived units (../../udunits/udunits2-derived.xml)
 
-     Units accepted for use with the SI
+   * Units accepted for use with the SI
      (../../udunits/udunits2-accepted.xml)
 
-     Non-SI units (../../udunits/udunits2-common.xml)
+   * Non-SI units (../../udunits/udunits2-common.xml)
 
 
 File: udunits2.info,  Node: Support,  Next: Complete Index,  Prev: Database,  Up: Top
