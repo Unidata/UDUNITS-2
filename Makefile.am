@@ -83,7 +83,7 @@ remote-checks:	dist
 
 ftp:	dist
 	git status -a | grep -F -q 'nothing to commit'
-	git tag v$(VERSION)
+	git tag -f v$(VERSION)
 	scp $(distArchive) conan:/web/ftp/pub/$(PACKAGE)/
 	mailx -s '$(distName) now available' -a CHANGE_LOG \
 	    ed@unidata.ucar.edu </dev/null
