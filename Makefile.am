@@ -118,9 +118,9 @@ available:	ftp web-update download-update
 .PHONY:	hostchecks hostcheck remote-checks web-update ftp \
 	download-update available
 
-udunits2.info:	success.texi failure.texi make.texi LICENSE
-udunits2.html:	success.texi failure.texi make.texi LICENSE
-udunits2.pdf:	success.texi failure.texi make.texi LICENSE
+udunits2.info:	version.texi success.texi failure.texi make.texi LICENSE
+udunits2.html:	version.texi success.texi failure.texi make.texi LICENSE
+udunits2.pdf:	version.texi success.texi failure.texi make.texi LICENSE
 
 $(srcdir)/version.texi:  $(srcdir)/stamp-vti
 	@cp $(srcdir)/stamp-vti $@
