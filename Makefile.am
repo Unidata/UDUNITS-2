@@ -82,6 +82,7 @@ remote-checks:	dist
 	$(MAKE) udunits2.html
 
 ftp:	dist
+	git status -a | grep -F -q 'nothing to commit'
 	git tag v$(VERSION)
 	scp $(distArchive) conan:/web/ftp/pub/$(PACKAGE)/
 	mailx -s '$(distName) now available' -a CHANGE_LOG \
