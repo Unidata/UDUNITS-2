@@ -82,6 +82,13 @@ TAGS_FILES = parser.c $(top_srcdir)/expat/*.c $(top_srcdir)/expat/*.h
 LINTFLAGS	= -u
 LINT		= lint
 
+# Allow HTML documentation access to the units database by creating symbolic
+# links in the webpage directory to the database files.
+install-data-hook:
+	cd $(DESTDIR)$(htmldir) && \
+	    rm -rf $(PACKAGE)*.xml && \
+	    ln -s ../../$(PACKAGE)/*.xml .
+
 SUFFIXES = .c .l
 
 .c.ln:

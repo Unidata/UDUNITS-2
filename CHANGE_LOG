@@ -1,3 +1,7 @@
+2.1.22
+        Correct access to units database from documentation for both
+        installations and the online webpages.
+
 2.1.21  2010-01-24
         Eliminate expectation and use of leading scale factor in the "have"
         unit of udunits2(1).

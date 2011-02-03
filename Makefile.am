@@ -93,13 +93,13 @@ web-update:	install install-html
 	&& rsync $(RSYNC_FLAGS) -aCu --delete --delete-excluded \
 	    *.html \
 	    conan:/content/software/$(PACKAGE)/$(distName)
-	cd $(pkgdatadir) \
+	cd $(DESTDIR)$(pkgdatadir) \
 	&& rsync $(RSYNC_FLAGS) -aCu --delete \
 	    *.xml \
 	    conan:/content/software/$(PACKAGE)/$(distName)
-	ssh conan rm /content/software/$(PACKAGE)/$(PACKAGE)-2
-	ssh conan ln -s /content/software/$(PACKAGE)/$(distName) \
-	    /content/software/$(PACKAGE)/$(PACKAGE)-2
+	echo 'cd /content/software/$(PACKAGE) && \
+	    rm $(PACKAGE)-2 && ln -s $(distName) $(PACKAGE)-2' | \
+	    ssh conan
 
 download-update:
 	ssh conan cat /content/downloads/udunits/toc.xml \
