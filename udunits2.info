@@ -5,7 +5,8 @@ INFO-DIR-SECTION Science
 START-INFO-DIR-ENTRY
 * udunits-2: (udunits2).  The Unidata package for units of physical quantities.
 END-INFO-DIR-ENTRY
-   Copyright 2008, 2009 University Corporation for Atmospheric Research
+   Copyright 2011 University Corporation for Atmospheric Research. All
+rights reserved.
 
    Access and use of this software shall impose the following
 obligations and understandings on the user. The user is granted the
@@ -44,7 +45,8 @@ This manual describes the UDUNITS-2 package, which contains a C library
 for units of physical quantities and a unit-definition and
 value-conversion utility.
 
-   Copyright 2008, 2009 University Corporation for Atmospheric Research
+   Copyright 2011 University Corporation for Atmospheric Research. All
+rights reserved.
 
    Access and use of this software shall impose the following
 obligations and understandings on the user. The user is granted the
@@ -495,16 +497,16 @@ Index
 
 
 Tag Table:
-Node: Top1986
-Node: Introduction4350
-Node: Differences4824
-Node: Obtain7318
-Node: Install7661
-Node: Short7938
-Node: Long8786
-Node: What20503
-Node: Database22850
-Node: Support23350
-Node: Complete Index23661
+Node: Top2002
+Node: Introduction4382
+Node: Differences4856
+Node: Obtain7350
+Node: Install7693
+Node: Short7970
+Node: Long8818
+Node: What20535
+Node: Database22882
+Node: Support23382
+Node: Complete Index23693
 
 End Tag Table

@@ -33,6 +33,7 @@ info_TEXINFOS 	= udunits2lib.texi
 AM_MAKEINFOFLAGS = -I $(top_srcdir)
 AM_MAKEINFOHTMLFLAGS = --no-split -I $(top_srcdir)
 AM_CPPFLAGS    = -DDEFAULT_UDUNITS2_XML_PATH='"$(pkgdatadir)/udunits2.xml"'
+libudunits2_la_LDFLAGS	= -version-number 0:1:0
 
 lex_prefix = ut
 LEX_OUTPUT_ROOT = lex.$(lex_prefix)
