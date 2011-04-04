@@ -1009,9 +1009,9 @@ productCompare(
 	const ProductUnit* const	product1 = &unit1->product;
 	const ProductUnit* const	product2 = &unit2->product;
 
-	cmp = product1->count - product2->count;
+        cmp = product1->count - product2->count;
 
-	if (cmp == 0) {
+        if (cmp == 0) {
 	    const short* const	indexes1 = product1->indexes;
 	    const short* const	indexes2 = product2->indexes;
 	    const short* const	powers1	= product1->powers;
@@ -1699,7 +1699,7 @@ galileanCompare(
 		? -1
 		: galilean1->offset == galilean2->offset
 		    ? 0
-		    : -1;
+		    : 1;
 
 	if (cmp == 0) {
 	    cmp =
@@ -1707,7 +1707,7 @@ galileanCompare(
 		    ? -1
 		    : galilean1->scale == galilean2->scale
 			? 0
-			: -1;
+			: 1;
 
 	    if (cmp == 0)
 		cmp = COMPARE(galilean1->unit, galilean2->unit);

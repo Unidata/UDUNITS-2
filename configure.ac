@@ -1,7 +1,7 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 #
-# Copyright 2008, 2009 University Corporation for Atmospheric Research
+# Copyright 2011 University Corporation for Atmospheric Research
 #
 # This file is part of the UDUNITS-2 package.  See the file LICENSE
 # in the top-level source-directory of the package for terms and
@@ -9,7 +9,7 @@
 #
 
 AC_PREREQ(2.59)
-AC_INIT(UDUNITS, 2.1.21, support-udunits@unidata.ucar.edu)
+AC_INIT(UDUNITS, 2.1.22, support-udunits@unidata.ucar.edu)
 AC_CONFIG_SRCDIR([lib/converter.c])
 AC_CONFIG_AUX_DIR([.])
 AM_INIT_AUTOMAKE([foreign subdir-objects])

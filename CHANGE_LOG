@@ -1,5 +1,8 @@
 2.1.22
-        Correct access to units database from documentation for both
+        Corrected ut_compare(3) for Galilean units (e.g., "1.01 m" and
+        "1.1 m").
+
+        Corrected access to units database from documentation for both
         installations and the online webpages.
 
         Added shared library version numbers.

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008, 2009 University Corporation for Atmospheric Research
+ * Copyright 2011 University Corporation for Atmospheric Research
  *
  * This file is part of the UDUNITS-2 package.  See the file LICENSE
  * in the top-level source-directory of the package for copying and
@@ -336,7 +336,8 @@ test_utScale(void)
     CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
     CU_ASSERT_PTR_NOT_NULL(kilometer);
     CU_ASSERT_EQUAL(ut_get_system(meter), ut_get_system(kilometer));
-    CU_ASSERT_NOT_EQUAL(ut_compare(meter, kilometer), 0);
+    CU_ASSERT_EQUAL(ut_compare(meter, kilometer), -1);
+    CU_ASSERT_EQUAL(ut_compare(kilometer, meter), 1);
 
     nchar = ut_format(kilometer, buf, sizeof(buf)-1, asciiSymbolDef);
     CU_ASSERT_TRUE_FATAL(nchar > 0);
@@ -354,7 +355,10 @@ test_utScale(void)
     CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
     CU_ASSERT_PTR_NOT_NULL(micron);
     CU_ASSERT_EQUAL(ut_get_system(meter), ut_get_system(micron));
-    CU_ASSERT_NOT_EQUAL(ut_compare(meter, micron), 0);
+    CU_ASSERT_EQUAL(ut_compare(meter, micron), -1);
+    CU_ASSERT_EQUAL(ut_compare(micron, meter), 1);
+    CU_ASSERT_EQUAL(ut_compare(kilometer, micron), 1);
+    CU_ASSERT_EQUAL(ut_compare(micron, kilometer), -1);
 
     metre = ut_scale(1, meter);
     CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
@@ -407,13 +411,17 @@ test_utOffset(void)
     CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
     CU_ASSERT_PTR_NOT_NULL(celsius);
     CU_ASSERT_EQUAL(ut_get_system(kelvin), ut_get_system(celsius));
-    CU_ASSERT_NOT_EQUAL(ut_compare(kelvin, celsius), 0);
+    CU_ASSERT_EQUAL(ut_compare(kelvin, celsius), -1);
+    CU_ASSERT_EQUAL(ut_compare(celsius, kelvin), 1);
 
     fahrenheit = ut_offset(rankine, 459.67);
     CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
     CU_ASSERT_PTR_NOT_NULL(fahrenheit);
     CU_ASSERT_EQUAL(ut_get_system(rankine), ut_get_system(fahrenheit));
-    CU_ASSERT_NOT_EQUAL(ut_compare(rankine, fahrenheit), 0);
+    CU_ASSERT_EQUAL(ut_compare(rankine, fahrenheit), -1);
+    CU_ASSERT_EQUAL(ut_compare(fahrenheit, rankine), 1);
+    CU_ASSERT_EQUAL(ut_compare(celsius, fahrenheit), -1);
+    CU_ASSERT_EQUAL(ut_compare(fahrenheit, celsius), 1);
     CU_ASSERT_EQUAL(ut_map_name_to_unit("degrees_fahrenheit", UT_ASCII, fahrenheit),
 	UT_SUCCESS);
 

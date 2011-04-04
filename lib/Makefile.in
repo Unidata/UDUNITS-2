@@ -90,6 +90,9 @@ am_libudunits2_la_OBJECTS = unitcore.lo converter.lo formatter.lo \
 	prefix.lo parser.lo status.lo xml.lo error.lo \
 	ut_free_system.lo $(am__objects_1)
 libudunits2_la_OBJECTS = $(am_libudunits2_la_OBJECTS)
+libudunits2_la_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(libudunits2_la_LDFLAGS) $(LDFLAGS) -o $@
 @ENABLE_UDUNITS_1_TRUE@@HAVE_CUNIT_TRUE@am__EXEEXT_1 =  \
 @ENABLE_UDUNITS_1_TRUE@@HAVE_CUNIT_TRUE@	testUnits-1$(EXEEXT)
 testUnits_SOURCES = testUnits.c
@@ -326,6 +329,7 @@ info_TEXINFOS = udunits2lib.texi
 AM_MAKEINFOFLAGS = -I $(top_srcdir)
 AM_MAKEINFOHTMLFLAGS = --no-split -I $(top_srcdir)
 AM_CPPFLAGS = -DDEFAULT_UDUNITS2_XML_PATH='"$(pkgdatadir)/udunits2.xml"'
+libudunits2_la_LDFLAGS = -version-number 0:1:0
 lex_prefix = ut
 LFLAGS = -d -P$(lex_prefix)
 include_HEADERS = udunits2.h converter.h $(am__append_3)
@@ -419,7 +423,7 @@ clean-libLTLIBRARIES:
 	  rm -f "$${dir}/so_locations"; \
 	done
 libudunits2.la: $(libudunits2_la_OBJECTS) $(libudunits2_la_DEPENDENCIES) 
-	$(LINK) -rpath $(libdir) $(libudunits2_la_OBJECTS) $(libudunits2_la_LIBADD) $(LIBS)
+	$(libudunits2_la_LINK) -rpath $(libdir) $(libudunits2_la_OBJECTS) $(libudunits2_la_LIBADD) $(LIBS)
 
 clean-checkPROGRAMS:
 	@list='$(check_PROGRAMS)'; test -n "$$list" || exit 0; \
