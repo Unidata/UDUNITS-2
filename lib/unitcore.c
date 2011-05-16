@@ -3822,7 +3822,7 @@ ut_free(
  */
 ut_status
 ut_accept_visitor(
-    const ut_unit* const		unit,
+    const ut_unit* const	unit,
     const ut_visitor* const	visitor,
     void* const			arg)
 {

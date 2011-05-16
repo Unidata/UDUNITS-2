@@ -48,6 +48,7 @@ typedef struct {
 #undef ABS
 #define ABS(x)			((x) < 0 ? -(x) : (x))
 #define RETURNS_NAME(getId)	((getId) == getName)
+#define SUBTRACT_SIZET(a, b)    ((b) < (a) ? (a) - (b) : 0)
 
 static int
 asciiPrintProduct(
@@ -296,8 +297,10 @@ asciiPrintProduct(
 	     */
 	    if (nchar > 0) {
 		n = RETURNS_NAME(getId)
-		    ? snprintf(buf+nchar, max-nchar, "%s", "-")
-		    : snprintf(buf+nchar, max-nchar, "%s", ".");
+		    ? snprintf(buf+nchar, SUBTRACT_SIZET(max, nchar), "%s",
+                            "-")
+		    : snprintf(buf+nchar, SUBTRACT_SIZET(max, nchar), "%s",
+                            ".");
 
 		if (n < 0) {
 		    nchar = n;
@@ -310,8 +313,8 @@ asciiPrintProduct(
 	    /*
 	     * Append unit identifier.
 	     */
-	    n = printBasic(basicUnits[i], buf+nchar, max-nchar, getId,
-		UT_ASCII);
+	    n = printBasic(basicUnits[i], buf+nchar, SUBTRACT_SIZET(max, nchar),
+                    getId, UT_ASCII);
 
 	    if (n < 0) {
 		nchar = n;
@@ -325,8 +328,10 @@ asciiPrintProduct(
 	     */
 	    if (powers[i] != 1) {
 		n = RETURNS_NAME(getId)
-		    ? snprintf(buf+nchar, max-nchar, "^%d", powers[i])
-		    : snprintf(buf+nchar, max-nchar, "%d", powers[i]);
+		    ? snprintf(buf+nchar, SUBTRACT_SIZET(max, nchar), "^%d",
+                            powers[i])
+		    : snprintf(buf+nchar, SUBTRACT_SIZET(max, nchar), "%d",
+                            powers[i]);
 
 		if (n < 0) {
 		    nchar = n;
@@ -385,7 +390,8 @@ utf8PrintProduct(
 		    /*
 		     * Append mid-dot separator.
 		     */
-		    n = snprintf(buf+nchar, max-nchar, "%s", "\xc2\xb7");
+		    n = snprintf(buf+nchar, SUBTRACT_SIZET(max, nchar), "%s",
+                            "\xc2\xb7");
 
 		    if (n < 0) {
 			nchar = n;
@@ -398,8 +404,8 @@ utf8PrintProduct(
 		/*
 		 * Append unit identifier.
 		 */
-		n = printBasic(basicUnits[iBasic], buf+nchar, max-nchar,
-		    getId, UT_UTF8);
+		n = printBasic(basicUnits[iBasic], buf+nchar,
+                        SUBTRACT_SIZET(max, nchar), getId, UT_UTF8);
 
 		if (n < 0) {
 		    nchar = n;
@@ -429,7 +435,8 @@ utf8PrintProduct(
 			/*
 			 * Append superscript minus sign.
 			 */
-			n = snprintf(buf+nchar, max-nchar, "%s",
+			n = snprintf(buf+nchar, SUBTRACT_SIZET(max, nchar),
+                                "%s",
                             "\xe2\x81\xbb");
 
 			if (n < 0) {
@@ -460,7 +467,8 @@ utf8PrintProduct(
 				digit[idig++] = power % 10;
 
 			    while (idig-- > 0) {
-				n = snprintf(buf+nchar, max-nchar, "%s",
+				n = snprintf(buf+nchar,
+                                        SUBTRACT_SIZET(max, nchar), "%s",
 					exponentStrings[digit[idig]]);
 
 				if (n < 0) {
@@ -583,7 +591,8 @@ latin1PrintBasics(
 
 	if (power != 0) {
 	    if (needSeparator) {
-		n = snprintf(buf+nchar, max-nchar, "%s", "·");	/* 0xb7 */
+		n = snprintf(buf+nchar, SUBTRACT_SIZET(max, nchar), "%s",
+                        "·");	/* 0xb7 */
 
 		if (n < 0) {
 		    nchar = n;
@@ -596,8 +605,8 @@ latin1PrintBasics(
 	    /*
 	     * Append unit identifier.
 	     */
-	    n = printBasic(basicUnits[j], buf+nchar, max-nchar, getId,
-		UT_LATIN1);
+	    n = printBasic(basicUnits[j], buf+nchar,
+                    SUBTRACT_SIZET(max, nchar), getId, UT_LATIN1);
 
 	    if (n < 0) {
 		nchar = n;
@@ -611,7 +620,7 @@ latin1PrintBasics(
 	     * Append exponent if appropriate.
 	     */
 	    if (power != 1) {
-		n = snprintf(buf+nchar, max-nchar, "%s",
+		n = snprintf(buf+nchar, SUBTRACT_SIZET(max, nchar), "%s",
 		    power == 2 ? "²" : "³");	/* 0xb2 0xb3 */
 
 		if (n < 0) {
@@ -684,27 +693,31 @@ latin1PrintProduct(
 		int		n;
 
 		if (positiveCount == 0) {
-		    n = snprintf(buf+nchar, max-nchar, "%s", "1");
+		    n = snprintf(buf+nchar, SUBTRACT_SIZET(max, nchar), "%s",
+                            "1");
 		    nchar = n < 0 ? n : nchar + n;
 		}
 		else {
-		    n = latin1PrintBasics(buf+nchar, max-nchar, basicUnits,
-			powers, order, positiveCount, getId);
+		    n = latin1PrintBasics(buf+nchar, SUBTRACT_SIZET(max, nchar),
+                            basicUnits, powers, order, positiveCount, getId);
 		    nchar = n < 0 ? n : nchar + n;
 		}
 
 		if (nchar >= 0 && negativeCount > 0) {
-		    n = snprintf(buf+nchar, max-nchar, "%s", 
+		    n = snprintf(buf+nchar, SUBTRACT_SIZET(max, nchar), "%s",
 			negativeCount == 1 ? "/" : "/(");
 		    nchar = n < 0 ? n : nchar + n;
 
 		    if (nchar >= 0) {
-			n = latin1PrintBasics(buf+nchar, max-nchar, basicUnits,
-			    powers, order+positiveCount, negativeCount, getId);
+			n = latin1PrintBasics(buf+nchar,
+                                SUBTRACT_SIZET(max, nchar), basicUnits,
+                                powers, order+positiveCount, negativeCount,
+                                getId);
 			nchar = n < 0 ? n : nchar + n;
 
 			if (nchar >= 0 && negativeCount > 1) {
-			    n = snprintf(buf+nchar, max-nchar, "%s", ")");
+			    n = snprintf(buf+nchar, SUBTRACT_SIZET(max, nchar),
+                                    "%s", ")");
 			    nchar = n < 0 ? n : nchar + n;
 			}
 		    }			/* solidus appended */
@@ -822,8 +835,8 @@ printGalilean(
     }
 
     if (nchar >= 0) {
-	n = format(unit, buf+nchar, max-nchar, RETURNS_NAME(getId),
-	    getDefinition, encoding, 1);
+	n = format(unit, buf+nchar, SUBTRACT_SIZET(max, nchar),
+                RETURNS_NAME(getId), getDefinition, encoding, 1);
 
 	if (n < 0) {
 	    nchar = n;
@@ -834,16 +847,17 @@ printGalilean(
 	    if (offset != 0) {
 		needParens = addParens;
 		n = RETURNS_NAME(getId)
-		    ? snprintf(buf+nchar, max-nchar, " from %.*g", DBL_DIG,
-			offset)
-		    : snprintf(buf+nchar, max-nchar, " @ %.*g", DBL_DIG,
-			offset);
+		    ? snprintf(buf+nchar, SUBTRACT_SIZET(max, nchar),
+                            " from %.*g", DBL_DIG, offset)
+		    : snprintf(buf+nchar, SUBTRACT_SIZET(max, nchar),
+                            " @ %.*g", DBL_DIG, offset);
 		nchar = n < 0 ? n : nchar + n;
 	    }				/* non-zero offset */
 
 	    if (nchar >= 0) {
 		if (needParens) {
-		    n = snprintf(buf+nchar, max-nchar, "%s", ")");
+		    n = snprintf(buf+nchar, SUBTRACT_SIZET(max, nchar),
+                            "%s", ")");
 		    nchar = n < 0 ? n : nchar + n;
 		}
 	    }				/* printed offset if appropriate */
@@ -957,14 +971,14 @@ printTimestamp(
     if (nchar >= 0) {
 	int	useNames = RETURNS_NAME(getId);
 
-	n = format(underlyingUnit, buf+nchar, max-nchar, useNames,
-	    getDefinition, encoding, 1);
+	n = format(underlyingUnit, buf+nchar, SUBTRACT_SIZET(max, nchar),
+                useNames, getDefinition, encoding, 1);
 	nchar = n < 0 ? n : nchar + n;
 
 	if (nchar >= 0) {
 	    int	useSeparators = useNames || year < 1000 || year > 9999;
 
-	    n =  snprintf(buf+nchar, max-nchar,
+	    n =  snprintf(buf+nchar, SUBTRACT_SIZET(max, nchar),
 		useSeparators
 		    ? " %s %d-%02d-%02d %02d:%02d"
 		    : " %s %d%02d%02dT%02d%02d",
@@ -976,14 +990,14 @@ printTimestamp(
 		int	decimalCount = -(int)floor(log10(resolution));
 
 		if (decimalCount > -2) {
-		    n = snprintf(buf+nchar, max-nchar, 
+		    n = snprintf(buf+nchar, SUBTRACT_SIZET(max, nchar),
 			    useSeparators ? ":%0*.*f" : "%0*.*f",
 			    decimalCount+3, decimalCount, second);
 		    nchar = n < 0 ? n : nchar + n;
 		}			/* sufficient precision for seconds */
 
 		if (nchar >= 0) {
-		    n = snprintf(buf+nchar, max-nchar, "%s",
+		    n = snprintf(buf+nchar, SUBTRACT_SIZET(max, nchar), "%s",
 			addParens ? " UTC)" : " UTC");
 		    nchar = n < 0 ? n : nchar + n;
 		}			/* printed seconds if appropriate */

@@ -7,6 +7,12 @@
 
         Added shared library version numbers.
 
+        Modified use of snprinf(3) in "formatter.c" to handle case where
+        snprintf(3) returns the number of characters that *would* have been
+        printed had the buffer been big enough (change in Unix standard from
+        X-Open 2 to X-Open 3). This should prevent segmentation violations from
+        occurring if the print-buffer is too small. Thank you Alex Cobb.
+
 2.1.21  2010-01-24
         Eliminate expectation and use of leading scale factor in the "have"
         unit of udunits2(1).
