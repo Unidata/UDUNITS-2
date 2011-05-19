@@ -1103,16 +1103,13 @@ web-update:	install install-html
 	    ssh conan
 
 download-update:
-	ssh conan cat /content/downloads/udunits/toc.xml \
+	cat /web/content/downloads/udunits/toc.xml \
 	    | sed -e \
 		's/"%current%" value=".*"/"%current%" value="$(VERSION)"/' \
 		>toc.xml.new
-	scp toc.xml.new conan:/content/downloads/udunits/toc.xml.new
-	ssh conan mv -f /content/downloads/$(PACKAGE)/toc.xml \
+	cp /web/content/downloads/$(PACKAGE)/toc.xml \
 	    /content/downloads/$(PACKAGE)/toc.xml.old
-	ssh conan mv -f /content/downloads/$(PACKAGE)/toc.xml.new \
-	    /content/downloads/$(PACKAGE)/toc.xml
-	rm toc.xml.new
+	mv toc.xml.new /web/content/downloads/udunits/toc.xml
 
 available:	ftp web-update download-update
 
