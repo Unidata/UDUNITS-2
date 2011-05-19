@@ -1,3 +1,11 @@
+2.1.23
+        Corrected "make install". Will now create the installation-directory
+        $(DESTDIR)$(htmldir) for holding the symbolic links for HTML access to
+        the unit database if that directory doesn't exist.
+
+        Modified documentation on ut_format() to indicate that the number
+        of bytes returned depends on the snprintf() function that's used.
+
 2.1.22  2011-05-16 10:50:34-600
         Corrected ut_compare(3) for Galilean units (e.g., "1.01 m" and
         "1.1 m").

@@ -306,9 +306,13 @@ test_utToString(void)
     int		nchar = ut_format(meter, buf, sizeof(buf)-1, asciiSymbolDef);
     int		n;
     ut_unit*	unit;
+    const char* string = "s @ 1-01-01 00:00:00.000000 UTC";
 
     CU_ASSERT_EQUAL(nchar, 1);
     CU_ASSERT_STRING_EQUAL(buf, "m");
+
+    n = ut_format(kilogram, buf, 1, asciiSymbolDef);
+    CU_ASSERT_EQUAL(n, 2);
 
     nchar = ut_format(meter, buf, sizeof(buf)-1, asciiName);
     CU_ASSERT_STRING_EQUAL(buf, "meter");
@@ -320,7 +324,10 @@ test_utToString(void)
     unit = ut_parse(unitSystem, "second since 1-01-01T00:00:00Z", UT_ASCII);
     CU_ASSERT_PTR_NOT_NULL(unit);
     CU_ASSERT(ut_format(unit, buf, sizeof(buf), asciiSymbolDef) != -1);
-    CU_ASSERT_STRING_EQUAL(buf, "s @ 1-01-01 00:00:00.000000 UTC");
+    CU_ASSERT_STRING_EQUAL(buf, string);
+
+    n = ut_format(unit, buf, 1, asciiSymbolDef);
+    CU_ASSERT_EQUAL(n, strlen(string));
     ut_free(unit);
 }
 

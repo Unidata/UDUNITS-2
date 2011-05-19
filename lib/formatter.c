@@ -1,5 +1,5 @@
 /*
- * Copyright 2008, 2009 University Corporation for Atmospheric Research
+ * Copyright (C) 2011 University Corporation for Atmospheric Research
  *
  * This file is part of the UDUNITS-2 package.  See the file LICENSE
  * in the top-level source-directory of the package for copying and
@@ -48,7 +48,7 @@ typedef struct {
 #undef ABS
 #define ABS(x)			((x) < 0 ? -(x) : (x))
 #define RETURNS_NAME(getId)	((getId) == getName)
-#define SUBTRACT_SIZET(a, b)    ((b) < (a) ? (a) - (b) : 0)
+#define SUBTRACT_SIZET(a, b)    ((a) > (b) ? (a) - (b) : 0)
 
 static int
 asciiPrintProduct(
@@ -145,9 +145,11 @@ getSymbol(
  *	addParens	Whether or not to add bracketing parentheses if
  *			whitespace is printed.
  * Returns:
- *	-1	Failure:  "utFormStatus()" will be
- *		    UT_BAD_ARG	"unit" is NULL or "buf" is NULL.
- *	else	Number of characters printed in "buf".
+ *	-1	        Failure:  "utFormStatus()" will be
+ *		            UT_BAD_ARG	"unit" is NULL or "buf" is NULL.
+ *	else	        Success. Number of bytes that would be printed if
+ *	                "size" were sufficiently large excluding the
+ *	                terminating NUL.
  */
 static int
 format(
@@ -204,27 +206,28 @@ format(
  * Arguments:
  *	unit		The basic-unit to be printed.
  *	buf		The buffer into which to print "unit".
- *	max		The size of "buf".
+ *	size		The size of "buf".
  * Returns:
  *	-1		Failure.  The identifier for "unit" could not be
  *			obtained.
- *	else		Success.  Number of characters printed, excluding any
- *			trailing NUL.
+ *	else	        Success. Number of bytes that would be printed if
+ *	                "size" were sufficiently large excluding the
+ *	                terminating NUL.
  */
 static int
 printBasic(
     const ut_unit* const	unit,
-    char* const		buf,
-    size_t		max,
-    IdGetter		getId,
-    ut_encoding		encoding)
+    char* const	        	buf,
+    const size_t        	size,
+    IdGetter	        	getId,
+    ut_encoding	        	encoding)
 {
     const char* const	id = getId(unit, encoding);
 
     return
 	id == NULL
 	    ? -1
-	    : snprintf(buf, max, "%s", id);
+	    : snprintf(buf, size, "%s", id);
 }
 
 
@@ -237,13 +240,14 @@ printBasic(
  * Returns:
  *	-1		Failure.  The identifier for "unit" could not be
  *			obtained.
- *	else		Success.  Number of characters formatted, excluding any
- *			trailing NUL.
+ *	else	        Success. Number of bytes that would be printed if
+ *	                "size" were sufficiently large excluding the
+ *	                terminating NUL.
  */
 static ut_status
 formatBasic(
     const ut_unit* const	unit,
-    void*		arg)
+    void*		        arg)
 {
     FormatPar*	formatPar = (FormatPar*)arg;
     int		nchar = printBasic(unit, formatPar->buf, formatPar->size,
@@ -269,11 +273,13 @@ formatBasic(
  *	count		The number of basic-units.
  *	buf		Pointer to the buffer into which to print the basic-
  *			units.
- *	max		The size of "buf" in bytes.
+ *	size		The size of "buf" in bytes.
  *	getId		Returns the identifier for a unit.
  * Returns:
  *	-1		Failure.  See errno.
- *	else		Success.  Number of bytes printed.
+ *	else	        Success. Number of bytes that would be printed if
+ *	                "size" were sufficiently large excluding the
+ *	                terminating NUL.
  */
 static int
 asciiPrintProduct(
@@ -281,67 +287,67 @@ asciiPrintProduct(
     const int* const		powers,
     const int			count,
     char* const			buf,
-    const size_t		max,
+    size_t		        size,
     IdGetter			getId)
 {
-    int		nchar = snprintf(buf, max, "%s", "");
+    int		nchar = snprintf(buf, size, "%s", "");
 
     if (nchar >= 0) {
-	int	i;
+        int	i;
 
-	for (i = 0; i < count; i++) {
-	    int	n;
+        size = SUBTRACT_SIZET(size, nchar);
 
-	    /*
-	     * Append separator if appropriate.
-	     */
-	    if (nchar > 0) {
-		n = RETURNS_NAME(getId)
-		    ? snprintf(buf+nchar, SUBTRACT_SIZET(max, nchar), "%s",
-                            "-")
-		    : snprintf(buf+nchar, SUBTRACT_SIZET(max, nchar), "%s",
-                            ".");
+        for (i = 0; i < count && nchar >= 0; i++) {
+            int	n;
 
-		if (n < 0) {
-		    nchar = n;
-		    break;
-		}
+            /*
+             * Append separator if appropriate.
+             */
+            if (nchar > 0) {
+                n = RETURNS_NAME(getId)
+                    ? snprintf(buf+nchar, size, "%s", "-")
+                    : snprintf(buf+nchar, size, "%s", ".");
 
-		nchar += n;
-	    }
+                if (n < 0) {
+                    nchar = n;
+                    break;
+                }
 
-	    /*
-	     * Append unit identifier.
-	     */
-	    n = printBasic(basicUnits[i], buf+nchar, SUBTRACT_SIZET(max, nchar),
-                    getId, UT_ASCII);
+                nchar += n;
+                size = SUBTRACT_SIZET(size, n);
+            }
 
-	    if (n < 0) {
-		nchar = n;
-		break;
-	    }
+            /*
+             * Append unit identifier.
+             */
+            n = printBasic(basicUnits[i], buf+nchar, size, getId, UT_ASCII);
 
-	    nchar += n;
+            if (n < 0) {
+                nchar = n;
+                break;
+            }
 
-	    /*
-	     * Append exponent if appropriate.
-	     */
-	    if (powers[i] != 1) {
-		n = RETURNS_NAME(getId)
-		    ? snprintf(buf+nchar, SUBTRACT_SIZET(max, nchar), "^%d",
-                            powers[i])
-		    : snprintf(buf+nchar, SUBTRACT_SIZET(max, nchar), "%d",
-                            powers[i]);
+            nchar += n;
+            size = SUBTRACT_SIZET(size, n);
 
-		if (n < 0) {
-		    nchar = n;
-		    break;
-		}
+            /*
+             * Append exponent if appropriate.
+             */
+            if (powers[i] != 1) {
+                n = RETURNS_NAME(getId)
+                    ? snprintf(buf+nchar, size, "^%d", powers[i])
+                    : snprintf(buf+nchar, size, "%d", powers[i]);
 
-		nchar += n;
-	    }
-	}				/* loop over basic-units */
-    }					/* "buf" initialized */
+                if (n < 0) {
+                    nchar = n;
+                    break;
+                }
+
+                nchar += n;
+                size = SUBTRACT_SIZET(size, n);
+            }
+        }				/* loop over basic-units */
+    }				/* "buf" initialized */
 
     return nchar;
 }
@@ -357,11 +363,13 @@ asciiPrintProduct(
  *	count		The number of basic-units.
  *	buf		Pointer to the buffer into which to print the basic-
  *			units.
- *	max		The size of "buf" in bytes.
+ *	size		The size of "buf" in bytes.
  *	getId		Returns the identifier for a unit.
  * Returns:
  *	-1		Failure.  See errno.
- *	else		Success.  Number of bytes printed.
+ *	else	        Success. Number of bytes that would be printed if
+ *	                "size" were sufficiently large excluding the
+ *	                terminating NUL.
  */
 static int
 utf8PrintProduct(
@@ -369,124 +377,126 @@ utf8PrintProduct(
     const int* const		powers,
     const int			count,
     char* const			buf,
-    const size_t		max,
+    size_t		        size,
     IdGetter			getId)
 {
-    int		nchar = snprintf(buf, max, "%s", "");
+    int		nchar = snprintf(buf, size, "%s", "");
 
     if (nchar >= 0) {
-	int	iBasic;
+        int	iBasic;
 
-	for (iBasic = 0; iBasic < count; iBasic++) {
-	    int	power = powers[iBasic];
+        size = SUBTRACT_SIZET(size, nchar);
 
-	    if (power != 0) {
-		/*
-		 * The current basic-unit must be printed.
-		 */
-		int	n;
+        for (iBasic = 0; iBasic < count; iBasic++) {
+            int	power = powers[iBasic];
 
-		if (nchar > 0) {
-		    /*
-		     * Append mid-dot separator.
-		     */
-		    n = snprintf(buf+nchar, SUBTRACT_SIZET(max, nchar), "%s",
-                            "\xc2\xb7");
+            if (power != 0) {
+                /*
+                 * The current basic-unit must be printed.
+                 */
+                int	n;
 
-		    if (n < 0) {
-			nchar = n;
-			break;
-		    }
+                if (nchar > 0) {
+                    /*
+                     * Append mid-dot separator.
+                     */
+                    n = snprintf(buf+nchar, size, "%s", "\xc2\xb7");
 
-		    nchar += n;
-		}
+                    if (n < 0) {
+                        nchar = n;
+                        break;
+                    }
 
-		/*
-		 * Append unit identifier.
-		 */
-		n = printBasic(basicUnits[iBasic], buf+nchar,
-                        SUBTRACT_SIZET(max, nchar), getId, UT_UTF8);
+                    nchar += n;
+                    size = SUBTRACT_SIZET(size, n);
+                }
 
-		if (n < 0) {
-		    nchar = n;
-		    break;
-		}
+                /*
+                 * Append unit identifier.
+                 */
+                n = printBasic(basicUnits[iBasic], buf+nchar, size, getId,
+                        UT_UTF8);
 
-		nchar += n;
+                if (n < 0) {
+                    nchar = n;
+                    break;
+                }
 
-		if (power != 1) {
-		    /*
-		     * Append exponent.
-		     */
-		    static const char*	exponentStrings[10] = {
-			"\xe2\x81\xb0",	/* 0 */
-			"\xc2\xb9",	/* 1 */
-			"\xc2\xb2",	/* 2 */
-			"\xc2\xb3",	/* 3 */
-			"\xe2\x81\xb4",	/* 4 */
-			"\xe2\x81\xb5",	/* 5 */
-			"\xe2\x81\xb6",	/* 6 */
-			"\xe2\x81\xb7",	/* 7 */
-			"\xe2\x81\xb8",	/* 8 */
-			"\xe2\x81\xb9",	/* 9 */
-		    };
+                nchar += n;
+                size = SUBTRACT_SIZET(size, n);
 
-		    if (power < 0) {
-			/*
-			 * Append superscript minus sign.
-			 */
-			n = snprintf(buf+nchar, SUBTRACT_SIZET(max, nchar),
-                                "%s",
-                            "\xe2\x81\xbb");
+                if (power != 1) {
+                    /*
+                     * Append exponent.
+                     */
+                    static const char*	exponentStrings[10] = {
+                        "\xe2\x81\xb0",	/* 0 */
+                        "\xc2\xb9",	/* 1 */
+                        "\xc2\xb2",	/* 2 */
+                        "\xc2\xb3",	/* 3 */
+                        "\xe2\x81\xb4",	/* 4 */
+                        "\xe2\x81\xb5",	/* 5 */
+                        "\xe2\x81\xb6",	/* 6 */
+                        "\xe2\x81\xb7",	/* 7 */
+                        "\xe2\x81\xb8",	/* 8 */
+                        "\xe2\x81\xb9",	/* 9 */
+                    };
 
-			if (n < 0) {
-			    nchar = n;
-			    break;
-			}
+                    if (power < 0) {
+                        /*
+                         * Append superscript minus sign.
+                         */
+                        n = snprintf(buf+nchar, size, "%s", "\xe2\x81\xbb");
 
-			nchar += n;
-			power = -power;
-		    }
+                        if (n < 0) {
+                            nchar = n;
+                            break;
+                        }
 
-		    /*
-		     * Append UTF-8 encoding of exponent magnitude.
-		     */
-		    {
-			static int*	digit = NULL;
+                        nchar += n;
+                        size = SUBTRACT_SIZET(size, n);
+                        power = -power;
+                    }
 
-			digit = realloc(digit, (size_t)((sizeof(powers[0])*
-				    CHAR_BIT*(M_LOG10E/M_LOG2E)) + 1));
+                    /*
+                     * Append UTF-8 encoding of exponent magnitude.
+                     */
+                    {
+                        static int*	digit = NULL;
 
-			if (digit == NULL) {
-			    nchar = -1;
-			}
-			else {
-			    int	idig = 0;
+                        digit = realloc(digit, (size_t)((sizeof(powers[0])*
+                                        CHAR_BIT*(M_LOG10E/M_LOG2E)) + 1));
 
-			    for (; power > 0; power /= 10)
-				digit[idig++] = power % 10;
+                        if (digit == NULL) {
+                            nchar = -1;
+                        }
+                        else {
+                            int	idig = 0;
 
-			    while (idig-- > 0) {
-				n = snprintf(buf+nchar,
-                                        SUBTRACT_SIZET(max, nchar), "%s",
-					exponentStrings[digit[idig]]);
+                            for (; power > 0; power /= 10)
+                                digit[idig++] = power % 10;
 
-				if (n < 0) {
-				    nchar = n;
-				    break;
-				}
+                            while (idig-- > 0) {
+                                n = snprintf(buf+nchar, size, "%s",
+                                        exponentStrings[digit[idig]]);
 
-				nchar += n;
-			    }
+                                if (n < 0) {
+                                    nchar = n;
+                                    break;
+                                }
 
-			    if (nchar < 0)
-				break;
-			}
-		    }			/* exponent digits block */
-		}			/* must print exponent */
-	    }				/* must print basic-unit */
-	}				/* loop over basic-units */
-    }					/* "buf" initialized */
+                                nchar += n;
+                                size = SUBTRACT_SIZET(size, n);
+                            }
+
+                            if (nchar < 0)
+                                break;
+                        }
+                    }		/* exponent digits block */
+                }		/* must print exponent */
+            }			/* must print basic-unit */
+        }				/* loop over basic-units */
+    }				/* "buf" initialized */
 
     return nchar;
 }
@@ -558,7 +568,7 @@ getBasicOrder(
  * Arguments:
  *	buf		Pointer to the buffer into which to print the basic-
  *			units.
- *	max		The size of "buf" in bytes.
+ *	size		The size of "buf" in bytes.
  *	basicUnits	Pointer to pointers to the basic-units.
  *	powers		Pointer to the powers associated with each basic-unit.
  *	order		Pointer to indexes of "powers".  "order[i]" is the
@@ -568,12 +578,14 @@ getBasicOrder(
  *	getId		Returns the identifier for a unit.
  * Returns:
  *	-1		Failure.  See errno.
- *	else		Success.  Number of bytes printed.
+ *	else	        Success. Number of bytes that would be printed if
+ *	                "size" were sufficiently large excluding the
+ *	                terminating NUL.
  */
 static int
 latin1PrintBasics(
     char* const			buf,
-    size_t			max,
+    size_t			size,
     const ut_unit* const*	basicUnits,
     const int* const		powers,
     const int* const		order,
@@ -591,8 +603,7 @@ latin1PrintBasics(
 
 	if (power != 0) {
 	    if (needSeparator) {
-		n = snprintf(buf+nchar, SUBTRACT_SIZET(max, nchar), "%s",
-                        "·");	/* 0xb7 */
+		n = snprintf(buf+nchar, size, "%s", "·");	/* 0xb7 */
 
 		if (n < 0) {
 		    nchar = n;
@@ -600,36 +611,38 @@ latin1PrintBasics(
 		}
 
 		nchar += n;
+                size = SUBTRACT_SIZET(size, n);
 	    }
 
-	    /*
-	     * Append unit identifier.
-	     */
-	    n = printBasic(basicUnits[j], buf+nchar,
-                    SUBTRACT_SIZET(max, nchar), getId, UT_LATIN1);
+            /*
+             * Append unit identifier.
+             */
+            n = printBasic(basicUnits[j], buf+nchar, size, getId, UT_LATIN1);
 
-	    if (n < 0) {
-		nchar = n;
-		break;
-	    }
+            if (n < 0) {
+                nchar = n;
+                break;
+            }
 
-	    nchar += n;
-	    needSeparator = 1;
+            nchar += n;
+            size = SUBTRACT_SIZET(size, n);
+            needSeparator = 1;
 
-	    /*
-	     * Append exponent if appropriate.
-	     */
-	    if (power != 1) {
-		n = snprintf(buf+nchar, SUBTRACT_SIZET(max, nchar), "%s",
-		    power == 2 ? "²" : "³");	/* 0xb2 0xb3 */
+            /*
+             * Append exponent if appropriate.
+             */
+            if (power != 1) {
+                n = snprintf(buf+nchar, size, "%s",
+                    power == 2 ? "²" : "³");	/* 0xb2 0xb3 */
 
-		if (n < 0) {
-		    nchar = n;
-		    break;
-		}
+                if (n < 0) {
+                    nchar = n;
+                    break;
+                }
 
-		nchar += n;
-	    }
+                nchar += n;
+                size = SUBTRACT_SIZET(size, n);
+            }
 	}		/* exponent not zero */
     }			/* loop over positive exponents */
 
@@ -647,11 +660,13 @@ latin1PrintBasics(
  *	count		The number of basic-units.
  *	buf		Pointer to the buffer into which to print the basic-
  *			units.
- *	max		The size of "buf" in bytes.
+ *	size		The size of "buf" in bytes.
  *	getId		Returns the identifier for a unit.
  * Returns:
  *	-1		Failure.  See errno.
- *	else		Success.  Number of bytes printed.
+ *	else	        Success. Number of bytes that would be printed if
+ *	                "size" were sufficiently large excluding the
+ *	                terminating NUL.
  */
 static int
 latin1PrintProduct(
@@ -659,7 +674,7 @@ latin1PrintProduct(
     const int* const		powers,
     const int			count,
     char* const			buf,
-    const size_t		max,
+    size_t		        size,
     IdGetter			getId)
 {
     int				nchar;
@@ -674,7 +689,7 @@ latin1PrintProduct(
 	 * At least one exponent can't be represented in ISO 8859-1.  Use
 	 * the ASCII encoding instead.
 	 */
-	nchar = asciiPrintProduct(basicUnits, powers, count, buf, max, getId);
+	nchar = asciiPrintProduct(basicUnits, powers, count, buf, size, getId);
     }
     else {
 	int		positiveCount;
@@ -687,42 +702,69 @@ latin1PrintProduct(
 	else {
 	    getBasicOrder(powers, count, order, &positiveCount, &negativeCount);
 
-	    nchar = snprintf(buf, max, "%s", "");
+            nchar = snprintf(buf, size, "%s", "");
 
-	    if (nchar >= 0 && (positiveCount + negativeCount > 0)) {
-		int		n;
+            if (nchar >= 0 && (positiveCount + negativeCount > 0)) {
+                int		n;
 
-		if (positiveCount == 0) {
-		    n = snprintf(buf+nchar, SUBTRACT_SIZET(max, nchar), "%s",
-                            "1");
-		    nchar = n < 0 ? n : nchar + n;
-		}
-		else {
-		    n = latin1PrintBasics(buf+nchar, SUBTRACT_SIZET(max, nchar),
-                            basicUnits, powers, order, positiveCount, getId);
-		    nchar = n < 0 ? n : nchar + n;
-		}
+                size = SUBTRACT_SIZET(size, nchar);
 
-		if (nchar >= 0 && negativeCount > 0) {
-		    n = snprintf(buf+nchar, SUBTRACT_SIZET(max, nchar), "%s",
-			negativeCount == 1 ? "/" : "/(");
-		    nchar = n < 0 ? n : nchar + n;
+                if (positiveCount == 0) {
+                    n = snprintf(buf+nchar, size, "%s", "1");
+                    if (0 > n) {
+                        nchar = n;
+                    }
+                    else {
+                        nchar += n;
+                        size = SUBTRACT_SIZET(size, n);
+                    }
+                }
+                else {
+                    n = latin1PrintBasics(buf+nchar, size, basicUnits,
+                            powers, order, positiveCount, getId);
+                    if (0 > n) {
+                        nchar = n;
+                    }
+                    else {
+                        nchar += n;
+                        size = SUBTRACT_SIZET(size, n);
+                    }
+                }
 
-		    if (nchar >= 0) {
-			n = latin1PrintBasics(buf+nchar,
-                                SUBTRACT_SIZET(max, nchar), basicUnits,
+                if (nchar >= 0 && negativeCount > 0) {
+                    n = snprintf(buf+nchar, size, "%s",
+                        negativeCount == 1 ? "/" : "/(");
+                    if (0 > n) {
+                        nchar = n;
+                    }
+                    else {
+                        nchar += n;
+                        size = SUBTRACT_SIZET(size, n);
+
+                        n = latin1PrintBasics(buf+nchar, size, basicUnits,
                                 powers, order+positiveCount, negativeCount,
                                 getId);
-			nchar = n < 0 ? n : nchar + n;
+                        if (0 > n) {
+                            nchar = n;
+                        }
+                        else {
+                            nchar += n;
+                            size = SUBTRACT_SIZET(size, n);
 
-			if (nchar >= 0 && negativeCount > 1) {
-			    n = snprintf(buf+nchar, SUBTRACT_SIZET(max, nchar),
-                                    "%s", ")");
-			    nchar = n < 0 ? n : nchar + n;
-			}
-		    }			/* solidus appended */
-		}			/* positive exponents printed */
-	    }				/* "buf" initialized */
+                            if (negativeCount > 1) {
+                                n = snprintf(buf+nchar, size, "%s", ")");
+                                if (0 > n) {
+                                    nchar = n;
+                                }
+                                else {
+                                    nchar += n;
+                                    size = SUBTRACT_SIZET(size, n);
+                                }
+                            }
+                        }
+                    }		        /* solidus appended */
+                }			/* positive exponents printed */
+            }				/* "buf" initialized */
 
 	    (void)free(order);
 	}				/* "order" allocated */
@@ -746,7 +788,9 @@ latin1PrintProduct(
  *	arg		The formatting parameters.
  * Returns:
  *	-1		Failure.  See errno.
- *	else		Success.  Number of bytes printed.
+ *	else	        Success. Number of bytes that would be printed if
+ *	                "size" were sufficiently large excluding the
+ *	                terminating NUL.
  */
 static ut_status
 formatProduct(
@@ -773,13 +817,13 @@ formatProduct(
 		formatPar->buf, formatPar->size, formatPar->getId);
 	}
 	else {
-	    const char*	id = formatPar->getId(unit, formatPar->encoding);
+            const char*	id = formatPar->getId(unit, formatPar->encoding);
 
-	    nchar = 
-		id == NULL
-		    ? formatPar->printProduct(basicUnits, powers, count,
-			formatPar->buf, formatPar->size, formatPar->getId)
-		    : snprintf(formatPar->buf, formatPar->size, "%s", id);
+            nchar = 
+                id == NULL
+                    ? formatPar->printProduct(basicUnits, powers, count,
+                        formatPar->buf, formatPar->size, formatPar->getId)
+                    : snprintf(formatPar->buf, formatPar->size, "%s", id);
 	}
     }
     formatPar->nchar = nchar < 0 ? nchar : formatPar->nchar + nchar;
@@ -801,7 +845,7 @@ formatProduct(
  *	offset		The offset of the Galilean-unit in units of "unit".
  *	buf		Pointer to the buffer into which to print the Galilean-
  *			unit.
- *	max		The size of "buf" in bytes.
+ *	size		The size of "buf" in bytes.
  *	getId		Returns the identifier for a unit.
  *	getDefinition	Returns the definition of "unit" in terms of basic
  *			units.
@@ -810,59 +854,79 @@ formatProduct(
  *			whitespace is printed.
  * Returns:
  *	-1		Failure.  See errno.
- *	else		Success.  Number of bytes printed.
+ *	else	        Success. Number of bytes that would be printed if
+ *	                "size" were sufficiently large excluding the
+ *	                terminating NUL.
  */
 static int
 printGalilean(
-    double		scale,
-    const ut_unit* const	unit,
-    double		offset,
-    char* const		buf,
-    const size_t	max,
-    IdGetter		getId,
-    const int		getDefinition,
-    const ut_encoding	encoding,
-    const int		addParens)
+    double                  scale,
+    const ut_unit* const    unit,
+    double                  offset,
+    char* const             buf,
+    size_t                  size,
+    IdGetter                getId,
+    const int               getDefinition,
+    const ut_encoding       encoding,
+    const int               addParens)
 {
     int			n;
     int			nchar = 0;
     int			needParens = 0;
 
     if (scale != 1) {
-	needParens = addParens;
-	n = snprintf(buf, max, needParens ? "(%.*g " : "%.*g ", DBL_DIG, scale);
-	nchar = n < 0 ? n : nchar + n;
+        needParens = addParens;
+        n = snprintf(buf, size, needParens ? "(%.*g " : "%.*g ", DBL_DIG,
+                scale);
+        if (0 > n) {
+            nchar = n;
+        }
+        else {
+            nchar += n;
+            size = SUBTRACT_SIZET(size, n);
+        }
     }
 
-    if (nchar >= 0) {
-	n = format(unit, buf+nchar, SUBTRACT_SIZET(max, nchar),
-                RETURNS_NAME(getId), getDefinition, encoding, 1);
+    if (0 <= nchar) {
+        n = format(unit, buf+nchar, size, RETURNS_NAME(getId),
+                getDefinition, encoding, 1);
 
-	if (n < 0) {
-	    nchar = n;
-	}
-	else {
-	    nchar += n;
+        if (n < 0) {
+            nchar = n;
+        }
+        else {
+            nchar += n;
+            size = SUBTRACT_SIZET(size, n);
 
-	    if (offset != 0) {
-		needParens = addParens;
-		n = RETURNS_NAME(getId)
-		    ? snprintf(buf+nchar, SUBTRACT_SIZET(max, nchar),
-                            " from %.*g", DBL_DIG, offset)
-		    : snprintf(buf+nchar, SUBTRACT_SIZET(max, nchar),
-                            " @ %.*g", DBL_DIG, offset);
-		nchar = n < 0 ? n : nchar + n;
-	    }				/* non-zero offset */
+            if (offset != 0) {
+                needParens = addParens;
+                n = RETURNS_NAME(getId)
+                    ? snprintf(buf+nchar, size, " from %.*g", DBL_DIG,
+                            offset)
+                    : snprintf(buf+nchar, size, " @ %.*g", DBL_DIG, offset);
+                if (0 > n) {
+                    nchar = n;
+                }
+                else {
+                    nchar += n;
+                    size = SUBTRACT_SIZET(size, n);
+                }
+            }			/* non-zero offset */
 
-	    if (nchar >= 0) {
-		if (needParens) {
-		    n = snprintf(buf+nchar, SUBTRACT_SIZET(max, nchar),
-                            "%s", ")");
-		    nchar = n < 0 ? n : nchar + n;
-		}
-	    }				/* printed offset if appropriate */
-	}				/* underlying unit printed */
-    }					/* scale printed if appropriate */
+            if (nchar >= 0) {
+                if (needParens) {
+                    n = snprintf(buf+nchar, size, "%s", ")");
+                    if (0 > n) {
+                        nchar = n;
+                    }
+                    else {
+                        nchar += n;
+                        size = SUBTRACT_SIZET(size, n);
+                    }
+                }
+            }			        /* printed offset if appropriate */
+        }				/* underlying unit printed */
+    }				        /* scale printed if appropriate */
 
     return nchar;
 }
@@ -879,15 +943,17 @@ printGalilean(
  *	arg		Pointer to the formatting parameters.
  * Returns:
  *	-1		Failure.  See errno.
- *	else		Success.  Number of bytes printed.
+ *	else	        Success. Number of bytes that would be printed if
+ *	                "size" were sufficiently large excluding the
+ *	                terminating NUL.
  */
 static ut_status
 formatGalilean(
     const ut_unit* const	unit,
-    const double	scale,
+    const double	        scale,
     const ut_unit* const	underlyingUnit,
-    double		offset,
-    void*		arg)
+    double		        offset,
+    void*		        arg)
 {
     FormatPar*	formatPar = (FormatPar*)arg;
     int		nchar;
@@ -932,7 +998,7 @@ formatGalilean(
  *	resolution	The resolution of the origin in seconds.
  *	buf		Pointer to the buffer into which to print the
  *			timestamp-unit.
- *	max		The size of "buf" in bytes.
+ *	size		The size of "buf" in bytes.
  *	getId		Returns the identifier for a unit.
  *	getDefinition	Returns the definition of "unit" in terms of basic
  *			units.
@@ -941,7 +1007,9 @@ formatGalilean(
  *			whitespace is printed.
  * Returns:
  *	-1		Failure.  See errno.
- *	else		Success.  Number of bytes printed.
+ *	else	        Success. Number of bytes that would be printed if
+ *	                "size" were sufficiently large excluding the
+ *	                terminating NUL.
  */
 static int
 printTimestamp(
@@ -954,7 +1022,7 @@ printTimestamp(
     const double	second,
     const double	resolution,
     char* const		buf,
-    const size_t	max,
+    size_t	        size,
     IdGetter		getId,
     const int		getDefinition,
     const ut_encoding	encoding,
@@ -964,42 +1032,66 @@ printTimestamp(
     int		nchar = 0;
 
     if (addParens) {
-	n = snprintf(buf, max, "%s", "(");
-	nchar = n < 0 ? n : nchar + n;
+	n = snprintf(buf, size, "%s", "(");
+        if (0 > n) {
+            nchar = -1;
+        }
+        else {
+            nchar += n;
+            size = SUBTRACT_SIZET(size, n);
+        }
     }
 
     if (nchar >= 0) {
 	int	useNames = RETURNS_NAME(getId);
 
-	n = format(underlyingUnit, buf+nchar, SUBTRACT_SIZET(max, nchar),
-                useNames, getDefinition, encoding, 1);
+        n = format(underlyingUnit, buf+nchar, size, useNames, getDefinition,
+                encoding, 1);
 	nchar = n < 0 ? n : nchar + n;
 
 	if (nchar >= 0) {
 	    int	useSeparators = useNames || year < 1000 || year > 9999;
 
-	    n =  snprintf(buf+nchar, SUBTRACT_SIZET(max, nchar),
+	    n =  snprintf(buf+nchar, size,
 		useSeparators
 		    ? " %s %d-%02d-%02d %02d:%02d"
 		    : " %s %d%02d%02dT%02d%02d",
 		useNames ? "since" : "@",
 		year, month, day, hour, minute);
-	    nchar = n < 0 ? n : nchar + n;
+            if (0 > n) {
+                nchar = -1;
+            }
+            else {
+                nchar += n;
+                size = SUBTRACT_SIZET(size, n);
+            }
 
 	    if (nchar >= 0) {
 		int	decimalCount = -(int)floor(log10(resolution));
 
 		if (decimalCount > -2) {
-		    n = snprintf(buf+nchar, SUBTRACT_SIZET(max, nchar),
+		    n = snprintf(buf+nchar, size,
 			    useSeparators ? ":%0*.*f" : "%0*.*f",
 			    decimalCount+3, decimalCount, second);
-		    nchar = n < 0 ? n : nchar + n;
+                    if (0 > n) {
+                        nchar = -1;
+                    }
+                    else {
+                        nchar += n;
+                        size = SUBTRACT_SIZET(size, n);
+                    }
 		}			/* sufficient precision for seconds */
 
 		if (nchar >= 0) {
-		    n = snprintf(buf+nchar, SUBTRACT_SIZET(max, nchar), "%s",
-			addParens ? " UTC)" : " UTC");
-		    nchar = n < 0 ? n : nchar + n;
+                    n = snprintf(buf+nchar, size, "%s", 
+                            addParens ? " UTC)" : " UTC");
+                    if (0 > n) {
+                        nchar = -1;
+                    }
+                    else {
+                        nchar += n;
+                        size = SUBTRACT_SIZET(size, n);
+                    }
 		}			/* printed seconds if appropriate */
 	    }				/* printed year through minute */
 	}				/* underlying unit printed */
@@ -1019,7 +1111,9 @@ printTimestamp(
  *	arg		Pointer to the formatting parameters.
  * Returns:
  *	-1		Failure.  See errno.
- *	else		Success.  Number of bytes printed.
+ *	else	        Success. Number of bytes that would be printed if
+ *	                "size" were sufficiently large excluding the
+ *	                terminating NUL.
  */
 static ut_status
 formatTimestamp(
@@ -1077,7 +1171,7 @@ formatTimestamp(
  *	reference	Pointer to the reference-level of the logarithmic-unit.
  *	buf		Pointer to the buffer into which to print the
  *			logarithmic-unit.
- *	max		The size of "buf" in bytes.
+ *	size		The size of "buf" in bytes.
  *	getId		Returns the identifier for a unit.
  *	getDefinition	Returns the definition of "unit" in terms of basic
  *			units.
@@ -1086,18 +1180,20 @@ formatTimestamp(
  *			whitespace is printed.
  * Returns:
  *	-1		Failure.  See errno.
- *	else		Success.  Number of bytes printed.
+ *	else	        Success. Number of bytes that would be printed if
+ *	                "size" were sufficiently large excluding the
+ *	                terminating NUL.
  */
 static int
 printLogarithmic(
-    const double	base,
+    const double	        base,
     const ut_unit* const	reference,
-    char*		buf,
-    const size_t	max,
-    IdGetter		getId,
-    const int		getDefinition,
-    const ut_encoding	encoding,
-    const int		addParens)
+    char*	        	buf,
+    size_t        	        size,
+    IdGetter	        	getId,
+    const int	        	getDefinition,
+    const ut_encoding   	encoding,
+    const int	        	addParens)
 {
     char	refSpec[512];
     int		nchar = format(reference, refSpec, sizeof(refSpec)-1,
@@ -1110,16 +1206,16 @@ printLogarithmic(
 	amount = isalpha(refSpec[0]) ? "1 " : "";
 
 	if (base == 2) {
-	    nchar = snprintf(buf, max, "lb(re %s%s)", amount, refSpec);
+	    nchar = snprintf(buf, size, "lb(re %s%s)", amount, refSpec);
 	}
 	else if (base == M_E) {
-	    nchar = snprintf(buf, max, "ln(re %s%s)", amount, refSpec);
+	    nchar = snprintf(buf, size, "ln(re %s%s)", amount, refSpec);
 	}
 	else if (base == 10) {
-	    nchar = snprintf(buf, max, "lg(re %s%s)", amount, refSpec);
+	    nchar = snprintf(buf, size, "lg(re %s%s)", amount, refSpec);
 	}
 	else {
-	    nchar = snprintf(buf, max,
+	    nchar = snprintf(buf, size,
 		addParens ? "(%.*g ln(re %s%s))" : "%.*g ln(re %s%s)",
 		DBL_DIG, 1/log(base), amount, refSpec);
 	}
@@ -1144,9 +1240,9 @@ printLogarithmic(
 static ut_status
 formatLogarithmic(
     const ut_unit* const	unit,
-    const double	base,
+    const double        	base,
     const ut_unit* const	reference,
-    void*		arg)
+    void*	        	arg)
 {
     FormatPar*	formatPar = (FormatPar*)arg;
     int		nchar;
@@ -1223,9 +1319,9 @@ static ut_visitor	formatter = {
  *                                              UT_LATIN1 and UT_UTF8 specified.
  *			    UT_CANT_FORMAT	"unit" can't be formatted in
  *						the desired manner.
- *      else		Success.  Number of characters printed in "buf".  If
- *			the number is equal to the size of the buffer, then the
- *			buffer is too small to have a terminating NUL character.
+ *	else	        Success. Number of bytes that would be printed if
+ *	                "size" were sufficiently large excluding the
+ *	                terminating NUL.
  */
 int
 ut_format(

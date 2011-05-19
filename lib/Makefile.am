@@ -85,7 +85,9 @@ LINT		= lint
 
 # Allow HTML documentation access to the units database by creating symbolic
 # links in the webpage directory to the database files.
-install-data-hook:
+$(DESTDIR)$(htmldir):
+	mkdir -p $@
+install-data-hook:	$(DESTDIR)$(htmldir)
 	cd $(DESTDIR)$(htmldir) && \
 	    rm -rf $(PACKAGE)*.xml && \
 	    ln -s ../../$(PACKAGE)/*.xml .

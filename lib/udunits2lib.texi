@@ -923,12 +923,13 @@ of basic-units instead of stopping any expansion at the highest level
 possible.
 @end table
 
-On succes, this function returns the number of characters written into
-@var{buf}, which will be less than or equal to @var{size}.
-If the number is equal to @var{size}, then the buffer is too small to
-have a terminating @code{NUL} character.
+On success, this function returns either the number of bytes -- excluding the
+terminating @code{NUL} -- that were written into @code{buf} or the number of
+bytes that @emph{would have been written}. The difference is due to the
+the runtime @code{snprinf()} function that was used.
 
-On failure, this function returns @code{-1} and @ref{ut_get_status()} will return one of the following:
+On failure, this function returns @code{-1} and @ref{ut_get_status()} will
+return one of the following:
 
 @table @code
 @item UT_BAD_ARG
