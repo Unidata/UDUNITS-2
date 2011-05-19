@@ -92,7 +92,7 @@ web-update:	install install-html
 	cd $(DESTDIR)$(htmldir) \
 	&& rsync $(RSYNC_FLAGS) -aCu --delete --delete-excluded \
 	    *.html \
-	    conan:/content/software/$(PACKAGE)/$(distName)
+	    /web/content/software/$(PACKAGE)/$(distName)
 	cd $(DESTDIR)$(pkgdatadir) \
 	&& rsync $(RSYNC_FLAGS) -aCu --delete \
 	    *.xml \
@@ -107,7 +107,7 @@ download-update:
 		's/"%current%" value=".*"/"%current%" value="$(VERSION)"/' \
 		>toc.xml.new
 	cp /web/content/downloads/$(PACKAGE)/toc.xml \
-	    /content/downloads/$(PACKAGE)/toc.xml.old
+	    /web/content/downloads/$(PACKAGE)/toc.xml.old
 	mv toc.xml.new /web/content/downloads/udunits/toc.xml
 
 available:	ftp web-update download-update
