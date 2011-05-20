@@ -1,3 +1,6 @@
+2.1.24
+        Removed superfluous "the" from library documentation.
+
 2.1.23  2011-05-19 13:35:40-600
         Corrected "make install". Will now create the installation-directory
         $(DESTDIR)$(htmldir) for holding the symbolic links for HTML access to

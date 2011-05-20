@@ -926,7 +926,7 @@ possible.
 On success, this function returns either the number of bytes -- excluding the
 terminating @code{NUL} -- that were written into @code{buf} or the number of
 bytes that @emph{would have been written}. The difference is due to the
-the runtime @code{snprinf()} function that was used.
+runtime @code{snprinf()} function that was used.
 
 On failure, this function returns @code{-1} and @ref{ut_get_status()} will
 return one of the following:
