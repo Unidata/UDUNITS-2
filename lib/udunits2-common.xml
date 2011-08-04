@@ -94,7 +94,7 @@ elements appear only within <aliases>.
 
     <!-- Constants -->
         <unit>
-            <def>6.02214179e23/mol</def>
+            <def>6.02214179e23/mol</def>        <!-- +-30e15 -->
             <aliases>
                 <name><singular>avogadro_constant</singular></name>
                 <noplural/>
