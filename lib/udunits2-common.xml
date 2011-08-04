@@ -439,13 +439,6 @@ elements appear only within <aliases>.
                 <name> <singular>arpentlin</singular> </name>
             </aliases>
         </unit>
-        <unit>
-            <def>(2.69e20/avogadro_constant)/m2</def>
-            <aliases>
-                <name> <singular>dobson</singular> </name>
-                <symbol>DU</symbol>
-            </aliases>
-        </unit>
 
     <!-- Angular Velocity -->
         <unit>
@@ -1607,6 +1600,13 @@ elements appear only within <aliases>.
             <def>1</def>
             <aliases>
                 <name> <singular>count</singular> </name>
+            </aliases>
+        </unit>
+        <unit>
+            <def>446.2 micromoles/meter^2</def>
+            <aliases>
+                <name> <singular>dobson</singular> </name>
+                <symbol>DU</symbol>
             </aliases>
         </unit>
 </unit-system>
