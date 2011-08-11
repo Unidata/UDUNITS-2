@@ -108,6 +108,34 @@ elements appear only within <aliases>.
                 <symbol>%</symbol>
             </aliases>
         </unit>
+        <unit>
+            <def>1e-6</def>
+            <aliases>
+                <symbol>ppm</symbol>
+                <symbol>ppmv</symbol>
+            </aliases>
+        </unit>
+        <unit>
+            <def>1e-9</def>
+            <aliases>
+                <symbol>ppb</symbol>
+                <symbol>ppbv</symbol>
+            </aliases>
+        </unit>
+        <unit>
+            <def>1e-12</def>
+            <aliases>
+                <symbol>ppt</symbol>
+                <symbol>pptv</symbol>
+            </aliases>
+        </unit>
+        <unit>
+            <def>1e-15</def>
+            <aliases>
+                <symbol>ppq</symbol>
+                <symbol>ppqv</symbol>
+            </aliases>
+        </unit>
 
     <!-- Plane Angle -->
         <unit>

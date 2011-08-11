@@ -1,6 +1,10 @@
 2.1.24
         Removed superfluous "the" from library documentation.
 
+        Added (against my better judgement) symbols "ppm", "ppb", "ppt", "ppq",
+        and (shamefully) symbols "ppmv", "ppbv", "pptv", and "ppqv" to the
+        "common" units database.
+
 2.1.23  2011-05-19 13:35:40-600
         Corrected "make install". Will now create the installation-directory
         $(DESTDIR)$(htmldir) for holding the symbolic links for HTML access to
@@ -27,7 +31,7 @@
         X-Open 2 to X-Open 3). This should prevent segmentation violations from
         occurring if the print-buffer is too small. Thank you Alex Cobb.
 
-2.1.21  2010-01-24
+2.1.21  2011-01-24
         Eliminate expectation and use of leading scale factor in the "have"
         unit of udunits2(1).
 
