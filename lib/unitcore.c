@@ -1,5 +1,5 @@
 /*
- * Copyright 2008, 2009 University Corporation for Atmospheric Research
+ * Copyright 2011 University Corporation for Atmospheric Research
  *
  * This file is part of the UDUNITS-2 package.  See the file LICENSE
  * in the top-level source-directory of the package for copying and
@@ -535,13 +535,15 @@ ut_decode_time(
 
     if (seconds >= 60) {
 	seconds -= 60;
-	if (++minutes >= 60) {
-	    minutes -= 60;
-	    if (++hours >= 24) {
-		hours -= 24;
-		days++;
-	    }
-	}
+	++minutes;
+    }
+    if (minutes >= 60) {
+        minutes -= 60;
+        ++hours;
+    }
+    if (hours >= 24) {
+        hours -= 24;
+        ++days;
     }
 
     *second = seconds;

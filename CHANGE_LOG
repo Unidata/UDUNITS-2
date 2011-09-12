@@ -5,6 +5,9 @@
         and (shamefully) symbols "ppmv", "ppbv", "pptv", and "ppqv" to the
         "common" units database.
 
+        Improved ut_decode_time(): the returned "seconds" value will now
+        always be less than 60. Thanks Christian.
+
 2.1.23  2011-05-19 13:35:40-600
         Corrected "make install". Will now create the installation-directory
         $(DESTDIR)$(htmldir) for holding the symbolic links for HTML access to
