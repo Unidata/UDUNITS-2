@@ -32,3 +32,4 @@ vgcore.*
 orgs
 udunits-2.1.10
 configure
+*.swp
