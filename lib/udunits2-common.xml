@@ -1631,10 +1631,23 @@ elements appear only within <aliases>.
             </aliases>
         </unit>
         <unit>
+            <def>1</def>
+            <aliases>
+                <name> <singular>bit</singular> </name>
+            </aliases>
+        </unit>
+        <unit>
             <def>446.2 micromoles/meter^2</def>
             <aliases>
                 <name> <singular>dobson</singular> </name>
                 <symbol>DU</symbol>
+            </aliases>
+        </unit>
+        <unit>
+            <def>mol/6.02214129e23</def> <!-- as of 20130319 -->
+            <name><singular>molecule</singular></name>
+            <aliases>
+                <name><singular>molec</singular></name>
             </aliases>
         </unit>
 </unit-system>
