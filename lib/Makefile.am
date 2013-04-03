@@ -17,7 +17,8 @@ libudunits2_la_SOURCES = unitcore.c converter.c formatter.c \
     status.c \
     xml.c \
     error.c \
-    ut_free_system.c
+    ut_free_system.c \
+    iso_c_utilities.f90 udunits2_fortran.f90
 BUILT_SOURCES = parser.c scanner.c
 pkgdata_DATA = \
     udunits2.xml \

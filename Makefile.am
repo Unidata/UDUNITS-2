@@ -5,6 +5,7 @@
 # redistribution conditions.
 #
 ## Process this file with automake to produce Makefile.in
+ACLOCAL_AMFLAGS		= -I m4
 if COND_EXPAT
     SUBDIRS		= expat lib prog
 else

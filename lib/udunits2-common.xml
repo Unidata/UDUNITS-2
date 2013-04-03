@@ -1637,4 +1637,11 @@ elements appear only within <aliases>.
                 <symbol>DU</symbol>
             </aliases>
         </unit>
+        <unit>
+            <def>mol/6.02214129e23</def> <!-- NIST 20130402 -->
+            <name><singular>molecule</singular></name>
+            <aliases>
+                <name><singular>molec</singular></name>
+            </aliases>
+        </unit>
 </unit-system>

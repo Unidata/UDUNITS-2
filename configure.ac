@@ -12,6 +12,7 @@ AC_PREREQ(2.59)
 AC_INIT(UDUNITS, 2.1.24, support-udunits@unidata.ucar.edu)
 AC_CONFIG_SRCDIR([lib/converter.c])
 AC_CONFIG_AUX_DIR([.])
+AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([foreign subdir-objects])
 AC_CONFIG_HEADERS([config.h expat/expat_config.h])
 
@@ -79,6 +80,7 @@ AC_PROG_LN_S
 AC_PROG_MAKE_SET
 AC_PROG_YACC
 AM_PROG_LEX
+AC_PROG_FC
 
 # Checks for libraries.
 AC_SEARCH_LIBS([dirname], [gen], , 

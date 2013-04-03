@@ -16,7 +16,7 @@
 typedef struct ut_system	ut_system;
 typedef union ut_unit		ut_unit;
 
-typedef enum {
+enum utStatus {
     UT_SUCCESS = 0,	/* Success */
     UT_BAD_ARG,	        /* An argument violates the function's contract */
     UT_EXISTS,		/* Unit, prefix, or identifier already exists */
@@ -33,14 +33,16 @@ typedef enum {
     UT_OPEN_ENV,	/* Can't open environment-specified unit database */
     UT_OPEN_DEFAULT,	/* Can't open installed, default, unit database */
     UT_PARSE		/* Error parsing unit specification */
-} ut_status;
+};
+typedef enum utStatus          ut_status;
 
-typedef enum {
+enum utEncoding {
     UT_ASCII = 0,
     UT_ISO_8859_1 = 1,
     UT_LATIN1 = UT_ISO_8859_1,
     UT_UTF8 = 2
-} ut_encoding;
+};
+typedef enum utEncoding        ut_encoding;
 
 #define UT_NAMES	4
 #define UT_DEFINITION	8
@@ -49,7 +51,7 @@ typedef enum {
 /*
  * Data-structure for a visitor to a unit:
  */
-typedef struct {
+typedef struct ut_visitor {
     /*
      * Visits a basic-unit.  A basic-unit is a base unit like "meter" or a non-
      * dimensional but named unit like "radian".
