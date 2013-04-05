@@ -1,5 +1,6 @@
 /*
- * Copyright 2007, 2008, 2009 University Corporation for Atmospheric Research
+ * Copyright 2013 University Corporation for Atmospheric Research. All rights
+ * reserved.
  *
  * This file is part of the UDUNITS-2 package.  See the file LICENSE
  * in the top-level source-directory of the package for copying and
@@ -32,6 +33,7 @@ static ut_encoding	_encoding;
 static const char*	_progname = "udunits2";
 static const char*	_xmlPath;
 static ut_system*	_unitSystem;
+static double           _haveUnitAmount;
 static char		_haveUnitSpec[_POSIX_MAX_INPUT+1];
 static char		_wantSpec[_POSIX_MAX_INPUT+1];
 static ut_unit*		_haveUnit;
@@ -309,19 +311,23 @@ getInputValue(void)
 	    break;
 
 	if (nbytes > 0) {
-	    (void)strcpy(_haveUnitSpec, buf);
+            if (sscanf(buf, "%lg %[^ \t\n]", &_haveUnitAmount, _haveUnitSpec)
+                    != 2) {
+                _haveUnitAmount = 1;
+                (void)strcpy(_haveUnitSpec, buf);
+            }
 
-	    ut_free(_haveUnit);
-	    _haveUnit = ut_parse(_unitSystem, _haveUnitSpec, _encoding);
+            ut_free(_haveUnit);
+            _haveUnit = ut_parse(_unitSystem, _haveUnitSpec, _encoding);
 
-	    if (_haveUnit == NULL) {
-		(void)fprintf(stderr, "%s: Don't recognize \"%s\"\n",
-		    _progname, _haveUnitSpec);
-	    }
-	    else {
-		success = 1;
-		break;
-	    }
+            if (_haveUnit == NULL) {
+                (void)fprintf(stderr, "%s: Don't recognize \"%s\"\n",
+                    _progname, _haveUnitSpec);
+            }
+            else {
+                success = 1;
+                break;
+            }
 	}
     }
 
@@ -335,8 +341,7 @@ getOutputRequest(void)
     int		success = 0;
 
     for (;;) {
-	int	nbytes =
-	    getSpec("You want: ", _wantSpec, sizeof(_wantSpec));
+	int	nbytes = getSpec("You want: ", _wantSpec, sizeof(_wantSpec));
 
 	if (nbytes < 0)
 	    break;
@@ -375,9 +380,10 @@ handleRequest(void)
     if (getInputValue()) {
 	if (getOutputRequest()) {
 	    if (_wantDefinition) {
-                char	buf[256];
-                int	nbytes = ut_format(_haveUnit, buf, sizeof(buf),
-                    _formattingOptions);
+                char	        buf[256];
+                ut_unit*        unit = ut_scale(_haveUnitAmount, _haveUnit);
+                int	        nbytes = ut_format(unit, buf, sizeof(buf),
+                        _formattingOptions);
 
                 if (nbytes >= sizeof(buf)) {
                     (void)fprintf(stderr, "%s: Resulting unit "
@@ -388,6 +394,8 @@ handleRequest(void)
 
                     (void)printf("    %s\n", buf);
                 }
+
+                ut_free(unit);
 	    }
 	    else if (!ut_are_convertible(_wantUnit, _haveUnit)) {
 		(void)fprintf(stderr, "%s: Units are not convertible\n",
@@ -410,10 +418,12 @@ handleRequest(void)
 
 		    (void)printf(
 			needsParens
-			    ? "    %s = %g (%s)\n"
-			    : "    %s = %g %s\n",
+			    ? "    %g %s = %g (%s)\n"
+			    : "    %g %s = %g %s\n",
+                        _haveUnitAmount,
 			_haveUnitSpec,
-			cv_convert_double(conv, 1.0), _wantSpec);
+			cv_convert_double(conv, _haveUnitAmount),
+                        _wantSpec);
 
                     (void)sprintf(haveExp,
                         strpbrk(_haveUnitSpec, whiteSpace) ||
