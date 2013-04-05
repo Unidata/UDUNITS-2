@@ -1631,6 +1631,12 @@ elements appear only within <aliases>.
             </aliases>
         </unit>
         <unit>
+            <def>1</def>
+            <aliases>
+                <name> <singular>bit</singular> </name>
+            </aliases>
+        </unit>
+        <unit>
             <def>446.2 micromoles/meter^2</def>
             <aliases>
                 <name> <singular>dobson</singular> </name>
