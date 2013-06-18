@@ -43,7 +43,16 @@
 #include <ctype.h>
 #include <errno.h>
 #include <float.h>
-#include <inttypes.h>
+
+#if !defined(_MSC_VER)
+#	include <inttypes.h>
+#	include <strings.h>
+#else
+#	define strcasecmp _stricmp 
+#	define strncasecmp _strnicmp 
+typedef int int32_t;
+#endif
+
 #include <limits.h>
 #include <math.h>
 #include <search.h>
@@ -51,7 +60,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <strings.h>
+
 
 #include "udunits2.h"		/* this module's API */
 #include "converter.h"

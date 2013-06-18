@@ -17,9 +17,19 @@
 
 #include <assert.h>
 #include <search.h>
+#if defined(_MSC_VER)
+#	include <win/search.h>
+#endif
 #include <stdlib.h>
 #include <string.h>
-#include <strings.h>
+#if !defined(_MSC_VER)
+#	include <strings.h>
+#else
+#	define snprintf _snprintf 
+#	define vsnprintf _vsnprintf 
+#	define strcasecmp _stricmp 
+#	define strncasecmp _strnicmp 
+#endif
 
 #include "udunits2.h"
 #include "unitAndId.h"

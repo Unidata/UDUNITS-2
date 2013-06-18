@@ -18,11 +18,19 @@
 #include <float.h>
 #include <limits.h>
 #include <math.h>
+#if defined(_MSC_VER)
+#	include <win/math.h>
+#endif
+
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+
+#if defined(_MSC_VER)
+#	define snprintf _snprintf
+#endif
 
 #include "udunits2.h"
 #include "unitToIdMap.h"

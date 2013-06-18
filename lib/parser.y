@@ -25,7 +25,15 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <strings.h>
+
+#if !defined(_MSC_VER)
+#	include <strings.h>
+#else
+#	define snprintf _snprintf 
+#	define vsnprintf _vsnprintf 
+#	define strcasecmp _stricmp 
+#	define strncasecmp _strnicmp 
+#endif
 
 #include "udunits2.h"
 

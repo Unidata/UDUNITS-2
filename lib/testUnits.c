@@ -9,22 +9,27 @@
 #   define _XOPEN_SOURCE 500
 #endif
 
-
 #include <float.h>
-#include <glob.h>
+
+#if !defined(_WIN32)
+#	include <glob.h>
+#	include <unistd.h>
+#else
+#	include <win/glob.h>
+#endif
+
 #include <math.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <unistd.h>
 #include <CUnit/CUnit.h>
 #include <CUnit/Basic.h>
 
 #include "udunits2.h"
 
 
-static char		xmlPath[80];
+static char		xmlPath[260];
 static ut_system*	unitSystem;
 static ut_unit*		kilogram;
 static ut_unit*		meter;
