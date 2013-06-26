@@ -43,7 +43,16 @@
 #include <ctype.h>
 #include <errno.h>
 #include <float.h>
-#include <inttypes.h>
+
+#if !defined(_MSC_VER)
+#	include <inttypes.h>
+#	include <strings.h>
+#else
+#	define strcasecmp _stricmp 
+#	define strncasecmp _strnicmp 
+typedef int int32_t;
+#endif
+
 #include <limits.h>
 #include <math.h>
 #include <search.h>
@@ -51,7 +60,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <strings.h>
+
 
 #include "udunits2.h"		/* this module's API */
 #include "converter.h"
@@ -3654,9 +3663,15 @@ ut_get_converter(
 		    "ut_get_converter(): Couldn't get converter to seconds");
 	    }
 	    else {
-		cv_converter*	shiftOrigin =
-		    cv_get_offset(
-			from->timestamp.origin - to->timestamp.origin);
+        cv_converter*	shiftOrigin = NULL;
+        if (IS_TIMESTAMP(to))
+		    shiftOrigin =
+		        cv_get_offset(
+			    from->timestamp.origin - to->timestamp.origin);
+        else
+		    shiftOrigin =
+		        cv_get_offset(
+			    from->timestamp.origin);
 
 		if (shiftOrigin == NULL) {
 		    ut_set_status(UT_OS);

@@ -19,6 +19,9 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
+#if defined(_MSC_VER)
+#	define strdup _strdup
+#endif
 
 #include "unitAndId.h"
 #include "udunits2.h"

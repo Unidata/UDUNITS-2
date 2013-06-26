@@ -9,22 +9,27 @@
 #   define _XOPEN_SOURCE 500
 #endif
 
-
 #include <float.h>
-#include <glob.h>
+
+#if !defined(_WIN32)
+#	include <glob.h>
+#	include <unistd.h>
+#else
+#	include <win/glob.h>
+#endif
+
 #include <math.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <unistd.h>
 #include <CUnit/CUnit.h>
 #include <CUnit/Basic.h>
 
 #include "udunits2.h"
 
 
-static char		xmlPath[80];
+static char		xmlPath[260];
 static ut_system*	unitSystem;
 static ut_unit*		kilogram;
 static ut_unit*		meter;
@@ -312,7 +317,8 @@ test_utToString(void)
     CU_ASSERT_STRING_EQUAL(buf, "m");
 
     n = ut_format(kilogram, buf, 1, asciiSymbolDef);
-    CU_ASSERT_EQUAL(n, 2);
+    CU_ASSERT_EQUAL(n, -1);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_CANT_FORMAT);
 
     nchar = ut_format(meter, buf, sizeof(buf)-1, asciiName);
     CU_ASSERT_STRING_EQUAL(buf, "meter");
@@ -326,7 +332,7 @@ test_utToString(void)
     CU_ASSERT(ut_format(unit, buf, sizeof(buf), asciiSymbolDef) != -1);
     CU_ASSERT_STRING_EQUAL(buf, string);
 
-    n = ut_format(unit, buf, 1, asciiSymbolDef);
+    n = ut_format(unit, buf, sizeof(buf), asciiSymbolDef);
     CU_ASSERT_EQUAL(n, strlen(string));
     ut_free(unit);
 }

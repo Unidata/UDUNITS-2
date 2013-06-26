@@ -17,6 +17,9 @@
 
 #include <assert.h>
 #include <errno.h>
+#if defined(_MSC_VER)
+#	include <win/search.h>
+#endif
 #include <search.h>
 #include <stdlib.h>
 #include <string.h>

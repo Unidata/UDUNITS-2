@@ -8,6 +8,9 @@
 
 #include <errno.h>
 #include <search.h>
+#if defined(_MSC_VER)
+#	include <win/search.h>
+#endif
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
@@ -379,7 +382,7 @@ resultingUnit(
     }
     else if (result != NULL) {
 	if (setUnit(result, unit2) != 0) {
-	    result == NULL;
+	    result = NULL;
 	}
     }
     return result;

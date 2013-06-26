@@ -18,6 +18,9 @@
 #include <ctype.h>
 #include <errno.h>
 #include <search.h>
+#if defined(_MSC_VER)
+#	include <win/search.h>
+#endif
 #include <stdlib.h>
 #include <string.h>
 

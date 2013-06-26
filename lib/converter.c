@@ -16,10 +16,18 @@
 #endif
 
 #include <math.h>
+#if defined(_MSC_VER)
+#	include <win/math.h>
+#endif
+
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#if defined(_MSC_VER)
+#	define snprintf _snprintf
+#endif
 
 #include "converter.h"		/* this module's API */
 
@@ -1042,7 +1050,7 @@ cv_get_galilean(
     const double	slope,
     const double	intercept)
 {
-    cv_converter*	conv;
+    cv_converter*	conv = NULL;
 
     if (slope == 1) {
 	conv = cv_get_offset(intercept);

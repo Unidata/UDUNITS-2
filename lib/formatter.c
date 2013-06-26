@@ -18,11 +18,19 @@
 #include <float.h>
 #include <limits.h>
 #include <math.h>
+#if defined(_MSC_VER)
+#	include <win/math.h>
+#endif
+
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+
+#if defined(_MSC_VER)
+#	define snprintf _snprintf
+#endif
 
 #include "udunits2.h"
 #include "unitToIdMap.h"
@@ -163,6 +171,12 @@ format(
 {
     int	nchar = -1;	/* failure */
 
+#if defined(_MSC_VER)
+    unsigned int old_exponent_format;
+    /* Enable two-digit exponent format to match the test case */
+    old_exponent_format = _set_output_format(_TWO_DIGIT_EXPONENT);
+#endif
+
     if (unit == NULL) {
 	ut_set_status(UT_BAD_ARG);
 	ut_handle_error_message("format(): NULL unit argument");
@@ -191,6 +205,11 @@ format(
 	if (ut_accept_visitor(unit, &formatter, &formatPar) == UT_SUCCESS)
 	    nchar = formatPar.nchar;
     }
+
+#if defined(_MSC_VER)
+    /* Disable two-digit exponent format to match the test case */
+    _set_output_format( old_exponent_format );
+#endif
 
     return nchar;
 }
