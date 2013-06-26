@@ -64,5 +64,8 @@
     <ClInclude Include="..\..\..\expat\xmltok_impl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\expat\winconfig.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

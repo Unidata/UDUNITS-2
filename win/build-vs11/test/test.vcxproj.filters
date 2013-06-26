@@ -19,7 +19,7 @@
       <Filter>Source files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\lib\testUnits.c">
-      <Filter>Header files</Filter>
+      <Filter>Source files</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

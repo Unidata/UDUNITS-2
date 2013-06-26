@@ -27,4 +27,8 @@
 /* Windows has memmove() available. */
 #define HAVE_MEMMOVE
 
+#if defined(_WIN64)
+#   define XML_LARGE_SIZE
+#endif
+
 #endif /* ndef WINCONFIG_H */

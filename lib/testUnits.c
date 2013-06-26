@@ -317,7 +317,8 @@ test_utToString(void)
     CU_ASSERT_STRING_EQUAL(buf, "m");
 
     n = ut_format(kilogram, buf, 1, asciiSymbolDef);
-    CU_ASSERT_EQUAL(n, 2);
+    CU_ASSERT_EQUAL(n, -1);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_CANT_FORMAT);
 
     nchar = ut_format(meter, buf, sizeof(buf)-1, asciiName);
     CU_ASSERT_STRING_EQUAL(buf, "meter");
@@ -331,7 +332,7 @@ test_utToString(void)
     CU_ASSERT(ut_format(unit, buf, sizeof(buf), asciiSymbolDef) != -1);
     CU_ASSERT_STRING_EQUAL(buf, string);
 
-    n = ut_format(unit, buf, 1, asciiSymbolDef);
+    n = ut_format(unit, buf, sizeof(buf), asciiSymbolDef);
     CU_ASSERT_EQUAL(n, strlen(string));
     ut_free(unit);
 }

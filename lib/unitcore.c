@@ -3663,9 +3663,15 @@ ut_get_converter(
 		    "ut_get_converter(): Couldn't get converter to seconds");
 	    }
 	    else {
-		cv_converter*	shiftOrigin =
-		    cv_get_offset(
-			from->timestamp.origin - to->timestamp.origin);
+        cv_converter*	shiftOrigin = NULL;
+        if (IS_TIMESTAMP(to))
+		    shiftOrigin =
+		        cv_get_offset(
+			    from->timestamp.origin - to->timestamp.origin);
+        else
+		    shiftOrigin =
+		        cv_get_offset(
+			    from->timestamp.origin);
 
 		if (shiftOrigin == NULL) {
 		    ut_set_status(UT_OS);
