@@ -50,7 +50,7 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
  configure.lineno config.status.lineno
 mkinstalldirs = $(install_sh) -d
-CONFIG_HEADER = config.h $(top_builddir)/expat/expat_config.h
+CONFIG_HEADER = config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 SOURCES =
@@ -268,9 +268,8 @@ top_srcdir = @top_srcdir@
 # redistribution conditions.
 #
 ACLOCAL_AMFLAGS = -I m4
-@COND_EXPAT_FALSE@SUBDIRS = lib prog
-@COND_EXPAT_TRUE@SUBDIRS = expat lib prog
-DIST_SUBDIRS = expat lib prog test
+SUBDIRS = lib prog
+DIST_SUBDIRS = lib prog test
 info_TEXINFOS = udunits2.texi
 udunits2_TEXINFOS = success.texi failure.texi make.texi
 EXTRA_DIST = \

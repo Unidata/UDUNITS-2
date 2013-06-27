@@ -36,13 +36,12 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-@COND_EXPAT_TRUE@@HAVE_CUNIT_TRUE@am__append_1 = ../expat/libexpat.la
 @HAVE_CUNIT_TRUE@check_PROGRAMS = testUnits$(EXEEXT) $(am__EXEEXT_1)
 @HAVE_CUNIT_TRUE@TESTS = testUnits$(EXEEXT) $(am__EXEEXT_1)
-@ENABLE_UDUNITS_1_TRUE@am__append_2 = udunits-1.c
-@ENABLE_UDUNITS_1_TRUE@am__append_3 = udunits.h
+@ENABLE_UDUNITS_1_TRUE@am__append_1 = udunits-1.c
+@ENABLE_UDUNITS_1_TRUE@am__append_2 = udunits.h
+@ENABLE_UDUNITS_1_TRUE@@HAVE_CUNIT_TRUE@am__append_3 = testUnits-1
 @ENABLE_UDUNITS_1_TRUE@@HAVE_CUNIT_TRUE@am__append_4 = testUnits-1
-@ENABLE_UDUNITS_1_TRUE@@HAVE_CUNIT_TRUE@am__append_5 = testUnits-1
 subdir = lib
 DIST_COMMON = $(am__include_HEADERS_DIST) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in parser.c
@@ -54,8 +53,7 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/libtool.m4 \
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
-CONFIG_HEADER = $(top_builddir)/config.h \
-	$(top_builddir)/expat/expat_config.h
+CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
@@ -86,31 +84,27 @@ libudunits2_la_LIBADD =
 am__libudunits2_la_SOURCES_DIST = unitcore.c converter.c formatter.c \
 	idToUnitMap.c idToUnitMap.h unitToIdMap.c unitToIdMap.h \
 	unitAndId.c unitAndId.h systemMap.c systemMap.h prefix.c \
-	parser.y status.c xml.c error.c ut_free_system.c \
-	iso_c_utilities.f90 udunits2_fortran.f90 udunits-1.c
+	parser.y status.c xml.c error.c ut_free_system.c udunits-1.c
 @ENABLE_UDUNITS_1_TRUE@am__objects_1 = udunits-1.lo
 am_libudunits2_la_OBJECTS = unitcore.lo converter.lo formatter.lo \
 	idToUnitMap.lo unitToIdMap.lo unitAndId.lo systemMap.lo \
 	prefix.lo parser.lo status.lo xml.lo error.lo \
-	ut_free_system.lo iso_c_utilities.lo udunits2_fortran.lo \
-	$(am__objects_1)
+	ut_free_system.lo $(am__objects_1)
 libudunits2_la_OBJECTS = $(am_libudunits2_la_OBJECTS)
-libudunits2_la_LINK = $(LIBTOOL) --tag=FC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(FCLD) $(AM_FCFLAGS) $(FCFLAGS) \
+libudunits2_la_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(libudunits2_la_LDFLAGS) $(LDFLAGS) -o $@
 @ENABLE_UDUNITS_1_TRUE@@HAVE_CUNIT_TRUE@am__EXEEXT_1 =  \
 @ENABLE_UDUNITS_1_TRUE@@HAVE_CUNIT_TRUE@	testUnits-1$(EXEEXT)
 testUnits_SOURCES = testUnits.c
 testUnits_OBJECTS = testUnits.$(OBJEXT)
 testUnits_LDADD = $(LDADD)
-@HAVE_CUNIT_TRUE@testUnits_DEPENDENCIES = libudunits2.la \
-@HAVE_CUNIT_TRUE@	$(am__append_1)
+@HAVE_CUNIT_TRUE@testUnits_DEPENDENCIES = libudunits2.la
 testUnits_1_SOURCES = testUnits-1.c
 testUnits_1_OBJECTS = testUnits-1.$(OBJEXT)
 testUnits_1_LDADD = $(LDADD)
-@HAVE_CUNIT_TRUE@testUnits_1_DEPENDENCIES = libudunits2.la \
-@HAVE_CUNIT_TRUE@	$(am__append_1)
-DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir) -I$(top_builddir)/expat
+@HAVE_CUNIT_TRUE@testUnits_1_DEPENDENCIES = libudunits2.la
+DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
 am__mv = mv -f
@@ -122,13 +116,6 @@ LTCOMPILE = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
-	$(LDFLAGS) -o $@
-FCCOMPILE = $(FC) $(AM_FCFLAGS) $(FCFLAGS)
-LTFCCOMPILE = $(LIBTOOL) --tag=FC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
-	--mode=compile $(FC) $(AM_FCFLAGS) $(FCFLAGS)
-FCLD = $(FC)
-FCLINK = $(LIBTOOL) --tag=FC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
-	--mode=link $(FCLD) $(AM_FCFLAGS) $(FCFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
 YACCCOMPILE = $(YACC) $(YFLAGS) $(AM_YFLAGS)
 LTYACCCOMPILE = $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
@@ -328,7 +315,7 @@ libudunits2_la_SOURCES = unitcore.c converter.c formatter.c \
 	idToUnitMap.c idToUnitMap.h unitToIdMap.c unitToIdMap.h \
 	unitAndId.c unitAndId.h systemMap.c systemMap.h prefix.c \
 	parser.y status.c xml.c error.c ut_free_system.c \
-	iso_c_utilities.f90 udunits2_fortran.f90 $(am__append_2)
+	$(am__append_1)
 BUILT_SOURCES = parser.c scanner.c
 pkgdata_DATA = \
     udunits2.xml \
@@ -348,7 +335,7 @@ AM_CPPFLAGS = -DDEFAULT_UDUNITS2_XML_PATH='"$(pkgdatadir)/udunits2.xml"'
 libudunits2_la_LDFLAGS = -version-number 0:1:0
 lex_prefix = ut
 LFLAGS = -d -P$(lex_prefix)
-include_HEADERS = udunits2.h converter.h $(am__append_3)
+include_HEADERS = udunits2.h converter.h $(am__append_2)
 EXTRA_DIST = \
     parser.c \
     scanner.l \
@@ -363,12 +350,16 @@ EXTRA_DIST = \
     udunits2lib.pdf
 
 AM_YFLAGS = -t -p ut
-@HAVE_CUNIT_TRUE@LDADD = libudunits2.la @LD_CUNIT@ @LIBS_COVERAGE@ \
-@HAVE_CUNIT_TRUE@	$(am__append_1)
+@HAVE_CUNIT_TRUE@LDADD = \
+@HAVE_CUNIT_TRUE@    libudunits2.la \
+@HAVE_CUNIT_TRUE@    @LD_CUNIT@ \
+@HAVE_CUNIT_TRUE@    @LIBS_COVERAGE@ \
+@HAVE_CUNIT_TRUE@    @LIBS@
+
 @HAVE_CUNIT_TRUE@TESTS_ENVIRONMENT = UDUNITS2_XML_PATH='$(srcdir)/udunits2.xml'
 DISTCLEANFILES = *.log
 MOSTLYCLEANFILES = lint.log *.ln *.i core core.[0-9]* *.gcov *.gcda *.gcno
-TAGS_FILES = parser.c $(top_srcdir)/expat/*.c $(top_srcdir)/expat/*.h
+TAGS_FILES = parser.c
 LINTFLAGS = -u
 LINT = lint
 SUFFIXES = .c .l
@@ -376,7 +367,7 @@ all: $(BUILT_SOURCES)
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 
 .SUFFIXES:
-.SUFFIXES: .c .l .dvi .f90 .gcov .html .i .info .ln .lo .o .obj .pdf .ps .texi .y
+.SUFFIXES: .c .l .dvi .gcov .html .i .info .ln .lo .o .obj .pdf .ps .texi .y
 $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -502,15 +493,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LTCOMPILE) -c -o $@ $<
-
-.f90.o:
-	$(FCCOMPILE) -c -o $@ $<
-
-.f90.obj:
-	$(FCCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
-
-.f90.lo:
-	$(LTFCCOMPILE) -c -o $@ $<
 
 .y.c:
 	$(am__skipyacc) $(SHELL) $(YLWRAP) $< y.tab.c $@ y.tab.h $*.h y.output $*.output -- $(YACCCOMPILE)

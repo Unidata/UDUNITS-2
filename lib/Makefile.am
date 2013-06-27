@@ -17,8 +17,7 @@ libudunits2_la_SOURCES = unitcore.c converter.c formatter.c \
     status.c \
     xml.c \
     error.c \
-    ut_free_system.c \
-    iso_c_utilities.f90 udunits2_fortran.f90
+    ut_free_system.c
 BUILT_SOURCES = parser.c scanner.c
 pkgdata_DATA = \
     udunits2.xml \
@@ -59,10 +58,8 @@ if HAVE_CUNIT
 LDADD			= \
     libudunits2.la \
     @LD_CUNIT@ \
-    @LIBS_COVERAGE@
-if COND_EXPAT
-    LDADD		+= ../expat/libexpat.la
-endif
+    @LIBS_COVERAGE@ \
+    @LIBS@
 check_PROGRAMS		= testUnits
 TESTS_ENVIRONMENT	= UDUNITS2_XML_PATH='$(srcdir)/udunits2.xml'
 TESTS = testUnits
@@ -79,7 +76,7 @@ endif
 
 DISTCLEANFILES	= *.log
 MOSTLYCLEANFILES = lint.log *.ln *.i core core.[0-9]* *.gcov *.gcda *.gcno
-TAGS_FILES = parser.c $(top_srcdir)/expat/*.c $(top_srcdir)/expat/*.h
+TAGS_FILES = parser.c
 
 LINTFLAGS	= -u
 LINT		= lint

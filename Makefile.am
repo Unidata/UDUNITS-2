@@ -6,12 +6,8 @@
 #
 ## Process this file with automake to produce Makefile.in
 ACLOCAL_AMFLAGS		= -I m4
-if COND_EXPAT
-    SUBDIRS		= expat lib prog
-else
-    SUBDIRS		= lib prog
-endif
-DIST_SUBDIRS		= expat lib prog test
+SUBDIRS			= lib prog
+DIST_SUBDIRS		= lib prog test
 info_TEXINFOS		= udunits2.texi
 udunits2_TEXINFOS	= success.texi failure.texi make.texi
 EXTRA_DIST = \

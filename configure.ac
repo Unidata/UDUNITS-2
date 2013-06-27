@@ -14,7 +14,7 @@ AC_CONFIG_SRCDIR([lib/converter.c])
 AC_CONFIG_AUX_DIR([.])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([foreign subdir-objects])
-AC_CONFIG_HEADERS([config.h expat/expat_config.h])
+AC_CONFIG_HEADERS([config.h])
 
 CFLAGS_COVERAGE=''
 LIBS_COVERAGE=''
@@ -87,9 +87,8 @@ AC_SEARCH_LIBS([dirname], [gen], ,
     AC_MSG_ERROR([cannot find function dirname]))
 AC_SEARCH_LIBS([log10], [m], , 
     AC_MSG_ERROR([cannot find function log10]))
-AC_SEARCH_LIBS([XML_StopParser], [expat], [need_expat=no], 
-    [need_expat=yes])
-AM_CONDITIONAL([COND_EXPAT], test "$need_expat" = yes)
+AC_SEARCH_LIBS([XML_StopParser], [expat], , 
+    AC_MSG_ERROR([cannot find EXPAT function XML_StopParser]))
 
 # Checks for header files.
 AC_HEADER_STDC
@@ -112,20 +111,12 @@ AM_CONDITIONAL([HAVE_CUNIT], [test "$LD_CUNIT"])
 AC_C_CONST
 AC_TYPE_SIZE_T
 
-# Needed for the Expat subpackage:
-AC_C_BIGENDIAN([byteorder=4321], [byteorder=1234])
-AC_DEFINE_UNQUOTED([BYTEORDER], [$byteorder],
-    [Define to 4321 for big-endian and 1234 for little-endian])
-AC_DEFINE([XML_CONTEXT_BYTES], 1024,
-    [How much context to retain around the current parse point.])
-
 # Checks for library functions.
 AC_CHECK_FUNCS([floor memmove memset modf pow strcasecmp strdup strpbrk])
 
 AC_PROG_LIBTOOL
 
 AC_CONFIG_FILES([Makefile
-		 expat/Makefile
                  lib/Makefile
                  lib/xmlFailures/Makefile
                  lib/xmlSuccesses/Makefile
