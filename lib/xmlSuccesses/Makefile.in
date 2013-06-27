@@ -73,8 +73,11 @@ ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
+<<<<<<< HEAD
 FC = @FC@
 FCFLAGS = @FCFLAGS@
+=======
+>>>>>>> refs/heads/master
 FGREP = @FGREP@
 GREP = @GREP@
 INSTALL = @INSTALL@
@@ -125,7 +128,10 @@ abs_top_builddir = @abs_top_builddir@
 abs_top_srcdir = @abs_top_srcdir@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_DUMPBIN = @ac_ct_DUMPBIN@
+<<<<<<< HEAD
 ac_ct_FC = @ac_ct_FC@
+=======
+>>>>>>> refs/heads/master
 am__include = @am__include@
 am__leading_dot = @am__leading_dot@
 am__quote = @am__quote@
