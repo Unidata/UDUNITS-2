@@ -1902,7 +1902,7 @@ test_parsing(void)
     CU_ASSERT_EQUAL(ut_compare(unit, hertz), 0);
     ut_free(unit);
 
-    spec = "MeGa\xb5Hertz"; /* "Mega" mu "Hertz" */
+    spec = "MeGa\xb5Hertz"; /* "MeGa" mu "Hertz" */
     unit = ut_parse(unitSystem, spec, UT_LATIN1);
     CU_ASSERT_PTR_NOT_NULL(unit);
     CU_ASSERT_EQUAL(ut_compare(unit, hertz), 0);
