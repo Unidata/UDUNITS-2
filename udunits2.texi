@@ -11,7 +11,7 @@
 * udunits-2: (udunits2).  The Unidata package for units of physical quantities.
 @end direntry
 @copying
-@include LICENSE
+@include COPYRIGHT
 @end copying
 
 @titlepage
@@ -168,39 +168,16 @@ cd udunits-@value{VERSION}
 @end example
 
 @item
-Because some @code{make} utilities cannot build this package correctly,
-locate the operating system that is closest to yours in the following table
-and determine the @var{make} utility that you will use.
-@quotation
-@include make.texi
-@end quotation
-
-@item
 If necessary, clean-up from a previous installation attempt by making
 the @code{distclean} target using the @var{make} utility from step 2:
 @example
 @var{make} distclean
 @end example
 
-@item
-Because some compilers cannot build this package correctly,
-locate the operating system closest to yours in the following table
-and determine the compiler
-that you will use and any required option for the @code{configure} script.
-@quotation
-@include success.texi
-@end quotation
-
 The option @code{--disable-shared} causes the build process to create
 a static library only: a sharable library is not created.
 This option is necessary if the @code{libtool} utility that's included
 in this package can't build a sharable library using the given compiler.
-
-The following table lists the build environments that do not work ---
-so don't use them:
-@quotation
-@include failure.texi
-@end quotation
 
 @item
 Execute the @code{configure} script.
