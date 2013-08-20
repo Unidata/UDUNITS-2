@@ -1,6 +1,6 @@
-# Copyright 2008, 2009 University Corporation for Atmospheric Research
+# Copyright 2013 University Corporation for Atmospheric Research
 #
-# This file is part of the UDUNITS-2 package.  See the file LICENSE
+# This file is part of the UDUNITS-2 package.  See the file COPYRIGHT
 # in the top-level source-directory of the package for copying and
 # redistribution conditions.
 #
@@ -15,7 +15,7 @@ EXTRA_DIST = \
     udunits2.html \
     udunits2.pdf \
     CHANGE_LOG \
-    LICENSE \
+    COPYRIGHT \
     texinfo.tex
 AM_MAKEINFOHTMLFLAGS = --no-split
 RSYNC_FLAGS	= --rsh=ssh --rsync-path=/opt/bin/rsync
@@ -37,7 +37,7 @@ success.texi:	test/results.tab
 	    } \
 	    END { \
 		print "@end multitable"; \
-	    }' >success.texi
+	    }' >$@
 	sleep 2	# to accomodate broken HP-UX B.11.00 make(1)
 
 failure.texi:	test/results.tab
@@ -54,7 +54,7 @@ failure.texi:	test/results.tab
 	    } \
 	    END { \
 		print "@end multitable"; \
-	    }' >failure.texi
+	    }' >$@
 	sleep 2	# to accomodate broken HP-UX B.11.00 make(1)
 
 make.texi:	test/results.tab
@@ -112,9 +112,9 @@ available:	ftp web-update download-update
 .PHONY:	hostchecks hostcheck remote-checks web-update ftp \
 	download-update available
 
-udunits2.info:	version.texi success.texi failure.texi make.texi LICENSE
-udunits2.html:	version.texi success.texi failure.texi make.texi LICENSE
-udunits2.pdf:	version.texi success.texi failure.texi make.texi LICENSE
+udunits2.info:	version.texi success.texi failure.texi make.texi COPYRIGHT
+udunits2.html:	version.texi success.texi failure.texi make.texi COPYRIGHT
+udunits2.pdf:	version.texi success.texi failure.texi make.texi COPYRIGHT
 
 $(srcdir)/version.texi:  $(srcdir)/stamp-vti
 	@cp $(srcdir)/stamp-vti $@
