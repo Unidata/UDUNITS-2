@@ -1,9 +1,9 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 #
-# Copyright 2011 University Corporation for Atmospheric Research
+# Copyright 2013 University Corporation for Atmospheric Research
 #
-# This file is part of the UDUNITS-2 package.  See the file LICENSE
+# This file is part of the UDUNITS-2 package.  See the file COPYRIGHT
 # in the top-level source-directory of the package for terms and
 # conditions.
 #

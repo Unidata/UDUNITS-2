@@ -2,12 +2,12 @@
  * Copyright 2013 University Corporation for Atmospheric Research. All rights
  * reserved.
  *
- * This file is part of the UDUNITS-2 package.  See the file LICENSE
+ * This file is part of the UDUNITS-2 package.  See the file COPYRIGHT
  * in the top-level source-directory of the package for copying and
  * redistribution conditions.
  */
 /*
- * This program prints definitions of units of physical qantities and converts
+ * This program prints definitions of units of physical quantities and converts
  * values between such units.
  */
 

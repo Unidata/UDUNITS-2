@@ -1,0 +1,10 @@
+This package provides support for units of physical quantities. Its main
+components are:
+    1) A C library, "libudunits2", for:
+        a) Obtaining a binary representation of a unit;
+        b) Manipulating units arithmetically; and
+        c) Obtaining a converter of numeric values between compatible units;
+    2) A utility, "udunits2", for
+        a) Obtaining the definition of a unit; and
+        b) Converting a numeric value between compatible units; and
+    3) An extensive database of units.
