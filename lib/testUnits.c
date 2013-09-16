@@ -149,7 +149,7 @@ test_utNewBaseUnit(void)
     CU_ASSERT_PTR_NULL(ut_new_base_unit(NULL));
     CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
 
-    CU_ASSERT_EQUAL(ut_map_unit_to_name(kilogram, "�ngstr�m", UT_UTF8), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_map_unit_to_name(kilogram, "\xc5ngstr\xf6m", UT_UTF8), UT_BAD_ARG);
 
     CU_ASSERT_EQUAL(ut_set_second(second), UT_SUCCESS);
     CU_ASSERT_EQUAL(ut_set_second(meter), UT_EXISTS);
@@ -172,7 +172,7 @@ test_utNewDimensionlessUnit(void)
     CU_ASSERT_EQUAL(ut_map_unit_to_symbol(radian, "f", UT_ASCII), UT_EXISTS);
     CU_ASSERT_EQUAL(ut_map_unit_to_symbol(NULL, "f", UT_ASCII), UT_BAD_ARG);
 
-    CU_ASSERT_EQUAL(ut_map_unit_to_name(radian, "�ngstr�m", UT_UTF8), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_map_unit_to_name(radian, "\xc5ngstr\xf6m", UT_UTF8), UT_BAD_ARG);
 }
 
 
@@ -232,7 +232,7 @@ test_utAddSymbolPrefix(void)
     CU_ASSERT_EQUAL(ut_add_symbol_prefix(unitSystem, "M", 1e6), UT_SUCCESS);
     CU_ASSERT_EQUAL(ut_add_symbol_prefix(unitSystem, "M", 1e6), UT_SUCCESS);
     CU_ASSERT_EQUAL(ut_add_symbol_prefix(unitSystem, "u", 1e-6), UT_SUCCESS);
-    CU_ASSERT_EQUAL(ut_add_symbol_prefix(unitSystem, "�", 1e-6), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_add_symbol_prefix(unitSystem, "\xb5", 1e-6), UT_SUCCESS);
     CU_ASSERT_EQUAL(ut_add_symbol_prefix(unitSystem, "\xc2\xb5", 1e-6),
         UT_SUCCESS);    /* "\xc2\xb5" is "mu" character in UTF-8 */
     CU_ASSERT_EQUAL(ut_add_symbol_prefix(unitSystem, "k", 1e3), UT_SUCCESS);
@@ -2061,12 +2061,12 @@ test_xml(void)
 
     unit1 = ut_parse(xmlSystem, "angstrom", UT_ASCII);
     CU_ASSERT_PTR_NOT_NULL(unit1);
-    unit2 = ut_parse(xmlSystem, "\xE5ngstr\xF6m", UT_LATIN1);/* small A with ring */
+    unit2 = ut_parse(xmlSystem, "\xe5ngstr\xf6m", UT_LATIN1);/* small A with ring */
     CU_ASSERT_PTR_NOT_NULL(unit2);
     CU_ASSERT_EQUAL(ut_compare(unit1, unit2), 0);
     ut_free(unit2);
 #if 0
-    unit2 = ut_parse(xmlSystem, "\xC5ngstr\xF6m", UT_LATIN1);/* capital A with ring */
+    unit2 = ut_parse(xmlSystem, "\xc5ngstr\xf6m", UT_LATIN1);/* capital A with ring */
     CU_ASSERT_PTR_NOT_NULL(unit2);
     CU_ASSERT_EQUAL(ut_compare(unit1, unit2), 0);
     ut_free(unit2);

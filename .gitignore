@@ -39,3 +39,4 @@ Makefile.in
 *.gch
 .gradle
 *.orig
+*.info
