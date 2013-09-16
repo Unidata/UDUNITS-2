@@ -12,7 +12,7 @@
 
 /*LINTLIBRARY*/
 
-#include <config.h>
+#include "../config.h"
 
 #ifndef	_XOPEN_SOURCE
 #   define _XOPEN_SOURCE 500

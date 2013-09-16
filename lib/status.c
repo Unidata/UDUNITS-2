@@ -15,7 +15,7 @@
 #   define _XOPEN_SOURCE 500
 #endif
 
-#include <udunits2.h>
+#include "udunits2.h"
 
 static ut_status		_status = UT_SUCCESS;
 
