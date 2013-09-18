@@ -2079,6 +2079,7 @@ timestampNewOrigin(
 }
 
 
+#if 0
 /*
  * Returns a new unit instance.
  *
@@ -2114,6 +2115,7 @@ timestampNew(
     return timestampNewOrigin(
 	unit, ut_encode_time(year, month, day, hour, minute, second));
 }
+#endif
 
 
 static ProductUnit*
