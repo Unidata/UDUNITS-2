@@ -65,6 +65,15 @@ AC_ARG_ENABLE([udunits-1],
 CFLAGS=${CFLAGS:--O}
 CPPFLAGS=${CPPFLAGS:--DNDEBUG}
 
+# The default absolute pathname of the installed units database. "pkgdatadir"
+# isn't a configure-variable in the normal sense: it doesn't appear in 
+# "config.status" yet appears in "Makefile"; consequently, the following
+# nonsense just to avoid defining the pathname in the makefile so that Eclipse
+# is happy.
+pkgdatadir=$(eval echo $(eval echo `echo ${datadir}`/${PACKAGE}))
+AC_DEFINE_UNQUOTED([DEFAULT_UDUNITS2_XML_PATH], ["${pkgdatadir}/udunits2.xml"],
+    [The default absolute pathname of the installed units database])
+
 # Checks for programs.
 AC_PROG_CC
 AM_PROG_CC_C_O
