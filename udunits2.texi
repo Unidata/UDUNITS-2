@@ -262,7 +262,9 @@ cmake --build . [-DUDUNITS_INSTALL_PREFIX=@emph{dir}] -- all [test] install [ins
 where arguments in square brackets are optional.
 
 The default installation-prefix is 
-"@code{C:\Program Files (x86)\udunits-2.}@emph{minor}.@emph{bug}".
+"@code{C:\Program Files (x86)\udunits-2.}@var{minor}.@var{bug}", where 
+@var{minor} and @var{bug} are the minor version and bug-fix level,
+respectively.
 
 @node Database, Support, Installation, Top
 @chapter The Units Database
