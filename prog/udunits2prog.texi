@@ -45,7 +45,11 @@ as well as convert numeric values between compatible units.
 @cindex synopsis
 
 @example
-udunits2 [-A|-L|-U] [-hr] [XML_file]
+udunits2 -h
+@end example
+
+@example
+udunits2 [-A|-L|-U] [-r] [-H have] [-W want] [XML_file]
 @end example
 
 @node Options, Description, Synopsis, Top
@@ -66,6 +70,11 @@ Print a help message.
 @item -r
 Reveal any problems with the units database (by default, no error messages are
 printed during import of the database).
+@item -H have
+Use @code{have} unit for conversion. The default is the reply to the prompt.
+@item -W want
+Use @code{want} unit for conversion. An empty string requests the definition of
+the @code{have} unit. The default is the reply to the prompt.
 @item XML_file
 The pathname of the XML-formatted units database.
 If not specified, then the default, compile-time pathname is used.
@@ -74,7 +83,8 @@ If not specified, then the default, compile-time pathname is used.
 @node Description, See Also, Options, Top
 @chapter Description
 
-When successfully started, the program will print the prompt
+When successfully started without the @code{-H have} or @code{-W want} options,
+the program will print the prompt
 
 @example
 You have: 
