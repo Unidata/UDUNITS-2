@@ -1579,7 +1579,7 @@ startNoPlural(
     void*		data,
     const char**	atts)
 {
-    if (currFile->context != UNIT_NAME || currFile->context != ALIAS_NAME) {
+    if (currFile->context != UNIT_NAME && currFile->context != ALIAS_NAME) {
         ut_set_status(UT_PARSE);
 	ut_handle_error_message("Wrong place for <noplural> element");
 	XML_StopParser(currFile->parser, 0);
