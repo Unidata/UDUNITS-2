@@ -40,3 +40,4 @@ Makefile.in
 .gradle
 *.orig
 *.info
+.vagrant
