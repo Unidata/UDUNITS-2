@@ -1786,7 +1786,7 @@ static void
 endImport(
     void*		data)
 {
-    char        buf[_POSIX_PATH_MAX];
+    char        buf[_XOPEN_PATH_MAX];
     const char* path;
 
     if (text[0] == '/') {
@@ -2063,7 +2063,7 @@ readXml(
         ut_handle_error_message("Couldn't create XML parser");
     }
     else {
-        char        base[_POSIX_PATH_MAX];
+        char        base[_XOPEN_PATH_MAX];
 
         (void)strncpy(base, path, sizeof(base));
         base[sizeof(base)-1] = 0;
