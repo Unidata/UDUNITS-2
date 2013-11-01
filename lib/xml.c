@@ -34,6 +34,10 @@
 #include "expat.h"
 #include "udunits2.h"
 
+#ifndef _XOPEN_PATH_MAX
+#   define _XOPEN_PATH_MAX 1024
+#endif
+
 #define NAME_SIZE 128
 #define ACCUMULATE_TEXT \
     XML_SetCharacterDataHandler(currFile->parser, accumulateText)
