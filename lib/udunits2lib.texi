@@ -66,6 +66,7 @@ Coding:
 #include <udunits2.h>
 @quotation
 @multitable {ut_error_message_handler} {ut_get_dimensionless_unit_one(}
+@item ut_system* @tab ut_get_path_xml(const char* @var{path});
 @item ut_system* @tab ut_read_xml(const char* @var{path});
 @item ut_system* @tab ut_new_system(void);
 @item void      @tab ut_free_system(ut_system* @var{system});
@@ -222,7 +223,7 @@ the default unit database using @code{@ref{ut_read_xml()}}
 with a @code{NULL} pathname argument.
 If this doesn't quite match your needs, then there are alternatives.
 Together with the typical solution, the means for obtaining a useful
-unit-system are (in order of increasing difficulty):
+unit-system are (in order of increasing complexity):
 
 @itemize @bullet
 @item
@@ -250,6 +251,27 @@ in which case you will definitely have to start with
 
 You should pass every unit-system pointer to @code{@ref{ut_free_system()}}
 when you no longer need the corresponding unit-system.
+
+@anchor{ut_get_path_xml()}
+@deftypefun @code{const char*} ut_get_path_xml @code{(const char* @var{path}, ut_status* status)}
+Returns the pathname of the XML-formatted unit-database corresponding to 
+@var{path}. If @var{path} is non-@code{NULL}, then it is returned; otherwise,
+if the environment variable @code{UDUNITS2_XML_PATH} is set, then its value is
+returned; otherwise, the pathname of the default unit-database is returned.
+The value of @code{*status} indicates which of these possibilities occurred:
+
+@table @code
+@item UT_OPEN_ARG
+@var{path} is non-@code{NULL} and was returned.
+@item UT_OPEN_ENV
+@var{path} is @code{NULL}, the environment variable
+@code{UDUNITS2_XML_PATH} is set, and its value was returned.
+@item UT_OPEN_DEFAULT
+@var{path} is @code{NULL}, the environment variable
+@code{UDUNITS2_XML_PATH} is unset, and the pathname of the default unit-database
+was returned.
+@end table
+@end deftypefun
 
 @anchor{ut_read_xml()}
 @deftypefun @code{ut_system*} ut_read_xml @code{(const char* @var{path})}
