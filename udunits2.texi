@@ -39,7 +39,7 @@ and value-conversion utility.
 * Introduction::        Introduction
 * Differences::		How this package differs from the original UDUNITS
 * Obtain::              Obtaining this package
-* Install::             Installing this package
+* Installation::        Installing this package
 * Support::             Support for this package
 * Database::            The unit database
 * Complete Index::      Complete index
@@ -110,7 +110,7 @@ the symbol @code{g}, which in the original package was associated with
 standard free fall (a unit of accelleration) but which is associated
 with gram in the new package.
 
-@node Obtain, Install, Differences, Top
+@node Obtain, Installation, Differences, Top
 @chapter Obtaining this Package
 @cindex obtaining this package
 
@@ -123,25 +123,27 @@ cd /usr/local/src
 gunzip -c udunits-@value{VERSION}.tar.gz | pax -r
 @end example
 
-@node Install, Database, Obtain, Top
+@node Installation, Database, Obtain, Top
 @chapter Installing this Package
-@cindex installing this package
+@cindex installation
 
 @menu
-* Short::        Short intallation instructions
-* Long::         Long installation instructions
-* What::         What gets installed
+* Unix::        Unix-like environments
+* Windows::     Windows environments
 @end menu
 
-@node Short, Long, , Install
-@section Short Installation Instructions
-Not all development enviroments can build and install this package.
-See the long instructions in the next section for details.
+@node Unix, Windows, , Installation
+@section Unix Installation Instructions
 
-The following assumes that you are familiar with autoconf-based
-package-installation.
-If you're not, then follow the long instructions in the
-next section.
+@menu
+* Autoconf::    Autoconf-based installation
+* CMake::       CMake-based installation
+@end menu
+
+@node Autoconf, CMake, , Unix
+@subsection Autoconf-based installation
+
+@subsubsection Short instructions
 
 @example
 ./configure [--prefix=@var{root}] [--disable-shared] [CC=@var{path}]
@@ -154,11 +156,7 @@ make clean
 
 By default, the installation root is @code{/usr/local}.
 
-If you encounter problems, then follow the instructions in the
-next section.
-
-@node Long, What, Short, Install
-@section Long Installation Instructions
+@subsubsection Long instructions
 
 @enumerate
 @item
@@ -242,58 +240,31 @@ from step 2:
 @end example
 @end enumerate
 
-@node What, , Long, Install
-@section What Gets Installed
-
-The following files are created or installed under the installation directory:
+@node CMake, , Autoconf, Unix
+@subsection CMake-based installation
 
 @example
-bin/:
-udunits2                # Unit @ref{Top, , utility, udunits2prog}
-
-include/:
-converter.h             # API for value converters
-udunits2.h              # API for units
-
-lib/:
-libudunits2.a           # Static unit @ref{Top, , library, udunits2lib}
-libudunits2.la          # libtool(1) reference for unit @ref{Top, , library, udunits2lib}
-libudunits2.so          # Link to shared @ref{Top, , library, udunits2lib}
-libudunits2.so.0        # Link to shared @ref{Top, , library, udunits2lib}
-libudunits2.so.0.0.0    # Shared @ref{Top, , library, udunits2lib}
-
-share/:
-doc                     # Directory. Created if it doesn't exist
-info                    # Directory. Created if it doesn't exist
-udunits                 # Directory. Created if it doesn't exist
-
-share/doc:
-udunits                 # Directory. Created if it doesn't exist
-
-share/doc/udunits:
-udunits2.html           # HTML documentation on this package
-udunits2lib.html        # HTML documentation on the unit @ref{Top, , library, udunits2lib}
-udunits2lib.pdf         # PDF documentation on the unit @ref{Top, , library, udunits2lib}
-udunits2.pdf            # PDF documentation on this package
-udunits2prog.html       # HTML documentation on the unit @ref{Top, , utility, udunits2prog}
-udunits2prog.pdf        # PDF documentation on the unit @ref{Top, , utility, udunits2prog}
-
-share/info:
-dir                     # Top-level "info" file.  Created if it doesn't exist
-udunits2.info           # INFO documentation on this package
-udunits2lib.info        # INFO documentation on the unit @ref{Top, , library, udunits2lib}
-udunits2prog.info       # INFO documentation on the unit @ref{Top, , utility, udunits2prog}
-
-share/udunits:
-udunits2.xml            # Default unit database
-udunits2-accepted.xml   # Units accepted for use with the SI
-udunits2-base.xml       # SI base units
-udunits2-common.xml     # Common, non-SI units
-udunits2-derived.xml    # Derived units of the SI
-udunits2-prefixes.xml   # SI unit prefixes
+cmake
+cmake --build . -- all test install install_test
 @end example
 
-@node Database, Support, Install, Top
+@node Windows, , Unix, Installation
+@section Windows Installation Instructions
+
+Currently, only a 32-bit @uref{http://www.mingw.org,MinGW}-based installation is
+supported:
+
+@example
+cmake -G "MinGW Makefiles"
+cmake --build . [-DUDUNITS_INSTALL_PREFIX=@emph{dir}] -- all [test] install [install_test]
+@end example
+
+where arguments in square brackets are optional.
+
+The default installation-prefix is 
+"@code{C:\Program Files (x86)\udunits-2.}@emph{minor}.@emph{bug}".
+
+@node Database, Support, Installation, Top
 @chapter The Units Database
 @cindex database
 
