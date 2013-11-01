@@ -954,7 +954,8 @@ test_utLog(void)
     CU_ASSERT_TRUE_FATAL(nchar > 0);
     CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
     buf[nchar] = 0;
-    CU_ASSERT_STRING_EQUAL(buf, "0.1 lg(re 1e-18 m3)");
+    CU_ASSERT_TRUE(strcmp(buf, "0.1 lg(re 1e-18 m3)") == 0 ||
+            strcmp(buf, "0.1 lg(re 1e-018 m3)") == 0);
     CU_ASSERT_EQUAL(ut_map_symbol_to_unit("dBZ", UT_ASCII, dBZ), UT_SUCCESS);
     CU_ASSERT_EQUAL(ut_map_symbol_to_unit("dBZ", UT_ASCII, dBZ), UT_SUCCESS);
     CU_ASSERT_EQUAL(ut_map_symbol_to_unit("dBZ", UT_ASCII, meter), UT_EXISTS);
@@ -1756,8 +1757,7 @@ test_parsing(void)
 
     spec = "(K/1.8) @ 459.67";
     unit = ut_parse(unitSystem, spec, UT_ASCII);
-    CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(ut_compare(unit, fahrenheit), 0);
+    CU_ASSERT_EQUAL(ut_are_convertible(unit, fahrenheit), 1);
     ut_free(unit);
 
     spec = "METER";
@@ -1863,7 +1863,7 @@ test_parsing(void)
 
         unit = ut_parse(unitSystem, buf, UT_ASCII);
         CU_ASSERT_PTR_NOT_NULL(unit);
-        CU_ASSERT_EQUAL(ut_compare(unit, fahrenheit), 0);
+        CU_ASSERT_EQUAL(ut_are_convertible(unit, fahrenheit), 1);
         ut_free(unit);
     }
 
@@ -2079,7 +2079,8 @@ test_xml(void)
 
     xmlSystem = ut_read_xml(NULL);
     if (xmlSystem == NULL) {
-        CU_ASSERT_EQUAL(ut_get_status(), UT_OPEN_DEFAULT);
+        CU_ASSERT_EQUAL(ut_get_status(), getenv("UDUNITS2_XML_PATH") == NULL
+        		? UT_OPEN_DEFAULT : UT_OPEN_ENV);
     }
     else {
         ut_free_system(xmlSystem);
