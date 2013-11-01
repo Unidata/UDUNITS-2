@@ -8,7 +8,7 @@
 * udunits2: (udunits2prog).     The Unidata units-conversion program.
 @end direntry
 @copying
-@include ../COPYRIGHT
+@include COPYRIGHT
 @end copying
 
 @titlepage
