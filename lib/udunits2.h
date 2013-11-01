@@ -148,6 +148,22 @@ extern "C" {
  ******************************************************************************/
 
 
+/**
+ * Returns the pathname of the XML database.
+ *
+ * @param path      The pathname of the XML file or NULL.
+ * @param status    Status. One of UT_OPEN_ARG, UT_OPEN_ENV, or UT_OPEN_DEFAULT.
+ * @return          If "path" is not NULL, then it is returned; otherwise, the
+ *                  pathname specified by the environment variable
+ *                  UDUNITS2_XML_PATH is returned if set; otherwise, the
+ *                  compile-time pathname of the installed, default, unit
+ *                  database is returned.
+ */
+const char*
+ut_get_path_xml(
+	const char*	path,
+	ut_status*  status);
+
 /*
  * Returns the unit-system corresponding to an XML file.  This is the usual way
  * that a client will obtain a unit-system.
