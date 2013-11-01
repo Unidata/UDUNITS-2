@@ -12,11 +12,13 @@ info_TEXINFOS		= udunits2.texi
 udunits2_TEXINFOS	= success.texi failure.texi make.texi
 EXTRA_DIST = \
     ANNOUNCEMENT \
-    udunits2.html \
-    udunits2.pdf \
     CHANGE_LOG \
+    CMakeLists.txt \
+    config.h.cmake \
     COPYRIGHT \
-    texinfo.tex
+    texinfo.tex \
+    udunits2.html \
+    udunits2.pdf
 AM_MAKEINFOHTMLFLAGS = --no-split
 RSYNC_FLAGS	= --rsh=ssh --rsync-path=/opt/bin/rsync
 distName = $(PACKAGE)-$(VERSION)

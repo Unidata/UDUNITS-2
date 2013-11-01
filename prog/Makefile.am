@@ -16,7 +16,10 @@ MOSTLYCLEANFILES	= lint.log *.ln
 LINTFLAGS		= -u
 LINT			= lint
 TAGS_FILES     	 	= $(top_srcdir)/lib/*.c $(top_srcdir)/lib/*.h
-EXTRA_DIST 		= udunits2prog.html udunits2prog.pdf
+EXTRA_DIST 		= \
+    CMakeLists.txt \
+    udunits2prog.html \
+    udunits2prog.pdf
 
 .c.ln:
 	$(LINT.c) $(AM_CPPFLAGS) $(CPPFLAGS) -c $<

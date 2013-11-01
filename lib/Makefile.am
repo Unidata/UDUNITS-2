@@ -40,6 +40,7 @@ LFLAGS = -d -P$(lex_prefix)
 
 include_HEADERS = udunits2.h converter.h
 EXTRA_DIST = \
+    CMakeLists.txt \
     parser.c \
     scanner.l \
     scanner.c \
