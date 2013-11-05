@@ -1,5 +1,8 @@
 INCLUDE_DIRECTORIES("." "${CMAKE_BINARY_DIR}")
 INCLUDE_DIRECTORIES("${EXPAT_INCLUDE_DIRS}")
+IF (LD_CUNIT)
+    INCLUDE_DIRECTORIES("${CUNIT_INCLUDE_DIR}")
+ENDIF()
 
 # Ensure that the C source-files for the scanner and parser are up-to-date
 # on a Unix system.
@@ -39,7 +42,6 @@ target_link_libraries(libudunits2 ${EXPAT_LIBRARIES})
 
 if (LD_CUNIT)
     add_executable(testUnits testUnits.c)
-    target_include_directories(testUnits PUBLIC "${CUNIT_INCLUDE_DIR}")
     target_link_libraries (testUnits libudunits2)
     target_link_libraries (testUnits ${EXPAT_LIBRARIES})
     target_link_libraries (testUnits ${LD_CUNIT})
