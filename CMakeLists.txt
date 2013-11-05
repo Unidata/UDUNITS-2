@@ -174,7 +174,7 @@ SET(util "${CMAKE_INSTALL_PREFIX}/bin/udunits2")
 IF(WIN32)
     STRING(REGEX REPLACE "/" "\\\\" util "${util}")
 ENDIF()
-MESSAGE("util = \"${util}\"")
+#MESSAGE("util = \"${util}\"")
 ADD_CUSTOM_TARGET(install_test "${util}" -H km -W m
     COMMENT "Checking installation...")
 
@@ -206,7 +206,7 @@ SET(CPACK_SOURCE_IGNORE_FILES
 SET(CPACK_SOURCE_IGNORE_FILES
     "${CPACK_SOURCE_IGNORE_FILES};/autom4te\\\\.cache/;/test/;/\\\\.deps/;/\\\\.vagrant/;~$;so_locations;\\\\.swp$")
 SET(CPACK_SOURCE_IGNORE_FILES
-    "${CPACK_SOURCE_IGNORE_FILES};\\\\.metadata/;/CMakeFiles/")
+    "${CPACK_SOURCE_IGNORE_FILES};\\\\.metadata/;/CMakeFiles/;/build/")
 SET(CPACK_SOURCE_STRIP_FILES "")
 SET(CPACK_STRIP_FILES "bin/udunits2")
 INCLUDE(CPack)
