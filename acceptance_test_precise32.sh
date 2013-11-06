@@ -28,4 +28,4 @@ vagrant ssh precise32 -c 'mkdir build'
 vagrant ssh precise32 -c "cd build && cmake ../$pkgpat/"
 vagrant ssh precise32 -c 'cd build && cmake --build . -- all test install install_test package'
 
-#scp vagrant@${ip}:build/*.deb .
+scp vagrant@${ip}:build/*.deb .
