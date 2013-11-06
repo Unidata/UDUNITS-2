@@ -10,7 +10,7 @@ echo tgzdir=$tgzdir
 echo pkgpat=$pkgpat
 
 tgzpat=$pkgpat.tar.gz
-eval tgz=$tgzdir/$tgzpat
+tgz=`ls $tgzdir/$tgzpat`
 
 echo tgzpat=$tgzpat
 echo tgz=$tgz
