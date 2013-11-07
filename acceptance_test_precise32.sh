@@ -15,7 +15,6 @@ cd $pkgid
 trap 'vagrant destroy' 0
 vagrant up precise32
 
-vagrant ssh precise32 -c "mkdir build"
-vagrant ssh precise32 -c "cd build && cmake /vagrant/$pkgid"
-vagrant ssh precise32 -c "cd build && cmake --build . -- all test install install_test package"
-vagrant ssh precise32 -c "cd build && cp *.deb /vagrant"
+vagrant ssh precise32 -c "cmake /vagrant"
+vagrant ssh precise32 -c "cmake --build . -- all test install install_test package"
+vagrant ssh precise32 -c 'cp *.deb /vagrant'
