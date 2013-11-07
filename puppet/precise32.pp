@@ -7,6 +7,16 @@ Exec { path => ['/usr/bin', '/bin', '/usr/sbin', '/sbin'], }
   
 exec {'update': command => 'apt-get update', }
 
+package {'rpmbuild':
+  ensure  => present,
+  require => Exec['update'],
+}
+
+package {'make':
+  ensure  => present,
+  require => Exec['update'],
+}
+
 package {'libcunit1':
   ensure  => present,
   require => Exec['update'],
