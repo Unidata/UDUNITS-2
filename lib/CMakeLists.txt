@@ -1,6 +1,6 @@
 INCLUDE_DIRECTORIES("." "${CMAKE_BINARY_DIR}")
 INCLUDE_DIRECTORIES("${EXPAT_INCLUDE_DIRS}")
-IF (LD_CUNIT)
+IF (CUNIT_INCLUDE_DIR)
     INCLUDE_DIRECTORIES("${CUNIT_INCLUDE_DIR}")
 ENDIF()
 
@@ -40,12 +40,12 @@ set_target_properties(libudunits2 PROPERTIES ARCHIVE_OUTPUT_NAME udunits2)
 set_target_properties(libudunits2 PROPERTIES RUNTIME_OUTPUT_NAME udunits2)
 target_link_libraries(libudunits2 ${EXPAT_LIBRARIES})
 
-if (LD_CUNIT)
+if (CUNIT_LIBRARY)
     add_executable(testUnits testUnits.c)
     target_link_libraries (testUnits libudunits2)
-    target_link_libraries (testUnits ${EXPAT_LIBRARIES})
-    target_link_libraries (testUnits ${LD_CUNIT})
-    target_link_libraries (testUnits ${LD_M})
+    target_link_libraries (testUnits ${EXPAT_LIBRARY})
+    target_link_libraries (testUnits ${CUNIT_LIBRARY})
+    target_link_libraries (testUnits ${MATH_LIBRARY})
     add_test(
         NAME testUnits
         COMMAND testUnits ${CMAKE_CURRENT_SOURCE_DIR}/udunits2.xml)
