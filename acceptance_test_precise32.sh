@@ -1,22 +1,34 @@
-# Performs an acceptance-test of a package on a guest VM. Input is the
-# compressed tar file of the source-code. Output is a binary distribution.
+# Performs an acceptance-test of a package on a Debian-based VM. Input is the
+# compressed tar file of the source-code. Output is a DEB binary distribution.
 
-ip=${1?Guest IP not specified}
+set -e
+
+ip=${1?IP of VM not specified}
 tgz=${2?Pathname of compressed tar file not specified}
-pkgid=`basename $tgz .tar.gz`
+
+pkgId=`basename $tgz .tar.gz`
+vmName=precise32        #  Ubuntu's 32-bit "Precise Pangolin"
 
 echo ip=$ip
 echo tgz=$tgz
-echo pkgid=$pkgid
+echo pkgId=$pkgId
 
 pax -zr <$tgz
-cd $pkgid
+cd $pkgId
 
-trap 'vagrant destroy' 0
-vagrant up precise32
+trap "vagrant destroy $vmName" 0
 
-vagrant ssh precise32 -c "cmake /vagrant"
-vagrant ssh precise32 -c "cmake --build . -- all test"
-vagrant ssh precise32 -c "sudo cmake --build . -- install"
-vagrant ssh precise32 -c "cmake --build . -- install_test package"
-vagrant ssh precise32 -c 'cp *.deb /vagrant'
+vagrant up $vmName
+
+# Build the package from source, test it, install it, test the installation,
+# and create a binary distribution.
+vagrant ssh $vmName -c 'cmake -DCPACK_GENERATOR=DEB /vagrant'
+vagrant ssh $vmName -c 'cmake --build . -- all test'
+vagrant ssh $vmName -c 'sudo cmake --build . -- install install_test package'
+vagrant ssh $vmName -c 'cp *.deb /vagrant'
+
+vagrant destroy $vmName
+vagrant up $vmName
+
+# Verify that the package can be installed from the binary distribution.
+vagrant ssh $vmName -c 'sudo dpkg --install /vagrant/*.deb'
