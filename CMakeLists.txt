@@ -6,18 +6,6 @@ SET(udunits_VERSION_MAJOR 2)
 SET(udunits_VERSION_MINOR 1)
 SET(udunits_VERSION_PATCH 26)
 
-# Set a default installation directory that the user can override.
-IF(WIN32)
-    SET(prefix "C:/Program Files (x86)" CACHE PATH "Installation directory")
-ELSEIF(UNIX)
-    SET(prefix "/usr/local" CACHE PATH "Installation directory")
-ENDIF()
-SET(UDUNITS_INSTALL_PREFIX
-    "${prefix}/udunits-${udunits_VERSION_MAJOR}.${udunits_VERSION_MINOR}.${udunits_VERSION_PATCH}"
-    CACHE PATH "Installation directory")
-SET(CMAKE_INSTALL_PREFIX "${UDUNITS_INSTALL_PREFIX}" CACHE INTERNAL
-    "CMake Installation directory")
-
 # Ensure a path in the format common to both Unix and MinGW.
 FUNCTION(to_common_path input result)
     FILE(TO_NATIVE_PATH ${input} tmp)
@@ -195,6 +183,7 @@ IF (WIN32)
 #   SET(CPACK_PACKAGE_ICON "${CMake_SOURCE_DIR}/Utilities/Release\\\\InstallIcon.bmp")
 #   SET(CPACK_NSIS_INSTALLED_ICON_NAME "bin\\\\MyExecutable.exe")
 ENDIF()
+SET(CPACK_DEBIAN_PACKAGE_DEPENDS "libcunit1, libcunit1-dev, expat, libexpat-dev")
 SET(CPACK_PACKAGE_CONTACT "support-udunits@unidata.ucar.edu")
 SET(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_CURRENT_SOURCE_DIR}/README")
 SET(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Units of physical quantities C library and utility")
