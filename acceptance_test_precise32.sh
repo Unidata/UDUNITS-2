@@ -2,30 +2,20 @@
 # compressed tar file of the source-code. Output is a binary distribution.
 
 ip=${1?Guest IP not specified}
-tgzdir=${2?Parent directory of compressed tar file not specified}
-pkgpat=${3?Package pattern not specified}
+tgz=${2?Pathname of compressed tar file not specified}
+pkgid=`basename $tgz .tar.gz`
 
 echo ip=$ip
-echo tgzdir=$tgzdir
-echo pkgpat=$pkgpat
-
-tgzpat=$pkgpat.tar.gz
-tgz=`ls $tgzdir/$tgzpat`
-
-echo tgzpat=$tgzpat
 echo tgz=$tgz
+echo pkgid=$pkgid
 
 pax -zr <$tgz
-cd $pkgpat
+cd $pkgid
 
-vagrant up precise32
 trap 'vagrant destroy' 0
+vagrant up precise32
 
-scp $tgz vagrant@${ip}:
-
-vagrant ssh precise32 -c 'pax -zr <$tgzpat'
-vagrant ssh precise32 -c 'mkdir build'
-vagrant ssh precise32 -c "cd build && cmake ../$pkgpat/"
-vagrant ssh precise32 -c 'cd build && cmake --build . -- all test install install_test package'
-
-scp vagrant@${ip}:build/*.deb .
+vagrant ssh precise32 -c "mkdir build"
+vagrant ssh precise32 -c "cd build && cmake /vagrant/$pkgid"
+vagrant ssh precise32 -c "cd build && cmake --build . -- all test install install_test package"
+vagrant ssh precise32 -c "cd build && cp *.deb /vagrant"
