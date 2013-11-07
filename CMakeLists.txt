@@ -163,7 +163,7 @@ IF(WIN32)
     STRING(REGEX REPLACE "/" "\\\\" util "${util}")
 ENDIF()
 #MESSAGE("util = \"${util}\"")
-ADD_CUSTOM_TARGET(install_test "${util}" -H km -W m
+ADD_CUSTOM_TARGET(install_test "${util}" -A -H km -W m
     COMMENT "Checking installation...")
 
 # Create an installer
