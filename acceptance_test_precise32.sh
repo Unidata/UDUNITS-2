@@ -16,5 +16,7 @@ trap 'vagrant destroy' 0
 vagrant up precise32
 
 vagrant ssh precise32 -c "cmake /vagrant"
-vagrant ssh precise32 -c "cmake --build . -- all test install install_test package"
+vagrant ssh precise32 -c "cmake --build . -- all test"
+vagrant ssh precise32 -c "sudo cmake --build . -- install"
+vagrant ssh precise32 -c "cmake --build . -- install_test package"
 vagrant ssh precise32 -c 'cp *.deb /vagrant'
