@@ -16,7 +16,7 @@ echo pkgId=$pkgId
 pax -zr <$tgz
 cd $pkgId
 
-trap "vagrant destroy $vmName" 0
+trap "vagrant destroy --force $vmName" 0
 
 vagrant up $vmName
 
@@ -27,7 +27,7 @@ vagrant ssh $vmName -c 'cmake --build . -- all test'
 vagrant ssh $vmName -c 'sudo cmake --build . -- install install_test package'
 vagrant ssh $vmName -c 'cp *.deb /vagrant'
 
-vagrant destroy $vmName
+vagrant destroy --force $vmName
 vagrant up $vmName
 
 # Verify that the package can be installed from the binary distribution.
