@@ -32,5 +32,6 @@ vagrant destroy --force $vmName
 vagrant up $vmName
 
 # Verify that the package installs correctly from the binary distribution.
-vagrant ssh $vmName -c "sudo dpkg --install --instdir=$prefix /vagrant/*.deb"
+# Bug in dpkg(1) causes following to fail if option "--instdir=$prefix" used.
+vagrant ssh $vmName -c "sudo dpkg --install /vagrant/*.deb"
 vagrant ssh $vmName -c "$prefix/bin/udunits2 -A -H km -W m"
