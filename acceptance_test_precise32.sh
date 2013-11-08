@@ -6,16 +6,14 @@ set -e
 ip=${1?IP of VM not specified}
 tgz=${2?Pathname of compressed tar file not specified}
 
-pkgId=`basename $tgz .tar.gz`
-vmName=precise32        #  Ubuntu's 32-bit "Precise Pangolin"
-prefix=/usr             # /usr/local doesn't appear to be viable
+vmName=precise32        # Ubuntu's 32-bit "Precise Pangolin"
+prefix=/usr             # Debian's "/usr/local" doesn't appear to be viable
 
 echo ip=$ip
 echo tgz=$tgz
-echo pkgId=$pkgId
 
 pax -zr <$tgz
-cd $pkgId
+cd `basename $tgz .tar.gz`
 
 trap "vagrant destroy --force $vmName" 0
 
