@@ -23,7 +23,7 @@ vagrant up $vmDevel
 # Build the package from source, test it, install it, test the installation,
 # and create a binary distribution.
 vagrant ssh $vmDevel -c \
-  "cmake -DCMAKE_INSTALL_PREFIX=$prefix -DCPACK_SYSTEM_NAME=ubuntu12_i386 -DCPACK_GENERATOR=DEB /vagrant"
+  "cmake -DCMAKE_INSTALL_PREFIX=$prefix -DCPACK_SYSTEM_NAME=ubuntu12-i386 -DCPACK_GENERATOR=DEB /vagrant"
 vagrant ssh $vmDevel -c "cmake --build . -- all test"
 vagrant ssh $vmDevel -c "sudo cmake --build . -- install install_test package"
 vagrant ssh $vmDevel -c 'cp *.deb /vagrant'
