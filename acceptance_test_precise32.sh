@@ -8,7 +8,7 @@ tgz=${2?Pathname of compressed tar file not specified}
 
 pkgId=`basename $tgz .tar.gz`
 vmName=precise32        #  Ubuntu's 32-bit "Precise Pangolin"
-prefix=/usr/local
+prefix=/usr             # /usr/local doesn't appear to be viable
 
 echo ip=$ip
 echo tgz=$tgz
