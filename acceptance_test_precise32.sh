@@ -9,7 +9,7 @@ tgz=${2?Pathname of compressed tar file not specified}
 vmBase=precise32        # Ubuntu's 32-bit "Precise Pangolin"
 vmDevel=${vmBase}_devel
 vmRun=${vmBase}_run
-prefix=/usr             # Debian's "/usr/local" doesn't appear to be viable
+prefix=/usr/local       # Debian's "/usr/local" doesn't appear to be viable
 
 echo ip=$ip
 echo tgz=$tgz

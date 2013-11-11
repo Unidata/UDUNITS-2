@@ -1,5 +1,38 @@
-2.1.25
-        Added the unit "bit".
+2.1.25  2013-11-11
+    Release Engineering:
+        Added acceptance-test scripts for 32-bit Ubuntu 12 (Precise Pangolin)
+        and 32-bit Windows-7.
+
+        Added support for building by CMake and for creating a distribution
+        by CPack.
+
+        Added scripts and configuration-files for supporting
+        continuous-delivery.
+
+    udunits2(1) Program:
+        Added "-H have" and "-W want" options.
+
+        Added support for numeric unit amount so that "0 degC" equals "32
+        degF".
+
+    udunits2(3) Library:
+
+        Added ut_get_path_xml().
+
+    Units Database:
+        Corrected logic of checking for location of <noplural> element.
+
+        Corrected ISO Latin-1 encodings that got screwed-up somehow.
+
+        Added units "molecule" (for conversion with "mole") and "bit".
+
+    Misc:
+        Ported code to 32-bit Windows-7 under MinGW.
+
+        Changed file LICENSE to COPYRIGHT and corrected copyright year in many
+        files.
+
+        Removed bundled EXPAT package.
 
 2.1.24  2011-09-12 15:01-600
         Removed superfluous "the" from library documentation.
