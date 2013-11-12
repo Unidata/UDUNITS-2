@@ -25,13 +25,14 @@
             Corrected ISO Latin-1 encodings that somehow got corrupted.
     
     Release Engineering:
-        Added acceptance-test scripts for 32-bit Ubuntu 12 (Precise Pangolin)
-        and 32-bit Windows-7.
-
         Added support for building by CMake and for creating binary
         distributions by CPack.
 
         Added scripts and configuration-files to support continuous-delivery.
+
+        Added acceptance-test scripts for 32-bit Ubuntu 12 (Precise Pangolin)
+        and 32-bit Windows-7. Currently, only the Ubuntu script is used in the
+        continuous-delivery pipeline.
     
     Misc:
         Changed file LICENSE to COPYRIGHT and corrected copyright year in many
