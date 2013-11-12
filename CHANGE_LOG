@@ -16,6 +16,13 @@
             Removed bundled EXPAT package.
                 
             Ported code to 32-bit Windows-7 under MinGW.
+
+    Bug Fixes:
+        udunits2(3) (Library):
+            Corrected logic of checking for location of <noplural> element.
+    
+        Units Database:
+            Corrected ISO Latin-1 encodings that somehow got corrupted.
     
     Release Engineering:
         Added acceptance-test scripts for 32-bit Ubuntu 12 (Precise Pangolin)
@@ -25,13 +32,6 @@
         distributions by CPack.
 
         Added scripts and configuration-files to support continuous-delivery.
-
-    Bug Fixes:
-        udunits2(3) (Library):
-            Corrected logic of checking for location of <noplural> element.
-    
-        Units Database:
-            Corrected ISO Latin-1 encodings that somehow got corrupted.
     
     Misc:
         Changed file LICENSE to COPYRIGHT and corrected copyright year in many
