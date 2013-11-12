@@ -9,7 +9,7 @@ tgz=${2?Pathname of compressed tar file not specified}
 vmBase=precise32        # Ubuntu's 32-bit "Precise Pangolin"
 vmDevel=${vmBase}_devel
 vmRun=${vmBase}_run
-prefix=/usr/local       # Debian's "/usr/local" doesn't appear to be viable
+prefix=/usr/local       # "/usr/local" doesn't appear to work with CPack
 
 echo ip=$ip
 echo tgz=$tgz
@@ -26,6 +26,7 @@ vagrant ssh $vmDevel -c \
   "cmake -DCMAKE_INSTALL_PREFIX=$prefix -DCPACK_SYSTEM_NAME=ubuntu12-i386 -DCPACK_GENERATOR=DEB /vagrant"
 vagrant ssh $vmDevel -c "cmake --build . -- all test"
 vagrant ssh $vmDevel -c "sudo cmake --build . -- install install_test package"
+rm -rf *.deb
 vagrant ssh $vmDevel -c 'cp *.deb /vagrant'
 
 vagrant destroy --force $vmDevel
