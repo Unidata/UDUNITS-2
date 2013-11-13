@@ -13,8 +13,8 @@
 #     pipeId            Unique identifier for the parent delivery pipeline
 #                       instance
 #     nJobs             Number of upstream jobs
-#     binDistroPath     Pathname of the binary distribution file
-#     srcDistroPath     Pathname of the source distribution file
+#     binDistroPath     Glob pattern of the binary distribution file
+#     srcDistroPath     Glob pattern of the source distribution file
 
 set -e  # exit on failure
 
@@ -36,6 +36,12 @@ pipeId=${1:?Group ID not specified}
 nJobs=${2:?Number of upstream jobs not specified}
 binDistroPath=${3:?Binary distribution not specified}
 srcDistroPath=${4:?Source distribution not specified}
+
+#
+# Convert glob patterns to absolute pathnames.
+#
+binDistroPath=`ls $binDistroPath`
+srcDistroPath=`ls $srcDistroPath`
 
 #
 # Remove any leftovers from an earlier delivery pipeline.
