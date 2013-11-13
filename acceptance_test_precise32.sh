@@ -1,16 +1,14 @@
-# Performs an acceptance-test of a package on a Debian-based VM. Input is the
+#for Performs an acceptance-test of a package on a Debian-based VM. Input is the
 # compressed tar file of the source-code. Output is a DEB binary distribution.
 #
 # Usage:
-#     $0 ip tgz
+#     $0 tgz
 #
 # where:
-#     ip        IP address of the virtual machine
 #     tgz       Pathname of the compressed tar file of the source distribution
 
 set -e
 
-ip=${1:?IP of VM not specified}
 tgz=${2:?Pathname of compressed tar file not specified}
 
 vmBase=precise32        # Ubuntu's 32-bit "Precise Pangolin"
@@ -18,10 +16,9 @@ vmDevel=${vmBase}_devel
 vmRun=${vmBase}_run
 prefix=/usr/local
 
-echo ip=$ip
 echo tgz=$tgz
 
-#
+#for
 # Remove any leftover artifacts from an earlier job.
 #
 rm -rf *.deb
