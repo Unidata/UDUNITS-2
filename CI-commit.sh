@@ -22,11 +22,11 @@ test "$majorId"
 test "$minorId"
 test "$patchId"
 
-cat <<EOF
+cat <<EOF >CMakeLists.txt.tmp
 SET(VERSION_MAJOR $majorId)
 SET(VERSION_MINOR $minorId)
 SET(VERSION_PATCH $patchId)
-EOF >CMakeLists.txt.tmp
+EOF 
 
 cat CMakeLists.txt >>CMakeLists.txt.tmp
 mv CMakeLists.txt.tmp CMakeLists.txt 
