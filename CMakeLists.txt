@@ -2,6 +2,10 @@ PROJECT (udunits C)
 
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
+SET(VERSION_MAJOR 2)
+SET(VERSION_MINOR 2)
+SET(VERSION_PATCH 0)
+
 # Ensure a path in the format common to both Unix and MinGW.
 FUNCTION(to_common_path input result)
     FILE(TO_NATIVE_PATH ${input} tmp)

@@ -1,4 +1,4 @@
-2.2.0
+2.2.0	2013-11-13 09:06:41-07:00
     New Features:
         udunits2(1) (Program):
             Added "-H have" and "-W want" options.
