@@ -10,7 +10,7 @@
 
 set -e
 
-tgz=${2:?Pathname of compressed tar file not specified}
+tgz=${1:?Pathname of compressed tar file not specified}
 
 vmBase=precise32        # Ubuntu's 32-bit "Precise Pangolin"
 vmDevel=${vmBase}_devel
