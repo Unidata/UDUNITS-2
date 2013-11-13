@@ -1,18 +1,10 @@
 # This script does the following:
-#     1. Ensures a current timestamp on the first line of CHANGE_LOG;
-#     2. Sets the package version in the CMake configuration-file;
-#     3. Commits to the local repository;
-#     4. Tags the package with the current version; and
+#     1. Ensures correct version information in the CMake configuration-file;
+#     2. Commits to the local repository;
+#     3. Tags the package with the current version; and
 #     4. Pushes to the remote repository
 
 set -e  # exit if error
-
-#
-# Ensure a current timestamp on the first line of CHANGE_LOG.
-#
-sed '1s/^\([^ \t]*\).*/\1\t'"`date --rfc-3339=seconds`/" \
-    CHANGE_LOG >CHANGE_LOG.tmp
-mv CHANGE_LOG.tmp CHANGE_LOG 
 
 #
 # Set the package version in the CMake configuration-file.
