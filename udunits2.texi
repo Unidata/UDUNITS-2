@@ -38,10 +38,9 @@ and value-conversion utility.
 @menu
 * Introduction::        Introduction
 * Differences::		How this package differs from the original UDUNITS
-* Obtain::              Obtaining this package
 * Installation::        Installing this package
-* Support::             Support for this package
 * Database::            The unit database
+* Support::             Support for this package
 * Complete Index::      Complete index
 @end menu
 
@@ -57,7 +56,7 @@ for obtaining the definition of a unit and for
 converting numeric values between compatible units;
 and 3) an extensive database of units.
 
-@node Differences, Obtain, Introduction, Top
+@node Differences, Installation, Introduction, Top
 @chapter How This Package Differs from the Original @code{UDUNITS} Package
 
 The @code{UDUNIT-2} package differs from the original @code{UDUNITS}
@@ -110,8 +109,34 @@ the symbol @code{g}, which in the original package was associated with
 standard free fall (a unit of accelleration) but which is associated
 with gram in the new package.
 
-@node Obtain, Installation, Differences, Top
-@chapter Obtaining this Package
+@node Installation, Database, Differences, Top
+@chapter Installing this Package
+@cindex installation
+
+@menu
+* Prerequisites::       Prerequisites for this package
+* Obtain::              Obtaining this package
+* Unix::                Installing on Unix-like environments
+* Windows::             Installing on Windows environments
+@end menu
+
+@node Prerequisites, Obtain, , Installation
+@section Prerequisites for this package
+@cindex prerequisites for this package
+
+The Expat library and header-files must be installed. Look for the library 
+"libexpat" and the header-file "expat.h".
+
+If this package is to be tested (which is optional), then the CUnit library
+and header-files must be installed. Look for the library "libcunit" and the
+header-files "CUnit/CUnit.h" and "CUnit/Basic.h".
+
+If this package is to be built on a Windows system, then the CMake and MinGW
+packages must be installed. Look for the utility "cmake" and the
+directory/folder "MinGW".
+
+@node Obtain, Unix, Prerequisites, Installation
+@section Obtaining this Package
 @cindex obtaining this package
 
 Get this package from its download-page at
@@ -123,16 +148,7 @@ cd /usr/local/src
 gunzip -c udunits-@value{VERSION}.tar.gz | pax -r
 @end example
 
-@node Installation, Database, Obtain, Top
-@chapter Installing this Package
-@cindex installation
-
-@menu
-* Unix::        Unix-like environments
-* Windows::     Windows environments
-@end menu
-
-@node Unix, Windows, , Installation
+@node Unix, Windows, Obtain, Installation
 @section Unix Installation Instructions
 
 @menu
@@ -245,8 +261,10 @@ from step 2:
 
 @example
 cmake
-cmake --build . -- all test install install_test
+cmake --build . -- all [test] install [install_test]
 @end example
+
+where the arguments in square brackets are optional.
 
 @node Windows, , Unix, Installation
 @section Windows Installation Instructions
