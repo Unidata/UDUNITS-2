@@ -23,7 +23,7 @@ echo tgz=$tgz
 #
 # Remove any leftover artifacts from an earlier job.
 #
-rm -rf *.deb
+rm -rf *
 
 #
 # Unpack the source distribution.
