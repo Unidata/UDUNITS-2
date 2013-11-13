@@ -1,12 +1,12 @@
 2.2.0	2013-11-13 09:06:41-07:00
     New Features:
-        udunits2(1) (Program):
+        Program udunits2(1):
             Added "-H have" and "-W want" options.
     
             Added support for numeric unit amount so that "0 degC" equals "32
             degF".
     
-        udunits2(3) (Library):
+        Library udunits2(3):
             Added ut_get_path_xml() to retrieve pathname of XML unit database.
                 
         Units Database:
@@ -18,7 +18,7 @@
             Ported code to 32-bit Windows-7 under MinGW.
 
     Bug Fixes:
-        udunits2(3) (Library):
+        Library udunits2(3):
             Corrected logic of checking for location of <noplural> element.
     
         Units Database:
