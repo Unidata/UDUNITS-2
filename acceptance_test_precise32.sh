@@ -5,7 +5,8 @@
 #     $0 tgz
 #
 # where:
-#     tgz       Pathname of the compressed tar file of the source distribution
+#     tgz       Glob pattern of the compressed tar file of the source
+#               distribution
 
 set -e
 
@@ -16,9 +17,10 @@ vmDevel=${vmBase}_devel
 vmRun=${vmBase}_run
 prefix=/usr/local
 
+tgz=`ls $tgz`
 echo tgz=$tgz
 
-#for
+#
 # Remove any leftover artifacts from an earlier job.
 #
 rm -rf *.deb
