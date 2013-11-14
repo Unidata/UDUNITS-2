@@ -81,3 +81,12 @@ success && scp $binDistroPath webserver:$ftpDir
 #
 ssh webserver ls $ftpDir/`basename $srcDistroPath` >/dev/null 2>&1 ||
     scp $srcDistroPath webserver:$ftpDir
+
+#
+# Copy the "share" documentation to the on-line webpage if appropriate.
+#
+if echo $binDistroPath | grep -q '\.tar\.gz$'; then
+    pkgId=`echo $binDistroPath | sed 's/.*udunits-\([0-9.]*\).*/udunits-\1/'`
+    cat $binDistroPath | 
+        ssh webserver "(cd /web/content/software/udunits && pax -zr -s ';.*/share/;$pkgId/;' '*/share/')"
+fi
