@@ -3,15 +3,15 @@
 # upstream, binary-distribution-creating jobs in the delivery pipeline were
 # successful.
 #
-# This script is complicated by the fact that it must assume that it will be
-# invoked multiple times by an instance of the delivery pipeline.
+# This script is complicated by the fact that it will be invoked by every
+# upstream job that creates a binary distribution.
 #
 # Usage:
 #     $0 pipeId nJobs binDistroPath srcDistroPath
 #
 # where:
 #     pipeId            Unique identifier for the parent delivery pipeline
-#                       instance
+#                       instance (e.g., top-of-the-pipe job number)
 #     nJobs             Number of upstream jobs
 #     binDistroPath     Glob pattern of the binary distribution file
 #     srcDistroPath     Glob pattern of the source distribution file
