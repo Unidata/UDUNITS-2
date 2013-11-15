@@ -1,5 +1,6 @@
-#for Performs an acceptance-test of a package on a Debian-based VM. Input is the
-# compressed tar file of the source-code. Output is a DEB binary distribution.
+# Performs an acceptance-test of a package on a 32-bit Ubuntu-based VM. Input
+# is the compressed tar file of the source-code. Output is a DEB binary
+# distribution.
 #
 # Usage:
 #     $0 tgz
@@ -16,7 +17,6 @@ vmBase=precise32        # Ubuntu's 32-bit "Precise Pangolin"
 vmDevel=${vmBase}_devel
 vmRun=${vmBase}_run
 prefix=/usr/local
-
 tgz=`ls $tgz`
 echo tgz=$tgz
 
@@ -31,10 +31,13 @@ rm -rf *
 pax -zr <$tgz
 
 #
-# Start the virtual machine.
+# Make the source directory the current working directory.
 #
 cd `basename $tgz .tar.gz`
 
+#
+# Start the virtual machine.
+#
 trap "vagrant destroy --force $vmDevel" 0
 vagrant up $vmDevel
 
@@ -57,7 +60,6 @@ vagrant ssh $vmDevel -c 'cp *.deb /vagrant'
 # Restart the virtual machine.
 #
 vagrant destroy --force $vmDevel
-
 trap "vagrant destroy --force $vmRun" 0
 vagrant up $vmRun
 
