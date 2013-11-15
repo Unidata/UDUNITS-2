@@ -21,6 +21,10 @@ package {'cmake':
   ensure  => present,
 }
 
+package {'rpm-build':
+  ensure  => present,
+}
+
 exec {'bashrc':
   command => 'echo "set -o vi" >>/home/vagrant/.bashrc',
   unless  => 'grep "set *-o" /home/vagrant/.bashrc',
