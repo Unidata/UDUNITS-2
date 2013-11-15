@@ -11,15 +11,10 @@
 
 set -e
 
-tgz=${1:?Pathname of compressed tar file not specified}
+tgz=${1:?Pathname of compressed source-distribution not specified}
 
-#
-# Vet the host.
-#
-uname -r | fgrep fc16.x86_64
-
+vmName=fedora19_64        # 64-bit Fedora 19
 prefix=/usr/local
-DESTDIR=`pwd`
 tgz=`ls $tgz`
 echo tgz=$tgz
 
@@ -39,16 +34,34 @@ pax -zr <$tgz
 cd `basename $tgz .tar.gz`
 
 #
-# Build the package from source, test it, install it, test the installation,
-# and create a binary distribution.
+# Start the virtual machine.
 #
-cmake -DCMAKE_INSTALL_PREFIX=$prefix -DCPACK_SYSTEM_NAME=fc16-x86_64 \
-    -DCPACK_GENERATOR=RPM .
-make DESTDIR=$DESTDIR all test install install_test package
-rm -rf $DESTDIR$prefix
+trap "vagrant destroy --force $vmName" 0
+vagrant up $vmName
+
+#
+# On the virtual machine, build the package from source, test it, install it,
+# test the installation, and create a binary distribution.
+#
+vagrant ssh $vmName -c \
+  "cmake -DCMAKE_INSTALL_PREFIX=$prefix -DCPACK_SYSTEM_NAME=fedora19-x86_64 -DCPACK_GENERATOR=RPM /vagrant"
+vagrant ssh $vmName -c "cmake --build . -- all test"
+vagrant ssh $vmName -c "sudo cmake --build . -- install install_test package"
+rm -rf *.rpm
+
+#
+# Copy the binary distribution to the host machine.
+#
+vagrant ssh $vmName -c 'cp *.rpm /vagrant'
+
+#
+# Restart the virtual machine.
+#
+vagrant destroy --force $vmName
+vagrant up $vmName
 
 #
 # Verify that the package installs correctly from the binary distribution.
 #
-rpm --install --prefix $DESTDIR$prefix *.rpm
-$DESTDIR$prefix/bin/udunits2 -A -H km -W m $DESTDIR$prefix/share/udunits
+vagrant ssh $vmName -c "sudo yum --install /vagrant/*.rpm"
+vagrant ssh $vmName -c "$prefix/bin/udunits2 -A -H km -W m"
