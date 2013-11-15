@@ -28,6 +28,6 @@ mv CMakeLists.txt.tmp CMakeLists.txt
 #
 # Commit, tag, and push the package.
 #
-git commit -a
+git commit -a || echo Nothing to commit
 git tag -f v$versionId
 git push
