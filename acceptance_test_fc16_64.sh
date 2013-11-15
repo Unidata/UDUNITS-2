@@ -63,5 +63,5 @@ vagrant up $vmName
 #
 # Verify that the package installs correctly from the binary distribution.
 #
-vagrant ssh $vmName -c "sudo yum --install /vagrant/*.rpm"
+vagrant ssh $vmName -c "sudo rpm --install /vagrant/*.rpm"
 vagrant ssh $vmName -c "$prefix/bin/udunits2 -A -H km -W m"
