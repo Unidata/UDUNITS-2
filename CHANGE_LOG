@@ -1,3 +1,7 @@
+2.2.1
+    Bug Fixes:
+        Fixed hyperlink references to XML database files in documentation.
+
 2.2.0	2013-11-13 16:45:52-07:00
     New Features:
         Program udunits2(1):
