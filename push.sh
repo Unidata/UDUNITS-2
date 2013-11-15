@@ -1,7 +1,7 @@
 # This script does the following:
 #     1. Ensures correct version information in the CMake configuration-file;
-#     2. Commits to the local repository;
-#     3. Tags the package with the current version; and
+#     2. Commits to the local repository if appropriate;
+#     3. Tags the HEAD revision with the current version; and
 #     4. Pushes to the remote repository
 
 set -e  # exit if error
