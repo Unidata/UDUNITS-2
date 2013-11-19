@@ -65,7 +65,7 @@ vagrant ssh $vmName -c "sudo cmake --build . -- install install_test package"
 # Copy the binary distribution to the host machine.
 #
 rm -rf *.$ext
-vagrant ssh $vmName -c 'cp *.$ext /vagrant'
+vagrant ssh $vmName -c "cp *.$ext /vagrant"
 
 #
 # Restart the virtual machine.
