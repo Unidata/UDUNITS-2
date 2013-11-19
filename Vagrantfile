@@ -8,7 +8,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.define "fedora19_64" do |fedora19_64|
     fedora19_64.vm.box = "fedora19_64"
     fedora19_64.vm.box_url = "https://dl.dropboxusercontent.com/u/86066173/fedora-19.box"
-    fedora19_64.vm.network :private_network, ip: "192.168.56.102"
+    fedora19_64.vm.network "private_network", ip: "192.168.56.102"
     fedora19_64.vm.provision :puppet do |puppet|
       puppet.manifests_path = "puppet"
       puppet.manifest_file = "fedora19_64.pp"
@@ -18,7 +18,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.define "precise32" do |precise32|
     precise32.vm.box = "precise32"
     precise32.vm.box_url = "http://files.vagrantup.com/precise32.box"
-    precise32.vm.network :private_network, ip: "192.168.56.103"
+    precise32.vm.network "private_network", ip: "192.168.56.103"
     precise32.vm.provision :puppet do |puppet|
       puppet.manifests_path = "puppet"
       puppet.manifest_file = "precise32.pp"
