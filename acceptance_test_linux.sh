@@ -57,7 +57,7 @@ vagrant up $vmName
 # test the installation, and create a binary distribution.
 #
 vagrant ssh $vmName -c \
-  "cmake -DCMAKE_INSTALL_PREFIX=$prefix -DCPACK_SYSTEM_NAME=$sysName -DCPACK_GENERATOR=RPM /vagrant"
+  "cmake -DCMAKE_INSTALL_PREFIX=$prefix -DCPACK_SYSTEM_NAME=$sysName -DCPACK_GENERATOR=$generator /vagrant"
 vagrant ssh $vmName -c "cmake --build . -- all test"
 vagrant ssh $vmName -c "sudo cmake --build . -- install install_test package"
 
