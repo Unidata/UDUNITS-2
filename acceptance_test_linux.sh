@@ -18,8 +18,6 @@
 
 set -e
 
-echo $PATH
-
 tgz=${1:?Pathname of compressed source-distribution not specified}
 vmName=${2:?Name of virtual machine not specified}
 sysName=${3:?Name of system for CPack not specified}
@@ -29,7 +27,6 @@ install=${6:?Installation command not specified}
 
 prefix=/usr/local
 tgz=`ls $tgz`
-echo tgz=$tgz
 
 #
 # Remove any leftover artifacts from an earlier job.
@@ -49,6 +46,7 @@ cd `basename $tgz .tar.gz`
 #
 # Start the virtual machine.
 #
+type vagrant 
 trap "vagrant destroy --force $vmName" 0
 vagrant up $vmName
 
