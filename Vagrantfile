@@ -15,23 +15,13 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     end
   end
 
-  config.vm.define "precise32_devel" do |precise32_devel|
-    precise32_devel.vm.box = "precise32"
-    precise32_devel.vm.box_url = "http://files.vagrantup.com/precise32.box"
-    precise32_devel.vm.network :private_network, ip: "192.168.56.102"
-    precise32_devel.vm.provision :puppet do |puppet|
+  config.vm.define "precise32" do |precise32|
+    precise32.vm.box = "precise32"
+    precise32.vm.box_url = "http://files.vagrantup.com/precise32.box"
+    precise32.vm.network :private_network, ip: "192.168.56.102"
+    precise32.vm.provision :puppet do |puppet|
       puppet.manifests_path = "puppet"
-      puppet.manifest_file = "precise32_devel.pp"
-    end
-  end
-
-  config.vm.define "precise32_run" do |precise32_run|
-    precise32_run.vm.box = "precise32"
-    precise32_run.vm.box_url = "http://files.vagrantup.com/precise32.box"
-    precise32_run.vm.network :private_network, ip: "192.168.56.102"
-    precise32_run.vm.provision :puppet do |puppet|
-      puppet.manifests_path = "puppet"
-      puppet.manifest_file = "precise32_run.pp"
+      puppet.manifest_file = "precise32.pp"
     end
   end
 
