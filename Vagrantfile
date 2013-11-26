@@ -5,23 +5,21 @@
 VAGRANTFILE_API_VERSION = "2"
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
-  config.vm.define "fedora19_64" do |fedora19_64|
-    fedora19_64.vm.box = "fedora19_64"
-    fedora19_64.vm.box_url = "https://dl.dropboxusercontent.com/u/86066173/fedora-19.box"
-    fedora19_64.vm.network "private_network", ip: "192.168.56.102"
-    fedora19_64.vm.provision :puppet do |puppet|
+  config.vm.define "centos64_64" do |centos64_64|
+    centos64_64.vm.box = "centos-6.4-x86_64-devel"
+    centos64_64.vm.network "private_network", ip: "192.168.56.102"
+    centos64_64.vm.provision :puppet do |puppet|
       puppet.manifests_path = "puppet"
-      puppet.manifest_file = "fedora19_64.pp"
+      puppet.manifest_file = "centos-devel.pp"
     end
   end
 
-  config.vm.define "precise32" do |precise32|
-    precise32.vm.box = "precise32"
-    precise32.vm.box_url = "http://files.vagrantup.com/precise32.box"
-    precise32.vm.network "private_network", ip: "192.168.56.103"
-    precise32.vm.provision :puppet do |puppet|
+  config.vm.define "ubuntu12_i386" do |ubuntu12_i386|
+    ubuntu12_i386.vm.box = "ubuntu12-i386-devel"
+    ubuntu12_i386.vm.network "private_network", ip: "192.168.56.103"
+    ubuntu12_i386.vm.provision :puppet do |puppet|
       puppet.manifests_path = "puppet"
-      puppet.manifest_file = "precise32.pp"
+      puppet.manifest_file = "ubuntu-devel.pp"
     end
   end
 
