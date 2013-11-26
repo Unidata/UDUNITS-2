@@ -44,11 +44,13 @@ pax -zr <$tgz
 cd `basename $tgz .tar.gz`
 
 #
-# Start the virtual machine.
+# Start the virtual machine. Ensure that each virtual machine is started
+# separately because vagrant(1) doesn't support concurrent "vagrant up" 
+# invocations.
 #
 type vagrant 
 trap "vagrant destroy --force $vmName" 0
-vagrant up $vmName
+flock /tmp/`basename $0`.lock -c "vagrant up $vmName"
 
 #
 # On the virtual machine, build the package from source, test it, install it,
