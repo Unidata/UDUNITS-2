@@ -15,7 +15,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   end
 
   config.vm.define "ubuntu12_32" do |ubuntu12_32|
-    ubuntu12_32.vm.box = "ubuntu12-i386-devel"
+    ubuntu12_32.vm.box = "precise32"
     ubuntu12_32.vm.network "private_network", ip: "192.168.56.103"
     ubuntu12_32.vm.provision :puppet do |puppet|
       puppet.manifests_path = "puppet"
