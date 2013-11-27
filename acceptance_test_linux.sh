@@ -50,7 +50,7 @@ cd `basename $tgz .tar.gz`
 #
 type vagrant 
 trap "vagrant destroy --force $vmName" 0
-flock /tmp/`basename $0`.lock -c "vagrant up $vmName"
+flock "$tgz" -c "vagrant up \"$vmName\""
 
 #
 # On the virtual machine, build the package from source, test it, install it,
