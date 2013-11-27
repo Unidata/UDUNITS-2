@@ -61,7 +61,7 @@ flock "$tgz" -c "vagrant up \"$vmName\""
 #
 vagrant ssh $vmName -c "cmake --version"
 vagrant ssh $vmName -c \
-  "cmake -DCMAKE_INSTALL_PREFIX=$prefix -DCPACK_SYSTEM_NAME=$sysName -DCPACK_GENERATOR=$generator /vagrant"
+    "cmake -DCMAKE_INSTALL_PREFIX=$prefix -DCPACK_SYSTEM_NAME=$sysName -DCPACK_GENERATOR=$generator /vagrant"
 vagrant ssh $vmName -c "make all test"
 vagrant ssh $vmName -c "sudo make install install_test package"
 
@@ -70,7 +70,6 @@ vagrant ssh $vmName -c "sudo make install install_test package"
 #
 rm -rf *.$ext
 vagrant ssh $vmName -c "cp *.$ext /vagrant"
-pkgId=`basename *.$ext .$ext`
 
 #
 # Restart the virtual machine.
@@ -88,6 +87,7 @@ vagrant ssh $vmName -c "$prefix/bin/udunits2 -A -H km -W m"
 # Create a distribution of the documentation if appropriate.
 #
 if test "$createDoc" = true; then
-  vagrant ssh $vmName -c "tar -czf $pkgId-doc.tar.gz $prefix/share/doc/udunits $prefix/share/udunits"
-  vagrant ssh $vmName -c "cp $pkgId-doc.tar.gz /vagrant"
+    pkgId=`echo $tgz | sed 's/^\([^-]*-[0-9.]*\).*/\1/'`
+    vagrant ssh $vmName -c "tar -czf $pkgId-doc.tar.gz $prefix/share/doc/udunits $prefix/share/udunits"
+    vagrant ssh $vmName -c "cp $pkgId-doc.tar.gz /vagrant"
 fi
