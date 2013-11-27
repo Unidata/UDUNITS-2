@@ -91,7 +91,7 @@ fi
 # Copy the documentation to the on-line webpage if appropriate.
 #
 if test "$docDistroPath"; then
-    pkgId=`echo $docDistroPath | sed 's/^\([^-]*-[0-9.]*\).*/\1/'`
+    pkgId=`basename $docDistroPath | sed 's/^\([^-]*-[0-9.]*\).*/\1/'`
     pkgWebDir=/web/content/software/udunits/$pkgId
     trap "`trap -p ERR`; ssh webserver rm -rf $pkgWebDir" ERR
     cat $docDistroPath | 

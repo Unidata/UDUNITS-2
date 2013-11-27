@@ -87,7 +87,7 @@ vagrant ssh $vmName -c "$prefix/bin/udunits2 -A -H km -W m"
 # Create a distribution of the documentation if appropriate.
 #
 if test "$createDoc" = true; then
-    pkgId=`echo $tgz | sed 's/^\([^-]*-[0-9.]*\).*/\1/'`
+    pkgId=`basename $tgz .tar.gz | sed 's/^\([^-]*-[0-9.]*\).*/\1/'`
     vagrant ssh $vmName -c "tar -czf $pkgId-doc.tar.gz $prefix/share/doc/udunits $prefix/share/udunits"
     vagrant ssh $vmName -c "cp $pkgId-doc.tar.gz /vagrant"
 fi
