@@ -7,7 +7,7 @@
 # upstream job that creates a binary distribution.
 #
 # Usage:
-#     $0 pipeId nJobs binDistroPath srcDistroPath
+#     $0 pipeId nJobs binDistroPath srcDistroPath [docDistroPath]
 #
 # where:
 #     pipeId            Unique identifier for the parent delivery pipeline
@@ -15,6 +15,7 @@
 #     nJobs             Number of upstream jobs
 #     binDistroPath     Glob pattern of the binary distribution file
 #     srcDistroPath     Glob pattern of the source distribution file
+#     docDistroPath     Pathname of the documentation distribution file
 
 set -e  # exit on failure
 
@@ -36,6 +37,7 @@ pipeId=${1:?Group ID not specified}
 nJobs=${2:?Number of upstream jobs not specified}
 binDistroPath=${3:?Binary distribution not specified}
 srcDistroPath=${4:?Source distribution not specified}
+docDistroPath=${5}
 
 #
 # Convert glob patterns to absolute pathnames.
@@ -73,20 +75,25 @@ done
 # Copy the binary distribution to the download area.
 #
 ftpDir=/web/ftp/pub/udunits
-
+trap "`trap -p ERR`; ssh webserver rm -f $ftpDir/$binDistroPath" ERR
 success && scp $binDistroPath webserver:$ftpDir
 
 #
 # Copy the source distribution to the download area if necessary.
 #
-ssh webserver ls $ftpDir/`basename $srcDistroPath` >/dev/null 2>&1 ||
-    scp $srcDistroPath webserver:$ftpDir
+srcFtpPath=$ftpDir/`basename $srcDistroPath`
+if ! ssh webserver ls $srcFtpPath >/dev/null 2>&1; then
+    trap "`trap -p ERR`; ssh webserver rm -f $srcFtpPath" ERR
+    scp $srcDistroPath webserver:$srcFtpPath
+fi
 
 #
-# Copy the "share" documentation to the on-line webpage if appropriate.
+# Copy the documentation to the on-line webpage if appropriate.
 #
-if echo $binDistroPath | grep -q '\.tar\.gz$'; then
-    pkgId=`echo $binDistroPath | sed 's/.*udunits-\([0-9.]*\).*/udunits-\1/'`
-    cat $binDistroPath | 
-        ssh webserver "(cd /web/content/software/udunits && pax -zr -s ';.*/share/;$pkgId/;' '*/share/')"
+if test "$docDistroPath"; then
+    pkgId=`echo $docDistroPath | sed 's/^\([^-]*-[0-9.]*\).*/\1/'`
+    pkgWebDir=/web/content/software/udunits/$pkgId
+    trap "`trap -p ERR`; ssh webserver rm -rf $pkgWebDir" ERR
+    cat $docDistroPath | 
+        ssh webserver "cd `dirname $pkgWebDir` && pax -zr -s ';.*/share/;$pkgId/;' '*/share/'"
 fi
