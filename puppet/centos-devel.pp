@@ -17,10 +17,6 @@ package {'CUnit-devel':
   ensure  => present,
 }
 
-package {'cmake':
-  ensure  => present,
-}
-
 package {'rpm-build':
   ensure  => present,
 }
