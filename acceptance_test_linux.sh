@@ -58,8 +58,8 @@ flock "$tgz" -c "vagrant up \"$vmName\""
 #
 vagrant ssh $vmName -c \
   "cmake -DCMAKE_INSTALL_PREFIX=$prefix -DCPACK_SYSTEM_NAME=$sysName -DCPACK_GENERATOR=$generator /vagrant"
-vagrant ssh $vmName -c "cmake --build . -- all test"
-vagrant ssh $vmName -c "sudo cmake --build . -- install install_test package"
+vagrant ssh $vmName -c "make all test"
+vagrant ssh $vmName -c "sudo make install install_test package"
 
 #
 # Copy the binary distribution to the host machine.
