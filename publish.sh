@@ -74,7 +74,7 @@ while ! decidable; do
 done
 
 #
-# Copy the binary distribution to the download area.
+# Copy the binary distribution to the repository.
 #
 trap "ssh webserver rm -f $repoDir/$binDistroFile; `trap -p ERR`" ERR
 success && scp $binDistroFile webserver:$repoDir
@@ -96,7 +96,7 @@ fi
 #
 if test "$docDistroFile"; then
     #        
-    # Provision the website using the documentation distribution.
+    # Provision the website with the documentation.
     #
     pkgId=`basename $docDistroFile | sed 's/^\([^-]*-[0-9.]*\).*/\1/'`
     pkgWebDir=/web/content/software/udunits/$pkgId
