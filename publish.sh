@@ -7,7 +7,7 @@
 # upstream job that creates a binary distribution.
 #
 # Usage:
-#     $0 pipeId nJobs binDistroFile srcDistroFile repoDir [docDistroFile]
+#     $0 pipeId nJobs binDistroFile srcDistroFile binRepoDir [docDistroFile]
 #
 # where:
 #     pipeId            Unique identifier for the parent delivery pipeline
@@ -15,8 +15,14 @@
 #     nJobs             Number of upstream jobs
 #     binDistroFile     Glob pattern of the binary distribution file
 #     srcDistroFile     Glob pattern of the source distribution file
-#     repoDir           Pathname of the repository directory
+#     binRepoDir        Pathname of the binary repository directory
 #     docDistroFile     Pathname of the documentation distribution file
+
+pkgName=udunits                  # Name of package
+binRepoHost=artifacts            # Name of computer hosting binary repository
+srcRepoHost=webserver            # Name of computer hosting source repository
+srcRepoDir=/web/ftp/pub/$pkgName # Pathname of source repository
+webHost=webserver                # Name of computer hosting package website
 
 set -e  # exit on failure
 
@@ -24,21 +30,21 @@ set -e  # exit on failure
 # Indicates if the outcome of the upstream jobs is decidable.
 #
 decidable() {
-    test `ls *.success *.failure 2>/dev/null | wc -w` -ge $nJobs
+    test `ls $jobId.success $jobId.failure 2>/dev/null | wc -w` -ge $nJobs
 }
 
 #
 # Indicates if the upstream jobs were successful.
 #
 success() {
-    test `ls *.success 2>/dev/null | wc -w` -ge $nJobs
+    test `ls $jobId.success 2>/dev/null | wc -w` -ge $nJobs
 }
 
 pipeId=${1:?Group ID not specified}
 nJobs=${2:?Number of upstream jobs not specified}
 binDistroFile=${3:?Binary distribution file not specified}
 srcDistroFile=${4:?Source distribution file not specified}
-repoDir=${5:?Repository directory not specified}
+binRepoDir=${5:?Binary repository directory not specified}
 docDistroFile=${6}
 
 #
@@ -48,17 +54,18 @@ binDistroFile=`ls $binDistroFile`
 srcDistroFile=`ls $srcDistroFile`
 
 #
-# Remove any leftovers from an earlier delivery pipeline.
-#
-ls *.success *.failure 2>/dev/null | grep -v ^$pipeId- | xargs rm -rf
-
-#
 # Form a unique identifier for this invocation.
 #
 jobId=$pipeId-`basename $binDistroFile`
 
 #
-# Publish the outcome of the upstream job.
+# Remove any leftovers from an earlier delivery pipeline.
+#
+ls *.success *.failure 2>/dev/null | grep -v ^$jobId | xargs rm -rf
+
+#
+# Make known to all instances of this script the outcome of the upstream job
+# associated with this instance.
 #
 if test -e $binDistroFile; then
     touch $jobId.success
@@ -74,21 +81,21 @@ while ! decidable; do
 done
 
 #
-# Copy the binary distribution to the repository.
+# Copy the binary distribution to the binary repository.
 #
-trap "ssh webserver rm -f $repoDir/$binDistroFile; `trap -p ERR`" ERR
-success && scp $binDistroFile webserver:$repoDir
+trap "ssh $binRepoHost rm -f $binRepoDir/$binDistroFile; `trap -p ERR`" ERR
+success && scp $binDistroFile $binRepoHost:$binRepoDir
 
 #
-# If the repository doesn't have the source distribution,
+# If the source repository doesn't have the source distribution,
 #
-srcDistroPath=$repoDir/`basename $srcDistroFile`
-if ! ssh webserver ls $srcDistroPath >/dev/null 2>&1; then
+srcDistroPath=/web/ftp/pub/$pkgName/`basename $srcDistroFile`
+if ! ssh $srcRepoHost ls $srcDistroPath >/dev/null 2>&1; then
     #
-    # Copy the source distribution to the repository.
+    # Copy the source distribution to the source repository.
     #
-    trap "ssh webserver rm -f $srcDistroPath; `trap -p ERR`" ERR
-    scp $srcDistroFile webserver:$srcDistroPath
+    trap "ssh $srcRepoHost rm -f $srcDistroPath; `trap -p ERR`" ERR
+    scp $srcDistroFile $srcRepoHost:$srcDistroPath
 fi
 
 #
@@ -96,11 +103,11 @@ fi
 #
 if test "$docDistroFile"; then
     #        
-    # Provision the website with the documentation.
+    # Provision the package's website with the documentation.
     #
     pkgId=`basename $docDistroFile | sed 's/^\([^-]*-[0-9.]*\).*/\1/'`
-    pkgWebDir=/web/content/software/udunits/$pkgId
-    trap "ssh webserver rm -rf $pkgWebDir; `trap -p ERR`" ERR
+    pkgWebDir=/web/content/software/$pkgName/$pkgId
+    trap "ssh $webHost rm -rf $pkgWebDir; `trap -p ERR`" ERR
     cat $docDistroFile | 
-        ssh webserver "cd `dirname $pkgWebDir` && pax -zr -s ';.*/share/;$pkgId/;' '*/share/'"
+        ssh $webHost "cd `dirname $pkgWebDir` && pax -zr -s ';.*/share/;$pkgId/;' '*/share/'"
 fi
