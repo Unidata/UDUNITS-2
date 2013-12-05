@@ -7,15 +7,16 @@
 # upstream job that creates a binary distribution.
 #
 # Usage:
-#     $0 pipeId nJobs binDistroPath srcDistroPath [docDistroPath]
+#     $0 pipeId nJobs binDistroFile srcDistroFile repoDir [docDistroFile]
 #
 # where:
 #     pipeId            Unique identifier for the parent delivery pipeline
 #                       instance (e.g., top-of-the-pipe job number)
 #     nJobs             Number of upstream jobs
-#     binDistroPath     Glob pattern of the binary distribution file
-#     srcDistroPath     Glob pattern of the source distribution file
-#     docDistroPath     Pathname of the documentation distribution file
+#     binDistroFile     Glob pattern of the binary distribution file
+#     srcDistroFile     Glob pattern of the source distribution file
+#     repoDir           Pathname of the repository directory
+#     docDistroFile     Pathname of the documentation distribution file
 
 set -e  # exit on failure
 
@@ -35,15 +36,16 @@ success() {
 
 pipeId=${1:?Group ID not specified}
 nJobs=${2:?Number of upstream jobs not specified}
-binDistroPath=${3:?Binary distribution not specified}
-srcDistroPath=${4:?Source distribution not specified}
-docDistroPath=${5}
+binDistroFile=${3:?Binary distribution file not specified}
+srcDistroFile=${4:?Source distribution file not specified}
+repoDir=${5:?Repository directory not specified}
+docDistroFile=${6}
 
 #
 # Convert glob patterns to absolute pathnames.
 #
-binDistroPath=`ls $binDistroPath`
-srcDistroPath=`ls $srcDistroPath`
+binDistroFile=`ls $binDistroFile`
+srcDistroFile=`ls $srcDistroFile`
 
 #
 # Remove any leftovers from an earlier delivery pipeline.
@@ -53,12 +55,12 @@ ls *.success *.failure 2>/dev/null | grep -v ^$pipeId- | xargs rm -rf
 #
 # Form a unique identifier for this invocation.
 #
-jobId=$pipeId-`basename $binDistroPath`
+jobId=$pipeId-`basename $binDistroFile`
 
 #
 # Publish the outcome of the upstream job.
 #
-if test -e $binDistroPath; then
+if test -e $binDistroFile; then
     touch $jobId.success
 else
     touch $jobId.failure
@@ -74,26 +76,25 @@ done
 #
 # Copy the binary distribution to the download area.
 #
-ftpDir=/web/ftp/pub/udunits
-trap "`trap -p ERR`; ssh webserver rm -f $ftpDir/$binDistroPath" ERR
-success && scp $binDistroPath webserver:$ftpDir
+trap "ssh webserver rm -f $repoDir/$binDistroFile; `trap -p ERR`" ERR
+success && scp $binDistroFile webserver:$repoDir
 
 #
 # Copy the source distribution to the download area if necessary.
 #
-srcFtpPath=$ftpDir/`basename $srcDistroPath`
-if ! ssh webserver ls $srcFtpPath >/dev/null 2>&1; then
-    trap "`trap -p ERR`; ssh webserver rm -f $srcFtpPath" ERR
-    scp $srcDistroPath webserver:$srcFtpPath
+srcDistroPath=$repoDir/`basename $srcDistroFile`
+if ! ssh webserver ls $srcDistroPath >/dev/null 2>&1; then
+    trap "ssh webserver rm -f $srcDistroPath; `trap -p ERR`" ERR
+    scp $srcDistroFile webserver:$srcDistroPath
 fi
 
 #
 # Copy the documentation to the on-line webpage if appropriate.
 #
-if test "$docDistroPath"; then
-    pkgId=`basename $docDistroPath | sed 's/^\([^-]*-[0-9.]*\).*/\1/'`
+if test "$docDistroFile"; then
+    pkgId=`basename $docDistroFile | sed 's/^\([^-]*-[0-9.]*\).*/\1/'`
     pkgWebDir=/web/content/software/udunits/$pkgId
-    trap "`trap -p ERR`; ssh webserver rm -rf $pkgWebDir" ERR
-    cat $docDistroPath | 
+    trap "ssh webserver rm -rf $pkgWebDir; `trap -p ERR`" ERR
+    cat $docDistroFile | 
         ssh webserver "cd `dirname $pkgWebDir` && pax -zr -s ';.*/share/;$pkgId/;' '*/share/'"
 fi

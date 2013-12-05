@@ -9,14 +9,15 @@
 #     tgz       Glob pattern of the compressed tar file of the source
 #               distribution
 #     vmName    Name of the virtual machine (e.g., "fedora19_64", "precise32")
-#     sysName   Name of the system for CPack (e.g., "fedora19-x86_64",
+#     sysName   Name of the system for CPack (e.g., "fedora19.x86_64",
 #               "ubuntu12_32")
 #     generator Name of the CPack package generator (e.g., "RPM", "DEB")
 #     ext       Extension of the package file (e.g., "rpm", "deb")
 #     install   Command to install from the package file (e.g., "rpm --install",
 #               "dpkg --install")
-#     createDoc If and only if "true", then a distribution of the documentation
-#               is also created.
+#     createDoc If and only if "true", then a distribution of the "share/doc"
+#				and "share/udunits" directories is also created with the
+#				name "<name>-<version>-doc.tar.gz".
 
 set -e
 
@@ -52,7 +53,7 @@ cd `basename $tgz .tar.gz`
 # invocations.
 #
 type vagrant 
-trap "trap -p EXIT; vagrant destroy --force $vmName" EXIT
+trap "vagrant destroy --force $vmName; `trap -p EXIT`" EXIT
 flock "$tgz" -c "vagrant up \"$vmName\""
 
 #
