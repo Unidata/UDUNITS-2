@@ -20,9 +20,11 @@
 #     docDistroFile     Pathname of the documentation distribution file
 
 pkgName=udunits                  # Name of package
-binRepoHost=artifacts            # Name of computer hosting binary repository
-binRepoRoot=/web/ftp/repo        # Absolute pathname of the root directory of
-#                                # the binary repository
+binRepoHost=spock                # Name of computer hosting binary repository
+binRepoRoot=repo                 # Pathname of the root directory of the binary
+                                 # repository. A relative pathname is resolved
+                                 # against the home directory of $USER on
+                                 # $binRepoHost
 srcRepoHost=webserver            # Name of computer hosting source repository
 srcRepoDir=/web/ftp/pub/$pkgName # Pathname of source repository
 webHost=webserver                # Name of computer hosting package website
@@ -87,9 +89,9 @@ done
 #
 # Copy the binary distribution to the binary repository.
 #
-binRepoAbsDir=$binRepoRoot/$binRepoRelDir
-trap "ssh $binRepoHost rm -f $binRepoAbsDir/$binDistroFileName; `trap -p ERR`" ERR
-success && scp $binDistroFile $binRepoHost:$binRepoAbsDir
+binRepoDir=$binRepoRoot/$binRepoRelDir
+trap "ssh $binRepoHost rm -f $binRepoDir/$binDistroFileName; `trap -p ERR`" ERR
+success && scp $binDistroFile $binRepoHost:$binRepoDir
 
 #
 # If the source repository doesn't have the source distribution,
