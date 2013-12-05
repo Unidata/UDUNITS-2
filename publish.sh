@@ -7,19 +7,22 @@
 # upstream job that creates a binary distribution.
 #
 # Usage:
-#     $0 pipeId nJobs binDistroFile srcDistroFile binRepoDir [docDistroFile]
+#     $0 pipeId nJobs binDistroFile srcDistroFile binRepoRelDir [docDistroFile]
 #
 # where:
 #     pipeId            Unique identifier for the parent delivery pipeline
 #                       instance (e.g., top-of-the-pipe job number)
 #     nJobs             Number of upstream jobs
-#     binDistroFile     Glob pattern of the binary distribution file
-#     srcDistroFile     Glob pattern of the source distribution file
-#     binRepoDir        Pathname of the binary repository directory
+#     binDistroFile     Pathname of the binary distribution file
+#     srcDistroFile     Pathname of the source distribution file
+#     binRepoRelDir     Pathname of the binary repository directory relative to
+#                       the root of the binary repository
 #     docDistroFile     Pathname of the documentation distribution file
 
 pkgName=udunits                  # Name of package
 binRepoHost=artifacts            # Name of computer hosting binary repository
+binRepoRoot=/web/ftp/repo        # Absolute pathname of the root directory of
+#                                # the binary repository
 srcRepoHost=webserver            # Name of computer hosting source repository
 srcRepoDir=/web/ftp/pub/$pkgName # Pathname of source repository
 webHost=webserver                # Name of computer hosting package website
@@ -44,7 +47,7 @@ pipeId=${1:?Group ID not specified}
 nJobs=${2:?Number of upstream jobs not specified}
 binDistroFile=${3:?Binary distribution file not specified}
 srcDistroFile=${4:?Source distribution file not specified}
-binRepoDir=${5:?Binary repository directory not specified}
+binRepoRelDir=${5:?Relative pathname of binary repository directory not specified}
 docDistroFile=${6}
 
 #
@@ -56,7 +59,8 @@ srcDistroFile=`ls $srcDistroFile`
 #
 # Form a unique identifier for this invocation.
 #
-jobId=$pipeId-`basename $binDistroFile`
+binDistroFileName=`basename $binDistroFile`
+jobId=$pipeId-$binDistroFileName
 
 #
 # Remove any leftovers from an earlier delivery pipeline.
@@ -83,8 +87,9 @@ done
 #
 # Copy the binary distribution to the binary repository.
 #
-trap "ssh $binRepoHost rm -f $binRepoDir/$binDistroFile; `trap -p ERR`" ERR
-success && scp $binDistroFile $binRepoHost:$binRepoDir
+binRepoAbsDir=$binRepoRoot/$binRepoRelDir
+trap "ssh $binRepoHost rm -f $binRepoAbsDir/$binDistroFileName; `trap -p ERR`" ERR
+success && scp $binDistroFile $binRepoHost:$binRepoAbsDir
 
 #
 # If the source repository doesn't have the source distribution,
