@@ -67,7 +67,7 @@ else
 fi
 
 #
-# Wait until the outcome of the upstream jobs can be decided.
+# Wait until the outcome of all the upstream jobs can be decided.
 #
 while ! decidable; do
     sleep 3
@@ -80,18 +80,24 @@ trap "ssh webserver rm -f $repoDir/$binDistroFile; `trap -p ERR`" ERR
 success && scp $binDistroFile webserver:$repoDir
 
 #
-# Copy the source distribution to the download area if necessary.
+# If the repository doesn't have the source distribution,
 #
 srcDistroPath=$repoDir/`basename $srcDistroFile`
 if ! ssh webserver ls $srcDistroPath >/dev/null 2>&1; then
+    #
+    # Copy the source distribution to the repository.
+    #
     trap "ssh webserver rm -f $srcDistroPath; `trap -p ERR`" ERR
     scp $srcDistroFile webserver:$srcDistroPath
 fi
 
 #
-# Copy the documentation to the on-line webpage if appropriate.
+# If the documentation distribution was specified,
 #
 if test "$docDistroFile"; then
+    #        
+    # Provision the website using the documentation distribution.
+    #
     pkgId=`basename $docDistroFile | sed 's/^\([^-]*-[0-9.]*\).*/\1/'`
     pkgWebDir=/web/content/software/udunits/$pkgId
     trap "ssh webserver rm -rf $pkgWebDir; `trap -p ERR`" ERR
