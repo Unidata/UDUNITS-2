@@ -51,7 +51,7 @@ binRepoRelDir=${5:?Relative pathname of binary repository directory not specifie
 docDistroFile=${6}
 
 #
-# Convert glob patterns to absolute pathnames.
+# Ensure valid pathnames.
 #
 binDistroFile=`ls $binDistroFile`
 srcDistroFile=`ls $srcDistroFile`
@@ -115,4 +115,9 @@ if test "$docDistroFile"; then
     trap "ssh $webHost rm -rf $pkgWebDir; `trap -p ERR`" ERR
     cat $docDistroFile | 
         ssh $webHost "cd `dirname $pkgWebDir` && pax -zr -s ';.*/share/;$pkgId/;' '*/share/'"
+    
+    #
+    # Rebuild the binary repository.
+    #
+    ssh $binRepoHost $binRepoRoot/rebuild
 fi
