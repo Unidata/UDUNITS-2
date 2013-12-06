@@ -3,7 +3,7 @@
 # distribution file.
 #
 # Usage:
-#     $0 tgz vmName sysName generator ext install [createDoc]
+#     $0 tgz vmName sysName generator ext install
 #
 # where:
 #     tgz       Glob pattern of the compressed tar file of the source
@@ -15,9 +15,6 @@
 #     ext       Extension of the package file (e.g., "rpm", "deb")
 #     install   Command to install from the package file (e.g., "rpm --install",
 #               "dpkg --install")
-#     createDoc If and only if "true", then a distribution of the "share/doc"
-#				and "share/udunits" directories is also created with the
-#				name "<name>-<version>-doc.tar.gz".
 
 set -e
 
@@ -27,7 +24,6 @@ sysName=${3:?Name of system for CPack not specified}
 generator=${4:?Name of the CPack package generator not specified}
 ext=${5:?Package extension not specified}
 install=${6:?Installation command not specified}
-createDoc=${7:-false}
 
 prefix=/usr/local
 tgz=`ls $tgz`
@@ -85,10 +81,9 @@ vagrant ssh $vmName -c "sudo $install /vagrant/*.$ext"
 vagrant ssh $vmName -c "$prefix/bin/udunits2 -A -H km -W m"
 
 #
-# Create a distribution of the documentation if appropriate.
+# Create a distribution of the documentation in case it's needed by a
+# subsequent job.
 #
-if test "$createDoc" = true; then
-    pkgId=`basename $tgz .tar.gz | sed 's/^\([^-]*-[0-9.]*\).*/\1/'`
-    vagrant ssh $vmName -c "tar -czf $pkgId-doc.tar.gz $prefix/share/doc/udunits $prefix/share/udunits"
-    vagrant ssh $vmName -c "cp $pkgId-doc.tar.gz /vagrant"
-fi
+pkgId=`basename $tgz .tar.gz | sed 's/^\([^-]*-[0-9.]*\).*/\1/'`
+vagrant ssh $vmName -c "tar -czf $pkgId-doc.tar.gz $prefix/share/doc/udunits $prefix/share/udunits"
+vagrant ssh $vmName -c "cp $pkgId-doc.tar.gz /vagrant"
