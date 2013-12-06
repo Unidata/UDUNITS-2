@@ -85,5 +85,6 @@ vagrant ssh $vmName -c "$prefix/bin/udunits2 -A -H km -W m"
 # subsequent job.
 #
 pkgId=`basename $tgz .tar.gz | sed 's/^\([^-]*-[0-9.]*\).*/\1/'`
-vagrant ssh $vmName -c "tar -czf $pkgId-doc.tar.gz $prefix/share/doc/udunits $prefix/share/udunits"
+vagrant ssh $vmName -c \
+    "pax -zw -s ';$prefix/;;' $prefix/share/doc/udunits $prefix/share/udunits >$pkgId-doc.tar.gz"
 vagrant ssh $vmName -c "cp $pkgId-doc.tar.gz /vagrant"

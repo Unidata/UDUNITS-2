@@ -7,7 +7,7 @@
 # upstream job that creates a binary distribution.
 #
 # Usage:
-#     $0 pipeId nJobs binDistroFile srcDistroFile binRepoRelDir [docDistroFile]
+#     $0 pipeId nJobs binDistroFile srcDistroFile binRepoRelDir docDistroFile
 #
 # where:
 #     pipeId            Unique identifier for the parent delivery pipeline
@@ -50,7 +50,7 @@ nJobs=${2:?Number of upstream jobs not specified}
 binDistroFile=${3:?Binary distribution file not specified}
 srcDistroFile=${4:?Source distribution file not specified}
 binRepoRelDir=${5:?Relative pathname of binary repository directory not specified}
-docDistroFile=${6}
+docDistroFile=${6:?Documentation distribution file not specified}
 
 #
 # Ensure valid pathnames.
@@ -105,18 +105,18 @@ if ! ssh $srcRepoHost ls $srcDistroPath >/dev/null 2>&1; then
     scp $srcDistroFile $srcRepoHost:$srcDistroPath
 fi
 
+pkgId=`basename $docDistroFile | sed 's/^\([^-]*-[0-9.]*\).*/\1/'`
+pkgWebDir=/web/content/software/$pkgName/$pkgId
 #
-# If the documentation distribution was specified,
+# If the package's website doesn't have this version's documentation,
 #
-if test "$docDistroFile"; then
+if ! ssh $webHost test -e $pkgWebDir; then
     #        
-    # Provision the package's website with the documentation.
+    # Provision the package's website with the documentation distribution.
     #
-    pkgId=`basename $docDistroFile | sed 's/^\([^-]*-[0-9.]*\).*/\1/'`
-    pkgWebDir=/web/content/software/$pkgName/$pkgId
     trap "ssh $webHost rm -rf $pkgWebDir; `trap -p ERR`" ERR
     gunzip -c $docDistroFile | 
-        ssh $webHost "cd `dirname $pkgWebDir` && pax -r -s ';.*/share/;$pkgId/;' '*/share/*'"
+        ssh $webHost "cd `dirname $pkgWebDir` && pax -r -s ';share/;$pkgId/;'"
     
     #
     # Rebuild the binary repository.
