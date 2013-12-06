@@ -1,5 +1,6 @@
 # This script does the following:
-#     1. Ensures correct version information in the CMake configuration-file;
+#     1. Ensures correct version information in the CMake configuration-file
+#        and the texinfo(1) version file;
 #     2. Commits to the local repository if appropriate;
 #     3. Tags the HEAD revision with the current version; and
 #     4. Pushes to the remote repository
@@ -24,6 +25,15 @@ sed "
 /^[ \t]*[Ss][Ee][Tt][ \t]*(VERSION_PATCH[ \t]/cSET(VERSION_PATCH $patchId)" \
     CMakeLists.txt >CMakeLists.txt.tmp
 mv CMakeLists.txt.tmp CMakeLists.txt 
+
+#
+# Set the package version in the texinfo(1) version file.
+#
+sed "
+/^@set EDITION/c@set EDITION $versionId
+/^@set VERSION/c@set VERSION $versionId" \
+    version.texi >version.texi.tmp
+mv version.texi.tmp version.texi
 
 #
 # Commit, tag, and push the package.
