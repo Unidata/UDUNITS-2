@@ -115,8 +115,8 @@ if test "$docDistroFile"; then
     pkgId=`basename $docDistroFile | sed 's/^\([^-]*-[0-9.]*\).*/\1/'`
     pkgWebDir=/web/content/software/$pkgName/$pkgId
     trap "ssh $webHost rm -rf $pkgWebDir; `trap -p ERR`" ERR
-    cat $docDistroFile | 
-        ssh $webHost "cd `dirname $pkgWebDir` && pax -zr -s ';.*/share/;$pkgId/;' '*/share/'"
+    gunzip -c $docDistroFile | 
+        ssh $webHost "cd `dirname $pkgWebDir` && pax -r -s ';.*/share/;$pkgId/;' '*/share/'"
     
     #
     # Rebuild the binary repository.
