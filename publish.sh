@@ -116,7 +116,7 @@ if test "$docDistroFile"; then
     pkgWebDir=/web/content/software/$pkgName/$pkgId
     trap "ssh $webHost rm -rf $pkgWebDir; `trap -p ERR`" ERR
     gunzip -c $docDistroFile | 
-        ssh $webHost "cd `dirname $pkgWebDir` && pax -r -s ';.*/share/;$pkgId/;' '*/share/'"
+        ssh $webHost "cd `dirname $pkgWebDir` && pax -r -s ';.*/share/;$pkgId/;' '*/share/*'"
     
     #
     # Rebuild the binary repository.
