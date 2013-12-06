@@ -28,6 +28,7 @@ binRepoRoot=repo                 # Pathname of the root directory of the binary
 srcRepoHost=webserver            # Name of computer hosting source repository
 srcRepoDir=/web/ftp/pub/$pkgName # Pathname of source repository
 webHost=webserver                # Name of computer hosting package website
+lockfile=file.lock               # lockfile(1) target
 
 set -e  # exit on failure
 
@@ -94,10 +95,15 @@ trap "ssh $binRepoHost rm -f $binRepoDir/$binDistroFileName; `trap -p ERR`" ERR
 success && scp $binDistroFile $binRepoHost:$binRepoDir
 
 #
+# Rebuild the binary repository.
+#
+ssh $binRepoHost $binRepoRoot/rebuild $binRepoRelDir
+
+srcDistroPath=/web/ftp/pub/$pkgName/`basename $srcDistroFile`
+#
 # If the source repository doesn't have the source distribution,
 #
-srcDistroPath=/web/ftp/pub/$pkgName/`basename $srcDistroFile`
-if ! ssh $srcRepoHost ls $srcDistroPath >/dev/null 2>&1; then
+if ! ssh $srcRepoHost test -e $srcDistroPath; then
     #
     # Copy the source distribution to the source repository.
     #
@@ -112,14 +118,11 @@ pkgWebDir=/web/content/software/$pkgName/$pkgId
 #
 if ! ssh $webHost test -e $pkgWebDir; then
     #        
-    # Provision the package's website with the documentation distribution.
+    # Provision the package's website with the documentation distribution. NB:
+    # Assumes that the first component of all pathnames in the distribution is
+    # "share/".
     #
     trap "ssh $webHost rm -rf $pkgWebDir; `trap -p ERR`" ERR
     gunzip -c $docDistroFile | 
         ssh $webHost "cd `dirname $pkgWebDir` && pax -r -s ';share/;$pkgId/;'"
-    
-    #
-    # Rebuild the binary repository.
-    #
-    ssh $binRepoHost $binRepoRoot/rebuild
 fi

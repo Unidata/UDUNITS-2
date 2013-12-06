@@ -1,6 +1,5 @@
-# Performs an acceptance-test of a package on a Linux system. Input
-# is the compressed tar file of the source-code. Output is a binary
-# distribution file.
+# Performs an acceptance-test of a package on a Linux system. Creates a binary
+# distribution file and a documentation distribution file.
 #
 # Usage:
 #     $0 tgz vmName sysName generator ext install
@@ -82,7 +81,8 @@ vagrant ssh $vmName -c "$prefix/bin/udunits2 -A -H km -W m"
 
 #
 # Create a distribution of the documentation in case it's needed by a
-# subsequent job.
+# subsequent job. NB: The first component of all pathnames in the distribution
+# is "share/".
 #
 pkgId=`basename $tgz .tar.gz | sed 's/^\([^-]*-[0-9.]*\).*/\1/'`
 vagrant ssh $vmName -c \
