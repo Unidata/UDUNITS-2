@@ -37,8 +37,10 @@ and value-conversion utility.
 
 @menu
 * Introduction::        Introduction
-* Differences::		How this package differs from the original UDUNITS
+* Differences::		    How this package differs from the original UDUNITS package
 * Installation::        Installing this package
+* Utility::             The unit utility
+* Library::             The unit library
 * Database::            The unit database
 * Support::             Support for this package
 * Complete Index::      Complete index
@@ -54,7 +56,7 @@ for units of physical quantities;
 2) @ref{Top, , a utility, udunits2prog};
 for obtaining the definition of a unit and for
 converting numeric values between compatible units;
-and 3) an extensive database of units.
+and 3) an @ref{Database, , extensive database of units}.
 
 @node Differences, Installation, Introduction, Top
 @chapter How This Package Differs from the Original @code{UDUNITS} Package
@@ -109,7 +111,7 @@ the symbol @code{g}, which in the original package was associated with
 standard free fall (a unit of accelleration) but which is associated
 with gram in the new package.
 
-@node Installation, Database, Differences, Top
+@node Installation, Utility, Differences, Top
 @chapter Installing this Package
 @cindex installation
 
@@ -261,7 +263,7 @@ from step 2:
 
 @example
 cmake
-cmake --build . -- all [test] install [install_test]
+make all [test] install [install_test]
 @end example
 
 where the arguments in square brackets are optional.
@@ -284,7 +286,17 @@ The default installation-prefix is
 @var{minor} and @var{bug} are the minor version and bug-fix level,
 respectively.
 
-@node Database, Support, Installation, Top
+@node Utility, Library, Installation, Top
+@chapter Unit Utility
+@cindex Utility,  unit
+@xref{, , , udunits2prog}, for details on this package's unit utility.
+
+@node Library, Database, Utility, Top
+@chapter Unit Library
+@cindex Library,  unit
+@xref{, , , udunits2lib}, for details on this package's unit library.
+
+@node Database, Support, Library, Top
 @chapter The Units Database
 @cindex database
 
