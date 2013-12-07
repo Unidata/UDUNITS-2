@@ -16,6 +16,9 @@
             Removed bundled EXPAT package.
                 
             Ported code to 32-bit Windows-7 under MinGW.
+            
+            Added explicit chapters on the unit utility and unit library to the
+            top-level package documentation.
 
     Bug Fixes:
         Library udunits2(3):
