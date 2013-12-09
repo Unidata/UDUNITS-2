@@ -289,12 +289,13 @@ respectively.
 @node Utility, Library, Installation, Top
 @chapter Unit Utility
 @cindex Utility,  unit
-@xref{, , , udunits2prog}, for details on this package's unit utility.
+@xref{UDUNITS Utility, , , udunits2prog}, for details on this package's unit
+utility.
 
 @node Library, Database, Utility, Top
 @chapter Unit Library
 @cindex Library,  unit
-@xref{, , , udunits2lib}, for details on this package's unit library.
+@xref{UDUNITS Library, , , udunits2lib}, for details on this package's unit library.
 
 @node Database, Support, Library, Top
 @chapter The Units Database
