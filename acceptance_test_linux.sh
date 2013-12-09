@@ -8,8 +8,8 @@
 #     tgz       Glob pattern of the compressed tar file of the source
 #               distribution
 #     vmName    Name of the virtual machine (e.g., "fedora19_64", "precise32")
-#     sysName   Name of the system for CPack (e.g., "fedora19.x86_64",
-#               "ubuntu12_32")
+#     sysName   Value for the variable CPACK_SYSTEM_NAME (e.g.,
+#               "1.x86_64", "ubuntu12_32")
 #     generator Name of the CPack package generator (e.g., "RPM", "DEB")
 #     ext       Extension of the package file (e.g., "rpm", "deb")
 #     install   Command to install from the package file (e.g., "rpm --install",
