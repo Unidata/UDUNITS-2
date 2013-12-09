@@ -49,7 +49,7 @@ if ! test $versionId = `cat previousVersionId`; then
     # A new package version is being released. Reset the release number.
     #
     echo 1 >releaseNo
-elif
+else
     #
     # The same package version is being released. Increment the release number.
     #
