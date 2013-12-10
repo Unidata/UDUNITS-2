@@ -10,14 +10,16 @@
 #     $0 pipeId nJobs binDistroFile srcDistroFile binRepoRelDir docDistroFile
 #
 # where:
-#     pipeId            Unique identifier for the parent delivery pipeline
-#                       instance (e.g., top-of-the-pipe job number)
-#     nJobs             Number of upstream jobs
-#     binDistroFile     Pathname of the binary distribution file
-#     srcDistroFile     Pathname of the source distribution file
-#     binRepoRelDir     Pathname of the binary repository directory relative to
-#                       the root of the binary repository
-#     docDistroFile     Pathname of the documentation distribution file
+#     pipeId                Unique identifier for the parent delivery pipeline
+#                           instance (e.g., top-of-the-pipe job number)
+#     nJobs                 Number of upstream jobs
+#     binDistroFile         Pathname of the binary distribution file
+#     srcDistroFile         Pathname of the source distribution file
+#     binRepoRelDir         Pathname of the binary repository directory relative to
+#                           the root of the binary repository
+#     docDistroFile         Pathname of the documentation distribution file
+#     binDistroGlob         Glob pattern matching filenames of all releases of
+#                           this version of the binary distribution of the package
 
 pkgName=udunits                  # Name of package
 binRepoHost=spock                # Name of computer hosting binary repository
@@ -28,7 +30,6 @@ binRepoRoot=repo                 # Pathname of the root directory of the binary
 srcRepoHost=webserver            # Name of computer hosting source repository
 srcRepoDir=/web/ftp/pub/$pkgName # Pathname of source repository
 webHost=webserver                # Name of computer hosting package website
-lockfile=file.lock               # lockfile(1) target
 
 set -e  # exit on failure
 
@@ -52,6 +53,7 @@ binDistroFile=${3:?Binary distribution file not specified}
 srcDistroFile=${4:?Source distribution file not specified}
 binRepoRelDir=${5:?Relative pathname of binary repository directory not specified}
 docDistroFile=${6:?Documentation distribution file not specified}
+binDistroGlob=${7:?Release-independent, version-dependent filename glob pattern not specified}
 
 #
 # Ensure valid pathnames.
@@ -93,6 +95,11 @@ done
 binRepoDir=$binRepoRoot/$binRepoRelDir
 trap "ssh $binRepoHost rm -f $binRepoDir/$binDistroFileName; `trap -p ERR`" ERR
 success && scp $binDistroFile $binRepoHost:$binRepoDir
+
+#
+# Delete all previous binary releases of the same package version.
+#
+ssh $binRepoHost "ls $binRepoDir/$binDistroGlob | fgrep -v $binDistroFileName | xargs rm -f"
 
 #
 # Rebuild the binary repository.
