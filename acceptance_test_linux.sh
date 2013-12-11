@@ -17,10 +17,10 @@
 
 set -e
 
-sourceDistro=${1:?Pathname of compressed source-distribution not specified}
+sourceDistro=${1:?Pathname of source-distribution not specified}
 vmName=${2:?Name of virtual machine not specified}
 pkgFileName=${3:?Package filename not specified}
-generator=${4:?Name of the CPack package generator not specified}
+generator=${4:?Name of CPack package generator not specified}
 ext=${5:?Package extension not specified}
 install=${6:?Installation command not specified}
 
