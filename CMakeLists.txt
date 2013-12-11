@@ -198,6 +198,7 @@ SET(CPACK_RESOURCE_FILE_README "${CMAKE_CURRENT_SOURCE_DIR}/README")
 SET(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/COPYRIGHT")
 # The following line is necessary for installing to anything other than "/usr"
 SET(CPACK_SET_DESTDIR "ON")
+SET(CPACK_PACKAGE_RELOCATABLE "ON")
 SET(CPACK_SOURCE_GENERATOR "TGZ;ZIP")
 SET(CPACK_SOURCE_IGNORE_FILES
     "${CPACK_SOURCE_IGNORE_FILES};config\\\\.h$;/xmlFailures/;/xmlSuccesses/;/m4/;/\\\\.gradle/;\\\\.git;Makefile$")
@@ -210,3 +211,6 @@ SET(CPACK_SOURCE_IGNORE_FILES
 SET(CPACK_SOURCE_STRIP_FILES "")
 SET(CPACK_STRIP_FILES "bin/udunits2")
 INCLUDE(CPack)
+#include(UseRPMTools)
+#    if(RPMTools_ADD_RPM_TARGETS("udunits"))
+#endif()
