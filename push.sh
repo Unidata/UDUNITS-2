@@ -41,21 +41,33 @@ sed "
 mv version.texi.tmp version.texi
 
 #
+# Get the previous package information.
+#
+. package.properties
+
+#
 # If the current package version differs from that of the previous release
 # (i.e., the previous invocation of this script),
 #
-if ! test $versionId = `cat previousVersionId`; then
+if ! test $versionId = $PKG_VERSION; then
     #
     # A new package version is being released. Reset the release number.
     #
-    echo 1 >releaseNo
+    PKG_RELEASE=1
 else
     #
     # The same package version is being released. Increment the release number.
     #
-    releaseNo=$((`cat releaseNo` + 1))
-    echo $releaseNo >releaseNo
+    PKG_RELEASE=$(($PKG_RELEASE + 1))
 fi
+
+#
+# Save the package information.
+#
+sed "
+/PKG_VERSION/cPKG_VERSION=$PKG_VERSION
+/PKG_RELEASE/cPKG_RELEASE=$PKG_RELEASE" package.properties >package.properties.tmp
+mv package.properties.tmp package.properties
 
 #
 # Commit, tag, and push the package.
@@ -63,8 +75,3 @@ fi
 git commit -a || true
 git tag -f v$versionId
 git push
-
-#
-# Set the package version of the prevous release.
-#
-echo $versionId >previousVersionId
