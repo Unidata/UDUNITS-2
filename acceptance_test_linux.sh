@@ -2,30 +2,30 @@
 # distribution file and a documentation distribution file.
 #
 # Usage:
-#     $0 tgz vmName sysName generator ext install
+#     $0 sourceDistro vmName pkgFileName generator ext install
 #
 # where:
-#     tgz       Glob pattern of the compressed tar file of the source
-#               distribution
-#     vmName    Name of the virtual machine (e.g., "fedora19_64", "precise32")
-#     sysName   Value for the variable CPACK_SYSTEM_NAME (e.g.,
-#               "1.x86_64", "ubuntu12_32")
-#     generator Name of the CPack package generator (e.g., "RPM", "DEB")
-#     ext       Extension of the package file (e.g., "rpm", "deb")
-#     install   Command to install from the package file (e.g., "rpm --install",
-#               "dpkg --install")
+#     sourceDistro  Glob pattern of the compressed tar file of the source
+#                   distribution
+#     vmName        Name of the virtual machine (e.g., "centos64_64", "precise32")
+#     pkgFileName   Value for the variable CPACK_PACKAGE_FILE_NAME (e.g.,
+#                   "udunits-2.2.0-3.x86_64")
+#     generator     Name of the CPack package generator (e.g., "RPM", "DEB")
+#     ext           Extension of the package file (e.g., "rpm", "deb")
+#     install       Command to install from the package file (e.g., "rpm --install",
+#                   "dpkg --install")
 
 set -e
 
-tgz=${1:?Pathname of compressed source-distribution not specified}
+sourceDistro=${1:?Pathname of compressed source-distribution not specified}
 vmName=${2:?Name of virtual machine not specified}
-sysName=${3:?Name of system for CPack not specified}
+pkgFileName=${3:?Package filename not specified}
 generator=${4:?Name of the CPack package generator not specified}
 ext=${5:?Package extension not specified}
 install=${6:?Installation command not specified}
 
 prefix=/usr/local
-tgz=`ls $tgz`
+sourceDistro=`ls $sourceDistro`
 
 #
 # Remove any leftover artifacts from an earlier job.
@@ -35,12 +35,12 @@ rm -rf *
 #
 # Unpack the source distribution.
 #
-pax -zr <$tgz
+pax -zr <$sourceDistro
 
 #
 # Make the source directory the current working directory.
 #
-cd `basename $tgz .tar.gz`
+cd `basename $sourceDistro .tar.gz`
 
 #
 # Start the virtual machine. Ensure that each virtual machine is started
@@ -49,7 +49,7 @@ cd `basename $tgz .tar.gz`
 #
 type vagrant 
 trap "vagrant destroy --force $vmName; `trap -p EXIT`" EXIT
-flock "$tgz" -c "vagrant up \"$vmName\""
+flock "$sourceDistro" -c "vagrant up \"$vmName\""
 
 #
 # On the virtual machine, build the package from source, test it, install it,
@@ -57,7 +57,7 @@ flock "$tgz" -c "vagrant up \"$vmName\""
 #
 vagrant ssh $vmName -c "cmake --version"
 vagrant ssh $vmName -c \
-    "cmake -DCMAKE_INSTALL_PREFIX=$prefix -DCPACK_SYSTEM_NAME=$sysName -DCPACK_GENERATOR=$generator /vagrant"
+    "cmake -DCMAKE_INSTALL_PREFIX=$prefix -DCPACK_PACKAGE_FILE_NAME=$pkgFileName -DCPACK_GENERATOR=$generator /vagrant"
 vagrant ssh $vmName -c "make all test"
 vagrant ssh $vmName -c "sudo make install install_test package"
 
@@ -84,7 +84,7 @@ vagrant ssh $vmName -c "$prefix/bin/udunits2 -A -H km -W m"
 # subsequent job. NB: The first component of all pathnames in the distribution
 # is "share/".
 #
-pkgId=`basename $tgz .tar.gz | sed 's/^\([^-]*-[0-9.]*\).*/\1/'`
+pkgId=`basename $sourceDistro .tar.gz | sed 's/^\([^-]*-[0-9.]*\).*/\1/'`
 vagrant ssh $vmName -c \
     "pax -zw -s ';$prefix/;;' $prefix/share/doc/udunits $prefix/share/udunits >$pkgId-doc.tar.gz"
 vagrant ssh $vmName -c "cp $pkgId-doc.tar.gz /vagrant"
