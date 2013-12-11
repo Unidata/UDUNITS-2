@@ -7,7 +7,7 @@
 # upstream job that creates a binary distribution.
 #
 # Usage:
-#     $0 pipeId nJobs binDistroFile srcDistroFile binRepoRelDir docDistroFile
+#     $0 pipeId nJobs binDistroFile srcDistroFile binRepoRelDir docDistroFile pkgName indexHtml
 #
 # where:
 #     pipeId                Unique identifier for the parent delivery pipeline
@@ -20,8 +20,10 @@
 #     docDistroFile         Pathname of the documentation distribution file
 #     binDistroGlob         Glob pattern matching filenames of all releases of
 #                           this version of the binary distribution of the package
+#     pkgName               Name of the package (e.g., "udunits")
+#     indexHtml             Name of the top-level HTML documentation file (e.g.,
+#                           "udunits2.html")
 
-pkgName=udunits                  # Name of package
 binRepoHost=spock                # Name of computer hosting binary repository
 binRepoRoot=repo                 # Pathname of the root directory of the binary
                                  # repository. A relative pathname is resolved
@@ -54,12 +56,15 @@ srcDistroFile=${4:?Source distribution file not specified}
 binRepoRelDir=${5:?Relative pathname of binary repository directory not specified}
 docDistroFile=${6:?Documentation distribution file not specified}
 binDistroGlob=${7:?Release-independent, version-dependent filename glob pattern not specified}
+pkgName=${8:?Package name not specified}
+indexHtml=${9:?Top-level HTML documentation-file not specified}
 
 #
 # Ensure valid pathnames.
 #
 binDistroFile=`ls $binDistroFile`
 srcDistroFile=`ls $srcDistroFile`
+
 
 #
 # Form a unique identifier for this invocation.
@@ -73,8 +78,8 @@ jobId=$pipeId-$binDistroFileName
 ls *.success *.failure 2>/dev/null | grep -v ^$jobId | xargs rm -rf
 
 #
-# Make known to all instances of this script the outcome of the upstream job
-# associated with this instance.
+# Make known to all invocations of this script in the delivery pipeline the
+# outcome of the upstream job associated with this invocation.
 #
 if test -e $binDistroFile; then
     touch $jobId.success
@@ -132,5 +137,5 @@ if ! ssh $webHost test -e $pkgWebDir; then
     trap "ssh $webHost rm -rf $pkgWebDir; `trap -p ERR`" ERR
     gunzip -c $docDistroFile | 
         ssh $webHost "cd `dirname $pkgWebDir` && pax -r -s ';share/;$pkgId/;'"
-    ssh $webHost "cd $pkgWebDir && ln -s doc/udunits/udunits2.html index.html"
-fi
+    ssh $webHost "cd $pkgWebDir && ln -s doc/$pkgName/${indexHtml} index.html"
+    fi
