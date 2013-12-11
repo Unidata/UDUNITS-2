@@ -7,7 +7,7 @@
 # upstream job that creates a binary distribution.
 #
 # Usage:
-#     $0 pipeId nJobs binDistroFile srcDistroFile binRepoRelDir docDistroFile pkgName indexHtml
+#     $0 pipeId nJobs binDistroFile srcDistroFile binRepoRelDir docDistroFile binDistroGlob pkgName indexHtml
 #
 # where:
 #     pipeId                Unique identifier for the parent delivery pipeline
