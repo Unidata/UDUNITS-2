@@ -137,5 +137,5 @@ if ! ssh $webHost test -e $pkgWebDir; then
     trap "ssh $webHost rm -rf $pkgWebDir; `trap -p ERR`" ERR
     gunzip -c $docDistroFile | 
         ssh $webHost "cd `dirname $pkgWebDir` && pax -r -s ';share/;$pkgId/;'"
-    ssh $webHost "cd $pkgWebDir && ln -s doc/$pkgName/${indexHtml} index.html"
+    ssh $webHost "cd $pkgWebDir && rm -f index.html && ln -s doc/$pkgName/${indexHtml} index.html"
     fi
