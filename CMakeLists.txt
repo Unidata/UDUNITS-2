@@ -157,6 +157,12 @@ ADD_SUBDIRECTORY (prog)
 # The documentation is in texinfo(5) format
 texi_doc(udunits2.texi version.texi COPYRIGHT)
 
+# Install CHANGE_LOG and COPYRIGHT
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/CHANGE_LOG" DESTINATION
+            ${CMAKE_INSTALL_DOCDIR})
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/COPYRIGHT" DESTINATION
+            ${CMAKE_INSTALL_DOCDIR})
+
 # Test the installation
 SET(util "${CMAKE_INSTALL_PREFIX}/bin/udunits2")
 IF(WIN32)
