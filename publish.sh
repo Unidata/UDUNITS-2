@@ -138,4 +138,5 @@ if ! ssh $webHost test -e $pkgWebDir; then
     gunzip -c $docDistroFile | 
         ssh $webHost "cd `dirname $pkgWebDir` && pax -r -s ';share/;$pkgId/;'"
     ssh $webHost "cd $pkgWebDir && rm -f index.html && ln -s doc/$pkgName/${indexHtml} index.html"
+    ssh $webHost "cd $pkgWebDir && rm -f CHANGE_LOG && ln -s doc/$pkgName/CHANGE_LOG CHANGE_LOG"
     fi
