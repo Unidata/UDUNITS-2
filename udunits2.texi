@@ -39,8 +39,8 @@ and value-conversion utility.
 * Introduction::        Introduction
 * Differences::		    How this package differs from the original UDUNITS package
 * Installation::        Installing this package
-* Utility::             The unit utility
 * Library::             The unit library
+* Utility::             The unit utility
 * Database::            The unit database
 * Support::             Support for this package
 * Complete Index::      Complete index
@@ -116,14 +116,41 @@ with gram in the new package.
 @cindex installation
 
 @menu
+* Binary::              Installing from a binary distribution
+* Source::              Installing from a source distribution
+@end menu
+
+@node Binary, Source, , Installation
+@section Installing from a Binary Distribution
+@cindex Installation, binary
+
+Currently, the only binary distribution that's supported is a 64-bit one for
+Centos 6.4. If this is appropriate for your computer, then create the file
+@code{/etc/yum.repos.d/unidata.repo} with the following contents:
+
+@example
+[unidata]
+name=Unidata Repository
+baseurl=ftp://ftp.unidata.ucar.edu/repo/CentOS/6/$basearch
+enabled=1
+@end example
+
+You should then be able to install this package by executing the 
+command @code{yum install udunits} as the superuser (i.e., "root").
+
+@node Source, , Binary, Installation
+@section Installing from a Source Distribution
+@cindex Installation, source
+
+@menu
 * Prerequisites::       Prerequisites for this package
 * Obtain::              Obtaining this package
 * Unix::                Installing on Unix-like environments
 * Windows::             Installing on Windows environments
 @end menu
 
-@node Prerequisites, Obtain, , Installation
-@section Prerequisites for this package
+@node Prerequisites, Obtain, , Source
+@subsection Prerequisites for This Package
 @cindex prerequisites for this package
 
 The Expat library and header-files must be installed. Look for the library 
@@ -137,8 +164,8 @@ If this package is to be built on a Windows system, then the CMake and MinGW
 packages must be installed. Look for the utility "cmake" and the
 directory/folder "MinGW".
 
-@node Obtain, Unix, Prerequisites, Installation
-@section Obtaining this Package
+@node Obtain, Unix, Prerequisites, Source
+@subsection Obtaining this Package
 @cindex obtaining this package
 
 Get this package from its download-page at
@@ -150,8 +177,8 @@ cd /usr/local/src
 gunzip -c udunits-@value{VERSION}.tar.gz | pax -r
 @end example
 
-@node Unix, Windows, Obtain, Installation
-@section Unix Installation Instructions
+@node Unix, Windows, Obtain, Source
+@subsection Unix Installation Instructions
 
 @menu
 * Autoconf::    Autoconf-based installation
@@ -159,9 +186,9 @@ gunzip -c udunits-@value{VERSION}.tar.gz | pax -r
 @end menu
 
 @node Autoconf, CMake, , Unix
-@subsection Autoconf-based installation
+@subsubsection Autoconf-based Installation
 
-@subsubsection Short instructions
+Short instructions:
 
 @example
 ./configure [--prefix=@var{root}] [--disable-shared] [CC=@var{path}]
@@ -174,7 +201,7 @@ make clean
 
 By default, the installation root is @code{/usr/local}.
 
-@subsubsection Long instructions
+Long instructions:
 
 @enumerate
 @item
@@ -259,7 +286,7 @@ from step 2:
 @end enumerate
 
 @node CMake, , Autoconf, Unix
-@subsection CMake-based installation
+@subsubsection CMake-based Installation
 
 @example
 cmake
@@ -268,8 +295,8 @@ make all [test] install [install_test]
 
 where the arguments in square brackets are optional.
 
-@node Windows, , Unix, Installation
-@section Windows Installation Instructions
+@node Windows, , Unix, Source
+@subsection Windows Installation Instructions
 
 Currently, only a 32-bit @uref{http://www.mingw.org,MinGW}-based installation is
 supported:
@@ -286,16 +313,16 @@ The default installation-prefix is
 @var{minor} and @var{bug} are the minor version and bug-fix level,
 respectively.
 
-@node Utility, Library, Installation, Top
+@node Library, Utility, Installation, Top
+@chapter Unit Library
+@cindex Library,  unit
+@xref{UDUNITS Library, , , udunits2lib}, for details on this package's unit library.
+
+@node Utility, Database, Library, Top
 @chapter Unit Utility
 @cindex Utility,  unit
 @xref{UDUNITS Utility, , , udunits2prog}, for details on this package's unit
 utility.
-
-@node Library, Database, Utility, Top
-@chapter Unit Library
-@cindex Library,  unit
-@xref{UDUNITS Library, , , udunits2lib}, for details on this package's unit library.
 
 @node Database, Support, Library, Top
 @chapter The Units Database
