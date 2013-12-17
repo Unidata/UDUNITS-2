@@ -111,7 +111,7 @@ the symbol @code{g}, which in the original package was associated with
 standard free fall (a unit of accelleration) but which is associated
 with gram in the new package.
 
-@node Installation, Utility, Differences, Top
+@node Installation, Library, Differences, Top
 @chapter Installing this Package
 @cindex installation
 
@@ -324,7 +324,7 @@ respectively.
 @xref{UDUNITS Utility, , , udunits2prog}, for details on this package's unit
 utility.
 
-@node Database, Support, Library, Top
+@node Database, Support, Utility, Top
 @chapter The Units Database
 @cindex database
 
