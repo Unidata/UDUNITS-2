@@ -135,8 +135,13 @@ baseurl=ftp://ftp.unidata.ucar.edu/repo/CentOS/6/$basearch
 enabled=1
 @end example
 
-You should then be able to install this package by executing the 
-command @code{yum install udunits} as the superuser (i.e., "root").
+You should then be able to install this package in the usual manner.
+For example,
+
+@example
+su -
+yum install udunits
+@end example
 
 @node Source, , Binary, Installation
 @section Installing from a Source Distribution
