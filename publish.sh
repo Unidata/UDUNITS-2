@@ -124,19 +124,34 @@ if ! ssh $srcRepoHost test -e $srcDistroPath; then
 fi
 
 pkgId=`basename $docDistroFile | sed 's/^\([^-]*-[0-9.]*\).*/\1/'`
-pkgWebDir=/web/content/software/$pkgName/$pkgId
+version=`echo $pkgId | sed 's/^[^-]*//'`
+pkgWebDir=/web/content/software/$pkgName
+versionWebDir=$pkgWebDir/$pkgId
 #
 # If the package's website doesn't have this version's documentation,
 #
-if ! ssh $webHost test -e $pkgWebDir; then
+if ! ssh $webHost test -e $versionWebDir; then
     #        
     # Provision the package's website with the documentation distribution. NB:
     # Assumes that the first component of all pathnames in the distribution is
     # "share/".
     #
-    trap "ssh $webHost rm -rf $pkgWebDir; `trap -p ERR`" ERR
+    trap "ssh $webHost rm -rf $versionWebDir; `trap -p ERR`" ERR
     gunzip -c $docDistroFile | 
-        ssh $webHost "cd `dirname $pkgWebDir` && pax -r -s ';share/;$pkgId/;'"
-    ssh $webHost "cd $pkgWebDir && rm -f index.html && ln -s doc/$pkgName/${indexHtml} index.html"
-    ssh $webHost "cd $pkgWebDir && cp doc/$pkgName/CHANGE_LOG .."
+        ssh $webHost "cd $pkgWebDir && pax -r -s ';share/;$pkgId/;'"
+    ssh $webHost "cd $versionWebDir && rm -f index.html && ln -s doc/$pkgName/${indexHtml} index.html"
+    ssh $webHost "cd $versionWebDir && cp doc/$pkgName/CHANGE_LOG $pkgWebDir"
+    ssh $webHost <<EOF
+        cd $pkgWebDir
+        sed -e '
+            /BEGIN VERSION LINKS/ {
+                p
+                a\\
+            <li><a href="$pkgId">$version</a>
+            }
+            /<li><a href="$pkgId">$version<\/a>/d
+        ' index.html >index.html.new
+        cp index.html index.html.old
+        mv index.html.new index.html
+EOF
 fi
