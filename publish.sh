@@ -124,7 +124,7 @@ if ! ssh $srcRepoHost test -e $srcDistroPath; then
 fi
 
 pkgId=`basename $docDistroFile | sed 's/^\([^-]*-[0-9.]*\).*/\1/'`
-version=`echo $pkgId | sed 's/^[^-]*//'`
+version=`echo $pkgId | sed 's/^[^-]*-//'`
 pkgWebDir=/web/content/software/$pkgName
 versionWebDir=$pkgWebDir/$pkgId
 #
@@ -145,7 +145,6 @@ if ! ssh $webHost test -e $versionWebDir; then
         cd $pkgWebDir
         sed -e '
             /BEGIN VERSION LINKS/ {
-                p
                 a\\
             <li><a href="$pkgId">$version</a>
             }
