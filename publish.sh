@@ -141,6 +141,9 @@ if ! ssh $webHost test -e $versionWebDir; then
         ssh $webHost "cd $pkgWebDir && pax -r -s ';share/;$pkgId/;'"
     ssh $webHost "cd $versionWebDir && rm -f index.html && ln -s doc/$pkgName/${indexHtml} index.html"
     ssh $webHost "cd $versionWebDir && cp doc/$pkgName/CHANGE_LOG $pkgWebDir"
+    #
+    # Ensure that the top-level HTML file contains a reference to this version.
+    #
     ssh $webHost <<EOF
         cd $pkgWebDir
         sed -e '
