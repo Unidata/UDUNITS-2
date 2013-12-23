@@ -168,13 +168,15 @@ directory/folder "MinGW".
 @subsection Obtaining this Package
 @cindex obtaining this package
 
-Get this package from its download-page at
-@uref{http://www.unidata.ucar.edu/downloads/udunits/}
-and unpack it in an appropriate place, e.g.,
+Get the source for this package from its download-page at
+@uref{ftp://ftp.unidata.ucar.edu/pub/udunits/}
+and unpack it in an appropriate place. For example,
 
 @example
+su -
 cd /usr/local/src
-gunzip -c udunits-@value{VERSION}.tar.gz | pax -r
+wget -O - ftp://ftp.unidata.ucar.edu/pub/udunits/udunits-@value{VERSION}-Source.tar.gz |
+gunzip -c | pax -r
 @end example
 
 @node Unix, Windows, Obtain, Source
