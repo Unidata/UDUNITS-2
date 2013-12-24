@@ -144,7 +144,7 @@ if ! ssh $webHost test -e $versionWebDir; then
     #
     # Ensure that the top-level HTML file contains a reference to this version.
     #
-    ssh $webHost <<EOF
+    ssh -T $webHost <<EOF
         cd $pkgWebDir
         sed -e '
             /BEGIN VERSION LINKS/ {
