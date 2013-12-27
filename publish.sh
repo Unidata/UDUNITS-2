@@ -146,6 +146,10 @@ if ! ssh $webHost test -e $versionWebDir; then
     #
     ssh -T $webHost <<EOF
         cd $pkgWebDir
+        #
+        # Ensure that the top-level HTML file contains a reference to this
+        # version.
+        #
         sed -e '
             /BEGIN VERSION LINKS/ {
                 a\\
@@ -155,5 +159,10 @@ if ! ssh $webHost test -e $versionWebDir; then
         ' index.html >index.html.new
         cp index.html index.html.old
         mv index.html.new index.html
+        #
+        # Set the curent-version symbolic link to the current version
+        #
+        rm -f $pkgName-current
+        ln -s $pkgId $pkgName-current
 EOF
 fi
