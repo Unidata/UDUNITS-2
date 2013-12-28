@@ -124,14 +124,15 @@ with the unit gram in version 2 of the package.
 @section Installing from a Binary Distribution
 @cindex Installation, binary
 
-Currently, the only binary distribution that's supported is a 64-bit one for
-Centos 6.4. If this is appropriate for your computer, then create the file
+Currently, the only supported binary distribution is for 64-bit 
+CentOS 6.4. If your computer is compatible with this (e.g., your computer is
+64-bit CentOS, Fedora, or RedHat), then create the file
 @code{/etc/yum.repos.d/unidata.repo} with the following contents:
 
 @example
 [unidata]
 name=Unidata Repository
-baseurl=ftp://ftp.unidata.ucar.edu/repo/CentOS/6/$basearch
+baseurl=http://www.unidata.ucar.edu/yum-repo/CentOS/6/$basearch
 enabled=1
 @end example
 
