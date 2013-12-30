@@ -24,6 +24,16 @@
 #     indexHtml             Name of the top-level HTML documentation file (e.g.,
 #                           "udunits2.html")
 
+pipeId=${1:?Group ID not specified}
+nJobs=${2:?Number of upstream jobs not specified}
+binDistroFile=${3:?Binary distribution file not specified}
+srcDistroFile=${4:?Source distribution file not specified}
+binRepoRelDir=${5:?Relative pathname of binary repository directory not specified}
+docDistroFile=${6:?Documentation distribution file not specified}
+binDistroGlob=${7:?Release-independent, version-dependent filename glob pattern not specified}
+pkgName=${8:?Package name not specified}
+indexHtml=${9:?Top-level HTML documentation-file not specified}
+
 binRepoHost=spock                # Name of computer hosting binary repository
 binRepoRoot=repo                 # Pathname of the root directory of the binary
                                  # repository. A relative pathname is resolved
@@ -48,16 +58,6 @@ decidable() {
 success() {
     test `ls $jobId.success 2>/dev/null | wc -w` -ge $nJobs
 }
-
-pipeId=${1:?Group ID not specified}
-nJobs=${2:?Number of upstream jobs not specified}
-binDistroFile=${3:?Binary distribution file not specified}
-srcDistroFile=${4:?Source distribution file not specified}
-binRepoRelDir=${5:?Relative pathname of binary repository directory not specified}
-docDistroFile=${6:?Documentation distribution file not specified}
-binDistroGlob=${7:?Release-independent, version-dependent filename glob pattern not specified}
-pkgName=${8:?Package name not specified}
-indexHtml=${9:?Top-level HTML documentation-file not specified}
 
 #
 # Ensure valid pathnames.
