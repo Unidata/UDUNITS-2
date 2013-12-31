@@ -104,47 +104,9 @@ if ! ssh $srcRepoHost test -e $srcDistroPath; then
     scp $srcDistroFile $srcRepoHost:$srcDistroPath
 fi
 
-# Set some variables for managing the package's website.
+# Upload the documentation to the package's website.
 #
 pkgId=`basename $docDistroFile | sed 's/^\([^-]*-[0-9.]*\).*/\1/'`
 version=`echo $pkgId | sed 's/^[^-]*-//'`
 pkgWebDir=/web/content/software/$pkgName
-versionWebDir=$pkgWebDir/$pkgId
-
-# If the package's website doesn't have this version's documentation,
-#
-if ! ssh $webHost test -e $versionWebDir; then
-    # Provision the package's website with the documentation distribution. NB:
-    # Assumes that the first component of all pathnames in the distribution is
-    # "share/".
-    #
-    trap "ssh $webHost rm -rf $versionWebDir; `trap -p ERR`" ERR
-    gunzip -c $docDistroFile | 
-        ssh $webHost "cd $pkgWebDir && pax -r -s ';share/;$pkgId/;'"
-    ssh $webHost "cd $versionWebDir && rm -f index.html && ln -s doc/$pkgName/${indexHtml} index.html"
-    ssh $webHost "cd $versionWebDir && cp doc/$pkgName/CHANGE_LOG $pkgWebDir"
-
-    # Ensure that the top-level HTML file contains a reference to this version.
-    #
-    ssh -T $webHost <<EOF
-        cd $pkgWebDir
-
-        # Ensure that the top-level HTML file contains a reference to this
-        # version.
-        #
-        sed -e '
-            /BEGIN VERSION LINKS/ {
-                a\\
-            <li><a href="$pkgId">$version</a>
-            }
-            /<li><a href="$pkgId">$version<\/a>/d
-        ' index.html >index.html.new
-        cp index.html index.html.old
-        mv index.html.new index.html
-
-        # Set the curent-version symbolic link to the current version
-        #
-        rm -f $pkgName-current
-        ln -s $pkgId $pkgName-current
-EOF
-fi
+ssh -T $webHost $pkgWebDir/upload $version $indexHtml <$docDistroFile
