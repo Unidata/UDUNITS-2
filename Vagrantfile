@@ -7,7 +7,6 @@ VAGRANTFILE_API_VERSION = "2"
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.define "centos64_64" do |centos64_64|
     centos64_64.vm.box = "centos-6.4-x86_64-devel"
-    centos64_64.vm.network "private_network", ip: "192.168.56.102"
     centos64_64.vm.provision :puppet do |puppet|
       puppet.manifests_path = "puppet"
       puppet.manifest_file = "centos-devel.pp"
@@ -16,7 +15,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
   config.vm.define "ubuntu12_32" do |ubuntu12_32|
     ubuntu12_32.vm.box = "precise32"
-    ubuntu12_32.vm.network "private_network", ip: "192.168.56.103"
     ubuntu12_32.vm.provision :puppet do |puppet|
       puppet.manifests_path = "puppet"
       puppet.manifest_file = "ubuntu-devel.pp"
