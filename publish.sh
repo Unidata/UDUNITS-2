@@ -109,4 +109,4 @@ fi
 pkgId=`basename $docDistroFile | sed 's/^\([^-]*-[0-9.]*\).*/\1/'`
 version=`echo $pkgId | sed 's/^[^-]*-//'`
 pkgWebDir=/web/content/software/$pkgName
-ssh -T $webHost $pkgWebDir/upload $version $indexHtml <$docDistroFile
+ssh -T $webHost bash -x $pkgWebDir/upload $version $indexHtml <$docDistroFile
