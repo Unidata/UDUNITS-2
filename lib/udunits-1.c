@@ -379,7 +379,7 @@ resultingUnit(
     }
     else if (result != NULL) {
 	if (setUnit(result, unit2) != 0) {
-	    result == NULL;
+	    result = NULL;
 	}
     }
     return result;

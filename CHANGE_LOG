@@ -1,3 +1,7 @@
+2.2.1
+    Squashed bug in UDUNITS-1 interface that would not indicate an error if an
+    ENOMEM error occurred.
+
 2.2.0
     New Features:
         Program udunits2(1):
