@@ -51,8 +51,9 @@ mv version.texi.tmp version.texi
 #
 if ! test $versionId = $PKG_VERSION; then
     #
-    # A new package version is being released. Reset the release number.
+    # A new package version is being released. Reset.
     #
+    PKG_VERSION=$versionId
     PKG_RELEASE=1
 else
     #
