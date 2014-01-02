@@ -1,6 +1,11 @@
 2.2.1
-    Squashed bug in UDUNITS-1 interface that would not indicate an error if an
-    ENOMEM error occurred.
+    UDUNITS-1 Interface:
+        Squashed bug in UDUNITS-1 interface that would not indicate an error if
+        an ENOMEM error occurred.
+
+    Documentation:
+        Corrected name of installation-prefix variable in cmake build example
+        for Windows (UDUNITS_INSTALL_PREFIX -> CMAKE_INSTALL_PREFIX).
 
 2.2.0
     New Features:

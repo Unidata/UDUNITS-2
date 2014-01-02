@@ -311,7 +311,7 @@ supported:
 
 @example
 cmake -G "MinGW Makefiles"
-cmake --build . [-DUDUNITS_INSTALL_PREFIX=@emph{dir}] -- all [test] install [install_test]
+cmake --build . [-DCMAKE_INSTALL_PREFIX=@emph{dir}] -- all [test] install [install_test]
 @end example
 
 where arguments in square brackets are optional.
