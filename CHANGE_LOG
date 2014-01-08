@@ -1,3 +1,9 @@
+2.2.2
+    Documentation:
+        Changed URL of Unidata yum(1) repository from 
+        <http://www.unidata.ucar.edu/yum-repo/CentOS/6/$basearch> to
+        <http://www.unidata.ucar.edu/repos/yum/CentOS/6/$basearch>.
+
 2.2.1
     UDUNITS-1 Interface:
         Squashed bug in UDUNITS-1 interface that would not indicate an error if
