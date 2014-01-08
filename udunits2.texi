@@ -132,7 +132,7 @@ CentOS 6.4. If your computer is compatible with this (e.g., your computer is
 @example
 [unidata]
 name=Unidata Repository
-baseurl=http://www.unidata.ucar.edu/yum-repo/CentOS/6/$basearch
+baseurl=http://www.unidata.ucar.edu/repos/yum/CentOS/6/$basearch
 enabled=1
 @end example
 
