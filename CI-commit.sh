@@ -8,6 +8,7 @@ set -e  # exit if error
 #
 # Build and test the package and create a source-distribution.
 #
+autoreconf -i --force
 ./configure &>configure.log
 make distcheck
 rm -rf build
