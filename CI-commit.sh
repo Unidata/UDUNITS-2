@@ -8,6 +8,8 @@ set -e  # exit if error
 #
 # Build and test the package and create a source-distribution.
 #
+./configure &>configure.log
+make distcheck
 rm -rf build
 mkdir build
 cd build
