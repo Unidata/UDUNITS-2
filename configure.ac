@@ -129,6 +129,5 @@ AC_CONFIG_FILES([Makefile
                  lib/Makefile
                  lib/xmlFailures/Makefile
                  lib/xmlSuccesses/Makefile
-		 prog/Makefile
-		 test/Makefile])
+		 prog/Makefile])
 AC_OUTPUT

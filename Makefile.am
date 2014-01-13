@@ -7,9 +7,8 @@
 ## Process this file with automake to produce Makefile.in
 ACLOCAL_AMFLAGS		= -I m4
 SUBDIRS			= lib prog
-DIST_SUBDIRS		= lib prog test
+DIST_SUBDIRS		= lib prog
 info_TEXINFOS		= udunits2.texi
-udunits2_TEXINFOS	= success.texi failure.texi make.texi
 EXTRA_DIST = \
     ANNOUNCEMENT \
     CHANGE_LOG \
@@ -24,57 +23,6 @@ RSYNC_FLAGS	= --rsh=ssh --rsync-path=/opt/bin/rsync
 distName = $(PACKAGE)-$(VERSION)
 distArchive = $(distName).tar.gz
 DISTCLEANFILES	= *.log $(distArchive)
-
-success.texi:	test/results.tab
-	sleep 2	# to accomodate broken HP-UX B.11.00 make(1)
-	sort -u -t : -k 2,2 -k 4,4 -k 5,5 test/results.tab | \
-	awk -F: ' \
-	    BEGIN { \
-		print "@multitable {@code{Linux 2.6.18-1.2257.fc5smp}} {@code{/opt/csw/gcc4/bin/gcc}} {@code{--disable-shared}}"; \
-		print "@headitem O/S @tab Compiler @tab @code{configure} Option"; \
-	    } \
-	    $$6 == 1 { \
-		printf "@item @code{%s} @tab @code{%s} @tab @code{%s}\n", \
-		    $$2, $$4, $$5; \
-	    } \
-	    END { \
-		print "@end multitable"; \
-	    }' >$@
-	sleep 2	# to accomodate broken HP-UX B.11.00 make(1)
-
-failure.texi:	test/results.tab
-	sleep 2	# to accomodate broken HP-UX B.11.00 make(1)
-	sort -u -t : -k 2,2 -k 4,4 -k 5,5 test/results.tab | \
-	awk -F: ' \
-	    BEGIN { \
-		print "@multitable {@code{Linux 2.6.18-1.2257.fc5smp}} {@code{/opt/SUNWspro/bin/c99}} {@code{--disable-shared}}"; \
-		print "@headitem O/S @tab Compiler @tab @code{configure} Option"; \
-	    } \
-	    $$6 == 0 { \
-		printf "@item @code{%s} @tab @code{%s} @tab @code{%s}\n", \
-		    $$2, $$4, $$5; \
-	    } \
-	    END { \
-		print "@end multitable"; \
-	    }' >$@
-	sleep 2	# to accomodate broken HP-UX B.11.00 make(1)
-
-make.texi:	test/results.tab
-	sleep 2	# to accomodate broken HP-UX B.11.00 make(1)
-	awk -F: '$$6 == 1 {printf "%s:%s\n", $$2, $$3}' test/results.tab | \
-	sort -t : -u | \
-	awk -F: ' \
-	    BEGIN { \
-		print "@multitable {@code{Linux 2.6.18-1.2257.fc5smp}} {@code{/usr/bin/posix/make}}"; \
-		print "@headitem O/S @tab @code{make} Utility"; \
-	    } \
-	    { \
-		printf "@item @code{%s} @tab @code{%s}\n", $$1, $$2; \
-	    } \
-	    END { \
-		print "@end multitable"; \
-	    }' >$@
-	sleep 2	# to accomodate broken HP-UX B.11.00 make(1)
 
 remote-checks:	dist
 	cd test && $(MAKE) $(AM_MAKEFLAGS) $@
@@ -114,9 +62,9 @@ available:	ftp web-update download-update
 .PHONY:	hostchecks hostcheck remote-checks web-update ftp \
 	download-update available
 
-udunits2.info:	version.texi success.texi failure.texi make.texi COPYRIGHT
-udunits2.html:	version.texi success.texi failure.texi make.texi COPYRIGHT
-udunits2.pdf:	version.texi success.texi failure.texi make.texi COPYRIGHT
+udunits2.info:	version.texi COPYRIGHT
+udunits2.html:	version.texi COPYRIGHT
+udunits2.pdf:	version.texi COPYRIGHT
 
 $(srcdir)/version.texi:  $(srcdir)/stamp-vti
 	@cp $(srcdir)/stamp-vti $@
