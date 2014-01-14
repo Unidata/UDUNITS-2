@@ -46,20 +46,19 @@ mv version.texi.tmp version.texi
 . package.properties
 
 #
-# If the current package version differs from that of the previous release
-# (i.e., the previous invocation of this script),
+# If the package version is the same as the previous release,
 #
-if ! test $versionId = $PKG_VERSION; then
+if test $versionId = $PKG_VERSION; then
     #
-    # A new package version is being released. Reset.
+    # Just the release number needs to be incremented.
+    #
+    PKG_RELEASE=$(($PKG_RELEASE + 1))
+else
+    #
+    # The version is new and the release number needs to be reset.
     #
     PKG_VERSION=$versionId
     PKG_RELEASE=1
-else
-    #
-    # The same package version is being released. Increment the release number.
-    #
-    PKG_RELEASE=$(($PKG_RELEASE + 1))
 fi
 
 #
