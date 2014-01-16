@@ -1,6 +1,6 @@
-# Copyright 2008, 2009 University Corporation for Atmospheric Research
+# Copyright 2013 University Corporation for Atmospheric Research
 #
-# This file is part of the UDUNITS-2 package.  See the file LICENSE
+# This file is part of the UDUNITS-2 package.  See the file COPYRIGHT
 # in the top-level source-directory of the package for copying and
 # redistribution conditions.
 #
@@ -32,7 +32,6 @@ info_TEXINFOS 	= udunits2lib.texi
 #pdf_DATA = udunits2lib.pdf
 AM_MAKEINFOFLAGS = -I $(top_srcdir)
 AM_MAKEINFOHTMLFLAGS = --no-split -I $(top_srcdir)
-AM_CPPFLAGS    = -DDEFAULT_UDUNITS2_XML_PATH='"$(pkgdatadir)/udunits2.xml"'
 libudunits2_la_LDFLAGS	= -version-number 0:1:0
 
 lex_prefix = ut
@@ -41,6 +40,7 @@ LFLAGS = -d -P$(lex_prefix)
 
 include_HEADERS = udunits2.h converter.h
 EXTRA_DIST = \
+    CMakeLists.txt \
     parser.c \
     scanner.l \
     scanner.c \
@@ -58,10 +58,8 @@ if HAVE_CUNIT
 LDADD			= \
     libudunits2.la \
     @LD_CUNIT@ \
-    @LIBS_COVERAGE@
-if COND_EXPAT
-    LDADD		+= ../expat/libexpat.la
-endif
+    @LIBS_COVERAGE@ \
+    @LIBS@
 check_PROGRAMS		= testUnits
 TESTS_ENVIRONMENT	= UDUNITS2_XML_PATH='$(srcdir)/udunits2.xml'
 TESTS = testUnits
@@ -78,7 +76,7 @@ endif
 
 DISTCLEANFILES	= *.log
 MOSTLYCLEANFILES = lint.log *.ln *.i core core.[0-9]* *.gcov *.gcda *.gcno
-TAGS_FILES = parser.c $(top_srcdir)/expat/*.c $(top_srcdir)/expat/*.h
+TAGS_FILES = parser.c
 
 LINTFLAGS	= -u
 LINT		= lint

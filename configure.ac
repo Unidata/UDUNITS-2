@@ -1,9 +1,9 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 #
-# Copyright 2011 University Corporation for Atmospheric Research
+# Copyright 2013 University Corporation for Atmospheric Research
 #
-# This file is part of the UDUNITS-2 package.  See the file LICENSE
+# This file is part of the UDUNITS-2 package.  See the file COPYRIGHT
 # in the top-level source-directory of the package for terms and
 # conditions.
 #
@@ -12,8 +12,9 @@ AC_PREREQ(2.59)
 AC_INIT(UDUNITS, 2.1.24, support-udunits@unidata.ucar.edu)
 AC_CONFIG_SRCDIR([lib/converter.c])
 AC_CONFIG_AUX_DIR([.])
+AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([foreign subdir-objects])
-AC_CONFIG_HEADERS([config.h expat/expat_config.h])
+AC_CONFIG_HEADERS([config.h])
 
 CFLAGS_COVERAGE=''
 LIBS_COVERAGE=''
@@ -64,6 +65,15 @@ AC_ARG_ENABLE([udunits-1],
 CFLAGS=${CFLAGS:--O}
 CPPFLAGS=${CPPFLAGS:--DNDEBUG}
 
+# The default absolute pathname of the installed units database. "pkgdatadir"
+# isn't a configure-variable in the normal sense: it doesn't appear in 
+# "config.status" yet appears in "Makefile"; consequently, the following
+# nonsense just to avoid defining the pathname in the makefile so that Eclipse
+# is happy.
+pkgdatadir=$(eval echo $(eval echo `echo ${datadir}`/${PACKAGE}))
+AC_DEFINE_UNQUOTED([DEFAULT_UDUNITS2_XML_PATH], ["${pkgdatadir}/udunits2.xml"],
+    [The default absolute pathname of the installed units database])
+
 # Checks for programs.
 AC_PROG_CC
 AM_PROG_CC_C_O
@@ -79,15 +89,15 @@ AC_PROG_LN_S
 AC_PROG_MAKE_SET
 AC_PROG_YACC
 AM_PROG_LEX
+AC_PROG_FC
 
 # Checks for libraries.
 AC_SEARCH_LIBS([dirname], [gen], , 
     AC_MSG_ERROR([cannot find function dirname]))
 AC_SEARCH_LIBS([log10], [m], , 
     AC_MSG_ERROR([cannot find function log10]))
-AC_SEARCH_LIBS([XML_StopParser], [expat], [need_expat=no], 
-    [need_expat=yes])
-AM_CONDITIONAL([COND_EXPAT], test "$need_expat" = yes)
+AC_SEARCH_LIBS([XML_StopParser], [expat], , 
+    AC_MSG_ERROR([cannot find EXPAT function XML_StopParser]))
 
 # Checks for header files.
 AC_HEADER_STDC
@@ -110,23 +120,14 @@ AM_CONDITIONAL([HAVE_CUNIT], [test "$LD_CUNIT"])
 AC_C_CONST
 AC_TYPE_SIZE_T
 
-# Needed for the Expat subpackage:
-AC_C_BIGENDIAN([byteorder=4321], [byteorder=1234])
-AC_DEFINE_UNQUOTED([BYTEORDER], [$byteorder],
-    [Define to 4321 for big-endian and 1234 for little-endian])
-AC_DEFINE([XML_CONTEXT_BYTES], 1024,
-    [How much context to retain around the current parse point.])
-
 # Checks for library functions.
 AC_CHECK_FUNCS([floor memmove memset modf pow strcasecmp strdup strpbrk])
 
 AC_PROG_LIBTOOL
 
 AC_CONFIG_FILES([Makefile
-		 expat/Makefile
                  lib/Makefile
                  lib/xmlFailures/Makefile
                  lib/xmlSuccesses/Makefile
-		 prog/Makefile
-		 test/Makefile])
+		 prog/Makefile])
 AC_OUTPUT

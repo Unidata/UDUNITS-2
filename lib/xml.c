@@ -1,7 +1,7 @@
 /*
- * Copyright 2008, 2009 University Corporation for Atmospheric Research
+ * Copyright 2013 University Corporation for Atmospheric Research
  *
- * This file is part of the UDUNITS-2 package.  See the file LICENSE
+ * This file is part of the UDUNITS-2 package.  See the file COPYRIGHT
  * in the top-level source-directory of the package for copying and
  * redistribution conditions.
  */
@@ -11,6 +11,8 @@
  */
 
 /*LINTLIBRARY*/
+
+#include <config.h>
 
 #ifndef	_XOPEN_SOURCE
 #   define _XOPEN_SOURCE 500
@@ -31,6 +33,10 @@
 
 #include "expat.h"
 #include "udunits2.h"
+
+#ifndef _XOPEN_PATH_MAX
+#   define _XOPEN_PATH_MAX 1024
+#endif
 
 #define NAME_SIZE 128
 #define ACCUMULATE_TEXT \
@@ -1573,7 +1579,7 @@ startNoPlural(
     void*		data,
     const char**	atts)
 {
-    if (currFile->context != UNIT_NAME || currFile->context != ALIAS_NAME) {
+    if (currFile->context != UNIT_NAME && currFile->context != ALIAS_NAME) {
         ut_set_status(UT_PARSE);
 	ut_handle_error_message("Wrong place for <noplural> element");
 	XML_StopParser(currFile->parser, 0);
@@ -1780,7 +1786,7 @@ static void
 endImport(
     void*		data)
 {
-    char        buf[_POSIX_PATH_MAX];
+    char        buf[_XOPEN_PATH_MAX];
     const char* path;
 
     if (text[0] == '/') {
@@ -2057,7 +2063,7 @@ readXml(
         ut_handle_error_message("Couldn't create XML parser");
     }
     else {
-        char        base[_POSIX_PATH_MAX];
+        char        base[_XOPEN_PATH_MAX];
 
         (void)strncpy(base, path, sizeof(base));
         base[sizeof(base)-1] = 0;
@@ -2085,31 +2091,61 @@ readXml(
 }
 
 
-/*
+/**
+ * Returns the pathname of the XML database.
+ *
+ * @param path      The pathname of the XML file or NULL.
+ * @param status    Status. One of UT_OPEN_ARG, UT_OPEN_ENV, or UT_OPEN_DEFAULT.
+ * @return          If "path" is not NULL, then it is returned; otherwise, the
+ *                  pathname specified by the environment variable
+ *                  UDUNITS2_XML_PATH is returned if set; otherwise, the
+ *                  compile-time pathname of the installed, default, unit
+ *                  database is returned.
+ */
+const char*
+ut_get_path_xml(
+	const char*	path,
+	ut_status*  status)
+{
+    if (path != NULL) {
+    	*status = UT_OPEN_ARG;
+    }
+    else {
+    	path = getenv("UDUNITS2_XML_PATH");
+
+    	if (path != NULL) {
+        	*status = UT_OPEN_ENV;
+    	}
+    	else {
+          	path = DEFAULT_UDUNITS2_XML_PATH;
+        	*status = UT_OPEN_DEFAULT;
+    	}
+    }
+    return path;
+}
+
+
+/**
  * Returns the unit-system corresponding to an XML file.  This is the usual way
  * that a client will obtain a unit-system.
  *
- * Arguments:
- *	path	The pathname of the XML file or NULL.  If NULL, then the
- *		pathname specified by the environment variable UDUNITS2_XML_PATH
- *		is used if set; otherwise, the compile-time pathname of the
- *		installed, default, unit database is used.
- * Returns:
- *	NULL	Failure.  "ut_get_status()" will be
- *		    UT_OPEN_ARG		"path" is non-NULL but file couldn't be
- *					opened.  See "errno" for reason.
- *		    UT_OPEN_ENV		"path" is NULL and environment variable
- *					UDUNITS2_XML_PATH is set but file
- *					couldn't be opened.  See "errno" for
- *					reason.
- *		    UT_OPEN_DEFAULT	"path" is NULL, environment variable
- *					UDUNITS2_XML_PATH is unset, and the
- *					installed, default, unit database
- *					couldn't be opened.  See "errno" for
- *					reason.
- *		    UT_PARSE		Couldn't parse unit database.
- *		    UT_OS		Operating-system error.  See "errno".
- *	else	Pointer to the unit-system defined by "path".
+ * @param path	The pathname of the XML file or NULL.  If NULL, then the
+ *              pathname specified by the environment variable UDUNITS2_XML_PATH
+ *              is used if set; otherwise, the compile-time pathname of the
+ *              installed, default, unit database is used.
+ * @retval NULL Failure. "ut_get_status()" will be one of the following:
+ *	                UT_OPEN_ARG     "path" is non-NULL but file couldn't be
+ *	                                opened. See "errno" for reason.
+ *                  UT_OPEN_ENV     "path" is NULL and environment variable
+ *                                  UDUNITS2_XML_PATH is set but file couldn't
+ *                                  be opened.  See "errno" for reason.
+ *                  UT_OPEN_DEFAULT	"path" is NULL, environment variable
+ *                                  UDUNITS2_XML_PATH is unset, and the
+ *                                  installed, default, unit database couldn't
+ *                                  be opened. See "errno" for reason.
+ *                  UT_PARSE        Couldn't parse unit database.
+ *                  UT_OS           Operating-system error.  See "errno".
+ * @return      Pointer to the unit-system defined by "path".
  */
 ut_system*
 ut_read_xml(
@@ -2126,22 +2162,7 @@ ut_read_xml(
         ut_status       status;
         ut_status       openError;
 
-        if (path != NULL) {
-            openError = UT_OPEN_ARG;
-        }
-        else {
-            path = getenv("UDUNITS2_XML_PATH");
-
-            if (path != NULL) {
-                openError = UT_OPEN_ENV;
-            }
-            else {
-                path = DEFAULT_UDUNITS2_XML_PATH;
-                openError = UT_OPEN_DEFAULT;
-            }
-        }
-
-        status = readXml(path);
+        status = readXml(ut_get_path_xml(path, &openError));
 
         if (status == UT_OPEN_ARG) {
             status = openError;

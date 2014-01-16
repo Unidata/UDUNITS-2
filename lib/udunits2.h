@@ -1,7 +1,7 @@
 /*
- * Copyright 2008, 2009 University Corporation for Atmospheric Research
+ * Copyright 2013 University Corporation for Atmospheric Research
  *
- * This file is part of the UDUNITS-2 package.  See the file LICENSE
+ * This file is part of the UDUNITS-2 package.  See the file COPYRIGHT
  * in the top-level source-directory of the package for copying and
  * redistribution conditions.
  */
@@ -16,7 +16,7 @@
 typedef struct ut_system	ut_system;
 typedef union ut_unit		ut_unit;
 
-typedef enum {
+enum utStatus {
     UT_SUCCESS = 0,	/* Success */
     UT_BAD_ARG,	        /* An argument violates the function's contract */
     UT_EXISTS,		/* Unit, prefix, or identifier already exists */
@@ -33,14 +33,16 @@ typedef enum {
     UT_OPEN_ENV,	/* Can't open environment-specified unit database */
     UT_OPEN_DEFAULT,	/* Can't open installed, default, unit database */
     UT_PARSE		/* Error parsing unit specification */
-} ut_status;
+};
+typedef enum utStatus          ut_status;
 
-typedef enum {
+enum utEncoding {
     UT_ASCII = 0,
     UT_ISO_8859_1 = 1,
     UT_LATIN1 = UT_ISO_8859_1,
     UT_UTF8 = 2
-} ut_encoding;
+};
+typedef enum utEncoding        ut_encoding;
 
 #define UT_NAMES	4
 #define UT_DEFINITION	8
@@ -49,7 +51,7 @@ typedef enum {
 /*
  * Data-structure for a visitor to a unit:
  */
-typedef struct {
+typedef struct ut_visitor {
     /*
      * Visits a basic-unit.  A basic-unit is a base unit like "meter" or a non-
      * dimensional but named unit like "radian".
@@ -145,6 +147,22 @@ extern "C" {
  * Unit System:
  ******************************************************************************/
 
+
+/**
+ * Returns the pathname of the XML database.
+ *
+ * @param path      The pathname of the XML file or NULL.
+ * @param status    Status. One of UT_OPEN_ARG, UT_OPEN_ENV, or UT_OPEN_DEFAULT.
+ * @return          If "path" is not NULL, then it is returned; otherwise, the
+ *                  pathname specified by the environment variable
+ *                  UDUNITS2_XML_PATH is returned if set; otherwise, the
+ *                  compile-time pathname of the installed, default, unit
+ *                  database is returned.
+ */
+const char*
+ut_get_path_xml(
+	const char*	path,
+	ut_status*  status);
 
 /*
  * Returns the unit-system corresponding to an XML file.  This is the usual way

@@ -2,7 +2,7 @@
 <!--
 Copyright 2008, 2009 University Corporation for Atmospheric Research
 
-This file is part of the UDUNITS-2 package.  See the file LICENSE
+This file is part of the UDUNITS-2 package.  See the file COPYRIGHT
 in the top-level source-directory of the package for copying and
 redistribution conditions.
 
@@ -1631,10 +1631,23 @@ elements appear only within <aliases>.
             </aliases>
         </unit>
         <unit>
+            <def>1</def>
+            <aliases>
+                <name> <singular>bit</singular> </name>
+            </aliases>
+        </unit>
+        <unit>
             <def>446.2 micromoles/meter^2</def>
             <aliases>
                 <name> <singular>dobson</singular> </name>
                 <symbol>DU</symbol>
+            </aliases>
+        </unit>
+        <unit>
+            <def>mol/6.02214129e23</def> <!-- NIST 20130402 -->
+            <name><singular>molecule</singular></name>
+            <aliases>
+                <name><singular>molec</singular></name>
             </aliases>
         </unit>
 </unit-system>

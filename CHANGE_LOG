@@ -1,3 +1,67 @@
+2.2.3	2014-01-14T12:30:37-0700
+    Added vetting of the autoconf-based build to the continuous-delivery
+    pipeline.
+
+2.2.2
+    Documentation:
+        Changed URL of Unidata yum(1) repository from 
+        <http://www.unidata.ucar.edu/yum-repo/CentOS/6/$basearch> to
+        <http://www.unidata.ucar.edu/repos/yum/CentOS/6/$basearch>.
+
+2.2.1
+    UDUNITS-1 Interface:
+        Squashed bug in UDUNITS-1 interface that would not indicate an error if
+        an ENOMEM error occurred.
+
+    Documentation:
+        Corrected name of installation-prefix variable in cmake build example
+        for Windows (UDUNITS_INSTALL_PREFIX -> CMAKE_INSTALL_PREFIX).
+
+2.2.0
+    New Features:
+        Program udunits2(1):
+            Added "-H have" and "-W want" options.
+    
+            Added support for numeric unit amount so that "0 degC" equals "32
+            degF".
+    
+        Library udunits2(3):
+            Added ut_get_path_xml() to retrieve pathname of XML unit database.
+                
+        Units Database:
+            Added units "molecule" (for conversion with "mole") and "bit".
+
+        Misc:
+            Removed bundled EXPAT package.
+                
+            Ported code to 32-bit Windows-7 under MinGW.
+            
+            Added explicit chapters on the unit utility and unit library to the
+            top-level package documentation.
+
+    Bug Fixes:
+        Library udunits2(3):
+            Corrected logic of checking for location of <noplural> element.
+    
+        Units Database:
+            Corrected ISO Latin-1 encodings that somehow got corrupted.
+    
+    Release Engineering:
+        Added support for building by CMake and for creating binary
+        distributions by CPack.
+
+        Added scripts and configuration-files to support continuous-delivery.
+
+        Added acceptance-test scripts for 32-bit Ubuntu 12 (Precise Pangolin)
+        and 32-bit Windows-7. Currently, only the Ubuntu script is used in the
+        continuous-delivery pipeline.
+    
+    Misc:
+        Changed file LICENSE to COPYRIGHT and corrected copyright year in many
+        files.
+        
+        Refactored the documentation to make it more version aware.
+
 2.1.24  2011-09-12 15:01-600
         Removed superfluous "the" from library documentation.
 

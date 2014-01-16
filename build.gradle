@@ -1,0 +1,184 @@
+apply plugin: 'cpp'
+//apply plugin: 'cpp-lib'
+//apply plugin: 'cpp-exe'
+
+version = '2.1.25'
+group = 'edu.ucar.unidata'
+description = "Units of Physical Quantities"
+
+/*
+ * Apparently, there is no Maven repository for the Expat development package;
+ * consequently, the dependency on that package is explicitly managed.
+ */
+task checkExpat(type: Exec) {
+  ignoreExitValue = true
+  standardOutput = new ByteArrayOutputStream()
+  commandLine 'yum', 'info', 'expat-devel'
+}
+task ensureExpat(type: Exec, dependsOn: 'checkExpat') {
+  onlyIf {
+    checkExpat.execResult.getExitValue() != 0
+  }
+  commandLine 'yum', 'install', 'expat-devel'
+}
+
+/*
+ * Build the HTML documentation from texinfo(5) files.
+ */
+task ensureLibHtml(type: Exec) {
+  onlyIf { !new File("src/lib/udunits2lib.html").exists() }
+  workingDir "src/lib"
+  commandLine 'makeinfo', '--html', '--no-split', '-o', 'udunits2lib.html', 'udunits2lib.texi'
+}
+task ensureProgHtml(type: Exec) {
+  onlyIf { !new File("src/prog/udunits2prog.html").exists() }
+  workingDir "src/prog"
+  commandLine 'makeinfo', '--html', '--no-split', '-o', 'udunits2prog.html', 'udunits2prog.texi'
+}
+task ensureHtml(type: Exec, dependsOn: ['ensureLibHtml', 'ensureProgHtml']) {
+  onlyIf { !new File("src/udunits2.html").exists() }
+  workingDir "src"
+  commandLine 'makeinfo', '--html', '--no-split', '-o', 'udunits2.html', 'udunits2.texi'
+}
+
+/*
+ * Build the parser of unit specifications from yacc(1) and lex(1) input.
+ */
+task parser(type: Exec) {
+  onlyIf { !new File("src/lib/parser.c").exists() }
+  workingDir "src/lib"
+  commandLine 'bison', '-t', '-p', 'ut', '-o', 'parser.c', 'parser.y'
+}
+task scanner(type: Exec) {
+  onlyIf { !new File("src/lib/scanner.c").exists() }
+  workingDir "src/lib"
+  commandLine 'flex', '-d', '-P', 'ut', '-o', 'scanner.c', 'scanner.l'
+}
+
+sources {
+  lib {
+    c {
+      source {
+        srcDirs = ["src/lib"]
+        include "*.c"
+        exclude "scanner.c", "test*.c"
+      }
+      exportedHeaders {
+        srcDirs = ["src/lib"]
+        include "udunits.h"
+        include "udunits2.h"
+        include "converter.h"
+      }
+    }
+  }
+  exe {
+    c {
+      source {
+        srcDirs = ["src/prog"]
+        include "*.c"
+      }
+    }
+  }
+}
+
+libCExtractHeaders.dependsOn parser
+libCExtractHeaders.dependsOn scanner
+
+libraries {
+  main {
+    source sources.lib
+    binaries.all {
+      compilerArgs "-DDEFAULT_UDUNITS2_XML_PATH=\"${projectDir}" +
+        '/share/udunits/udunits2.xml"'
+    }
+  }
+}
+
+/*
+ * The following dependency requires use of "afterEvaluate" because the task
+ * "mainSharedLibrary" doesn't exist until after this entire file is parsed
+ * and then the "sources" section is evaluated.
+ */
+afterEvaluate {
+    mainSharedLibrary.dependsOn ensureExpat
+}
+
+executables {
+  main {
+    source sources.exe
+    binaries.all {
+      lib libraries.main.shared
+      compilerArgs "-I" + projectDir.toString() + "/src/lib"
+      linkerArgs "-lexpat"
+    }
+  }
+}
+
+def libTask = "${name}SharedLibrary"
+
+task "installLib"(dependsOn: "mainSharedLibrary", type: Copy) {
+  from "${buildDir}/binaries/$libTask"
+  into "lib"
+}
+
+task installHeaders(type: Copy) {
+  from "${rootDir}/src/lib"
+  include "udunits.h"
+  include "udunits2.h"
+  include "converter.h"
+  into "include"
+}
+
+task installDatabase(type: Copy) {
+  from "${rootDir}/src/lib"
+  include "*.xml"
+  into "share/udunits"
+}
+
+task installLibHtml(type: Copy, dependsOn: 'ensureLibHtml') {
+  from "${rootDir}/src/lib"
+  include "*.html"
+  into "share/doc/udunits"
+}
+
+task installProgHtml(type: Copy, dependsOn: 'ensureProgHtml') {
+  from "${rootDir}/src/prog"
+  include "*.html"
+  into "share/doc/udunits"
+}
+
+task installHtml(type: Copy, dependsOn: ['ensureHtml', "installLibHtml", "installProgHtml"]) {
+  from "${rootDir}/src"
+  include "*.html"
+  into "share/doc/udunits"
+}
+
+task "installProg"(dependsOn: "installMainExecutable", type: Copy) {
+  from "${buildDir}/install/${name}Executable"
+  into "bin"
+}
+
+task install(dependsOn: ["installLib",
+  "installHeaders", "installDatabase", "installProg", "installHtml"]) {
+}
+
+apply plugin: 'maven'
+/*
+dependencies {
+  archives
+}
+*/
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            repository(url: uri("${buildDir}/repo"))
+        }
+    }
+}
+
+task wrapper(type: Wrapper) {
+  gradleVersion = "1.9-20130910220037+0000"
+  //gradleVersion = "1.9-20130903235553+0000"
+  //gradleVersion = "1.9-20130829220030+0000"
+  //gradleVersion = "1.9-20130825220029+0000"
+}

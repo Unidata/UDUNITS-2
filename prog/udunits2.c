@@ -1,23 +1,27 @@
 /*
- * Copyright 2007, 2008, 2009 University Corporation for Atmospheric Research
+ * Copyright 2013 University Corporation for Atmospheric Research. All rights
+ * reserved.
  *
- * This file is part of the UDUNITS-2 package.  See the file LICENSE
+ * This file is part of the UDUNITS-2 package.  See the file COPYRIGHT
  * in the top-level source-directory of the package for copying and
  * redistribution conditions.
  */
 /*
- * This program prints definitions of units of physical qantities and converts
+ * This program prints definitions of units of physical quantities and converts
  * values between such units.
  */
+
+#include "config.h"
 
 #ifndef	_XOPEN_SOURCE
 #   define _XOPEN_SOURCE 500
 #endif
 
 #include <errno.h>
+#include <libgen.h>
 #include <limits.h>
 #include <sys/types.h>
-#include <regex.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -26,17 +30,26 @@
 
 #include <udunits2.h>
 
-static int		_reveal;
-static int		_encodingSet;
-static ut_encoding	_encoding;
-static const char*	_progname = "udunits2";
-static const char*	_xmlPath;
+#ifndef _POSIX_MAX_INPUT
+#   define _POSIX_MAX_INPUT 255
+#endif
+
+static const char*      _cmdHave; /* command-line "have" unit specification */
+static const char*      _cmdWant; /* command-line "want" unit specification */
+static int		_reveal; /* reveal problems with unit database? */
+static int		_encodingSet; /* is the character encoding set? */
+static ut_encoding	_encoding; /* the character encoding to use */
+static const char*	_progname;
+static const char*	_xmlPath = NULL; /* use default path */
 static ut_system*	_unitSystem;
-static char		_haveUnitSpec[_POSIX_MAX_INPUT+1];
-static char		_wantSpec[_POSIX_MAX_INPUT+1];
-static ut_unit*		_haveUnit;
-static ut_unit*		_wantUnit;
-static int		_wantDefinition;
+static double           _haveUnitAmount; /* amount of "have" unit */
+static char		_haveUnitSpec[_POSIX_MAX_INPUT+1]; /* "have" unit minus
+                                                              amount */
+static char		_wantSpec[_POSIX_MAX_INPUT+1]; /* complete "want" unit
+                                                          specification */
+static ut_unit*		_haveUnit; /* "have" unit minus amount */
+static ut_unit*		_wantUnit; /* complete "want" unit */
+static int		_wantDefinition; /* "have" unit definition desired? */
 static int		_formattingOptions = UT_DEFINITION;
 static int		_exitStatus = EXIT_FAILURE;
 
@@ -45,33 +58,69 @@ static void
 usage(void)
 {
     (void)fprintf(stderr,
-	"Usage: %s [-A|-L|-U] [-hr] [XML_file]\n"
-	"\n"
-	"where:\n"
-	"    -A         Use ASCII encoding.\n"
-	"    -L         Use ISO-8859-1 (ISO Latin-1)  encoding.\n"
-	"    -U         Use UTF-8 encoding.\n"
-	"    -h         Help.  Print this message.\n"
-	"    -r         Reveal any problems in the database.\n"
-	"    XML_file   XML database file.\n",
-	_progname);
+"Usage:\n"
+"    %s -h\n"
+"    %s [-A|-L|-U] [-r] [-H have] [-W want] [XML_file]\n"
+"\n"
+"where:\n"
+"    -A         Use ASCII encoding (default).\n"
+"    -L         Use ISO-8859-1 (ISO Latin-1) encoding.\n"
+"    -U         Use UTF-8 encoding.\n"
+"    -h         Help.  Print this message.\n"
+"    -r         Reveal any problems in the database.\n"
+"    -H have    Use \"have\" unit for conversion. Default is reply to prompt.\n"
+"    -W want    Use \"want\" unit for conversion. Empty string requests\n"
+"               definition of \"have\" unit. Default is reply to prompt.\n"
+"    XML_file   XML database file. Default is \"%s\".\n",
+        _progname, _progname, DEFAULT_UDUNITS2_XML_PATH);
+}
+
+/**
+ * Prints an error-message to the standard error stream.
+ *
+ * @param format        The format for the error-message. It shouldn't have a
+ *                      trailing newline.
+ * @param ...           Arguments referenced by the format.
+ */
+static void
+errMsg(
+    const char* const   format,
+    ...)
+{
+    (void)fprintf(stderr, "%s: ", _progname);
+    {
+        va_list     ap;
+
+        va_start(ap, format);
+        (void)vfprintf(stderr, format, ap);
+        va_end(ap);
+    }
+    (void)fputc('\n', stderr);
 }
 
 
 static int
 decodeCommandLine(
-    int			argc,
-    char* const*	argv)
+    int                 argc,
+    char* const*        argv)
 {
     int		c;
     int		success = 0;
 
-    while ((c = getopt(argc, argv, "ALUhr")) != -1) {
+    _progname = basename(argv[0]);
+
+    while ((c = getopt(argc, argv, "ALUhrH:W:")) != -1) {
 	switch (c) {
 	    case 'A':
 		_encoding = UT_ASCII;
 		_encodingSet = 1;
 		continue;
+            case 'H':
+                _cmdHave = optarg;
+                continue;
+            case 'W':
+                _cmdWant = optarg;
+                continue;
 	    case 'L':
 		_encoding = UT_LATIN1;
 		_encodingSet = 1;
@@ -90,8 +139,7 @@ decodeCommandLine(
 		usage();
 		break;
 	    default:
-		(void)fprintf(stderr, "%s: Unknown option \"%c\"\n",
-		    _progname, c);
+		errMsg("Unknown option \"%c\"", c);
 		usage();
 	}
 
@@ -99,108 +147,151 @@ decodeCommandLine(
     }
 
     if (c == -1) {
-	_xmlPath = 
-	    optind < argc
-		? argv[optind]
-		: NULL;
+        if (optind < argc)
+            _xmlPath = argv[optind];
 
-	success = 1;
+        success = 1;
     }
 
     return success;
 }
 
 
-static int
-ensureXmlPathSet(void)
+/**
+ * Returns a lower-case copy of a NUL-terminated string.
+ *
+ * @param string        The NUL-terminated string to be copied.
+ * @retval NULL         The string couldn't be copied. An error-message is
+ *                      printed to the standard error stream.
+ * @return              A NUL-terminated lower-case copy of the string. The
+ *                      caller should call free() on the string when it is no
+ *                      longer needed.
+ * @raise SIGSEGV       if "string" is NULL.
+ */
+static char*
+duplower(
+    const char*         string)
 {
-    if (_xmlPath == NULL)
-	(void)fprintf(stderr, "%s: Using default XML database\n", _progname);
+    char* const         copy = malloc(strlen(string)+1);
 
-    return 1;
+    if (copy == NULL) {
+        errMsg("Couldn't copy string \"%s\": %s", string, strerror(errno));
+    }
+    else {
+        char*   cp = copy;
+
+        while (*cp++ = tolower(*string++))
+            ; /* empty */
+    }
+
+    return copy;
 }
 
 
+/**
+ * Sets the character encoding from a (case insensitive) string specification
+ * of the encoding that might be embedded in a larger string.
+ *
+ * @param value         The string specification of the encoding. Contains
+ *                      one of the substrings "ascii", "latin1", "latin?1",
+ *                      "8859", "8859?1", "utf8", or "utf?8" (where the '?'
+ *                      is one of the characters ' ', '-', '_', or '.'). If the
+ *                      string contains more than one of these substrings, then
+ *                      the result is unspecified.
+ * @return              Whether or not the character encoding was set from the
+ *                      given string specification. 0 means no; otherwise, yes.
+ */
+static int
+setEncodingFromEmbeddedString(
+    char*	value)
+{
+    char*       lowerValue = duplower(value);
+    int         success = 0;
+
+    if (lowerValue != NULL) {
+        typedef struct {
+            const char*       string;
+            const ut_encoding encoding;
+        } Entry;
+        static const Entry entries[] = {
+            {"ascii",   UT_ASCII},
+            {"latin1",  UT_LATIN1},
+            {"latin 1", UT_LATIN1},
+            {"latin-1", UT_LATIN1},
+            {"latin_1", UT_LATIN1},
+            {"latin.1", UT_LATIN1},
+            {"8859 1",  UT_LATIN1},
+            {"8859-1",  UT_LATIN1},
+            {"8859_1",  UT_LATIN1},
+            {"8859.1",  UT_LATIN1},
+            {"utf8",    UT_UTF8},
+            {"utf 8",   UT_UTF8},
+            {"utf-8",   UT_UTF8},
+            {"utf_8",   UT_UTF8},
+            {"utf.8",   UT_UTF8}
+        };
+        const Entry* entry;
+
+        for (entry = entries;
+                entry < entries + sizeof(entries)/sizeof(entries[0]);
+                entry++) {
+            if (strstr(lowerValue, entry->string) != NULL) {
+                _encoding = entry->encoding;
+                _encodingSet = 1;
+                success = 1;
+                break;
+            }
+        }
+
+        free(lowerValue);
+    }
+
+    return success;
+}
+
+
+/**
+ * Sets the character encoding from a (case insensitive but exact) string
+ * specification of the encoding.
+ *
+ * @param value         The string specification of the encoding. One of
+ *                      "c" or "posix".
+ * @return              Whether or not the encoding was set. 0 means no;
+ *                      otherwise, yes.
+ */
+static int
+setEncodingFromExactString(
+    char*	value)
+{
+    if (strcasecmp(value, "c") == 0 || strcasecmp(value, "posix") == 0) {
+        _encoding = UT_ASCII;
+        _encodingSet = 1;
+        return 1;
+    }
+
+    return 0;
+}
+
+
+/**
+ * Sets the character encoding from a (case insensitive) string specification
+ * of the encoding.
+ *
+ * @param value         The string specification of the encoding or NULL. If
+ *                      not NULL, then one of "c" or "posix", or a string that
+ *                      contains one of the substrings "ascii", "latin1",
+ *                      "latin?1", "8859", "8859?1", "utf8", or "utf?8" (where
+ *                      the '?' is one of the characters ' ', '-', '_', or '.').
+ *                      If the string contains multiple instances of the
+ *                      substrings, then the result is unspecified.
+ */
 static void
 setEncoding(
     char*	value)
 {
     if (value != NULL) {
-	typedef struct {
-	    const char*	pattern;
-	    ut_encoding	encoding;
-	    regex_t		reg;
-	}			Entry;
-
-	static Entry	entries[] = {
-	    {"^c$",			UT_ASCII},
-	    {"^posix$",			UT_ASCII},
-	    {"ascii",			UT_ASCII},
-	    {"latin.?1([^0-9]|$)",	UT_LATIN1},
-	    {"8859.?1([^0-9]|$)",	UT_LATIN1},
-	    {"utf.?8([^0-9]|$)",	UT_UTF8},
-	};
-	static int		initialized = 0;
-	static int		entryCount = sizeof(entries)/sizeof(entries[0]);
-
-	if (!initialized) {
-	    int		status = 0;
-	    int		i;
-
-	    for (i = 0; i < entryCount; i++) {
-		Entry*	entry = entries + i;
-		regex_t*	reg = &entry->reg;
-		const char*	pattern = entry->pattern;
-
-		status =
-		    regcomp(reg, entries[i].pattern,
-			REG_EXTENDED | REG_ICASE | REG_NOSUB);
-
-		if (status != 0) {
-		    char	buf[132];
-
-		    (void)regerror(status, reg, buf, sizeof(buf));
-		    (void)fprintf(stderr, "%s: Unable to compile regular "
-			"expression \"%s\": %s\n", _progname, pattern, buf);
-
-		    break;
-		}
-	    }
-
-	    if (status == 0)
-		initialized = 1;
-	}
-
-	if (initialized) {
-	    int	i;
-	    int	status = 0;
-
-	    for (i = 0; i < entryCount; i++) {
-		Entry*	entry = entries + i;
-		regex_t*	reg = &entry->reg;
-
-		status = regexec(reg, value, 0, NULL, 0);
-
-		if (status == 0)
-		    break;
-
-		if (status != REG_NOMATCH) {
-		    char	buf[132];
-
-		    (void)regerror(status, reg, buf, sizeof(buf));
-		    (void)fprintf(stderr,
-			"%s: Unable to execute regular expression \"%s\": %s\n",
-			_progname, entry->pattern, buf);
-
-		    break;
-		}
-	    }
-
-	    if (status == 0 && i < entryCount) {
-		_encoding = entries[i].encoding;
-		_encodingSet = 1;
-	    }
-	}
+        if (!setEncodingFromExactString(value))
+            (void)setEncodingFromEmbeddedString(value);
     }
 }
 
@@ -218,10 +309,9 @@ ensureEncodingSet()
 		setEncoding(getenv("LANG"));
 
 		if (!_encodingSet) {
-		    (void)fprintf(stderr, "%s: Character encoding not "
-			"specified and not settable from environment variables "
-			"LC_ALL, LC_CTYPE, or LANG.  Assuming ASCII "
-			"encoding.\n", _progname);
+		    errMsg("Character encoding not specified and not settable "
+                        "from environment variables LC_ALL, LC_CTYPE, or LANG. "
+                        "Assuming ASCII encoding.");
 
 		    setEncoding("ASCII");
 		}
@@ -242,18 +332,20 @@ readXmlDatabase(void)
     int		success = 0;
 
     if (!_reveal)
-	ut_set_error_message_handler(ut_ignore);
+        ut_set_error_message_handler(ut_ignore);
 
     _unitSystem = ut_read_xml(_xmlPath);
 
     ut_set_error_message_handler(ut_write_to_stderr);
 
     if (_unitSystem != NULL) {
-	success = 1;
+        success = 1;
     }
     else {
-	(void)fprintf(stderr, "%s: Couldn't initialize unit-system from "
-	    "database \"%s\"\n", _progname, _xmlPath);
+        ut_status	status;
+
+        errMsg("Couldn't initialize unit-system from database \"%s\": %s",
+                ut_get_path_xml(_xmlPath, &status), strerror(errno));
     }
 
     return success;
@@ -261,7 +353,7 @@ readXmlDatabase(void)
 
 
 /*
- * Get a specification.
+ * Prompt the user and get a specification.
  */
 static int
 getSpec(
@@ -272,16 +364,14 @@ getSpec(
     int		nbytes = -1;		/* failure */
 
     if (fputs(prompt, stdout) == EOF) {
-	(void)fprintf(stderr, "%s: Couldn't write prompt: %s\n",
-	    _progname, strerror(errno));
+	errMsg("Couldn't write prompt: %s", strerror(errno));
     } else if (fgets(spec, size, stdin) == NULL) {
 	putchar('\n');
 
 	if (feof(stdin)) {
 	    _exitStatus = EXIT_SUCCESS;
 	} else {
-	    (void)fprintf(stderr, "%s: Couldn't read from standard input: %s\n",
-		_progname, strerror(errno));
+	    errMsg("Couldn't read from standard input: %s", strerror(errno));
 	}
     } else {
 	/*
@@ -297,32 +387,103 @@ getSpec(
 
 
 static int
+decodeInput(
+    const char* const   buf)
+{
+    int		success = 0;
+
+    if (sscanf(buf, "%lg %[^ \t\n]", &_haveUnitAmount,
+                _haveUnitSpec) != 2) {
+        _haveUnitAmount = 1;
+        (void)strcpy(_haveUnitSpec, buf);
+    }
+
+    ut_free(_haveUnit);
+    _haveUnit = ut_parse(_unitSystem, _haveUnitSpec, _encoding);
+
+    if (_haveUnit == NULL) {
+        errMsg("Don't recognize \"%s\"", _haveUnitSpec);
+    }
+    else {
+        success = 1;
+    }
+
+    return success;
+}
+
+
+static int
 getInputValue(void)
 {
     int		success = 0;
 
-    for (;;) {
-        char    buf[sizeof(_haveUnitSpec)];
-	int	nbytes = getSpec("You have: ", buf, sizeof(buf));
+    if (_cmdHave) {
+        static int      initialized = 0;
 
-	if (nbytes < 0)
-	    break;
+        if (initialized) {
+            if (_cmdWant == NULL) {
+                /*
+                 * Multiple, prompt-driven conversions desired.
+                 */
+                success = 1;
+            }
+            else {
+                /*
+                 * Single, previous, command-line-driven conversion desired.
+                 */
+                success = 0;
+            	_exitStatus = EXIT_SUCCESS;
+            }
+        }
+        else {
+            success = decodeInput(_cmdHave);
+            initialized = 1;
+        }
+    }
+    else {
+        for (;;) {
+            char    buf[sizeof(_haveUnitSpec)];
+            int	nbytes = getSpec("You have: ", buf, sizeof(buf));
 
-	if (nbytes > 0) {
-	    (void)strcpy(_haveUnitSpec, buf);
+            if (nbytes < 0)
+                break;
 
-	    ut_free(_haveUnit);
-	    _haveUnit = ut_parse(_unitSystem, _haveUnitSpec, _encoding);
+            if (nbytes > 0) {
+                success = decodeInput(buf);
 
-	    if (_haveUnit == NULL) {
-		(void)fprintf(stderr, "%s: Don't recognize \"%s\"\n",
-		    _progname, _haveUnitSpec);
-	    }
-	    else {
-		success = 1;
-		break;
-	    }
-	}
+                if (success)
+                    break;
+            }
+        }
+    }
+
+    return success;
+}
+
+
+static int
+decodeOutput(
+    const char* const   buf)
+{
+    int         success = 0;
+    size_t	nbytes = strlen(buf);
+
+    if (nbytes == 0) {
+        _wantDefinition = 1;
+        success = 1;
+    }
+    else {
+        ut_free(_wantUnit);
+
+        _wantDefinition = 0;
+        _wantUnit = ut_parse(_unitSystem, buf, _encoding);
+
+        if (_wantUnit == NULL) {
+            errMsg("Don't recognize \"%s\"", buf);
+        }
+        else {
+            success = 1;
+        }
     }
 
     return success;
@@ -334,33 +495,32 @@ getOutputRequest(void)
 {
     int		success = 0;
 
-    for (;;) {
-	int	nbytes =
-	    getSpec("You want: ", _wantSpec, sizeof(_wantSpec));
+    if (_cmdWant) {
+        static int      initialized = 0;
 
-	if (nbytes < 0)
-	    break;
+        if (initialized) {
+            success = 1;
+        }
+        else {
+            (void)strncpy(_wantSpec, _cmdWant, sizeof(_wantSpec));
+            _wantSpec[sizeof(_wantSpec)-1] = 0;
 
-	if (nbytes == 0) {
-	    _wantDefinition = 1;
-	    success = 1;
-	    break;
-	}
+            success = decodeOutput(_wantSpec);
+            initialized = 1;
+        }
+    }
+    else {
+        for (;;) {
+            int	nbytes = getSpec("You want: ", _wantSpec, sizeof(_wantSpec));
 
-	_wantDefinition = 0;
+            if (nbytes < 0)
+                break;
 
-	ut_free(_wantUnit);
+            success = decodeOutput(_wantSpec);
 
-	_wantUnit = ut_parse(_unitSystem, _wantSpec, _encoding);
-
-	if (_wantUnit == NULL) {
-	    (void)fprintf(stderr, "%s: Don't recognize \"%s\"\n",
-		_progname, _wantSpec);
-	}
-	else {
-	    success = 1;
-	    break;
-	}
+            if (success)
+                break;
+        }
     }
 
     return success;
@@ -375,30 +535,30 @@ handleRequest(void)
     if (getInputValue()) {
 	if (getOutputRequest()) {
 	    if (_wantDefinition) {
-                char	buf[256];
-                int	nbytes = ut_format(_haveUnit, buf, sizeof(buf),
-                    _formattingOptions);
+                char	        buf[256];
+                ut_unit*        unit = ut_scale(_haveUnitAmount, _haveUnit);
+                int	        nbytes = ut_format(unit, buf, sizeof(buf),
+                        _formattingOptions);
 
                 if (nbytes >= sizeof(buf)) {
-                    (void)fprintf(stderr, "%s: Resulting unit "
-                        "specification is too long\n", _progname);
+                    errMsg("Resulting unit specification is too long");
                 }
                 else if (nbytes >= 0) {
                     buf[nbytes] = 0;
 
                     (void)printf("    %s\n", buf);
                 }
+
+                ut_free(unit);
 	    }
 	    else if (!ut_are_convertible(_wantUnit, _haveUnit)) {
-		(void)fprintf(stderr, "%s: Units are not convertible\n",
-		    _progname);
+		errMsg("Units are not convertible");
 	    }
 	    else {
 		cv_converter*	conv = ut_get_converter(_haveUnit, _wantUnit);
 
 		if (conv == NULL) {
-		    (void)fprintf(stderr, "%s: Couldn't get unit converter\n",
-			_progname);
+		    errMsg("Couldn't get unit converter");
 		}
 		else {
                     char        haveExp[_POSIX_MAX_INPUT+1];
@@ -410,10 +570,12 @@ handleRequest(void)
 
 		    (void)printf(
 			needsParens
-			    ? "    %s = %g (%s)\n"
-			    : "    %s = %g %s\n",
+			    ? "    %g %s = %g (%s)\n"
+			    : "    %g %s = %g %s\n",
+                        _haveUnitAmount,
 			_haveUnitSpec,
-			cv_convert_double(conv, 1.0), _wantSpec);
+			cv_convert_double(conv, _haveUnitAmount),
+                        _wantSpec);
 
                     (void)sprintf(haveExp,
                         strpbrk(_haveUnitSpec, whiteSpace) ||
@@ -450,14 +612,12 @@ main(
     char* const* const	argv)
 {
     if (decodeCommandLine(argc, argv)) {
-	if (ensureEncodingSet()) {
-	    if (ensureXmlPathSet()) {
-		if (readXmlDatabase()) {
-		    while (handleRequest())
-			;		/* EMPTY */
-		}
-	    }
-	}
+    	if (ensureEncodingSet()) {
+            if (readXmlDatabase()) {
+                while (handleRequest())
+                    ; /* EMPTY */
+            }
+    	}
     }
 
     return _exitStatus;

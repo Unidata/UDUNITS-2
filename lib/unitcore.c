@@ -1,7 +1,7 @@
 /*
- * Copyright 2011 University Corporation for Atmospheric Research
+ * Copyright 2013 University Corporation for Atmospheric Research
  *
- * This file is part of the UDUNITS-2 package.  See the file LICENSE
+ * This file is part of the UDUNITS-2 package.  See the file COPYRIGHT
  * in the top-level source-directory of the package for copying and
  * redistribution conditions.
  */
@@ -2079,6 +2079,7 @@ timestampNewOrigin(
 }
 
 
+#if 0
 /*
  * Returns a new unit instance.
  *
@@ -2114,6 +2115,7 @@ timestampNew(
     return timestampNewOrigin(
 	unit, ut_encode_time(year, month, day, hour, minute, second));
 }
+#endif
 
 
 static ProductUnit*

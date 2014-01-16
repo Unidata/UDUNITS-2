@@ -1,7 +1,7 @@
 /*
- * Copyright 2011 University Corporation for Atmospheric Research
+ * Copyright 2013 University Corporation for Atmospheric Research
  *
- * This file is part of the UDUNITS-2 package.  See the file LICENSE
+ * This file is part of the UDUNITS-2 package.  See the file COPYRIGHT
  * in the top-level source-directory of the package for copying and
  * redistribution conditions.
  */
@@ -23,8 +23,7 @@
 
 #include "udunits2.h"
 
-
-static char		xmlPath[80];
+static const char*  xmlPath;
 static ut_system*	unitSystem;
 static ut_unit*		kilogram;
 static ut_unit*		meter;
@@ -58,24 +57,22 @@ static unsigned		latin1SymbolDef = UT_LATIN1 | UT_DEFINITION;
 static unsigned		utf8SymbolDef = UT_UTF8 | UT_DEFINITION;
 
 
+/*
+ * Only called once.
+ */
 static int
 setup(
     void)
 {
-    int		status = -1;	/* failure */
-    const char*	path = getenv("UDUNITS2_XML_PATH");
-
-    if (path != NULL) {
-	(void)strcpy(xmlPath, path);
-	unitSystem = ut_new_system();
-	if (unitSystem != NULL)
-	    status = 0;
-    }
-
-    return status;
+	return ((unitSystem = ut_new_system()) == NULL)
+        ? -1
+        : 0;
 }
 
 
+/*
+ * Only called once.
+ */
 static int
 teardown(
     void)
@@ -152,7 +149,7 @@ test_utNewBaseUnit(void)
     CU_ASSERT_PTR_NULL(ut_new_base_unit(NULL));
     CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
 
-    CU_ASSERT_EQUAL(ut_map_unit_to_name(kilogram, "Ångström", UT_UTF8), UT_BAD_ARG);
+    CU_ASSERT_EQUAL(ut_map_unit_to_name(kilogram, "\xc5ngstr\xf6m", UT_UTF8), UT_BAD_ARG);
 
     CU_ASSERT_EQUAL(ut_set_second(second), UT_SUCCESS);
     CU_ASSERT_EQUAL(ut_set_second(meter), UT_EXISTS);
@@ -175,7 +172,7 @@ test_utNewDimensionlessUnit(void)
     CU_ASSERT_EQUAL(ut_map_unit_to_symbol(radian, "f", UT_ASCII), UT_EXISTS);
     CU_ASSERT_EQUAL(ut_map_unit_to_symbol(NULL, "f", UT_ASCII), UT_BAD_ARG);
 
-    CU_ASSERT_EQUAL(ut_map_unit_to_name(radian, "Ångström", UT_UTF8), UT_BAD_ARG);
+    CU_ASSERT_EQUAL(ut_map_unit_to_name(radian, "\xc5ngstr\xf6m", UT_UTF8), UT_BAD_ARG);
 }
 
 
@@ -235,7 +232,7 @@ test_utAddSymbolPrefix(void)
     CU_ASSERT_EQUAL(ut_add_symbol_prefix(unitSystem, "M", 1e6), UT_SUCCESS);
     CU_ASSERT_EQUAL(ut_add_symbol_prefix(unitSystem, "M", 1e6), UT_SUCCESS);
     CU_ASSERT_EQUAL(ut_add_symbol_prefix(unitSystem, "u", 1e-6), UT_SUCCESS);
-    CU_ASSERT_EQUAL(ut_add_symbol_prefix(unitSystem, "µ", 1e-6), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_add_symbol_prefix(unitSystem, "\xb5", 1e-6), UT_SUCCESS);
     CU_ASSERT_EQUAL(ut_add_symbol_prefix(unitSystem, "\xc2\xb5", 1e-6),
         UT_SUCCESS);    /* "\xc2\xb5" is "mu" character in UTF-8 */
     CU_ASSERT_EQUAL(ut_add_symbol_prefix(unitSystem, "k", 1e3), UT_SUCCESS);
@@ -957,7 +954,8 @@ test_utLog(void)
     CU_ASSERT_TRUE_FATAL(nchar > 0);
     CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
     buf[nchar] = 0;
-    CU_ASSERT_STRING_EQUAL(buf, "0.1 lg(re 1e-18 m3)");
+    CU_ASSERT_TRUE(strcmp(buf, "0.1 lg(re 1e-18 m3)") == 0 ||
+            strcmp(buf, "0.1 lg(re 1e-018 m3)") == 0);
     CU_ASSERT_EQUAL(ut_map_symbol_to_unit("dBZ", UT_ASCII, dBZ), UT_SUCCESS);
     CU_ASSERT_EQUAL(ut_map_symbol_to_unit("dBZ", UT_ASCII, dBZ), UT_SUCCESS);
     CU_ASSERT_EQUAL(ut_map_symbol_to_unit("dBZ", UT_ASCII, meter), UT_EXISTS);
@@ -1759,8 +1757,7 @@ test_parsing(void)
 
     spec = "(K/1.8) @ 459.67";
     unit = ut_parse(unitSystem, spec, UT_ASCII);
-    CU_ASSERT_PTR_NOT_NULL(unit);
-    CU_ASSERT_EQUAL(ut_compare(unit, fahrenheit), 0);
+    CU_ASSERT_EQUAL(ut_are_convertible(unit, fahrenheit), 1);
     ut_free(unit);
 
     spec = "METER";
@@ -1835,7 +1832,7 @@ test_parsing(void)
     CU_ASSERT_EQUAL(ut_compare(unit, secondsSinceTheEpoch), 0);
     ut_free(unit);
 
-    spec = "kg·m²/s³";
+    spec = "kg\xb7m\xb2/s\xb3"; /* "kg" mid-dot "m" squared "/" "s" cubed */
     unit = ut_parse(unitSystem, spec, UT_LATIN1);
     CU_ASSERT_PTR_NOT_NULL(unit);
     CU_ASSERT_EQUAL(ut_compare(unit, watt), 0);
@@ -1866,7 +1863,7 @@ test_parsing(void)
 
         unit = ut_parse(unitSystem, buf, UT_ASCII);
         CU_ASSERT_PTR_NOT_NULL(unit);
-        CU_ASSERT_EQUAL(ut_compare(unit, fahrenheit), 0);
+        CU_ASSERT_EQUAL(ut_are_convertible(unit, fahrenheit), 1);
         ut_free(unit);
     }
 
@@ -1893,19 +1890,19 @@ test_parsing(void)
     CU_ASSERT_EQUAL(ut_compare(kilometer, unit), 0);
     ut_free(unit);
 
-    spec = "µm";
+    spec = "\xb5m"; /* mu "m" */
     unit = ut_parse(unitSystem, spec, UT_LATIN1);
     CU_ASSERT_PTR_NOT_NULL(unit);
     CU_ASSERT_EQUAL(ut_compare(unit, micron), 0);
     ut_free(unit);
 
-    spec = "µmegaHz";
+    spec = "\xb5megaHz"; /* mu "megaHz" */
     unit = ut_parse(unitSystem, spec, UT_LATIN1);
     CU_ASSERT_PTR_NOT_NULL(unit);
     CU_ASSERT_EQUAL(ut_compare(unit, hertz), 0);
     ut_free(unit);
 
-    spec = "MeGaµHertz";
+    spec = "MeGa\xb5Hertz"; /* "MeGa" mu "Hertz" */
     unit = ut_parse(unitSystem, spec, UT_LATIN1);
     CU_ASSERT_PTR_NOT_NULL(unit);
     CU_ASSERT_EQUAL(ut_compare(unit, hertz), 0);
@@ -1933,9 +1930,9 @@ test_xml(void)
     int                 status;
     ut_unit*            unit1;
     ut_unit*            unit2;
-    cv_converter*	converter;
-    char*		spec;
-    ut_unit*		unit;
+    cv_converter*	    converter;
+    char*		        spec;
+    ut_unit*		    unit;
 
     ut_set_error_message_handler(ut_write_to_stderr);
     xmlSystem = ut_read_xml(xmlPath);
@@ -2064,12 +2061,12 @@ test_xml(void)
 
     unit1 = ut_parse(xmlSystem, "angstrom", UT_ASCII);
     CU_ASSERT_PTR_NOT_NULL(unit1);
-    unit2 = ut_parse(xmlSystem, "\xE5ngstr\xF6m", UT_LATIN1);/* small A with ring */
+    unit2 = ut_parse(xmlSystem, "\xe5ngstr\xf6m", UT_LATIN1);/* small A with ring */
     CU_ASSERT_PTR_NOT_NULL(unit2);
     CU_ASSERT_EQUAL(ut_compare(unit1, unit2), 0);
     ut_free(unit2);
 #if 0
-    unit2 = ut_parse(xmlSystem, "\xC5ngstr\xF6m", UT_LATIN1);/* capital A with ring */
+    unit2 = ut_parse(xmlSystem, "\xc5ngstr\xf6m", UT_LATIN1);/* capital A with ring */
     CU_ASSERT_PTR_NOT_NULL(unit2);
     CU_ASSERT_EQUAL(ut_compare(unit1, unit2), 0);
     ut_free(unit2);
@@ -2082,7 +2079,8 @@ test_xml(void)
 
     xmlSystem = ut_read_xml(NULL);
     if (xmlSystem == NULL) {
-        CU_ASSERT_EQUAL(ut_get_status(), UT_OPEN_DEFAULT);
+        CU_ASSERT_EQUAL(ut_get_status(), getenv("UDUNITS2_XML_PATH") == NULL
+        		? UT_OPEN_DEFAULT : UT_OPEN_ENV);
     }
     else {
         ut_free_system(xmlSystem);
@@ -2160,10 +2158,14 @@ test_xml(void)
 
 int
 main(
-    const int		argc,
+    const int		    argc,
     const char* const*	argv)
 {
     int	exitCode = EXIT_FAILURE;
+
+    xmlPath = argv[1]
+            ? argv[1]
+            : getenv("UDUNITS2_XML_PATH");
 
     if (CU_initialize_registry() == CUE_SUCCESS) {
 	CU_Suite*	testSuite = CU_add_suite(__FILE__, setup, teardown);
