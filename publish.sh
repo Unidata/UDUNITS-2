@@ -23,6 +23,8 @@
 #                           "udunits2.html")
 #     upload                Path of the repository upload script 
 
+set -e  # exit on failure
+
 pipeId=${1:?Group ID not specified}
 nJobs=${2:?Number of upstream jobs not specified}
 binDistroFile=${3:?Binary distribution file not specified}
@@ -31,7 +33,7 @@ binRepoRelDir=${5:?Relative pathname of binary repository directory not specifie
 docDistroFile=${6:?Documentation distribution file not specified}
 pkgName=${7:?Package name not specified}
 indexHtml=${8:?Top-level HTML documentation-file not specified}
-upload=${9:Path of upload script not specified}
+upload=${9:?Path of upload script not specified}
 
 binRepoHost=spock                # Name of computer hosting binary repository
 binRepoRoot=repo                 # Pathname of the root directory of the binary
@@ -41,8 +43,6 @@ binRepoRoot=repo                 # Pathname of the root directory of the binary
 srcRepoHost=webserver            # Name of computer hosting source repository
 srcRepoDir=/web/ftp/pub/$pkgName # Pathname of source repository
 webHost=webserver                # Name of computer hosting package website
-
-set -e  # exit on failure
 
 # Indicates if the outcome of the upstream jobs is decidable.
 #
