@@ -1,4 +1,4 @@
-2.2.4
+2.2.4	2014-01-16T14:19:30-0700
     Corrected version information in documentation. The Git plugin for Eclipse
     doesn't yet support Git hooks, so the pre-commit hook wasn't working.
 
