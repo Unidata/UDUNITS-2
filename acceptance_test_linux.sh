@@ -9,7 +9,7 @@
 #                   distribution
 #     vmName        Name of the virtual machine (e.g., "centos64_64", "precise32")
 #     pkgFileName   Value for the variable CPACK_PACKAGE_FILE_NAME (e.g.,
-#                   "udunits-2.2.0-3.x86_64")
+#                   "udunits-2.2.0.x86_64")
 #     generator     Name of the CPack package generator (e.g., "RPM", "DEB")
 #     ext           Extension of the package file (e.g., "rpm", "deb")
 #     install       Command to install from the package file (e.g., "rpm --install",

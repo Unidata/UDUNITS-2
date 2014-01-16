@@ -1,4 +1,4 @@
-2.2.3
+2.2.3	2014-01-14T12:30:37-0700
     Added vetting of the autoconf-based build to the continuous-delivery
     pipeline.
 
