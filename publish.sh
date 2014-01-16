@@ -21,6 +21,7 @@
 #     pkgName               Name of the package (e.g., "udunits")
 #     indexHtml             Name of the top-level HTML documentation file (e.g.,
 #                           "udunits2.html")
+#     upload                Path of the repository upload script 
 
 pipeId=${1:?Group ID not specified}
 nJobs=${2:?Number of upstream jobs not specified}
@@ -30,6 +31,7 @@ binRepoRelDir=${5:?Relative pathname of binary repository directory not specifie
 docDistroFile=${6:?Documentation distribution file not specified}
 pkgName=${7:?Package name not specified}
 indexHtml=${8:?Top-level HTML documentation-file not specified}
+upload=${9:Path of upload script not specified}
 
 binRepoHost=spock                # Name of computer hosting binary repository
 binRepoRoot=repo                 # Pathname of the root directory of the binary
@@ -87,6 +89,7 @@ done
 # Upload the binary distribution to the binary repository.
 #
 success && 
+    scp $upload $binRepoHost:$binRepoRoot/upload &&        
     ssh -T $binRepoHost bash -x $binRepoRoot/upload \
             $binRepoRelDir/$binDistroFileName <$binDistroFile
 

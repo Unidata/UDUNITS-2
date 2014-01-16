@@ -1,4 +1,8 @@
-2.2.3	2014-01-14T12:30:37-0700
+2.2.4
+    Corrected version information in documentation. The Git plugin for Eclipse
+    doesn't yet support Git hooks, so the pre-commit hook wasn't working.
+
+2.2.3	2014-01-16T14:02:38-0700
     Added vetting of the autoconf-based build to the continuous-delivery
     pipeline.
 
