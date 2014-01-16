@@ -26,11 +26,17 @@ distro=${1:?Distribution not specified}
 #
 cd `dirname $0`
 
-# Parse the distribution's filename.
+# Vet and parse the distribution's filename.
 #
 repoDir=`dirname "$distro"`
-set `basename "$distro" | 
-        sed -r 's/([^-]*-[0-9.]*)(-[0-9]*)?\.([^.]*)\.rpm/\1 \3/'`
+distroName=`basename "$distro"`
+if ! echo $distroName | egrep -q '[^-]+-[0-9.]+(-[0-9]+)?\.[^.]+\.rpm';
+then
+    echo 1>&2 "Invalid distribution name: \"$distroName\""
+    exit 1
+fi
+set `echo "$distroName" | 
+        sed -r 's/([^-]+-[0-9.]+)(-[0-9]+)?\.([^.]+)\.rpm/\1 \3/'`
 pkgId=$1
 pkgCpu=$2
 
