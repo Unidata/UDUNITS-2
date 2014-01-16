@@ -87,8 +87,8 @@ done
 # Upload the binary distribution to the binary repository.
 #
 success && 
-    ssh -T $binRepoHost $binRepoRoot/upload $binRepoRelDir/$binDistroFileName \
-        <$binDistroFile
+    ssh -T $binRepoHost bash -x $binRepoRoot/upload \
+            $binRepoRelDir/$binDistroFileName <$binDistroFile
 
 # Set the absolute path to the public source distribution file.
 #
