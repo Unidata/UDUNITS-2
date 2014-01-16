@@ -1,0 +1,75 @@
+#! /bin/bash
+# Uploads a binary distribution to a yum(1) repository.  The distribution is
+# read from the standard input stream.
+#
+# Usage: $0 distro
+#
+# where:
+#     distro    Relative path to the distribution from the directory containing
+#		this script. The name component of the file must have the form
+#
+#		    <name>-<version>[-<release>].<cpu>.rpm
+#
+#		where:
+#		    <name>      Package name (e.g., "udunits")
+#		    <version>   Package version (e.g., "2.2.3")
+#		    <release>   Optional package release number (e.g., "4").
+#		                Ignored.
+#		    <cpu>       Package CPU (e.g., "x86_64")
+
+set -e  # Exit on error
+
+distro=${1:?Distribution not specified}
+
+# Assume that this script is in the root-directory of the complete binary
+# repository and go to it.
+#
+cd `dirname $0`
+
+# Parse the distribution's filename.
+#
+repoDir=`dirname "$distro"`
+set `basename "$distro" | 
+        sed -r 's/([^-]*-[0-9.]*)(-[0-9]*)?\.([^.]*)\.rpm/\1 \3/'`
+pkgId=$1
+pkgCpu=$2
+
+# Ensure that the repository directory exists and go to it.
+#
+test -d $repoDir || mkdir -p $repoDir
+pushd $repoDir
+
+# Glob pattern for all releases of the same version of the same package in the
+# repository directory:
+#
+releaseGlob=$pkgId-*.$pkgCpu.rpm 
+
+# Determine what the next release number should be.
+#
+if prevRelease=`ls $releaseGlob 2>/dev/null | 
+        sed -r "s/$pkgId-([0-9]*)\.$pkgCpu\.rpm/\1/"`; then
+    pkgRelease=$(($prevRelease+1))
+else
+    pkgRelease=1
+fi
+
+# Copy the distribution to the repository file.
+#
+distroPath=$pkgId-$pkgRelease.$pkgCpu.rpm
+cat >$distroPath
+
+# Delete all previous releases of the same version of the same package.
+#
+rm -f `ls $releaseGlob | fgrep -v $distroPath`
+
+# Go to the root-directory of the complete binary repository.
+#
+popd
+
+# Create a yum(1) repository in the repository directory.
+#
+createrepo $repoDir
+
+# Copy the yum(1) repository to the publicly-accessible repository computer.
+#
+rsync --archive --relative --delete $repoDir webserver:/web/content/repos/yum
