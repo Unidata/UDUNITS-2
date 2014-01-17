@@ -42,3 +42,5 @@ vgcore.*
 .vimrc
 *.vr
 test-driver
+build-aux
+udunits2.t2p

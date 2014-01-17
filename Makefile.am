@@ -15,7 +15,6 @@ EXTRA_DIST = \
     CMakeLists.txt \
     config.h.cmake \
     COPYRIGHT \
-    texinfo.tex \
     udunits2.html \
     udunits2.pdf
 AM_MAKEINFOHTMLFLAGS = --no-split
