@@ -58,7 +58,7 @@ install(TARGETS libudunits2
     ARCHIVE DESTINATION lib
     LIBRARY DESTINATION lib
     RUNTIME DESTINATION bin)
-install(FILES udunits2.h DESTINATION include)
+install(FILES udunits2.h converter.h DESTINATION include)
 install(FILES
         udunits2.xml
         udunits2-accepted.xml
