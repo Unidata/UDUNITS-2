@@ -14,9 +14,10 @@ set -e  # exit if error
 #
 rm -rf build
 mkdir build
-cd build
+pushd build
 cmake ..
 make all test package_source
+popd
 
 # Build and test the package and create a source-distribution using autotools.
 autoreconf -i --force
