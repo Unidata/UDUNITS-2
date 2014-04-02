@@ -1,115 +1,80 @@
-# Copies a binary distribution to the download area and ensures existence of
-# a source distribution in the download area. Does this if and only if the
-# upstream, binary-distribution-creating jobs in the delivery pipeline were
-# successful.
-#
-# This script is complicated by the fact that it will be invoked by every
-# upstream job that creates a binary distribution.
+# Ensures existence of a source distribution in the download area and modifies
+# the package's website. The package is built in the current working directory
+# and installed under a temporary directory in order to extract the
+# documentation.
 #
 # Usage:
-#     $0 pipeId nJobs binDistroFile srcDistroFile binRepoRelDir docDistroFile pkgName indexHtml
-#
-# where:
-#     pipeId                Unique identifier for the parent delivery pipeline
-#                           instance (e.g., top-of-the-pipe job number)
-#     nJobs                 Number of upstream jobs
-#     binDistroFile         Pathname of the binary distribution file
-#     srcDistroFile         Pathname of the source distribution file
-#     binRepoRelDir         Pathname of the binary repository directory relative to
-#                           the root of the binary repository
-#     docDistroFile         Pathname of the documentation distribution file
-#     pkgName               Name of the package (e.g., "udunits")
-#     indexHtml             Name of the top-level HTML documentation file (e.g.,
-#                           "udunits2.html")
-#     upload                Path of the repository upload script 
+#     $0 
 
 set -e  # exit on failure
 
-pipeId=${1:?Group ID not specified}
-nJobs=${2:?Number of upstream jobs not specified}
-binDistroFile=${3:?Binary distribution file not specified}
-srcDistroFile=${4:?Source distribution file not specified}
-binRepoRelDir=${5:?Relative pathname of binary repository directory not specified}
-docDistroFile=${6:?Documentation distribution file not specified}
-pkgName=${7:?Package name not specified}
-indexHtml=${8:?Top-level HTML documentation-file not specified}
-upload=${9:?Path of upload script not specified}
-
-binRepoHost=spock                # Name of computer hosting binary repository
-binRepoRoot=repo                 # Pathname of the root directory of the binary
-                                 # repository. A relative pathname is resolved
-                                 # against the home directory of $USER on
-                                 # $binRepoHost
-srcRepoHost=webserver            # Name of computer hosting source repository
-srcRepoDir=/web/ftp/pub/$pkgName # Pathname of source repository
-webHost=webserver                # Name of computer hosting package website
-
-# Indicates if the outcome of the upstream jobs is decidable.
+# Get the static release variables.
 #
-decidable() {
-    test `ls $jobId.success $jobId.failure 2>/dev/null | wc -w` -ge $nJobs
-}
-
-# Indicates if the upstream jobs were successful.
-#
-success() {
-    test `ls $jobId.success 2>/dev/null | wc -w` -ge $nJobs
-}
-
-# Ensure valid pathnames.
-#
-binDistroFile=`ls $binDistroFile`
-srcDistroFile=`ls $srcDistroFile`
-
-
-# Form a unique identifier for this invocation.
-#
-binDistroFileName=`basename $binDistroFile`
-jobId=$pipeId-$binDistroFileName
-
-# Remove any leftovers from an earlier delivery pipeline.
-#
-ls *.success *.failure 2>/dev/null | grep -v ^$jobId | xargs rm -rf
-
-# Make known to all invocations of this script in the delivery pipeline the
-# outcome of the upstream job associated with this invocation.
-#
-if test -e $binDistroFile; then
-    touch $jobId.success
-else
-    touch $jobId.failure
-fi
-
-# Wait until the outcome of all the upstream jobs can be decided.
-#
-while ! decidable; do
-    sleep 3
-done
-
-# Upload the binary distribution to the binary repository.
-#
-success && 
-    scp $upload $binRepoHost:$binRepoRoot/upload &&        
-    ssh -T $binRepoHost bash -x $binRepoRoot/upload \
-            $binRepoRelDir/$binDistroFileName <$binDistroFile
-
-# Set the absolute path to the public source distribution file.
-#
-srcDistroPath=/web/ftp/pub/$pkgName/`basename $srcDistroFile`
+. ./release-vars.sh
 
 # If the source repository doesn't have the source distribution,
 #
-if ! ssh $srcRepoHost test -e $srcDistroPath; then
+if ! ssh $SOURCE_REPO_HOST test -e $ABSPATH_SOURCE_DISTRO; then
     #
     # Copy the source distribution to the source repository.
     #
-    trap "ssh $srcRepoHost rm -f $srcDistroPath; `trap -p ERR`" ERR
-    scp $srcDistroFile $srcRepoHost:$srcDistroPath
+    trap "ssh $SOURCE_REPO_HOST rm -f $ABSPATH_SOURCE_DISTRO; `trap -p ERR`" ERR
+    scp $SOURCE_DISTRO_NAME $SOURCE_REPO_HOST:$ABSPATH_SOURCE_DISTRO
 fi
 
-# Upload the documentation to the package's website.
+# Install the package in order to obtain the documentation.
 #
-pkgId=`basename $docDistroFile | sed 's/^\([^-]*-[0-9.]*\).*/\1/'`
-version=`echo $pkgId | sed 's/^[^-]*-//'`
-pkgWebDir=/web/content/software/$pkgName
-ssh -T $webHost bash -x $pkgWebDir/upload $version $indexHtml <$docDistroFile
+prefix=/tmp/$PKG_ID
+./configure --prefix=$prefix >configure.log 2>&1
+trap "rm -rf $prefix; `trap -p EXIT`" EXIT
+make install >install.log 2>&1
+
+# Copy the documentation to the package's website.
+#
+scp -r $prefix/share $WEB_HOST:$ABSPATH_VERSION_WEB_DIR
+
+# On the web host,
+#
+ssh -T $WEB_HOST bash -x <<EOF
+    set -e # exit on error
+
+    # Go to the package's home directory.
+    #
+    cd $ABSPATH_PKG_WEB_DIR
+
+    # Allow group write access to all created files.
+    #
+    umask 02
+
+    # Copy the change-log to the home-directory of the package's website.
+    #
+    cp $PKG_ID/doc/$PKG_NAME/CHANGE_LOG .
+
+    # Set the hyperlink references in the top-level HTML file. For a given major
+    # and minor version, keep only the latest bug-fix.
+    #
+    ls -d $PKG_NAME-*.*.* |
+        sed "s/$PKG_NAME-//" |
+        sort -t. -k 1nr,1 -k 2nr,2 -k 3nr,3 |
+        awk -F. '\$1!=ma||\$2!=mi{print}{ma=\$1;mi=\$2}' >versions
+    sed -n '1,/$BEGIN_VERSION_LINKS/p' index.html >index.html.new
+    for vers in `cat versions`; do
+        href=`find $PKG_NAME-\$vers -name index.html`
+        test "\$href" || href=`find $PKG_NAME-\$vers -name udunits2.html`
+        echo "            <li><a href=\"\$href\">\$vers</a>" >>index.html.new
+    done
+    sed -n '/$END_VERSION_LINKS/,\$p' index.html >>index.html.new
+    cp index.html index.html.old
+    mv index.html.new index.html
+
+    # Delete all versions not referenced in the top-level HTML file.
+    #
+    for vers in `ls -d $PKG_NAME-*.*.* | sed "s/$PKG_NAME-//"`; do
+        fgrep -s \$vers versions || rm -rf $PKG_NAME-\$vers
+    done
+
+    # Adjust the symbolic link to the current version
+    #
+    rm -f $PKG_NAME-current
+    ln -s $PKG_ID $PKG_NAME-current
+EOF

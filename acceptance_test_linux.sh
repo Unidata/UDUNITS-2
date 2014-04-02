@@ -1,90 +1,108 @@
 # Performs an acceptance-test of a package on a Linux system. Creates a binary
-# distribution file and a documentation distribution file.
+# distribution file and a documentation distribution file. The current directory
+# must contain the source-distribution file and the release-variables file.
 #
-# The following environment variables must be set:
-#     SOURCE_DISTRO     Glob pattern of the compressed tar file of the source
-#                       distribution
-#     VM_NAME           Name of the Vagrant virtual machine (e.g.,
+# Usage: $0 vmName vmCpu generator ext install upload binRepoHost binRepoRoot
+#               binRepoDir
+#
+# where:
+#     vmName            Name of the Vagrant virtual machine (e.g.,
 #                       "centos64_64", "precise32")
-#     PKG_FILE_NAME     Value for the variable CPACK_PACKAGE_FILE_NAME (e.g.,
-#                       "udunits-2.2.0.x86_64")
-#     GENERATOR         Name of the CPack binary package generator (e.g., "RPM",
+#     vmCpu             Type of VM CPU (e.g., "x86_64")
+#     generator         Name of the CPack binary package generator (e.g., "RPM",
 #                       "DEB")
-#     EXT               Extension of the binary package file (e.g., "rpm",
+#     ext               Extension of the binary package file (e.g., "rpm",
 #                       "deb")
-#     INSTALL           Command to install from the package file (e.g., "rpm 
+#     install           Command to install from the package file (e.g., "rpm 
 #                       --install", "dpkg --install")
+#     upload            Path of the binary-repository upload script 
+#     binRepoHost       Name of the binary repository host (e.g., "spock").
+#     binRepoRoot       Path of the root of the binary repository on the
+#                       binary repository host relative to the home directory
+#                       of the user (e.g., "repo").
+#     binRepoDir        Path of the binary repository on the binary repository
+#                       host relative to the root of the binary repository
+#                       excluding the CPU type (e.g., "CentOS/6").
 
-set -e
+set -e # terminate on error
 
-: SOURCE_DISTRO=${SOURCE_DISTRO:?Path of source-distribution not specified}
-: VM_NAME=${VM_NAME:?Name of virtual machine not specified}
-: PKG_FILE_NAME=${PKG_FILE_NAME:?Package filename not specified}
-: GENERATOR=${GENERATOR:?Name of CPack package generator not specified}
-: EXT=${EXT:?Package extension not specified}
-: INSTALL=${INSTALL:?Installation command not specified}
+# Parse the command-line.
+#
+VM_NAME=${1:?Name of Vagrant virtual machine not specified}
+VM_CPU=${2:?Virtual machine CPU not specified}
+GENERATOR=${3:?Name of CPack package generator not specified}
+EXT=${4:?Package extension not specified}
+INSTALL=${5:?Installation command not specified}
+upload=${6:?Path of binary-repository upload script not specified}
+binRepoHost=${7:?Name of binary-repository host not specified}
+binRepoRoot=${8:?Relative path of binary repository root not specified}
+binRepoDir=${9:?Relative path of binary repository not specified}
 
-prefix=/usr/local
-SOURCE_DISTRO=`ls $SOURCE_DISTRO`
+# Get the static release variables.
+#
+. ./release-vars.sh
 
-#
-# Remove any leftover artifacts from an earlier job.
-#
-rm -rf *
+binDistroName="$PKG_ID.$VM_CPU"
+binDistroFilename=$binDistroName.$EXT
 
+# Make the directory that contains this script be the current working directory.
 #
-# Unpack the source distribution.
-#
-pax -zr <$SOURCE_DISTRO
+cd `dirname $0`
 
-#
-# Make the source directory the current working directory.
-#
-cd `basename $SOURCE_DISTRO .tar.gz`
-
-#
 # Start the virtual machine. Ensure that each virtual machine is started
 # separately because vagrant(1) doesn't support concurrent "vagrant up" 
 # invocations.
 #
-type vagrant 
 trap "vagrant destroy --force $VM_NAME; `trap -p EXIT`" EXIT
-flock "$SOURCE_DISTRO" -c "vagrant up \"$VM_NAME\""
+flock "$SOURCE_DISTRO_NAME" -c "vagrant up \"$VM_NAME\""
 
+# On the virtual machine,
 #
-# On the virtual machine, build the package from source, test it, install it,
-# test the installation, and create a binary distribution.
-#
-vagrant ssh $VM_NAME -c "cmake --version"
-vagrant ssh $VM_NAME -c \
-    "cmake -DCMAKE_INSTALL_PREFIX=$prefix -DCPACK_PACKAGE_FILE_NAME=$PKG_FILE_NAME -DCPACK_GENERATOR=$GENERATOR /vagrant"
-vagrant ssh $VM_NAME -c "make all test"
-vagrant ssh $VM_NAME -c "sudo make install install_test package"
+vagrant ssh $VM_NAME -- -T <<EOF
+    set -e # terminate on error
 
-#
-# Copy the binary distribution to the host machine.
-#
-rm -rf *.$EXT
-vagrant ssh $VM_NAME -c "cp *.$EXT /vagrant"
+    # Unpack the source distribution.
+    #
+    pax -zr </vagrant/$SOURCE_DISTRO_NAME
+
+    # Make the source directory of the unpacked distribution the current working
+    # directory.
+    #
+    cd $RELPATH_DISTRO_SOURCE_DIR
+
+    # Build the package from source, test it, install it, test the installation,
+    # and create a binary distribution.
+    #
+    cmake -DCMAKE_INSTALL_PREFIX=$ABSPATH_DEFAULT_INSTALL_PREFIX \
+        -DCPACK_PACKAGE_FILE_NAME=$binDistroName -DCPACK_GENERATOR=$GENERATOR
+    make all test
+    sudo make install install_test package
+
+    #
+    # Copy the binary distribution to the host machine.
+    #
+    cp $binDistroFilename /vagrant
+EOF
 
 #
 # Restart the virtual machine.
 #
 vagrant destroy --force $VM_NAME
-vagrant up $VM_NAME
+flock "$SOURCE_DISTRO_NAME" -c "vagrant up \"$VM_NAME\""
 
+# On the virtual machine,
 #
-# Verify that the package installs correctly from the binary distribution.
-#
-vagrant ssh $VM_NAME -c "sudo $INSTALL /vagrant/*.$EXT"
-vagrant ssh $VM_NAME -c "$prefix/bin/udunits2 -A -H km -W m"
+vagrant ssh $VM_NAME -- -T <<EOF
+    set -e # terminate on error
 
+    # Verify that the package installs correctly from the binary distribution.
+    #
+    sudo $INSTALL /vagrant/*.$EXT
+    $ABSPATH_DEFAULT_INSTALL_PREFIX/bin/udunits2 -A -H km -W m
+EOF
+
+# Upload the binary distribution to the binary repository.
 #
-# Create a distribution of the documentation in case it's needed by a
-# subsequent job. NB: The first component of all pathnames in the distribution
-# is "share/".
-#
-pkgId=`basename $SOURCE_DISTRO .tar.gz | sed 's/^\([^-]*-[0-9.]*\).*/\1/'`
-vagrant ssh $VM_NAME -c \
-    "pax -zw -s ';$prefix/;;' $prefix/share/doc/udunits $prefix/share/udunits >$pkgId-doc.tar.gz"
-vagrant ssh $VM_NAME -c "cp $pkgId-doc.tar.gz /vagrant"
+scp $upload $binRepoHost:$binRepoRoot/upload &&        
+    ssh -T $binRepoHost bash -x $binRepoRoot/upload \
+            $binRepoDir/$VM_CPU/$binDistroFilename <$binDistroFilename

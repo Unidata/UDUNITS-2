@@ -5,14 +5,20 @@
 
 set -e  # exit if error
 
+# Get the static release variables
 #
-# Build and test the package and create a source-distribution.
+. ./release-vars.sh
+
 #
-autoreconf -i --force
-./configure &>configure.log
-make distcheck
+# Build and test the package using CMake.
+#
 rm -rf build
 mkdir build
 cd build
 cmake ..
 make all test package_source
+
+# Build and test the package and create a source-distribution using autotools.
+autoreconf -i --force
+./configure --prefix=/tmp/$PKG_ID &>configure.log
+make distcheck
