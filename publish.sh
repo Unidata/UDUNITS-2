@@ -27,7 +27,7 @@ fi
 prefix=/tmp/$PKG_ID
 ./configure --prefix=$prefix >configure.log 2>&1
 trap "rm -rf $prefix; `trap -p EXIT`" EXIT
-make install >install.log 2>&1
+make install-info install-html >install.log 2>&1
 
 # Copy the documentation to the package's website.
 #
@@ -38,7 +38,7 @@ scp -r $prefix/share $WEB_HOST:$ABSPATH_VERSION_WEB_DIR
 ssh -T $WEB_HOST bash -x <<EOF
     set -e # exit on error
 
-    # Go to the package's home directory.
+    # Go to the home directory of the package.
     #
     cd $ABSPATH_PKG_WEB_DIR
 
@@ -46,12 +46,12 @@ ssh -T $WEB_HOST bash -x <<EOF
     #
     umask 02
 
-    # Copy the change-log to the home-directory of the package's website.
+    # Copy the change-log to the home-directory of the website of the package.
     #
     cp $PKG_ID/doc/$PKG_NAME/CHANGE_LOG .
 
-    # Set the hyperlink references in the top-level HTML file. For a given major
-    # and minor version, keep only the latest bug-fix.
+    # Set the hyperlink references in the top-level HTML file. For a given
+    # major and minor version, keep only the latest bug-fix.
     #
     ls -d $PKG_NAME-*.*.* |
         sed "s/$PKG_NAME-//" |
@@ -61,7 +61,8 @@ ssh -T $WEB_HOST bash -x <<EOF
     for vers in `cat versions`; do
         href=`find $PKG_NAME-\$vers -name index.html`
         test "\$href" || href=`find $PKG_NAME-\$vers -name udunits2.html`
-        echo "            <li><a href=\"\$href\">\$vers</a>" >>index.html.new
+        echo "            <li><a href=\"\$href\">\$vers</a>" \
+            >>index.html.new
     done
     sed -n '/$END_VERSION_LINKS/,\$p' index.html >>index.html.new
     cp index.html index.html.old
@@ -73,7 +74,7 @@ ssh -T $WEB_HOST bash -x <<EOF
         fgrep -s \$vers versions || rm -rf $PKG_NAME-\$vers
     done
 
-    # Adjust the symbolic link to the current version
+    # Adjust the symbolic link to the current version.
     #
     rm -f $PKG_NAME-current
     ln -s $PKG_ID $PKG_NAME-current
