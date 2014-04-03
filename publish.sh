@@ -31,7 +31,8 @@ make install install-info install-html >install.log 2>&1
 
 # Copy the documentation to the package's website.
 #
-scp -r $prefix/share $WEB_HOST:$ABSPATH_VERSION_WEB_DIR
+ssh $WEB_HOST mkdir -p $ABSPATH_VERSION_WEB_DIR
+scp -r $prefix/share/* $WEB_HOST:$ABSPATH_VERSION_WEB_DIR
 
 # On the web host,
 #
