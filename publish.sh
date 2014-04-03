@@ -31,13 +31,16 @@ make install install-info install-html >install.log 2>&1
 
 # Copy the documentation to the package's website.
 #
-ssh $WEB_HOST mkdir -p $ABSPATH_VERSION_WEB_DIR
-scp -r $prefix/share/* $WEB_HOST:$ABSPATH_VERSION_WEB_DIR
+versionWebDirTmp=$ABSPATH_VERSION_WEB_DIR.tmp
+ssh -T $WEB_HOST rm -rf $versionWebDirTmp
+trap "ssh -T $WEB_HOST rm -rf $versionWebDirTmp; `trap -p ERR`" ERR
+scp -Br $prefix/share $WEB_HOST:$versionWebDirTmp
+ssh -T $WEB_HOST mv -f $versionWebDirTmp $ABSPATH_VERSION_WEB_DIR
 
 # On the web host,
 #
-ssh -T $WEB_HOST bash -x <<EOF
-    set -e # exit on error
+ssh -T $WEB_HOST bash --login <<EOF
+    set -ex # exit on error
 
     # Go to the home directory of the package.
     #
