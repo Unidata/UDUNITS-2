@@ -59,9 +59,9 @@ ssh -T $WEB_HOST bash -x <<EOF
         sort -t. -k 1nr,1 -k 2nr,2 -k 3nr,3 |
         awk -F. '\$1!=ma||\$2!=mi{print}{ma=\$1;mi=\$2}' >versions
     sed -n '1,/$BEGIN_VERSION_LINKS/p' index.html >index.html.new
-    for vers in `cat versions`; do
-        href=`find $PKG_NAME-\$vers -name index.html`
-        test "\$href" || href=`find $PKG_NAME-\$vers -name udunits2.html`
+    for vers in \`cat versions\`; do
+        href=\`find $PKG_NAME-\$vers -name index.html\`
+        test "\$href" || href=\`find $PKG_NAME-\$vers -name udunits2.html\`
         echo "            <li><a href=\"\$href\">\$vers</a>" \
             >>index.html.new
     done
@@ -71,7 +71,7 @@ ssh -T $WEB_HOST bash -x <<EOF
 
     # Delete all versions not referenced in the top-level HTML file.
     #
-    for vers in `ls -d $PKG_NAME-*.*.* | sed "s/$PKG_NAME-//"`; do
+    for vers in \`ls -d $PKG_NAME-*.*.* | sed "s/$PKG_NAME-//"\`; do
         fgrep -s \$vers versions || rm -rf $PKG_NAME-\$vers
     done
 
