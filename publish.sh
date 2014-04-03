@@ -27,7 +27,7 @@ fi
 prefix=/tmp/$PKG_ID
 ./configure --prefix=$prefix >configure.log 2>&1
 trap "rm -rf $prefix; `trap -p EXIT`" EXIT
-make install-info install-html >install.log 2>&1
+make install install-info install-html >install.log 2>&1
 
 # Copy the documentation to the package's website.
 #

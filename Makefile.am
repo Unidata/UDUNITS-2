@@ -17,11 +17,12 @@ EXTRA_DIST = \
     COPYRIGHT \
     udunits2.html \
     udunits2.pdf
-AM_MAKEINFOHTMLFLAGS = --no-split
-RSYNC_FLAGS	= --rsh=ssh --rsync-path=/opt/bin/rsync
-distName = $(PACKAGE)-$(VERSION)
-distArchive = $(distName).tar.gz
-DISTCLEANFILES	= *.log $(distArchive)
+AM_MAKEINFOHTMLFLAGS 	= --no-split
+RSYNC_FLAGS		= --rsh=ssh --rsync-path=/opt/bin/rsync
+distName 		= $(PACKAGE)-$(VERSION)
+distArchive 		= $(distName).tar.gz
+DISTCLEANFILES		= *.log $(distArchive)
+dist_doc_DATA		= CHANGE_LOG COPYRIGHT README
 
 remote-checks:	dist
 	cd test && $(MAKE) $(AM_MAKEFLAGS) $@
