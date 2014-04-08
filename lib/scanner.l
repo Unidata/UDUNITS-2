@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 University Corporation for Atmospheric Research
+ * Copyright 2014 University Corporation for Atmospheric Research
  *
  * This file is part of the UDUNITS-2 package.  See the file COPYRIGHT
  * in the top-level source-directory of the package for copying and
@@ -22,9 +22,80 @@
 #include <string.h>
 #include <time.h>
 
+/**
+ * Decodes a date.
+ *
+ * @param[in]  text     The text specifying the date to be decoded.
+ * @param[in]  format   The format to use for decoding. The order is year (int),
+ *                      month (int), and day (int).
+ * @param[out] date     The date corresponding to the input.
+ * @retval     DATE     Success
+ * @retval     ERR      Error
+ */
+static double decodeDate(
+    const char* const   text,
+    const char* const   format,
+    double* const       date)
+{
+    int		year;
+    int		month = 1;
+    int		day = 1;
+
+    (void)sscanf(text, format, &year, &month, &day);
+    *date = ut_encode_date(year, month, day);
+    return DATE;
+}
+
+/**
+ * Decodes a clock-time.
+ *
+ * @param[in] text      The text specifying the clock-time to be decoded.
+ * @param[in] format    The format to use for decoding. The order is hour (int),
+ *                      minute (int), and second (double).
+ * @return              The clock-time corresponding to the input.
+ */
+static double decodeClock(
+    const char* const   text,
+    const char* const   format)
+{
+    int         hour = 0;
+    int         minute = 0;
+    double      second = 0;
+
+    (void)sscanf(text, format, &hour, &minute, &second);
+    if (hour < 0) {
+        minute = -minute;
+        second = -second;
+    }
+    return ut_encode_clock(hour, minute, second);
+}
+
+/**
+ * Decodes a real value.
+ *
+ * @param[in]  text     Text to be decoded.
+ * @param[out] value    Decoded value.
+ * @retval     REAL     Success.
+ * @retval     ERR      Failure.
+ */
+static int decodeReal(
+    const char* const text,
+    double* const     value)
+{
+    errno = 0;
+    *value = atof(text);
+
+    if (errno == 0)
+        return REAL;
+
+    ut_handle_error_message("Invalid real: \"%s\"", text);
+    return ERR;
+}
+
 %}
 
 space			[ \t\r\f\v]
+sign                    [+-]
 int			[0-9]+
 int_period		{int}\.
 period_int		\.{int}
@@ -69,30 +140,35 @@ since                   [Ss][Ii][Nn][Cc][Ee]
 ref                     [Rr][Ee][Ff]
 per                     [Pp][Ee][Rr]
 
-%Start		id_seen
+%Start		ID_SEEN SHIFT_SEEN DATE_SEEN CLOCK_SEEN
 
 %%
     if (_restartScanner) {
-	BEGIN(INITIAL);
+	BEGIN INITIAL;
 	_restartScanner = 0;
     }
 
-{space}*(@|{after}|{from}|{since}|{ref}){space}* {
-    BEGIN(INITIAL);
+{space}*{ref}{space}* {
+    BEGIN INITIAL;
     return SHIFT;
 }
 
-{space}*({per}|"/"){space}* {
-    BEGIN(INITIAL);
+<INITIAL,ID_SEEN>{space}*(@|{after}|{from}|{since}){space}* {
+    BEGIN SHIFT_SEEN;
+    return SHIFT;
+}
+
+<INITIAL,ID_SEEN>{space}*({per}|"/"){space}* {
+    BEGIN INITIAL;
     return DIVIDE;
 }
 
-"-"|"."|"*"|{middot}|{space}+ {
-    BEGIN(INITIAL);
+<INITIAL,ID_SEEN>"-"|"."|"*"|{middot}|{space}+ {
+    BEGIN INITIAL;
     return MULTIPLY;
 }
 
-("^"|"**")[+-]?{int} {
+<INITIAL,ID_SEEN>("^"|"**")[+-]?{int} {
     int		status;
 
     if (sscanf(yytext, "%*[*^]%ld", &yylval.ival) != 1) {
@@ -107,7 +183,7 @@ per                     [Pp][Ee][Rr]
     return status;
 }
 
-{utf8_exponent} {
+<INITIAL,ID_SEEN>{utf8_exponent} {
     int		status = EXPONENT;
     int		exponent = 0;
     int		sign = 1;
@@ -160,71 +236,70 @@ per                     [Pp][Ee][Rr]
     if (status == EXPONENT)
 	yylval.ival = sign * exponent;
 
-    BEGIN(INITIAL);
+    BEGIN INITIAL;
     return status;
 }
 
-{broken_date}(T|{space}*) {
-    int		year;
-    int		month;
-    int		day = 1;
-
-    (void) sscanf((char*)yytext, "%d-%d-%d", &year, &month, &day);
-
-    yylval.rval	= ut_encode_date(year, month, day);
-
-    BEGIN(INITIAL);
-    return DATE;
+<SHIFT_SEEN>{broken_date}(T|{space}*) {
+    BEGIN DATE_SEEN;
+    return decodeDate((char*)yytext, "%d-%d-%d", &yylval.rval);
 }
 
-{broken_clock}{space}* {
-    int		hour;
-    int		minute;
-    double	second	= 0.0;
+<SHIFT_SEEN>{packed_date}(T|{space}*) {
+    if (_isTime) {
+        BEGIN DATE_SEEN;
+        return decodeDate((char*)yytext, "%4d%2d%2d", &yylval.rval);
+    }
+    else {
+        BEGIN INITIAL;
+        return decodeReal((char*)yytext, &yylval.rval);
+    }
+}
 
-    (void) sscanf((char*)yytext, "%d:%d:%lf", &hour, &minute, &second);
-
-    yylval.rval	= ut_encode_clock(hour, minute, second);
-
-    BEGIN(INITIAL);
+<DATE_SEEN>{broken_clock}{space}* {
+    yylval.rval = decodeClock((char*)yytext, "%d:%d:%lf");
+    BEGIN CLOCK_SEEN;
     return CLOCK;
 }
 
-{packed_timestamp}{space}* {
-    int		year;
-    int		month = 1;
-    int		day = 1;
-    int		hour = 0;
-    int		minute = 0;
-    double	second	= 0.0;
-
-    (void) sscanf((char*)yytext, "%4d%2d%2dT%2d%2d%lf", &year, &month,
-        &day, &hour, &minute, &second);
-
-    yylval.rval	= ut_encode_time(year, month, day, hour, minute, second);
-
-    BEGIN(INITIAL);
-    return TIMESTAMP;
+<DATE_SEEN>{packed_clock}{space}* {
+    yylval.rval = decodeClock((char*)yytext, "%2d%2d%lf");
+    BEGIN CLOCK_SEEN;
+    return CLOCK;
 }
 
-<INITIAL>{real} {
-    int		status;
-
-    errno	= 0;
-    yylval.rval = atof((char*)yytext);
-
-    if (errno == 0) {
-	status	= REAL;
-    } else {
-        ut_handle_error_message("Invalid real\n", stderr);
-
-	status	= ERR;
-    }
-
-    return status;
+<CLOCK_SEEN>{sign}?{int}:{int} {
+    yylval.rval	= decodeClock((char*)yytext, "%d:%d");
+    BEGIN INITIAL;
+    return CLOCK;
 }
 
-[+-]?{int} {
+<CLOCK_SEEN>{sign}{int} {
+    yylval.rval	= (yyleng <= 3)
+                        ? decodeClock((char*)yytext, "%d")
+                        : (yyleng == 4)
+                            ? decodeClock((char*)yytext, "%2d%d")
+                            : decodeClock((char*)yytext, "%3d%d");
+    BEGIN INITIAL;
+    return CLOCK;
+}
+
+<CLOCK_SEEN>{int} {
+    yylval.rval	= (yyleng <= 2)
+                        ? decodeClock((char*)yytext, "%d")
+                        : (yyleng == 3)
+                            ? decodeClock((char*)yytext, "%1d%d")
+                            : decodeClock((char*)yytext, "%2d%d");
+    BEGIN INITIAL;
+    return CLOCK;
+}
+
+<INITIAL,SHIFT_SEEN>{real} {
+    BEGIN INITIAL;
+    return decodeReal((char*)yytext, &yylval.rval);
+}
+
+<INITIAL,ID_SEEN,SHIFT_SEEN>[+-]?{int} {
     int		status;
 
     errno	= 0;
@@ -238,6 +313,7 @@ per                     [Pp][Ee][Rr]
 	status	= ERR;
     }
 
+    BEGIN INITIAL;
     return status;
 }
 
@@ -256,15 +332,15 @@ lb{space}*{logref} {
     return LOGREF;
 }
 
-{id} {
+<INITIAL,CLOCK_SEEN>{id} {
     yylval.id = strdup((char*)yytext);
 
-    BEGIN(id_seen);
+    BEGIN ID_SEEN;
     return ID;
 }
 
 . {
-    BEGIN(INITIAL);
+    BEGIN INITIAL;
     return yytext[0];
 }
 

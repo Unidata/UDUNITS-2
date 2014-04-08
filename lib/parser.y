@@ -34,6 +34,7 @@ static ut_system*	_unitSystem;	/* The unit-system to use */
 static char*		_errorMessage;	/* last error-message */
 static ut_encoding	_encoding;	/* encoding of string to be parsed */
 static int		_restartScanner;/* restart scanner? */
+static int		_isTime;        /* product_exp is time? */
 
 
 /*
@@ -98,6 +99,105 @@ uterror(
     if (_errorMessage == NULL)
 	_errorMessage = nomem;
 }
+
+/**
+ * Parses an integer value into broken-down clock-time. The value is assumed to
+ * have the form H[H[MM[SS]]].
+ *
+ * @param[in]  value   The integer value.
+ * @param[out] hour    The hour field.
+ * @param[out] minute  The minute field. Set to zero if appropriate.
+ * @param[out] second  The second field. Set to zero if appropriate.
+ */
+static void to_clock(
+    unsigned long       value,
+    unsigned* const     hour,
+    unsigned* const     minute,
+    unsigned* const     second)
+{
+    if (value > 0)
+        while (value < 10000)
+            value *= 10;
+
+    *hour = value / 10000;
+    *minute = (value % 10000) / 100;
+    *second = value % 100;
+}
+
+/**
+ * Converts an integer value into a timezone offset as used by this package.
+ *
+ * @param[in]  value  The integer value. Must correspond to [+|-]H[H[MM]].
+ * @param[out] time   The corresponding time as used by this package.
+ * @retval     0      Success. "*time" is set.
+ * @retval     -1     The integer value is invalid.
+ */
+static int timezone_to_time(
+    const long    value,
+    double* const time)
+{
+    unsigned hour, minute, second;
+
+    if (value < -2400 || value > 2400)
+        return -1;
+
+    to_clock(value < 0 ? -value : value, &hour, &minute, &second);
+
+    if (hour > 24 || minute >= 60)
+        return -1;
+
+    *time = value < 0
+        ? ut_encode_clock(-hour, -minute, -second)
+        : ut_encode_clock(hour, minute, second);
+
+    return 0;
+}
+
+/**
+ * Converts an integer value into a time as used by this package.
+ *
+ * @param[in]  value  The integer value. Must correspond to H[H[MM[SS]]].
+ * @param[out] time   The corresponding time as used by this package.
+ * @retval     0      Success. "*time" is set.
+ * @retval     -1     The integer value is invalid.
+ */
+static int clock_to_time(
+    const long    value,
+    double* const time)
+{
+    unsigned hour, minute, second;
+    
+    if (value < 0)
+        return -1;
+
+    to_clock(value, &hour, &minute, &second);
+
+    if (hour > 24 || minute >= 60 || second > 60) /* allow leap second */
+        return -1;
+
+    *time = ut_encode_clock(hour, minute, second);
+
+    return 0;
+}
+
+/**
+ * Indicates if a unit is a (non-offset) time unit.
+ *
+ * @param[in] unit      The unit to be checked.
+ * @retval    0         If and only if the unit is not a time unit.
+ */
+static int isTime(
+    const ut_unit* const unit)
+{
+    ut_status   prev = ut_get_status();
+    ut_unit*    second = ut_get_unit_by_name(_unitSystem, "second");
+    int         isTime = ut_are_convertible(unit, second);
+    
+    ut_free(second);
+    ut_set_status(prev);
+    return isTime;
+}
+
 %}
 
 %union {
@@ -174,9 +274,11 @@ shift_exp:	product_exp {
 
 product_exp:	power_exp {
 		    $$ = $1;
+                    _isTime = isTime($$);
 		} |
 		product_exp power_exp	{
 		    $$ = ut_multiply($1, $2);
+                    _isTime = isTime($$);
 		    ut_free($1);
 		    ut_free($2);
 		    if ($$ == NULL)
@@ -190,6 +292,7 @@ product_exp:	power_exp {
 		} |
 		product_exp MULTIPLY power_exp	{
 		    $$ = ut_multiply($1, $3);
+                    _isTime = isTime($$);
 		    ut_free($1);
 		    ut_free($3);
 		    if ($$ == NULL)
@@ -203,6 +306,7 @@ product_exp:	power_exp {
 		} |
 		product_exp DIVIDE power_exp	{
 		    $$ = ut_divide($1, $3);
+                    _isTime = isTime($$);
 		    ut_free($1);
 		    ut_free($3);
 		    if ($$ == NULL)
@@ -336,19 +440,6 @@ timestamp:	DATE {
 		DATE CLOCK CLOCK {
 		    $$ = $1 + ($2 - $3);
 		} |
-		DATE CLOCK INT {
-		    int	mag = $3 >= 0 ? $3 : -$3;
-		    if (mag <= 24) {
-			$$ = $1 + ($2 - ut_encode_clock($3, 0, 0));
-		    }
-		    else if (mag >= 100 && mag <= 2400) {
-			$$ = $1 + ($2 - ut_encode_clock($3/100, $3%100, 0));
-		    }
-		    else {
-			ut_set_status(UT_SYNTAX);
-			YYERROR;
-		    }
-		} |
 		DATE CLOCK ID {
 		    int	error = 0;
 
@@ -373,19 +464,6 @@ timestamp:	DATE {
 		} |
 		TIMESTAMP CLOCK {
 		    $$ = $1 - $2;
-		} |
-		TIMESTAMP INT {
-		    int	mag = $2 >= 0 ? $2 : -$2;
-		    if (mag <= 24) {
-			$$ = $1 - ut_encode_clock($2, 0, 0);
-		    }
-		    else if (mag >= 100 && mag <= 2400) {
-			$$ = $1 - ut_encode_clock($2/100, $2%100, 0);
-		    }
-		    else {
-			ut_set_status(UT_SYNTAX);
-			YYERROR;
-		    }
 		} |
 		TIMESTAMP ID {
 		    int	error = 0;
@@ -436,7 +514,6 @@ timestamp:	DATE {
 #define yyreds		utreds
 #define yytoks		uttoks
 #define yylhs		utyylhs
-#define yylen		utyylen
 #define yydefred	utyydefred
 #define yydgoto		utyydgoto
 #define yysindex	utyysindex

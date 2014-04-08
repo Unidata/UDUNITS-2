@@ -1,3 +1,7 @@
+2.2.6	2014-04-08T12:57:50-0600
+    Fixed parsing of a timestamp "unit" with a "naked hour" (e.g., "days since
+    2014-04-08 06").
+
 2.2.5	2014-04-03T12:51:46-0600
     Added missing "Makefile.in" to source-distribution.
 

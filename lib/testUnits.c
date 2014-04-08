@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 University Corporation for Atmospheric Research
+ * Copyright 2014 University Corporation for Atmospheric Research
  *
  * This file is part of the UDUNITS-2 package.  See the file COPYRIGHT
  * in the top-level source-directory of the package for copying and
@@ -1564,6 +1564,50 @@ test_utOffsetByTime(void)
     cv_free(converter);
 
     ut_free(daysSinceTheEpoch);
+
+    {
+        /*
+         * "Naked hour" test
+         */
+        ut_unit* unit = ut_parse(unitSystem,
+                "second since 1970-01-01 0", UT_ASCII);
+        CU_ASSERT_PTR_NOT_NULL(unit);
+        if (unit) {
+            converter = ut_get_converter(unit, secondsSinceTheEpoch);
+            CU_ASSERT_PTR_NOT_NULL(converter);
+            if (converter) {
+                CU_ASSERT_TRUE(areCloseDoubles(cv_convert_double(converter, 0), 0));
+                cv_free(converter);
+            }
+            ut_free(unit);
+        }
+
+        unit = ut_parse(unitSystem,
+                "second since 1970-01-01 0+1", UT_ASCII);
+        CU_ASSERT_PTR_NOT_NULL(unit);
+        if (unit) {
+            converter = ut_get_converter(unit, secondsSinceTheEpoch);
+            CU_ASSERT_PTR_NOT_NULL(converter);
+            if (converter) {
+                CU_ASSERT_TRUE(areCloseDoubles(cv_convert_double(converter, 0), -3600));
+                cv_free(converter);
+            }
+            ut_free(unit);
+        }
+
+        unit = ut_parse(unitSystem,
+                "second since 1970-01-01 0 +1", UT_ASCII);
+        CU_ASSERT_PTR_NOT_NULL(unit);
+        if (unit) {
+            converter = ut_get_converter(unit, secondsSinceTheEpoch);
+            CU_ASSERT_PTR_NOT_NULL(converter);
+            if (converter) {
+                CU_ASSERT_TRUE(areCloseDoubles(cv_convert_double(converter, 0), -3600));
+                cv_free(converter);
+            }
+            ut_free(unit);
+        }
+    }
 
     CU_ASSERT_PTR_NULL(ut_offset_by_time(NULL, ut_encode_time(0, 0, 0, 0, 0, 0)));
     CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
