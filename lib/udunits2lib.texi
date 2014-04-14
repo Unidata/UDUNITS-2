@@ -66,65 +66,65 @@ Coding:
 #include <udunits2.h>
 @quotation
 @multitable {ut_error_message_handler} {ut_get_dimensionless_unit_one(}
-@item ut_system* @tab ut_get_path_xml(const char* @var{path});
-@item ut_system* @tab ut_read_xml(const char* @var{path});
-@item ut_system* @tab ut_new_system(void);
-@item void      @tab ut_free_system(ut_system* @var{system});
-@item ut_system* @tab ut_get_system(const ut_unit* @var{unit});
-@item ut_unit*   @tab ut_get_dimensionless_unit_one(const ut_system* @var{system});
-@item ut_unit*   @tab ut_get_unit_by_name(const ut_system* @var{system}, const char* @var{name});
-@item ut_unit*   @tab ut_get_unit_by_symbol(const ut_system* @var{system}, const char* @var{symbol});
-@item ut_status @tab  ut_set_second(const ut_unit* @var{second});
-@item ut_status @tab  ut_add_name_prefix(ut_system* @var{system}, const char* @var{name}, double @var{value});
-@item ut_status @tab  ut_add_symbol_prefix(ut_system* @var{system}, const char* @var{symbol}, double @var{value});
-@item ut_unit*   @tab ut_new_base_unit(ut_system* @var{system});
-@item ut_unit*   @tab ut_new_dimensionless_unit(ut_system* @var{system});
-@item ut_unit*   @tab ut_clone(const ut_unit* @var{unit});
-@item void      @tab ut_free(ut_unit* @var{unit});
-@item const char* @tab ut_get_name(const ut_unit* @var{unit}, ut_encoding @var{encoding});
-@item ut_status @tab ut_map_name_to_unit(const char* @var{name}, const ut_encoding @var{encoding}, const ut_unit* @var{unit});
-@item ut_status @tab ut_unmap_name_to_unit(ut_system* @var{system}, const char* @var{name}, const ut_encoding @var{encoding});
-@item ut_status @tab ut_map_unit_to_name(const ut_unit* @var{unit}, const char* @var{name}, ut_encoding @var{encoding});
-@item ut_status @tab ut_unmap_unit_to_name(const ut_unit* @var{unit}, ut_encoding @var{encoding});
-@item const char* @tab ut_get_symbol(const ut_unit* @var{unit}, ut_encoding @var{encoding});
-@item ut_status @tab ut_map_symbol_to_unit(const char* @var{symbol}, const ut_encoding @var{encoding}, const ut_unit* @var{unit});
-@item ut_status @tab ut_unmap_symbol_to_unit(ut_system* @var{system}, const char* @var{symbol}, const ut_encoding @var{encoding});
-@item ut_status @tab ut_map_unit_to_symbol(const ut_unit* @var{unit}, const char* @var{symbol}, ut_encoding @var{encoding});
-@item ut_status @tab ut_unmap_unit_to_symbol(const ut_unit* @var{unit}, ut_encoding @var{encoding});
-@item int @tab ut_is_dimensionless(const ut_unit* @var{unit});
-@item int @tab ut_same_system(const ut_unit* @var{unit1}, const ut_unit* @var{unit2});
-@item int @tab ut_compare(const ut_unit* @var{unit1}, const ut_unit* @var{unit2});
-@item int @tab ut_are_convertible(const ut_unit* @var{unit1}, const ut_unit* @var{unit2});
-@item cv_converter* @tab ut_get_converter(ut_unit* @var{from}, ut_unit* @var{to});
-@item ut_unit* @tab ut_scale(double @var{factor}, const ut_unit* @var{unit});
-@item ut_unit* @tab ut_offset(const ut_unit* @var{unit}, double @var{offset});
-@item ut_unit* @tab ut_offset_by_time(const ut_unit* @var{unit}, double @var{origin});
-@item ut_unit* @tab ut_multiply(const ut_unit* @var{unit1}, const ut_unit* @var{unit2});
-@item ut_unit* @tab ut_invert(const ut_unit* @var{unit});
-@item ut_unit* @tab ut_divide(const ut_unit* @var{numer}, const ut_unit* @var{denom});
-@item ut_unit* @tab ut_raise(const ut_unit* @var{unit}, int @var{power});
-@item ut_unit* @tab ut_root(const ut_unit* @var{unit}, int @var{root});
-@item ut_unit* @tab ut_log(double @var{base}, const ut_unit* @var{reference});
-@item ut_unit* @tab ut_parse(const ut_system* @var{system}, const char* @var{string}, ut_encoding @var{encoding});
-@item char*   @tab ut_trim(char* @var{string}, ut_encoding @var{encoding});
-@item int @tab ut_format(const ut_unit* @var{unit}, char* @var{buf}, size_t @var{size}, unsigned @var{opts});
-@item ut_status @tab ut_accept_visitor(const ut_unit* @var{unit}, const ut_visitor* @var{visitor}, void* @var{arg});
-@item double @tab ut_encode_date(int @var{year}, int @var{month}, int @var{day});
-@item double @tab ut_encode_clock(int @var{hours}, int @var{minutes}, double @var{seconds});
-@item double @tab ut_encode_time(int @var{year}, int @var{month}, int @var{day}, int @var{hour}, int @var{minute}, double @var{second});
-@item void @tab ut_decode_time(double @var{value}, int* @var{year}, int* @var{month}, int* @var{day}, int* @var{hour}, int* @var{minute}, double* @var{second}, double* @var{resolution});
-@item ut_status @tab ut_get_status(void);
-@item void @tab ut_set_status(ut_status @var{status});
-@item int @tab ut_handle_error_message(const char* @var{fmt}, ...);
-@item ut_error_message_handler@tab ut_set_error_message_handler(ut_error_message_handler @var{handler});
-@item int @tab ut_write_to_stderr(const char* @var{fmt}, va_list @var{args});
-@item int @tab ut_ignore(const char* @var{fmt}, va_list @var{args});
+@item const char*   @tab @ref{ut_get_path_xml(),ut_get_path_xml}(const char* @var{path});
+@item ut_system*    @tab @ref{ut_read_xml(),ut_read_xml}(const char* @var{path});
+@item ut_system*    @tab @ref{ut_new_system(),ut_new_system}(void);
+@item void          @tab @ref{ut_free_system(), ut_free_system}(ut_system* @var{system});
+@item ut_system*    @tab @ref{ut_get_system(),ut_get_system}(const ut_unit* @var{unit});
+@item ut_unit*      @tab @ref{ut_get_dimensionless_unit_one(),ut_get_dimensionless_unit_one}(const ut_system* @var{system});
+@item ut_unit*      @tab @ref{ut_get_unit_by_name(),ut_get_unit_by_name}(const ut_system* @var{system}, const char* @var{name});
+@item ut_unit*      @tab @ref{ut_get_unit_by_symbol(),ut_get_unit_by_symbol}(const ut_system* @var{system}, const char* @var{symbol});
+@item ut_status     @tab @ref{ut_set_second(),ut_set_second}(const ut_unit* @var{second});
+@item ut_status     @tab @ref{ut_add_name_prefix(),ut_add_name_prefix}(ut_system* @var{system}, const char* @var{name}, double @var{value});
+@item ut_status     @tab @ref{ut_add_symbol_prefix(),ut_add_symbol_prefix}(ut_system* @var{system}, const char* @var{symbol}, double @var{value});
+@item ut_unit*      @tab @ref{ut_new_base_unit(),ut_new_base_unit}(ut_system* @var{system});
+@item ut_unit*      @tab @ref{ut_new_dimensionless_unit(),ut_new_dimensionless_unit}(ut_system* @var{system});
+@item ut_unit*      @tab @ref{ut_clone(),ut_clone}(const ut_unit* @var{unit});
+@item void          @tab @ref{ut_free(),ut_free}(ut_unit* @var{unit});
+@item const char*   @tab @ref{ut_get_name(),ut_get_name}(const ut_unit* @var{unit}, ut_encoding @var{encoding});
+@item ut_status     @tab @ref{ut_map_name_to_unit(),ut_map_name_to_unit}(const char* @var{name}, const ut_encoding @var{encoding}, const ut_unit* @var{unit});
+@item ut_status     @tab @ref{ut_unmap_name_to_unit(),ut_unmap_name_to_unit}(ut_system* @var{system}, const char* @var{name}, const ut_encoding @var{encoding});
+@item ut_status     @tab @ref{ut_map_unit_to_name(),ut_map_unit_to_name}(const ut_unit* @var{unit}, const char* @var{name}, ut_encoding @var{encoding});
+@item ut_status     @tab @ref{ut_unmap_unit_to_name(),ut_unmap_unit_to_name}(const ut_unit* @var{unit}, ut_encoding @var{encoding});
+@item const char*   @tab @ref{ut_get_symbol(),ut_get_symbol}(const ut_unit* @var{unit}, ut_encoding @var{encoding});
+@item ut_status     @tab @ref{ut_map_symbol_to_unit(),ut_map_symbol_to_unit}(const char* @var{symbol}, const ut_encoding @var{encoding}, const ut_unit* @var{unit});
+@item ut_status     @tab @ref{ut_unmap_symbol_to_unit(),ut_unmap_symbol_to_unit}(ut_system* @var{system}, const char* @var{symbol}, const ut_encoding @var{encoding});
+@item ut_status     @tab @ref{ut_map_unit_to_symbol(),ut_map_unit_to_symbol}(const ut_unit* @var{unit}, const char* @var{symbol}, ut_encoding @var{encoding});
+@item ut_status     @tab @ref{ut_unmap_unit_to_symbol(),ut_unmap_unit_to_symbol}(const ut_unit* @var{unit}, ut_encoding @var{encoding});
+@item int           @tab @ref{ut_is_dimensionless(),ut_is_dimensionless}(const ut_unit* @var{unit});
+@item int           @tab @ref{ut_same_system(),ut_same_system}(const ut_unit* @var{unit1}, const ut_unit* @var{unit2});
+@item int           @tab @ref{ut_compare(),ut_compare}(const ut_unit* @var{unit1}, const ut_unit* @var{unit2});
+@item int           @tab @ref{ut_are_convertible(),ut_are_convertible}(const ut_unit* @var{unit1}, const ut_unit* @var{unit2});
+@item cv_converter* @tab @ref{ut_get_converter(),ut_get_converter}(ut_unit* @var{from}, ut_unit* @var{to});
+@item ut_unit*      @tab @ref{ut_scale(),ut_scale}(double @var{factor}, const ut_unit* @var{unit});
+@item ut_unit*      @tab @ref{ut_offset(),ut_offset}(const ut_unit* @var{unit}, double @var{offset});
+@item ut_unit*      @tab @ref{ut_offset_by_time(),ut_offset_by_time}(const ut_unit* @var{unit}, double @var{origin});
+@item ut_unit*      @tab @ref{ut_multiply(),ut_multiply}(const ut_unit* @var{unit1}, const ut_unit* @var{unit2});
+@item ut_unit*      @tab @ref{ut_invert(),ut_invert}(const ut_unit* @var{unit});
+@item ut_unit*      @tab @ref{ut_divide(),ut_divide}(const ut_unit* @var{numer}, const ut_unit* @var{denom});
+@item ut_unit*      @tab @ref{ut_raise(),ut_raise}(const ut_unit* @var{unit}, int @var{power});
+@item ut_unit*      @tab @ref{ut_root(),ut_root}(const ut_unit* @var{unit}, int @var{root});
+@item ut_unit*      @tab @ref{ut_log(),ut_log}(double @var{base}, const ut_unit* @var{reference});
+@item ut_unit*      @tab @ref{ut_parse(),ut_parse}(const ut_system* @var{system}, const char* @var{string}, ut_encoding @var{encoding});
+@item char*         @tab @ref{ut_trim(),ut_trim}(char* @var{string}, ut_encoding @var{encoding});
+@item int           @tab @ref{ut_format(),ut_format}(const ut_unit* @var{unit}, char* @var{buf}, size_t @var{size}, unsigned @var{opts});
+@item ut_status     @tab @ref{ut_accept_visitor(),ut_accept_visitor}(const ut_unit* @var{unit}, const ut_visitor* @var{visitor}, void* @var{arg});
+@item double        @tab @ref{ut_encode_date(),ut_encode_date}(int @var{year}, int @var{month}, int @var{day});
+@item double        @tab @ref{ut_encode_clock(),ut_encode_clock}(int @var{hours}, int @var{minutes}, double @var{seconds});
+@item double        @tab @ref{ut_encode_time(),ut_encode_time}(int @var{year}, int @var{month}, int @var{day}, int @var{hour}, int @var{minute}, double @var{second});
+@item void          @tab @ref{ut_decode_time(),ut_decode_time}(double @var{value}, int* @var{year}, int* @var{month}, int* @var{day}, int* @var{hour}, int* @var{minute}, double* @var{second}, double* @var{resolution});
+@item ut_status     @tab @ref{ut_get_status(),ut_get_status}(void);
+@item void          @tab @ref{ut_set_status(),ut_set_status}(ut_status @var{status});
+@item int           @tab @ref{ut_handle_error_message(),ut_handle_error_message}(const char* @var{fmt}, ...);
+@item ut_error_message_handler @tab @ref{ut_set_error_message_handler(),ut_set_error_message_handler}(ut_error_message_handler @var{handler});
+@item int           @tab @ref{ut_write_to_stderr(),ut_write_to_stderr}(const char* @var{fmt}, va_list @var{args});
+@item int           @tab @ref{ut_ignore(),ut_ignore}(const char* @var{fmt}, va_list @var{args});
 @item 
-@item float @tab cv_convert_float(const cv_converter* @var{converter}, float @var{value});
-@item double @tab cv_convert_double(const cv_converter* @var{converter}, double @var{value});
-@item float* @tab cv_convert_floats(const cv_converter* @var{converter}, const float* @var{in}, size_t @var{count}, float* @var{out});
-@item double* @tab cv_convert_doubles(const cv_converter* @var{converter}, const double* @var{const} in, @var{size_t} count, @var{double}* out);
-@item void @tab cv_free(cv_converter* @var{conv});
+@item float         @tab @ref{cv_convert_float(),cv_convert_float}(const cv_converter* @var{converter}, float @var{value});
+@item double        @tab @ref{cv_convert_double(),cv_convert_double}(const cv_converter* @var{converter}, double @var{value});
+@item float*        @tab @ref{cv_convert_floats(),cv_convert_floats}(const cv_converter* @var{converter}, const float* @var{in}, size_t @var{count}, float* @var{out});
+@item double*       @tab @ref{cv_convert_doubles(),cv_convert_doubles}(const cv_converter* @var{converter}, const double* @var{const} in, @var{size_t} count, @var{double}* out);
+@item void          @tab @ref{cv_free(),cv_free}(cv_converter* @var{conv});
 @end multitable
 @end quotation
 @end example
@@ -360,6 +360,9 @@ one of the following:
 @item UT_BAD_ARG
 @var{system} or @var{name} is @code{NULL}.
 @end table
+
+You should pass the returned unit to @code{ut_free()} when it is no longer
+needed.
 @end deftypefun
 
 @cindex getting a unit by its symbol
@@ -379,6 +382,9 @@ one of the following:
 @item UT_BAD_ARG
 @var{system} or @var{symbol} is @code{NULL}.
 @end table
+
+You should pass the returned unit to @code{ut_free()} when it is no longer
+needed.
 @end deftypefun
 
 @anchor{ut_get_dimensionless_unit_one()}
@@ -690,6 +696,9 @@ If an error occurs, then this function returns @code{NULL} and
 @item UT_OS
 Operating-system failure.  See @code{errno} for the reason.
 @end table
+
+You should pass the returned unit to @code{ut_free()} when it is no longer
+needed.
 @end deftypefun
 
 @anchor{ut_trim()}
@@ -1332,7 +1341,7 @@ Operating-system error. See @var{errno} for the reason.
 @end table
 @end deftypefun
 
-@anchor{ut_divide}
+@anchor{ut_divide()}
 @deftypefun @code{ut_unit*} ut_divide @code{(const ut_unit* @var{numer}, const ut_unit* @var{denom})}
 Returns the result of dividing unit @var{numer} by unit @var{denom}.
 You should pass the pointer to @ref{ut_free()} when you no longer need the unit

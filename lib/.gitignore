@@ -27,3 +27,5 @@ udunits2lib.vr
 testUnits-1
 test_decode_time
 /iso_c_utilities.mod
+*.trs
+*.t2p

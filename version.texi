@@ -1,4 +1,4 @@
 @set UPDATED 8 January 2014
 @set UPDATED-MONTH January 2014
-@set EDITION 2.2.6
-@set VERSION 2.2.6
+@set EDITION 2.2.7
+@set VERSION 2.2.7
