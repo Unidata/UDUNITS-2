@@ -2,8 +2,8 @@
 # distribution file and a documentation distribution file. The current directory
 # must contain the source-distribution file and the release-variables file.
 #
-# Usage: $0 vmName vmCpu generator ext install upload binRepoHost binRepoRoot
-#               binRepoDir
+# Usage: $0 vmName vmCpu generator ext install [upload binRepoHost binRepoRoot
+#               binRepoDir]
 #
 # where:
 #     vmName            Name of the Vagrant virtual machine (e.g.,
@@ -33,10 +33,10 @@ VM_CPU=${2:?Virtual machine CPU not specified}
 GENERATOR=${3:?Name of CPack package generator not specified}
 EXT=${4:?Package extension not specified}
 INSTALL=${5:?Installation command not specified}
-upload=${6:?Path of binary-repository upload script not specified}
-binRepoHost=${7:?Name of binary-repository host not specified}
-binRepoRoot=${8:?Relative path of binary repository root not specified}
-binRepoDir=${9:?Relative path of binary repository not specified}
+upload=${6}
+binRepoHost=${7}
+binRepoRoot=${8}
+binRepoDir=${9}
 
 # Get the static release variables.
 #
@@ -101,8 +101,12 @@ vagrant ssh $VM_NAME -- -T <<EOF
     $ABSPATH_DEFAULT_INSTALL_PREFIX/bin/udunits2 -A -H km -W m
 EOF
 
-# Upload the binary distribution to the binary repository.
+# If desired,
 #
-scp $upload $binRepoHost:$binRepoRoot/upload &&        
-    ssh -T $binRepoHost bash -x $binRepoRoot/upload \
-            $binRepoDir/$VM_CPU/$binDistroFilename <$binDistroFilename
+if test -n "$upload" -a -n "$binRepoHost" -a -n "binRepoRoot" -a -n "binRepoDir"; then
+    # Upload the binary distribution to the binary repository.
+    #
+    scp $upload $binRepoHost:$binRepoRoot/upload &&        
+        ssh -T $binRepoHost bash -x $binRepoRoot/upload \
+                $binRepoDir/$VM_CPU/$binDistroFilename <$binDistroFilename
+fi

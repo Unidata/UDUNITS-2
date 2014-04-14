@@ -1,5 +1,8 @@
-2.2.7	2014-04-14T10:59:28-0600
-    Added to the documentation when ut_free() should be called.
+2.2.7	2014-04-14T15:37:26-0600
+    Documentation:
+        Added more instances when ut_free() should be called.
+    
+        Added hyperlinks for functions in the synopsis section.
 
 2.2.6	2014-04-08T12:57:50-0600
     Fixed parsing of a timestamp "unit" with a "naked hour" (e.g., "days since
