@@ -63,6 +63,8 @@ LDADD			= \
 check_PROGRAMS		= testUnits
 TESTS_ENVIRONMENT	= UDUNITS2_XML_PATH='$(srcdir)/udunits2.xml'
 TESTS = testUnits
+else
+LDADD			= @LIBS@
 endif
 
 if ENABLE_UDUNITS_1

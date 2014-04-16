@@ -1,4 +1,4 @@
-2.2.7	2014-04-14T15:37:26-0600
+2.2.7	2014-04-16T09:05:47-0600
     Documentation:
         Added more instances when ut_free() should be called.
     

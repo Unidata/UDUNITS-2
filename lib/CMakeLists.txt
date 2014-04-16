@@ -39,13 +39,12 @@ set_target_properties(libudunits2 PROPERTIES LIBRARY_OUTPUT_NAME udunits2)
 set_target_properties(libudunits2 PROPERTIES ARCHIVE_OUTPUT_NAME udunits2)
 set_target_properties(libudunits2 PROPERTIES RUNTIME_OUTPUT_NAME udunits2)
 target_link_libraries(libudunits2 ${EXPAT_LIBRARIES})
+target_link_libraries(libudunits2 ${MATH_LIBRARY})
 
 if (CUNIT_LIBRARY)
     add_executable(testUnits testUnits.c)
     target_link_libraries (testUnits libudunits2)
-    target_link_libraries (testUnits ${EXPAT_LIBRARY})
     target_link_libraries (testUnits ${CUNIT_LIBRARY})
-    target_link_libraries (testUnits ${MATH_LIBRARY})
     add_test(
         NAME testUnits
         COMMAND testUnits ${CMAKE_CURRENT_SOURCE_DIR}/udunits2.xml)
