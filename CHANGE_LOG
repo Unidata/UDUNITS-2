@@ -1,3 +1,6 @@
+2.2.8	2014-04-16T09:08:10-0600
+    Added reference to math library to build of UDUNITS library.
+
 2.2.7	2014-04-16T09:05:47-0600
     Documentation:
         Added more instances when ut_free() should be called.
