@@ -1,0 +1,92 @@
+#! /bin/bash
+# Adds a binary-distribution to a yum(1) repository.
+#
+# Usage: $0 yumRoot repoDir distro
+#
+# where:
+#     yumRoot   Path to the root of the yum(1) repository. May be absolute or
+#               relative to the current working directory. Will be created if it
+#               doesn't exist. createrepo(1) will be executed here.
+#     repoDir   Path to the platform-specific binary repository relative to
+#               the root of the yum(1) repository. Will be created if it doesn't
+#               exist.
+#     distro    Path to the binary-distribution. May be absolute or relative.
+#               The filename portion must have the form
+#
+#		    <name>-<version>[-<release>].<cpu>.rpm
+#
+#		where:
+#		    <name>      Package name (e.g., "udunits")
+#		    <version>   Package version (e.g., "2.2.3")
+#		    <release>   Optional package release number (e.g., "4").
+#		                Ignored.
+#		    <cpu>       Package CPU (e.g., "x86_64")
+
+set -e  # Exit on error
+
+yumRoot=${1:?Root of yum(1) binary-repository not specified}
+repoDir=${2:?Platform-specific binary-repository not specified}
+distro=${3:?Binary-distribution not specified}
+
+# Verify that the path to the platform-specific binary-repository is relative.
+#
+if echo $repoDir | grep '^/'; then
+    echo 1>&2 "Path of platform-specific binary repository not relative"
+    exit 1;
+fi
+
+# Ensure that all input paths are absolute,
+#
+echo $yumRoot | grep -qv '^/' && yumRoot=`pwd`/$yumRoot
+echo $repoDir | grep -qv '^/' && repoDir=$yumRoot/$repoDir
+echo $distro | grep -qv '^/' && distro=`pwd`/$distro
+
+# Vet and parse the filename of the input binary-distribution.
+#
+distroName=`basename "$distro"`
+if ! echo $distroName | egrep -q '[^-]+-[0-9.]+(-[0-9]+)?\.[^.]+\.rpm';
+then
+    echo 1>&2 "Invalid binary-distribution name: \"$distroName\""
+    exit 1
+fi
+set `echo "$distroName" | 
+        sed -r 's/([^-]+-[0-9.]+)(-[0-9]+)?\.([^.]+)\.rpm/\1 \3/'`
+pkgId=$1
+pkgCpu=$2
+
+# Ensure that the platform-specific binary-repository directory exists and go
+# to it.
+#
+mkdir -p $repoDir
+cd $repoDir
+
+# Set the glob pattern for all releases of the same version of the same package
+# in the platform-specific binary-repository directory:
+#
+releaseGlob=$pkgId-*.$pkgCpu.rpm 
+
+# Determine what the next release number should be.
+#
+if prevRelease=`ls $releaseGlob 2>/dev/null | 
+        sed -r "s/$pkgId-([0-9]*)\.$pkgCpu\.rpm/\1/"`; then
+    pkgRelease=$(($prevRelease+1))
+else
+    pkgRelease=1
+fi
+
+# Copy the input binary-distribution to the output binary-distribution.
+#
+outDistro=$pkgId-$pkgRelease.$pkgCpu.rpm
+cp $distro $outDistro
+
+# Delete all previous releases of the same version of the same package.
+#
+rm -f `ls $releaseGlob | fgrep -v $outDistro`
+
+# Go to the root-directory of the yum(1) binary-repository.
+#
+cd $yumRoot
+
+# Update the platform-specific binary-repository.
+#
+flock $repoDir createrepo $repoDir

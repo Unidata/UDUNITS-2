@@ -2,8 +2,7 @@
 # distribution file and a documentation distribution file. The current directory
 # must contain the source-distribution file and the release-variables file.
 #
-# Usage: $0 vmName vmCpu generator ext install [upload binRepoHost binRepoRoot
-#               binRepoDir]
+# Usage: $0 vmName vmCpu generator ext install [binRepoDir]
 #
 # where:
 #     vmName            Name of the Vagrant virtual machine (e.g.,
@@ -15,11 +14,6 @@
 #                       "deb")
 #     install           Command to install from the package file (e.g., "rpm 
 #                       --install", "dpkg --install")
-#     upload            Path of the binary-repository upload script 
-#     binRepoHost       Name of the binary repository host (e.g., "spock").
-#     binRepoRoot       Path of the root of the binary repository on the
-#                       binary repository host relative to the home directory
-#                       of the user (e.g., "repo").
 #     binRepoDir        Path of the binary repository on the binary repository
 #                       host relative to the root of the binary repository
 #                       excluding the CPU type (e.g., "CentOS/6").
@@ -33,10 +27,7 @@ VM_CPU=${2:?Virtual machine CPU not specified}
 GENERATOR=${3:?Name of CPack package generator not specified}
 EXT=${4:?Package extension not specified}
 INSTALL=${5:?Installation command not specified}
-upload=${6}
-binRepoHost=${7}
-binRepoRoot=${8}
-binRepoDir=${9}
+binRepoDir=${6}
 
 # Get the static release variables.
 #
@@ -97,16 +88,11 @@ vagrant ssh $VM_NAME -- -T <<EOF
 
     # Verify that the package installs correctly from the binary distribution.
     #
-    sudo $INSTALL /vagrant/*.$EXT
+    sudo $INSTALL /vagrant/$binDistroFilename
     $ABSPATH_DEFAULT_INSTALL_PREFIX/bin/udunits2 -A -H km -W m
-EOF
 
-# If desired,
-#
-if test -n "$upload" -a -n "$binRepoHost" -a -n "binRepoRoot" -a -n "binRepoDir"; then
-    # Upload the binary distribution to the binary repository.
+    # Add the binary-distribution to the yum(1) binary-repository.
     #
-    scp $upload $binRepoHost:$binRepoRoot/upload &&        
-        ssh -T $binRepoHost bash -x $binRepoRoot/upload \
-                $binRepoDir/$VM_CPU/$binDistroFilename <$binDistroFilename
-fi
+    bash -x /vagrant/repo_add_yum /repo $binRepoDir/$VM_CPU \
+            /vagrant/$binDistroFilename
+EOF

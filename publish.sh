@@ -1,23 +1,38 @@
-# Ensures existence of a source distribution in the download area and modifies
-# the package's website. The package is built in the current working directory
-# and installed under a temporary directory in order to extract the
-# documentation.
+#! /bin/bash
+
+# This script
+#    1) Ensures existence of a source-distribution in the download area;
+#    2) Modifies the package's website; and
+#    3) Copies all binary-repositories to the publicly-visible repository
+#       computer.
+#
+# The package is built in the current working directory and installed under a
+# temporary directory in order to extract the documentation.
 #
 # Usage:
-#     $0 
+#     $0 reposRoot
+#
+# where:
+#       reposRoot       Path to the root-directory of all binary repositories.
+#                       May be absolute or relative to the current working
+#                       directory. For example, "/opt/tomcat/repos".
 
 set -e  # exit on failure
+
+reposRoot=${1:?Root-directory of all binary repositories not specified}
 
 # Get the static release variables.
 #
 . ./release-vars.sh
 
-# If the source repository doesn't have the source distribution,
+# Ensure that the path to the root-directory of all binary repositories is
+# absolute.
+#
+echo $reposRoot | grep -qv '^/' && reposRoot=`pwd`/$reposRoot
+
+# Ensure that the source repository has the source distribution,
 #
 if ! ssh $SOURCE_REPO_HOST test -e $ABSPATH_SOURCE_DISTRO; then
-    #
-    # Copy the source distribution to the source repository.
-    #
     trap "ssh $SOURCE_REPO_HOST rm -f $ABSPATH_SOURCE_DISTRO; `trap -p ERR`" ERR
     scp $SOURCE_DISTRO_NAME $SOURCE_REPO_HOST:$ABSPATH_SOURCE_DISTRO
 fi
@@ -83,3 +98,9 @@ ssh -T $WEB_HOST bash --login <<EOF
     rm -f $PKG_NAME-current
     ln -s $PKG_ID $PKG_NAME-current
 EOF
+
+# Copy the binary-repositories to the publicly-accessible repository
+# computer.
+#
+cd $reposRoot
+flock . rsync --archive --relative --delete * webserver:/web/content/repos

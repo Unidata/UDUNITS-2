@@ -11,6 +11,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       puppet.manifests_path = "puppet"
       puppet.manifest_file = "centos-devel.pp"
     end
+    centos64_64.config.vm.synced_folder "/opt/tomcat/repos/yum", "/repo"
   end
 
   config.vm.define "ubuntu12_32" do |ubuntu12_32|
