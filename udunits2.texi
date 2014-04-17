@@ -151,7 +151,7 @@ file @code{/etc/apt/sources.list} or
 @code{/etc/apt/sources.list.d/unidata.list}:
 
 @example
-deb http://www.unidata.ucar.edu/repos/apt i386
+deb http://www.unidata.ucar.edu/repos/apt i386/
 @end example
 
 You should then be able to install this package in the usual manner.
@@ -159,7 +159,7 @@ For example,
 
 @example
 su -
-apt-get --install udunits
+apt-get install udunits
 @end example
 
 @node Source, , Binary, Installation
