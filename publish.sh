@@ -50,7 +50,8 @@ versionWebDirTmp=$ABSPATH_VERSION_WEB_DIR.tmp
 ssh -T $WEB_HOST rm -rf $versionWebDirTmp
 trap "ssh -T $WEB_HOST rm -rf $versionWebDirTmp; `trap -p ERR`" ERR
 scp -Br $prefix/share $WEB_HOST:$versionWebDirTmp
-ssh -T $WEB_HOST mv -f $versionWebDirTmp $ABSPATH_VERSION_WEB_DIR
+ssh -T $WEB_HOST rm -rf $ABSPATH_VERSION_WEB_DIR
+ssh -T $WEB_HOST mv $versionWebDirTmp $ABSPATH_VERSION_WEB_DIR
 
 # On the web host,
 #
@@ -78,7 +79,7 @@ ssh -T $WEB_HOST bash --login <<EOF
         awk -F. '\$1!=ma||\$2!=mi{print}{ma=\$1;mi=\$2}' >versions
     sed -n '1,/$BEGIN_VERSION_LINKS/p' index.html >index.html.new
     for vers in \`cat versions\`; do
-        href=\`find $PKG_NAME-\$vers -name index.html\`
+        href=\`find $PKG_NAME-\$vers -name udunits2.html\`
         test "\$href" || href=\`find $PKG_NAME-\$vers -name udunits2.html\`
         echo "            <li><a href=\"\$href\">\$vers</a>" \
             >>index.html.new
