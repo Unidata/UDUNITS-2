@@ -125,8 +125,8 @@ with the unit gram in version 2 of the package.
 @cindex Installation, binary
 
 @subsection 64-bit CentOS 6.4
-If your computer is compatible with 64-bit CentOS 6.4 (e.g., your computer is
-64-bit CentOS, Fedora, or RedHat), then create the file
+If your operating system is compatible with 64-bit CentOS 6.4 (e.g., your system
+is 64-bit CentOS, Fedora, or RedHat), then create the file
 @code{/etc/yum.repos.d/unidata.repo} with the following contents:
 
 @example
@@ -145,9 +145,9 @@ yum install udunits
 @end example
 
 @subsection 32-bit Ubuntu 12
-If your computer is compatible with 32-bit Ubuntu 12 (precious pangolin) (e.g.,
-your computer is 32-bit Debian or Ubuntu), then add the following line to the
-file @code{/etc/apt/sources.list} or
+If your operating system is compatible with 32-bit Ubuntu 12 (precious pangolin)
+(e.g., your system is 32-bit Debian or Ubuntu), then add the following line to
+the file @code{/etc/apt/sources.list} or
 @code{/etc/apt/sources.list.d/unidata.list}:
 
 @example
