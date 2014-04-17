@@ -20,6 +20,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       puppet.manifests_path = "puppet"
       puppet.manifest_file = "ubuntu-devel.pp"
     end
+    ubuntu12_32.vm.synced_folder "/opt/tomcat/repos/apt", "/repo"
   end
 
   # config.vm.define "win7" do |win7|
