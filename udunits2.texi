@@ -124,8 +124,8 @@ with the unit gram in version 2 of the package.
 @section Installing from a Binary Distribution
 @cindex Installation, binary
 
-Currently, the only supported binary distribution is for 64-bit 
-CentOS 6.4. If your computer is compatible with this (e.g., your computer is
+@subsection 64-bit CentOS 6.4
+If your computer is compatible with 64-bit CentOS 6.4 (e.g., your computer is
 64-bit CentOS, Fedora, or RedHat), then create the file
 @code{/etc/yum.repos.d/unidata.repo} with the following contents:
 
@@ -142,6 +142,24 @@ For example,
 @example
 su -
 yum install udunits
+@end example
+
+@subsection 32-bit Ubuntu 12
+If your computer is compatible with 32-bit Ubuntu 12 (precious pangolin) (e.g.,
+your computer is 32-bit Debian or Ubuntu), then add the following line to the
+file @code{/etc/apt/sources.list} or
+@code{/etc/apt/sources.list.d/unidata.list}:
+
+@example
+deb http://www.unidata.ucar.edu/repos/apt i386
+@end example
+
+You should then be able to install this package in the usual manner.
+For example,
+
+@example
+su -
+apt-get --install udunits
 @end example
 
 @node Source, , Binary, Installation
