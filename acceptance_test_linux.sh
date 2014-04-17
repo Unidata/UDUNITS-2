@@ -10,24 +10,27 @@
 #     vmCpu             Type of VM CPU (e.g., "x86_64")
 #     generator         Name of the CPack binary package generator (e.g., "RPM",
 #                       "DEB")
-#     ext               Extension of the binary package file (e.g., "rpm",
+#     ext               Extension of the binary-distribution file (e.g., "rpm",
 #                       "deb")
-#     install           Command to install from the package file (e.g., "rpm 
-#                       --install", "dpkg --install")
-#     binRepoDir        Path of the binary repository on the binary repository
-#                       host relative to the root of the binary repository
-#                       excluding the CPU type (e.g., "CentOS/6").
+#     install           Command to install from the binary-distribution file
+#                       (e.g., "rpm --install", "dpkg --install")
+#     binRepoDir        Path of the platform-specific binary-repository
+#                       directory (excluding the CPU type) relative to the root
+#                       directory of the package-manager-specific
+#                       binary-repository (e.g., "CentOS/6"). The
+#                       binary-distribution will be placed in directory
+#                       "$binRepoDir/$vmCpu".
 
 set -e # terminate on error
 
 # Parse the command-line.
 #
-VM_NAME=${1:?Name of Vagrant virtual machine not specified}
-VM_CPU=${2:?Virtual machine CPU not specified}
-GENERATOR=${3:?Name of CPack package generator not specified}
+VM_NAME=${1:?Name of Vagrant virtual-machine not specified}
+VM_CPU=${2:?Virtual-machine CPU not specified}
+GENERATOR=${3:?Name of CPack package-generator not specified}
 EXT=${4:?Package extension not specified}
 INSTALL=${5:?Installation command not specified}
-binRepoDir=${6}
+binRepoDir=${6:?Platform-specific binary-repository directory not specified}
 
 # Get the static release variables.
 #
@@ -93,6 +96,6 @@ vagrant ssh $VM_NAME -- -T <<EOF
 
     # Add the binary-distribution to the yum(1) binary-repository.
     #
-    bash -x /vagrant/repo_add_yum /repo $binRepoDir/$VM_CPU \
+    bash -x /vagrant/repo_add /repo $binRepoDir/$VM_CPU \
             /vagrant/$binDistroFilename
 EOF
