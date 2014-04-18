@@ -104,4 +104,4 @@ EOF
 # computer.
 #
 cd $reposRoot
-flock . rsync --archive --relative --delete * webserver:/web/content/repos
+flock . rsync --archive --relative --delete * $WEB_HOST:$ABSPATH_WEB_ROOT/repos
