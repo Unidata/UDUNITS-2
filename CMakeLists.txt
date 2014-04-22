@@ -4,7 +4,7 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
 SET(VERSION_MAJOR 2)
 SET(VERSION_MINOR 2)
-SET(VERSION_PATCH 10)
+SET(VERSION_PATCH 11)
 
 # Ensure a path in the format common to both Unix and MinGW.
 FUNCTION(to_common_path input result)
@@ -184,7 +184,7 @@ IF (WIN32)
     SET(CPACK_NSIS_DISPLAY_NAME "${CPACK_PACKAGE_INSTALL_DIRECTORY} UDUNITS-2")
     SET(CPACK_NSIS_HELP_LINK "http://www.unidata.ucar.edu/software/udunits")
     SET(CPACK_NSIS_MODIFY_PATH ON)
-    SET(CPACK_NSIS_URL_INFO_ABOUT "${CPACK_NSIS_HELP_LINK }")
+    SET(CPACK_NSIS_URL_INFO_ABOUT "${CPACK_NSIS_HELP_LINK}")
 #   # There is a bug in NSI that does not handle full unix paths properly. Make
 #   # sure there is at least one set of four (4) backslashes.
 #   SET(CPACK_PACKAGE_ICON "${CMake_SOURCE_DIR}/Utilities/Release\\\\InstallIcon.bmp")
