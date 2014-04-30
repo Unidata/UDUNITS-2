@@ -37,6 +37,21 @@ if ! ssh $SOURCE_REPO_HOST test -e $ABSPATH_SOURCE_DISTRO; then
     scp $SOURCE_DISTRO_NAME $SOURCE_REPO_HOST:$ABSPATH_SOURCE_DISTRO
 fi
 
+# Purge the source-repository of bug-fix versions that are older than the latest
+# corresponding minor release.
+#
+ssh -T $SOURCE_REPO_HOST bash --login <<EOF
+    set -ex # Exit on error
+    cd $ABSPATH_SOURCE_REPO_DIR        
+    ls -d $PKG_ID_GLOB |
+        sed "s/$PKG_NAME-//" |
+        sort -t. -k 1nr,1 -k 2nr,2 -k 3nr,3 |
+        awk -F. '\$1!=ma||\$2!=mi{print}{ma=\$1;mi=\$2}' >versions
+    for vers in \`ls -d $PKG_ID_GLOB | sed "s/$PKG_NAME-//"\`; do
+        fgrep -s \$vers versions || rm -rf $PKG_NAME-\$vers
+    done
+EOF
+
 # Install the package in order to obtain the documentation.
 #
 prefix=/tmp/$PKG_ID
