@@ -1648,12 +1648,7 @@ elements appear only within <aliases>.
             <name><singular>molecule</singular></name>
             <aliases>
                 <name><singular>molec</singular></name>
-            </aliases>
-        </unit>
-        <unit>
-            <def>mol/6.02214129e23</def> <!-- NIST 20130402 -->
-            <name><singular>nucleon</singular></name>
-            <aliases>
+                <name><singular>nucleon</singular></name>
                 <name><singular>nuc</singular></name>
             </aliases>
         </unit>

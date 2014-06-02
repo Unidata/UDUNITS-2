@@ -1,4 +1,4 @@
-2.2.12	2014-06-02T13:14:57-0600
+2.2.12	2014-06-02T13:28:49-0600
     Added "nucleon" (alias "nuc") to database as "mole/(avogadro's number)" to
     support units like "Mev/nucleon".
 
