@@ -1,3 +1,7 @@
+2.2.12	2014-06-02T13:14:57-0600
+    Added "nucleon" (alias "nuc") to database as "mole/(avogadro's number)" to
+    support units like "Mev/nucleon".
+
 2.2.11	2014-04-30T14:40:58-0600
     Removed incorrect whitespace from top-level CMakeLists.txt file.
 
