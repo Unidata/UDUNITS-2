@@ -1,3 +1,6 @@
+2.2.13	2014-06-11T11:08:11-0600
+    Eliminate some valid compiler warnings.
+
 2.2.12	2014-06-02T13:28:49-0600
     Added "nucleon" (alias "nuc") to database as "mole/(avogadro's number)" to
     support units like "Mev/nucleon".

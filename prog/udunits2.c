@@ -18,6 +18,7 @@
 #endif
 
 #include <errno.h>
+#include <ctype.h>
 #include <libgen.h>
 #include <limits.h>
 #include <sys/types.h>

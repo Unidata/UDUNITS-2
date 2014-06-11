@@ -21,6 +21,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "prefix.h"
 #include "udunits2.h"
 #include "systemMap.h"
 

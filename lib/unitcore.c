@@ -385,11 +385,11 @@ ut_encode_clock(
  */
 static void
 decompose(value, uncer, nbasis, basis, count)
-    double	value;
-    double	uncer;		/* >= 0 */
-    int		nbasis;
-    double	*basis;		/* all values > 0 */
-    double	*count;
+    double        value;
+    double        uncer;		/* >= 0 */
+    int           nbasis;
+    const double *basis;		/* all values > 0 */
+    double       *count;
 {
     int		i;
 
