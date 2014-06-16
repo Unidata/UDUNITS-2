@@ -1494,7 +1494,7 @@ productAcceptVisitor(
 	    "Couldn't allocate %d-element basic-unit array", count);
     }
     else {
-      int*	powers = (count > 0 ? malloc(sizeof(int)*count) : 1);
+      int*	powers = (count > 0 ? malloc(sizeof(int)*count) : NULL);
 
 	if (count != 0 && powers == NULL) {
 	    ut_set_status(UT_OS);
@@ -1514,8 +1514,8 @@ productAcceptVisitor(
 
 	    ut_set_status(visitor->visit_product(unit, count,
 		(const ut_unit**)basicUnits, powers, arg));
-
-	    free(powers);
+	    if(powers)
+	      free(powers);
 	}				/* "powers" allocated */
 
 	free(basicUnits);
