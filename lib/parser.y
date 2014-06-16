@@ -569,16 +569,19 @@ latin1ToUtf8(
     }
 
     for (in = (const unsigned char*)latin1String,
-	   out = (unsigned char*)utf8String; *in, out; ++in) {
+	   out = (unsigned char*)utf8String; *in; ++in) {
 #       define IS_ASCII(c) (((c) & 0x80) == 0)
-
-        if (IS_ASCII(*in)) {
-            *out++ = *in;
-        }
-        else {
-            *out++ = 0xC0 | ((0xC0 & *in) >> 6);
-            *out++ = 0x80 | (0x3F & *in);
-        }
+      
+      if((unsigned char*)utf8String == NULL)
+	break;
+      
+      if (IS_ASCII(*in)) {
+	*out++ = *in;
+      }
+      else {
+	*out++ = 0xC0 | ((0xC0 & *in) >> 6);
+	*out++ = 0x80 | (0x3F & *in);
+      }
     }
 
     if(out)
