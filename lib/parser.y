@@ -569,7 +569,7 @@ latin1ToUtf8(
     }
 
     for (in = (const unsigned char*)latin1String,
-            out = (unsigned char*)utf8String; *in; ++in) {
+	   out = (unsigned char*)utf8String; *in, out; ++in) {
 #       define IS_ASCII(c) (((c) & 0x80) == 0)
 
         if (IS_ASCII(*in)) {
@@ -581,7 +581,8 @@ latin1ToUtf8(
         }
     }
 
-    *out = 0;
+    if(out)
+      *out = 0;
 
     return utf8String;
 }
