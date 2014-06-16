@@ -1494,7 +1494,7 @@ productAcceptVisitor(
 	    "Couldn't allocate %d-element basic-unit array", count);
     }
     else {
-	int*	powers = malloc(sizeof(int)*count);
+      int*	powers = (count > 0 ? malloc(sizeof(int)*count) : 1);
 
 	if (count != 0 && powers == NULL) {
 	    ut_set_status(UT_OS);
