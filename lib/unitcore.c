@@ -1481,7 +1481,7 @@ productAcceptVisitor(
     void* const			arg)
 {
     int		count = unit->product.count;
-    BasicUnit**	basicUnits = malloc(sizeof(BasicUnit)*count);
+    BasicUnit**	basicUnits = malloc(sizeof(BasicUnit*)*count);
 
     assert(unit != NULL);
     assert(IS_PRODUCT(unit));
@@ -1494,7 +1494,7 @@ productAcceptVisitor(
 	    "Couldn't allocate %d-element basic-unit array", count);
     }
     else {
-	int*	powers = malloc(sizeof(int)*count);
+        int*	powers = (count > 0 ? malloc(sizeof(int)*count) : NULL);
 
 	if (count != 0 && powers == NULL) {
 	    ut_set_status(UT_OS);
@@ -1515,7 +1515,8 @@ productAcceptVisitor(
 	    ut_set_status(visitor->visit_product(unit, count,
 		(const ut_unit**)basicUnits, powers, arg));
 
-	    free(powers);
+            if (powers)
+                free(powers);
 	}				/* "powers" allocated */
 
 	free(basicUnits);
