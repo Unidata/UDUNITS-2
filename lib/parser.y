@@ -563,29 +563,26 @@ latin1ToUtf8(
         else {
             ut_handle_error_message("Couldn't allocate %ld-byte buffer: %s",
                 (unsigned long)size, strerror(errno));
-
             return NULL;
         }
     }
 
-    for (in = (const unsigned char*)latin1String,
-            out = (unsigned char*)utf8String; *in; ++in) {
-#       define IS_ASCII(c) (((c) & 0x80) == 0)
+    if (utf8String) {
+        for (in = (const unsigned char*)latin1String,
+                out = (unsigned char*)utf8String; *in; ++in) {
+#           define IS_ASCII(c) (((c) & 0x80) == 0)
 
-        if((unsigned char*)utf8String == NULL)
-            break;
+            if (IS_ASCII(*in)) {
+                *out++ = *in;
+            }
+            else {
+                *out++ = 0xC0 | ((0xC0 & *in) >> 6);
+                *out++ = 0x80 | (0x3F & *in);
+            }
+        }
 
-        if (IS_ASCII(*in)) {
-            *out++ = *in;
-        }
-        else {
-            *out++ = 0xC0 | ((0xC0 & *in) >> 6);
-            *out++ = 0x80 | (0x3F & *in);
-        }
+        *out = 0;
     }
-
-    if(out)
-      *out = 0;
 
     return utf8String;
 }
