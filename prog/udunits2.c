@@ -389,24 +389,29 @@ getSpec(
 
 static int
 decodeInput(
-    const char* const   buf)
+    const char* const   input)
 {
-    int		success = 0;
-
-    if (sscanf(buf, "%lg %[^ \t\n]", &_haveUnitAmount,
-                _haveUnitSpec) != 2) {
-        _haveUnitAmount = 1;
-        (void)strcpy(_haveUnitSpec, buf);
-    }
+    int	success = 0;
 
     ut_free(_haveUnit);
-    _haveUnit = ut_parse(_unitSystem, _haveUnitSpec, _encoding);
 
-    if (_haveUnit == NULL) {
-        errMsg("Don't recognize \"%s\"", _haveUnitSpec);
+    if (sscanf(input, "%lg %[^ \t\n]", &_haveUnitAmount, _haveUnitSpec) == 2) {
+        _haveUnit = ut_parse(_unitSystem, _haveUnitSpec, _encoding);
+        if (_haveUnit != NULL)
+            success = 1;
     }
-    else {
-        success = 1;
+
+    if (!success) {
+        _haveUnitAmount = 1;
+        (void)strncpy(_haveUnitSpec, input, sizeof(_haveUnitSpec));
+        _haveUnitSpec[sizeof(_haveUnitSpec)-1] = 0;
+        _haveUnit = ut_parse(_unitSystem, _haveUnitSpec, _encoding);
+        if (_haveUnit == NULL) {
+            errMsg("Don't recognize \"%s\"", _haveUnitSpec);
+        }
+        else {
+            success = 1;
+        }
     }
 
     return success;

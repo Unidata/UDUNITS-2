@@ -1799,6 +1799,32 @@ test_parsing(void)
     CU_ASSERT_EQUAL(ut_compare(unit, kilometer), 0);
     ut_free(unit);
 
+    spec = "1/2";
+    unit = ut_parse(unitSystem, spec, UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    CU_ASSERT_EQUAL(ut_are_convertible(unit,
+            ut_get_dimensionless_unit_one(unitSystem)), 1);
+    ut_free(unit);
+
+    spec = "1/(2)";
+    unit = ut_parse(unitSystem, spec, UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    CU_ASSERT_EQUAL(ut_are_convertible(unit,
+            ut_get_dimensionless_unit_one(unitSystem)), 1);
+    ut_free(unit);
+
+    spec = "1/m";
+    unit = ut_parse(unitSystem, spec, UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    CU_ASSERT_EQUAL(ut_are_convertible(unit, meter), 1);
+    ut_free(unit);
+
+    spec = "1/(2 m)";
+    unit = ut_parse(unitSystem, spec, UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    CU_ASSERT_EQUAL(ut_are_convertible(unit, meter), 1);
+    ut_free(unit);
+
     spec = "(K/1.8) @ 459.67";
     unit = ut_parse(unitSystem, spec, UT_ASCII);
     CU_ASSERT_EQUAL(ut_are_convertible(unit, fahrenheit), 1);
