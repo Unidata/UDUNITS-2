@@ -1637,6 +1637,13 @@ elements appear only within <aliases>.
             </aliases>
         </unit>
         <unit>
+            <def>8</def>
+            <aliases>
+                <name><singular>octet</singular></name>
+                <name><singular>byte</singular></name>
+            </aliases>
+        </unit>
+        <unit>
             <def>446.2 micromoles/meter^2</def>
             <aliases>
                 <name> <singular>dobson</singular> </name>

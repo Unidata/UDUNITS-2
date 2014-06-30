@@ -1,3 +1,7 @@
+2.2.16	2014-06-30T10:04:32-0600
+    Added "octet" and "byte" to common units as aliases for the dimensionless
+    unit "8". (The unit "bit" was already defined).
+
 2.2.15	2014-06-25T15:06:29-0600
     Made udunits2(1) accept "1/(2 h)" as an input unit.
 
