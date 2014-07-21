@@ -43,14 +43,21 @@
 #include <ctype.h>
 #include <errno.h>
 #include <float.h>
+#ifndef _MSC_VER
 #include <inttypes.h>
+#else
+#define int32_t __int32
+#endif
+
 #include <limits.h>
 #include <math.h>
 #include <search.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+#ifndef _MSC_VER
 #include <string.h>
+#endif
 #include <strings.h>
 
 #include "udunits2.h"		/* this module's API */

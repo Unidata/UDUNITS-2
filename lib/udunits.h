@@ -12,6 +12,14 @@
 #ifndef UT_UNITS_H_INCLUDED
 #define UT_UNITS_H_INCLUDED
 
+#ifdef _MSC_VER
+<io.h>
+#define snprintf _snprintf
+#define close _close
+#define open _open
+#define read _read
+#endif
+
 #include "udunits2.h"
 
 #define UT_NAMELEN              32      /* maximum length of a unit string

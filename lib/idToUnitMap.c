@@ -18,7 +18,9 @@
 #include <assert.h>
 #include <search.h>
 #include <stdlib.h>
+#ifndef _MSC_VER
 #include <string.h>
+#endif
 #include <strings.h>
 
 #include "udunits2.h"
