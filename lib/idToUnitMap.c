@@ -17,11 +17,13 @@
 
 #include <assert.h>
 #include <search.h>
+
 #include <stdlib.h>
-#ifndef _MSC_VER
+
 #include <string.h>
-#endif
+#ifndef _MSC_VER
 #include <strings.h>
+#endif
 
 #include "udunits2.h"
 #include "unitAndId.h"

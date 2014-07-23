@@ -11,6 +11,14 @@
 #include <stdarg.h>
 #include <stddef.h>
 
+#ifdef _MSC_VER
+#include <stdlib.h>
+#include <stdio.h>
+#define _USE_MATH_DEFINES
+#define strdup _strdup
+#define strcasecmp stricmp
+#endif
+
 #include "converter.h"
 
 typedef struct ut_system	ut_system;

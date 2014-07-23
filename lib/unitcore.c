@@ -49,16 +49,21 @@
 #define int32_t __int32
 #endif
 
+#ifdef _MSC_VER
+#define _USE_MATH_DEFINES
+#endif
+
 #include <limits.h>
 #include <math.h>
 #include <search.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
-#ifndef _MSC_VER
 #include <string.h>
-#endif
+#ifndef _MSC_VER
+
 #include <strings.h>
+#endif
 
 #include "udunits2.h"		/* this module's API */
 #include "converter.h"

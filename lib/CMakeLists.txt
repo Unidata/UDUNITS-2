@@ -41,6 +41,12 @@ set_target_properties(libudunits2 PROPERTIES RUNTIME_OUTPUT_NAME udunits2)
 target_link_libraries(libudunits2 ${EXPAT_LIBRARIES})
 target_link_libraries(libudunits2 ${MATH_LIBRARY})
 
+IF(MSVC)
+	SET_TARGET_PROPERTIES(libudunits2 PROPERTIES
+	LINK_FLAGS_DEBUG " /NODEFAULTLIB:MSVCRT"
+)
+ENDIF()
+
 if (CUNIT_LIBRARY)
     add_executable(testUnits testUnits.c)
     target_link_libraries (testUnits libudunits2)

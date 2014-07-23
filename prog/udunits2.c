@@ -19,16 +19,19 @@
 
 #include <errno.h>
 #include <ctype.h>
+#ifndef _MSC_VER
 #include <libgen.h>
+#endif
 #include <limits.h>
 #include <sys/types.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifndef _MSC_VER
 #include <strings.h>
 #include <unistd.h>
-
+#endif
 #include <udunits2.h>
 
 #ifndef _POSIX_MAX_INPUT
