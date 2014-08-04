@@ -15,7 +15,13 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <io.h>
+
 #define _USE_MATH_DEFINES
+
+#define read _read;
+#define open _open;
+#define close _close;
 #define strdup _strdup
 #define strcasecmp stricmp
 

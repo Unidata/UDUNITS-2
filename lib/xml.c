@@ -2071,8 +2071,16 @@ readXml(
 
         (void)strncpy(base, path, sizeof(base));
         base[sizeof(base)-1] = 0;
+#ifndef _MSC_VER
         (void)memmove(base, dirname(base), sizeof(base));
-        base[sizeof(base)-1] = 0;
+#else
+		{
+			char *m_dir;
+			_splitpath(base,NULL,m_dir,NULL,NULL);
+			(void)memmove(base,m_dir,sizeof(base));
+		}
+#endif
+		base[sizeof(base)-1] = 0;
 
         if (XML_SetBase(parser, base) != XML_STATUS_OK) {
             status = UT_OS;

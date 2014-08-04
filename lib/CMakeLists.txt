@@ -26,6 +26,7 @@ SET(libudunits2_src converter.c
 		    formatter.c
 		    idToUnitMap.c
 		    parser.c
+		    prefix.c
 		    status.c
 		    systemMap.c
 		    unitAndId.c
