@@ -36,7 +36,7 @@ SET(libudunits2_src converter.c
 
 if(MSVC)
 	SET(libudunits2_src ${libudunits2_src}
-	tsearch.c tsearch.h)
+	tsearch.c tsearch.h c99_snprintf.c)
 endif()
 
 add_library(libudunits2

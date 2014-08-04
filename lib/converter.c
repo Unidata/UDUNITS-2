@@ -17,6 +17,7 @@
 
 #ifdef _MSC_VER
 #define _USE_MATH_DEFINES
+#include "udunits2.h" /* For the MSVC-specific defines. */
 #endif
 
 #include <math.h>

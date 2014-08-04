@@ -24,7 +24,7 @@
 #include <search.h>
 #endif
 
-include <stdlib.h>
+#include <stdlib.h>
 
 #include <string.h>
 

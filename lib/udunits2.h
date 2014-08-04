@@ -14,9 +14,28 @@
 #ifdef _MSC_VER
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdarg.h>
 #define _USE_MATH_DEFINES
 #define strdup _strdup
 #define strcasecmp stricmp
+
+//We must accomodate the lack of snprintf in MSVC.
+//c99_snprintf is defined in c99_snprintf.c, in lib/.
+#define snprintf c99_snprintf
+
+int c99_snprintf(
+   char* str,
+     size_t size,
+     const char* format,
+     ...);
+
+int c99_vsnprintf(
+char* str,
+  size_t size,
+  const char* format,
+  va_list ap);
+  
+
 #endif
 
 #include "converter.h"
