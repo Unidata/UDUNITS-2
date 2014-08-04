@@ -17,7 +17,11 @@
 
 #include <ctype.h>
 #include <errno.h>
+#ifdef _MSC_VER
+#include "tsearch.h"
+#else
 #include <search.h>
+#endif
 #include <stdlib.h>
 
 #include <string.h>

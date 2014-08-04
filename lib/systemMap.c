@@ -17,7 +17,11 @@
 #   define _XOPEN_SOURCE 500
 #endif
 
+#ifdef _MSC_VER
+#include "tsearch.h"
+#else
 #include <search.h>
+#endif
 #include <stdlib.h>
 
 #include "systemMap.h"

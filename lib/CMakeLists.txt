@@ -21,20 +21,26 @@ if (UNIX)
         PROPERTIES OBJECT_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/scanner.c)
 endif()
 
+SET(libudunits2_src converter.c
+		    error.c
+		    formatter.c
+		    idToUnitMap.c
+		    parser.c
+		    status.c
+		    systemMap.c
+		    unitAndId.c
+		    unitcore.c
+		    unitToIdMap.c
+		    ut_free_system.c
+		    xml.c)
+
+if(MSVC)
+	SET(libudunits2_src ${libudunits2_src}
+	tsearch.c tsearch.h)
+endif()
+
 add_library(libudunits2
-    converter.c 
-    error.c
-    formatter.c
-    idToUnitMap.c 
-    parser.c
-    prefix.c
-    status.c
-    systemMap.c 
-    unitAndId.c 
-    unitcore.c 
-    unitToIdMap.c 
-    ut_free_system.c
-    xml.c)
+	${libudunits2_src})	
 set_target_properties(libudunits2 PROPERTIES LIBRARY_OUTPUT_NAME udunits2)
 set_target_properties(libudunits2 PROPERTIES ARCHIVE_OUTPUT_NAME udunits2)
 set_target_properties(libudunits2 PROPERTIES RUNTIME_OUTPUT_NAME udunits2)

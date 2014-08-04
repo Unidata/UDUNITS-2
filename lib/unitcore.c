@@ -55,7 +55,13 @@
 
 #include <limits.h>
 #include <math.h>
+
+#ifdef _MSC_VER
+#include "tsearch.h"
+#else
 #include <search.h>
+#endif
+
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
