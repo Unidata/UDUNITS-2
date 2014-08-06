@@ -622,7 +622,7 @@ ut_unmap_unit_to_name(
  *	else		Pointer to the symbol in the given encoding to which
  *			"unit" maps.
  */
-const char*
+EXTERNL const char*
 ut_get_symbol(
     const ut_unit* const	unit,
     const ut_encoding	encoding);
@@ -662,7 +662,7 @@ ut_map_symbol_to_unit(
  *	UT_SUCCESS	Success.
  *	UT_BAD_ARG	"system" or "symbol" is NULL.
  */
-ut_status
+EXTERNL ut_status
 ut_unmap_symbol_to_unit(
     ut_system*		system,
     const char* const	symbol,
@@ -684,7 +684,7 @@ ut_unmap_symbol_to_unit(
  *	UT_OS		Operating-system error.  See "errno".
  *	UT_EXISTS	"unit" already maps to a symbol.
  */
-ut_status
+EXTERNL ut_status
 ut_map_unit_to_symbol(
     const ut_unit*		unit,
     const char* const		symbol,
@@ -727,7 +727,7 @@ ut_unmap_unit_to_symbol(
  *		    UT_SUCCESS		"unit" is dimensionfull.
  *	else	"unit" is dimensionless.
  */
-int
+EXTERNL int
 ut_is_dimensionless(
     const ut_unit* const	unit);
 
@@ -766,7 +766,7 @@ ut_same_system(
  *	 0	The first and second units are equal or both units are NULL.
  *	>0	The first unit is greater than the second unit.
  */
-int
+EXTERNL int
 ut_compare(
     const ut_unit* const	unit1,
     const ut_unit* const	unit2);
@@ -791,7 +791,7 @@ ut_compare(
  *						"kilogram").
  *	else	Numeric values can be converted between the units.
  */
-int
+EXTERNL int
 ut_are_convertible(
     const ut_unit* const	unit1,
     const ut_unit* const	unit2);
@@ -849,7 +849,7 @@ ut_get_converter(
  *			passed to ut_free() when the unit is no longer needed by
  *			the client.
  */
-ut_unit*
+EXTERNL ut_unit*
 ut_scale(
     const double		factor,
     const ut_unit* const	unit);
@@ -873,7 +873,7 @@ ut_scale(
  *			passed to ut_free() when the unit is no longer needed by
  *			the client.
  */
-ut_unit*
+EXTERNL ut_unit*
 ut_offset(
     const ut_unit* const	unit,
     const double	offset);
@@ -901,7 +901,7 @@ ut_offset(
  *	else	Pointer to the resulting unit.  The pointer should be passed
  *		to ut_free() when the unit is no longer needed by the client.
  */
-ut_unit*
+EXTERNL ut_unit*
 ut_offset_by_time(
     const ut_unit* const	unit,
     const double	origin);
@@ -922,7 +922,7 @@ ut_offset_by_time(
  *	else	Pointer to the resulting unit.  The pointer should be passed
  *		to ut_free() when the unit is no longer needed by the client.
  */
-ut_unit*
+EXTERNL ut_unit*
 ut_multiply(
     const ut_unit* const	unit1,
     const ut_unit* const	unit2);
@@ -967,7 +967,7 @@ ut_invert(
  *	else	Pointer to the resulting unit.  The pointer should be passed to
  *		ut_free() when the unit is no longer needed by the client.
  */
-ut_unit*
+EXTERNL ut_unit*
 ut_divide(
     const ut_unit* const	numer,
     const ut_unit* const	denom);
@@ -987,7 +987,7 @@ ut_divide(
  *	else	Pointer to the resulting unit.  The pointer should be passed to
  *		ut_free() when the unit is no longer needed by the client.
  */
-ut_unit*
+EXTERNL ut_unit*
 ut_raise(
     const ut_unit* const	unit,
     const int			power);
@@ -1010,7 +1010,7 @@ ut_raise(
  *	else	Pointer to the resulting unit.  The pointer should be passed to
  *		ut_free() when the unit is no longer needed by the client.
  */
-ut_unit*
+EXTERNL ut_unit*
 ut_root(
     const ut_unit* const	unit,
     const int			root);
@@ -1088,7 +1088,7 @@ ut_log(
  *						"errno".
  *	else		Pointer to the unit corresponding to "string".
  */
-ut_unit*
+EXTERNL ut_unit*
 ut_parse(
     const ut_system* const	system,
     const char* const		string,
@@ -1105,7 +1105,7 @@ ut_parse(
  * Returns:
  *      "string", with all leading and trailing whitespace removed.
  */
-char*
+EXTERNL char*
 ut_trim(
     char* const	        string,
     const ut_encoding	encoding);
