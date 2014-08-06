@@ -18,6 +18,10 @@
 extern "C" {
 #endif
 
+#ifndef EXTERNL
+#define EXTERNL extern
+#endif
+
 typedef union cv_converter	cv_converter;
 
 /*
