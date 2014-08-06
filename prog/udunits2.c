@@ -17,6 +17,10 @@
 #   define _XOPEN_SOURCE 500
 #endif
 
+#ifdef _MSC_VER
+#include "XGetOpt.h"
+#endif
+
 #include <errno.h>
 #include <ctype.h>
 #ifndef _MSC_VER

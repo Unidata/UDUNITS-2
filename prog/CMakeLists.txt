@@ -8,7 +8,7 @@ ENDIF()
 
 link_directories(${PROJECT_BINARY_DIR}/lib)
 
-set(udunits2_src udunits2.c)
+set(udunits2_SRC udunits2.c)
 
 # We need to implement our own getopt if using Visual Studio.
 IF(MSVC)
