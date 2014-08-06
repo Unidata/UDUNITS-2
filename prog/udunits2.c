@@ -635,7 +635,7 @@ handleRequest(void)
 int
 main(
     const int		argc,
-    char* const* const	argv)
+    char**	argv)
 {
     if (decodeCommandLine(argc, argv)) {
     	if (ensureEncodingSet()) {

@@ -19,11 +19,15 @@
 
 #define _USE_MATH_DEFINES
 
-#define read _read;
-#define open _open;
-#define close _close;
+/* Define a bunch of variables to use the ISO C++ conformant name instead
+   of the POSIX name. This quiets a lot of the warnings thrown by MSVC. */
+#define read _read
+#define open _open
+#define close _close
 #define strdup _strdup
 #define strcasecmp stricmp
+#define stricmp _stricmp
+#define isatty _isatty
 
 //We must accomodate the lack of snprintf in MSVC.
 //c99_snprintf is defined in c99_snprintf.c, in lib/.
@@ -41,8 +45,25 @@ char* str,
   const char* format,
   va_list ap);
   
-
 #endif
+
+/* If we are working in Visual Studio and have a
+   shared library, we will need to do some slight-of-hand
+   in order to make it generate a proper export library.
+*/
+
+#if defined(DLL_UDUNITS2) /* define when library is a DLL */
+#   if defined(DLL_EXPORT) /* defined when building the library */
+#     define MSC_EXTRA __declspec(dllexport)
+#   else
+#     define MSC_EXTRA __declspec(dllimport)
+#   endif
+#else
+# define MSC_EXTRA
+#endif /* defined(DLL_UDUNITS2) */
+
+#define EXTERNL MSC_EXTRA extern
+
 
 #include "converter.h"
 
@@ -172,7 +193,7 @@ typedef int (*ut_error_message_handler)(const char* fmt, va_list args);
 
 
 #ifdef __cplusplus
-extern "C" {
+EXTERNL "C" {
 #endif
 
 
@@ -192,7 +213,7 @@ extern "C" {
  *                  compile-time pathname of the installed, default, unit
  *                  database is returned.
  */
-const char*
+EXTERNL const char*
 ut_get_path_xml(
 	const char*	path,
 	ut_status*  status);
@@ -223,7 +244,7 @@ ut_get_path_xml(
  *		    UT_OS		Operating-system error.  See "errno".
  *	else	Pointer to the unit-system defined by "path".
  */
-ut_system*
+EXTERNL ut_system*
 ut_read_xml(
     const char*	path);
 
@@ -237,7 +258,7 @@ ut_read_xml(
  *		    UT_OS	Operating-system error.  See "errno".
  *	else	Pointer to a new unit system.
  */
-ut_system*
+EXTERNL ut_system*
 ut_new_system(void);
 
 

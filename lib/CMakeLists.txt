@@ -33,7 +33,8 @@ SET(libudunits2_src converter.c
 		    unitcore.c
 		    unitToIdMap.c
 		    ut_free_system.c
-		    xml.c)
+		    xml.c
+		    udunits2.h)
 
 if(MSVC)
 	SET(libudunits2_src ${libudunits2_src}
@@ -66,7 +67,7 @@ endif()
 # The documentation is in multiple texinfo(5) format files
 texi_doc(udunits2lib.texi ${CMAKE_SOURCE_DIR}/COPYRIGHT)
     
-install(TARGETS libudunits2
+install(TARGETS libudunits2 EXPORT udunits2-targets
     ARCHIVE DESTINATION lib
     LIBRARY DESTINATION lib
     RUNTIME DESTINATION bin)
