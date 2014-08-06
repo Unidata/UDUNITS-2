@@ -111,7 +111,24 @@ decodeCommandLine(
     int		c;
     int		success = 0;
 
-    _progname = basename(argv[0]);
+#ifndef _MSC_VER
+	    _progname = basename(argv[0]);
+ #else
+		{
+			char *m_fname = (char*)malloc(sizeof(char)*256);
+			char *m_ext = (char*)malloc(sizeof(char)*256);
+			char *tmp;
+			_splitpath(argv[0],NULL,NULL,m_fname,m_ext);
+			sprintf(tmp,"%s.%s",m_fname,m_ext);
+			_progname=tmp;
+			free(m_fname);
+			free(m_ext);
+
+		}
+#endif
+
+
+
 
     while ((c = getopt(argc, argv, "ALUhrH:W:")) != -1) {
 	switch (c) {

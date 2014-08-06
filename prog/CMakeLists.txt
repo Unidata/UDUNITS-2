@@ -2,7 +2,15 @@ include_directories ("${PROJECT_SOURCE_DIR}/lib")
 
 link_directories(${PROJECT_BINARY_DIR}/lib)
 
-add_executable(udunits2 udunits2.c)
+set(udunits2_src udunits2.c)
+
+# We need to implement our own getopt if using Visual Studio.
+IF(MSVC)
+   set(udunits2_SRC ${udunits2_SRC} XGetOpt.c XGetOpt.h)
+ENDIF()
+
+
+add_executable(udunits2 ${udunits2_SRC})
 
 target_link_libraries(udunits2 libudunits2)
 set_target_properties(udunits2 PROPERTIES
