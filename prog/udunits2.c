@@ -121,7 +121,7 @@ decodeCommandLine(
 		{
 			char *m_fname = (char*)malloc(sizeof(char)*256);
 			char *m_ext = (char*)malloc(sizeof(char)*256);
-			char *tmp;
+			char tmp[1024];
 			_splitpath(argv[0],NULL,NULL,m_fname,m_ext);
 			sprintf(tmp,"%s.%s",m_fname,m_ext);
 			_progname=tmp;

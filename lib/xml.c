@@ -2075,9 +2075,10 @@ readXml(
         (void)memmove(base, dirname(base), sizeof(base));
 #else
 		{
-			char *m_dir;
+			char *m_dir = (char*)malloc(sizeof(char)*1024);
 			_splitpath(base,NULL,m_dir,NULL,NULL);
 			(void)memmove(base,m_dir,sizeof(base));
+			free(m_dir);
 		}
 #endif
 		base[sizeof(base)-1] = 0;
