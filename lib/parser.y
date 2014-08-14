@@ -24,9 +24,10 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <stdio.h>
+#ifndef _MSC_VER
 #include <string.h>
 #include <strings.h>
-
+#endif
 #include "udunits2.h"
 
 static ut_unit*		_finalUnit;	/* fully-parsed specification */

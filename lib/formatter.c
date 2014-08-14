@@ -14,6 +14,10 @@
 #   define _XOPEN_SOURCE 500
 #endif
 
+#ifdef _MSC_VER
+#define _USE_MATH_DEFINES
+#endif
+
 #include <ctype.h>
 #include <float.h>
 #include <limits.h>

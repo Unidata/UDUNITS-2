@@ -43,15 +43,33 @@
 #include <ctype.h>
 #include <errno.h>
 #include <float.h>
+#ifndef _MSC_VER
 #include <inttypes.h>
+#else
+#define int32_t __int32
+#endif
+
+#ifdef _MSC_VER
+#define _USE_MATH_DEFINES
+#endif
+
 #include <limits.h>
 #include <math.h>
+
+#ifdef _MSC_VER
+#include "tsearch.h"
+#else
 #include <search.h>
+#endif
+
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifndef _MSC_VER
+
 #include <strings.h>
+#endif
 
 #include "udunits2.h"		/* this module's API */
 #include "converter.h"

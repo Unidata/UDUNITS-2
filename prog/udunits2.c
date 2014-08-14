@@ -17,18 +17,25 @@
 #   define _XOPEN_SOURCE 500
 #endif
 
+#ifdef _MSC_VER
+#include "XGetOpt.h"
+#endif
+
 #include <errno.h>
 #include <ctype.h>
+#ifndef _MSC_VER
 #include <libgen.h>
+#endif
 #include <limits.h>
 #include <sys/types.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifndef _MSC_VER
 #include <strings.h>
 #include <unistd.h>
-
+#endif
 #include <udunits2.h>
 
 #ifndef _POSIX_MAX_INPUT
@@ -108,7 +115,24 @@ decodeCommandLine(
     int		c;
     int		success = 0;
 
-    _progname = basename(argv[0]);
+#ifndef _MSC_VER
+	    _progname = basename(argv[0]);
+ #else
+		{
+			char *m_fname = (char*)malloc(sizeof(char)*256);
+			char *m_ext = (char*)malloc(sizeof(char)*256);
+			char tmp[1024];
+			_splitpath(argv[0],NULL,NULL,m_fname,m_ext);
+			sprintf(tmp,"%s.%s",m_fname,m_ext);
+			_progname=tmp;
+			free(m_fname);
+			free(m_ext);
+
+		}
+#endif
+
+
+
 
     while ((c = getopt(argc, argv, "ALUhrH:W:")) != -1) {
 	switch (c) {
@@ -615,7 +639,7 @@ handleRequest(void)
 int
 main(
     const int		argc,
-    char* const* const	argv)
+    char**	argv)
 {
     if (decodeCommandLine(argc, argv)) {
     	if (ensureEncodingSet()) {

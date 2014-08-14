@@ -1,4 +1,3 @@
-core.*
 .deps
 .exrc
 .libs
@@ -7,8 +6,6 @@ libudunits2.la
 *.log
 Makefile
 *.o
-parser.c
-scanner.c
 tags
 testUnits
 udunits2lib.aux

@@ -20,7 +20,7 @@ extern "C" {
  *	system		Pointer to the unit-system to have its associated
  *			resources freed.
  */
-void
+EXTERNL void
 utimFreeSystem(
     ut_system*	system);
 

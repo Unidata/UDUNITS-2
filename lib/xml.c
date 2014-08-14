@@ -21,13 +21,17 @@
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
+#ifndef _MSC_VER
 #include <libgen.h>
+#endif
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifndef _MSC_VER
 #include <strings.h>
 #include <unistd.h>
+#endif
 #include <sys/stat.h>
 #include <sys/types.h>
 
@@ -2067,8 +2071,17 @@ readXml(
 
         (void)strncpy(base, path, sizeof(base));
         base[sizeof(base)-1] = 0;
+#ifndef _MSC_VER
         (void)memmove(base, dirname(base), sizeof(base));
-        base[sizeof(base)-1] = 0;
+#else
+		{
+			char *m_dir = (char*)malloc(sizeof(char)*1024);
+			_splitpath(base,NULL,m_dir,NULL,NULL);
+			(void)memmove(base,m_dir,sizeof(base));
+			free(m_dir);
+		}
+#endif
+		base[sizeof(base)-1] = 0;
 
         if (XML_SetBase(parser, base) != XML_STATUS_OK) {
             status = UT_OS;

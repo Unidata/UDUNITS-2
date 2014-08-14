@@ -13,6 +13,32 @@ FUNCTION(to_common_path input result)
     SET(${result} ${tmp} PARENT_SCOPE)
 ENDFUNCTION(to_common_path)
 
+
+INCLUDE(GenerateExportHeader)
+OPTION(BUILD_SHARED_LIBS "Whether or not to build a shared library" ON)
+IF(BUILD_SHARED_LIBS)
+    SET(CMAKE_POSITION_INDEPENDENT_CODE ON)
+ENDIF()
+
+# A little bit of Windows/Visual Studio housekeeping.
+IF(MSVC)
+    # Set a property used with Visual Studio
+    SET(GLOBAL PROPERTY USE_FOLDERS ON)
+
+    # Suppress CRT warnings.
+    ADD_DEFINITIONS(-D_CRT_SECURE_NO_WARNINGS)
+
+    OPTION(ENABLE_DLL "Build a Windows DLL." ${BUILD_SHARED_LIBS})
+    MESSAGE(STATUS "Building Windows DLL: ${ENABLE_DLL}")
+    IF(ENABLE_DLL)
+       SET(BUILD_DLL ON CACHE BOOL "")
+       ADD_DEFINITIONS(-DDLL_UDUNITS2)
+       ADD_DEFINITIONS(-DDLL_EXPORT)
+    ENDIF()
+
+ENDIF()
+
+
 # Ensures a path in the native format.
 #FUNCTION(to_native_path input result)
 #    FILE(TO_NATIVE_PATH ${input} tmp)
@@ -26,9 +52,16 @@ ENDFUNCTION(to_common_path)
 #    DEFAULT_UDUNITS2_XML_PATH)
 FILE(TO_NATIVE_PATH "${CMAKE_INSTALL_PREFIX}/share/udunits/udunits2.xml" tmp)
 #MESSAGE("tmp = \"${tmp}\"")
+
 STRING(REGEX REPLACE "\\\\ " " " tmp "${tmp}")
 #MESSAGE("tmp = \"${tmp}\"")
 #STRING(REGEX REPLACE "\\\\" "\\\\\\\\" DEFAULT_UDUNITS2_XML_PATH "${tmp}")
+
+# Replace '\' with '\\' on Windows.
+IF(MSVC)
+    STRING(REPLACE "\\" "\\\\" tmp "${tmp}")
+ENDIF(MSVC)
+
 SET(DEFAULT_UDUNITS2_XML_PATH "${tmp}")
 MESSAGE("DEFAULT_UDUNITS2_XML_PATH = \"${DEFAULT_UDUNITS2_XML_PATH}\"")
 
@@ -40,7 +73,7 @@ INCLUDE(CTest)
 SET(CMAKE_INSTALL_INFODIR share/info)
 SET(CMAKE_INSTALL_DOCDIR share/doc/udunits)
 
-OPTION(BUILD_SHARED_LIBS "Whether or not to build a shared library" "ON")
+
 
 to_common_path(${CMAKE_SOURCE_DIR} common_source_dir)
 to_common_path(${CMAKE_INSTALL_INFODIR} common_install_infodir)
@@ -152,6 +185,13 @@ CONFIGURE_FILE(
 INCLUDE_DIRECTORIES("${PROJECT_BINARY_DIR}")
 
 ADD_SUBDIRECTORY (lib)
+
+# Import symbols instead of export them.
+IF(BUILD_DLL)
+    REMOVE_DEFINITIONS(-DDLL_EXPORT)
+ENDIF()
+
+
 ADD_SUBDIRECTORY (prog)
 
 # The documentation is in texinfo(5) format

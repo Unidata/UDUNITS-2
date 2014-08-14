@@ -12,6 +12,14 @@
 #ifndef UT_UNITS_H_INCLUDED
 #define UT_UNITS_H_INCLUDED
 
+#ifdef _MSC_VER
+<io.h>
+#define snprintf _snprintf
+#define close _close
+#define open _open
+#define read _read
+#endif
+
 #include "udunits2.h"
 
 #define UT_NAMELEN              32      /* maximum length of a unit string
@@ -58,32 +66,32 @@ typedef struct utUnit {
 } utUnit;
 
 #ifdef __cplusplus
-extern "C" {
+EXTERNL "C" {
 #endif
 
 /*
  *  Initialize the units(3) package.
  */
-extern int	utInit		PROTO((
+EXTERNL int	utInit		PROTO((
     const char	*path
 ));
 
 /*
  * Indicate if the units(3) package has been initialized.
  */
-extern int	utIsInit	PROTO((void));
+EXTERNL int	utIsInit	PROTO((void));
 
 /*
  * Initialize a unit-structure.
  */
-extern void	utIni		PROTO((
+EXTERNL void	utIni		PROTO((
     utUnit* const	unit
 ));
 
 /*
  *	Decode a formatted unit specification into a unit-structure.
  */
-extern int	utScan		PROTO((
+EXTERNL int	utScan		PROTO((
     const char	*spec,
     utUnit	*up
 ));
@@ -91,7 +99,7 @@ extern int	utScan		PROTO((
 /*
  *	Convert a temporal value into a UTC Gregorian date and time.
  */
-extern int	utCalendar	PROTO((
+EXTERNL int	utCalendar	PROTO((
     double		value,
     const utUnit	*unit,
     int			*year,
@@ -107,7 +115,7 @@ extern int	utCalendar	PROTO((
  *	use the Gregorian calendar if on or after noon, October 15, 1582;
  *	otherwise, the date is assumed to use the Julian calendar.
  */
-extern int	utInvCalendar	PROTO((
+EXTERNL int	utInvCalendar	PROTO((
     int			year,
     int			month,
     int			day,
@@ -121,28 +129,28 @@ extern int	utInvCalendar	PROTO((
 /*
  *	Indicate if a unit structure refers to a unit of time.
  */
-extern int	utIsTime	PROTO((
+EXTERNL int	utIsTime	PROTO((
     const utUnit	*up
 ));
 
 /*
  *	Indicate if a unit structure has an origin.
  */
-extern int	utHasOrigin	PROTO((
+EXTERNL int	utHasOrigin	PROTO((
     const utUnit	*up
 ));
 
 /*
  *	Clear a unit structure.
  */
-extern utUnit*	utClear		PROTO((
+EXTERNL utUnit*	utClear		PROTO((
     utUnit	*unit
 ));
 
 /*
  *	Copy a unit-strcture.
  */
-extern utUnit*	utCopy		PROTO((
+EXTERNL utUnit*	utCopy		PROTO((
     const utUnit	*source,
     utUnit		*dest
 ));
@@ -150,7 +158,7 @@ extern utUnit*	utCopy		PROTO((
 /*
  *	Multiply one unit-structure by another.
  */
-extern utUnit*	utMultiply	PROTO((
+EXTERNL utUnit*	utMultiply	PROTO((
     const utUnit	*term1,
     const utUnit	*term2, 
     utUnit		*result
@@ -159,7 +167,7 @@ extern utUnit*	utMultiply	PROTO((
 /*
  *	Divide one unit-structure by another.
  */
-extern utUnit*	utDivide	PROTO((
+EXTERNL utUnit*	utDivide	PROTO((
     const utUnit	*numer,
     const utUnit	*denom, 
     utUnit		*result
@@ -168,7 +176,7 @@ extern utUnit*	utDivide	PROTO((
 /*
  *	Form the reciprocal of a unit-structure.
  */
-extern utUnit*	utInvert	PROTO((
+EXTERNL utUnit*	utInvert	PROTO((
     const utUnit	*source,
     utUnit		*dest
 ));
@@ -176,7 +184,7 @@ extern utUnit*	utInvert	PROTO((
 /*
  *	Raise a unit-structure to a power.
  */
-extern utUnit*	utRaise		PROTO((
+EXTERNL utUnit*	utRaise		PROTO((
     const utUnit	*source,
     int			power,
     utUnit		*result
@@ -185,7 +193,7 @@ extern utUnit*	utRaise		PROTO((
 /*
  *	Shift the origin of a unit-structure by an arithmetic amount.
  */
-extern utUnit*	utShift		PROTO((
+EXTERNL utUnit*	utShift		PROTO((
     const utUnit	*source,
     double		amount,
     utUnit		*result
@@ -194,7 +202,7 @@ extern utUnit*	utShift		PROTO((
 /*
  *	Scale a unit-structure.
  */
-extern utUnit*	utScale		PROTO((
+EXTERNL utUnit*	utScale		PROTO((
     const utUnit	*source,
     double		factor,
     utUnit		*result
@@ -203,7 +211,7 @@ extern utUnit*	utScale		PROTO((
 /*
  *	Compute the conversion factor between two unit-structures.
  */
-extern int	utConvert	PROTO((
+EXTERNL int	utConvert	PROTO((
     const utUnit	*from,
     const utUnit	*to,
     double		*slope,
@@ -213,7 +221,7 @@ extern int	utConvert	PROTO((
 /*
  *	Encode a unit-structure into a formatted unit-specification.
  */
-extern int	utPrint		PROTO((
+EXTERNL int	utPrint		PROTO((
     const utUnit	*unit,
     char		**buf
 ));
@@ -221,7 +229,7 @@ extern int	utPrint		PROTO((
 /*
  *  Add a unit-structure to the units-table.
  */
-extern int	utAdd		PROTO((
+EXTERNL int	utAdd		PROTO((
     char		*name,
     int			HasPlural,
     const utUnit	*unit
@@ -230,7 +238,7 @@ extern int	utAdd		PROTO((
 /*
  *  Return the unit-structure corresponding to a unit-specification.
  */
-extern int	utFind		PROTO((
+EXTERNL int	utFind		PROTO((
     char	*spec,
     utUnit	*up
 ));
@@ -238,14 +246,14 @@ extern int	utFind		PROTO((
 /*
  * Free the resources of a unit-structure.
  */
-extern void	utFree		PROTO((
+EXTERNL void	utFree		PROTO((
     utUnit* const	unit
 ));
 
 /*
  *	Terminate use of this package.
  */
-extern void	utTerm		PROTO((void));
+EXTERNL void	utTerm		PROTO((void));
 
 #ifdef __cplusplus
 }

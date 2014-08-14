@@ -21,25 +21,39 @@ if (UNIX)
         PROPERTIES OBJECT_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/scanner.c)
 endif()
 
+SET(libudunits2_src converter.c
+		    error.c
+		    formatter.c
+		    idToUnitMap.c
+		    parser.c
+		    prefix.c
+		    status.c
+		    systemMap.c
+		    unitAndId.c
+		    unitcore.c
+		    unitToIdMap.c
+		    ut_free_system.c
+		    xml.c
+		    udunits2.h)
+
+if(MSVC)
+	SET(libudunits2_src ${libudunits2_src}
+	tsearch.c tsearch.h c99_snprintf.c)
+endif()
+
 add_library(libudunits2
-    converter.c 
-    error.c
-    formatter.c
-    idToUnitMap.c 
-    parser.c
-    prefix.c
-    status.c
-    systemMap.c 
-    unitAndId.c 
-    unitcore.c 
-    unitToIdMap.c 
-    ut_free_system.c
-    xml.c)
+	${libudunits2_src})	
 set_target_properties(libudunits2 PROPERTIES LIBRARY_OUTPUT_NAME udunits2)
 set_target_properties(libudunits2 PROPERTIES ARCHIVE_OUTPUT_NAME udunits2)
 set_target_properties(libudunits2 PROPERTIES RUNTIME_OUTPUT_NAME udunits2)
 target_link_libraries(libudunits2 ${EXPAT_LIBRARIES})
 target_link_libraries(libudunits2 ${MATH_LIBRARY})
+
+IF(MSVC)
+	SET_TARGET_PROPERTIES(libudunits2 PROPERTIES
+	LINK_FLAGS_DEBUG " /NODEFAULTLIB:MSVCRT"
+)
+ENDIF()
 
 if (CUNIT_LIBRARY)
     add_executable(testUnits testUnits.c)
@@ -53,7 +67,7 @@ endif()
 # The documentation is in multiple texinfo(5) format files
 texi_doc(udunits2lib.texi ${CMAKE_SOURCE_DIR}/COPYRIGHT)
     
-install(TARGETS libudunits2
+install(TARGETS libudunits2 EXPORT udunits2-targets
     ARCHIVE DESTINATION lib
     LIBRARY DESTINATION lib
     RUNTIME DESTINATION bin)
