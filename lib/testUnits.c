@@ -1902,6 +1902,12 @@ test_parsing(void)
     CU_ASSERT_EQUAL(ut_compare(unit, secondsSinceTheEpoch), 0);
     ut_free(unit);
 
+    spec = "second ref 1970-01-01T00:00:00Z";
+    unit = ut_parse(unitSystem, spec, UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    CU_ASSERT_EQUAL(ut_compare(unit, secondsSinceTheEpoch), 0);
+    ut_free(unit);
+
     spec = "kg\xb7m\xb2/s\xb3"; /* "kg" mid-dot "m" squared "/" "s" cubed */
     unit = ut_parse(unitSystem, spec, UT_LATIN1);
     CU_ASSERT_PTR_NOT_NULL(unit);

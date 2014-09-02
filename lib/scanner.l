@@ -148,12 +148,7 @@ per                     [Pp][Ee][Rr]
 	_restartScanner = 0;
     }
 
-{space}*{ref}{space}* {
-    BEGIN INITIAL;
-    return SHIFT;
-}
-
-<INITIAL,ID_SEEN>{space}*(@|{after}|{from}|{since}){space}* {
+<INITIAL,ID_SEEN>{space}*(@|{after}|{from}|{ref}|{since}){space}* {
     BEGIN SHIFT_SEEN;
     return SHIFT;
 }

@@ -23,9 +23,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     ubuntu12_32.vm.synced_folder "/opt/tomcat/repos/apt", "/repo"
   end
 
-  # config.vm.define "win7" do |win7|
-  #   win7.vm.box = "win7"
-  # end
+  config.vm.define "win7" do |win7|
+    win7.vm.box = "win7"
+  end
 
   # All Vagrant configuration is done here. The most common configuration
   # options are documented and commented below. For a complete reference,
