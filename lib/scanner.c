@@ -1038,6 +1038,9 @@ static int decodeReal(
 #define DATE_SEEN 3
 #define CLOCK_SEEN 4
 
+#ifdef WIN32
+#define YY_NO_UNISTD_H
+#endif 
 #ifndef YY_NO_UNISTD_H
 /* Special case for "unistd.h", since it is non-ANSI. We include it way
  * down here because we want the user's section 1 to have been scanned first.

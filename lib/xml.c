@@ -35,6 +35,9 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#ifndef DLL_UDUNITS2
+#define XML_STATIC
+#endif
 #include "expat.h"
 #include "udunits2.h"
 
