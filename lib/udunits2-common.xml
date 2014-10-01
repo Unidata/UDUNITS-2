@@ -296,6 +296,13 @@ elements appear only within <aliases>.
             <aliases> <name> <singular>apounce</singular> </name> </aliases>
         </unit>
         <unit>
+            <def>avoirdupois_ounce/16</def>		<!-- exact -->
+            <aliases>
+                <name> <singular>dram</singular> </name>
+                <symbol>dr</symbol>
+            </aliases>
+        </unit>
+        <unit>
             <def>5760 grain</def>
             <aliases> <name> <singular>appound</singular> </name> </aliases>
         </unit>
@@ -696,13 +703,6 @@ elements appear only within <aliases>.
         <unit>
             <def>US_fluid_ounce/8</def>		<!-- exact -->
             <aliases> <symbol>fldr</symbol> </aliases>
-        </unit>
-        <unit>
-            <def>US_fluid_ounce/16</def>		<!-- exact -->
-            <aliases>
-                <name> <singular>dram</singular> </name>
-                <symbol>dr</symbol>
-            </aliases>
         </unit>
         <unit>
             <def>tablespoon/3</def>			<!-- exact -->
