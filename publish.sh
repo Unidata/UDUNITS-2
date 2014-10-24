@@ -119,4 +119,4 @@ EOF
 # computer.
 #
 cd $reposRoot
-flock . rsync --archive --relative --delete * $WEB_HOST:$ABSPATH_WEB_ROOT/repos
+flock . rsync --archive --relative * $WEB_HOST:$ABSPATH_WEB_ROOT/repos
