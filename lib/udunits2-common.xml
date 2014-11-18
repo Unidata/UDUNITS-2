@@ -821,8 +821,11 @@ elements appear only within <aliases>.
         <unit>
             <comment>exact</comment>
             <def>US_fluid_ounce/8</def>
-            <aliases> <symbol>fldr</symbol> </aliases>
-            <definition>unit of volume for liquid measure in the apothecary system, equal to 1/8 liquid ounce; corresponding name is fluid dram</definition>
+            <aliases>
+                <name> <singular>fluid_dram</singular> </name>
+                <symbol>fldr</symbol>
+            </aliases>
+            <definition>unit of volume for liquid measure in the apothecary system, equal to 1/8 liquid ounce</definition>
         </unit>
         <unit>
             <comment>exact</comment>
