@@ -47,7 +47,7 @@ static const char*      _cmdWant; /* command-line "want" unit specification */
 static int		_reveal; /* reveal problems with unit database? */
 static int		_encodingSet; /* is the character encoding set? */
 static ut_encoding	_encoding; /* the character encoding to use */
-static const char*	_progname;
+static char             _progname[1024];
 static const char*	_xmlPath = NULL; /* use default path */
 static ut_system*	_unitSystem;
 static double           _haveUnitAmount; /* amount of "have" unit */
@@ -116,23 +116,29 @@ decodeCommandLine(
     int		success = 0;
 
 #ifndef _MSC_VER
-	    _progname = basename(argv[0]);
- #else
-		{
-			char *m_fname = (char*)malloc(sizeof(char)*256);
-			char *m_ext = (char*)malloc(sizeof(char)*256);
-			char tmp[1024];
-			_splitpath(argv[0],NULL,NULL,m_fname,m_ext);
-			sprintf(tmp,"%s.%s",m_fname,m_ext);
-			_progname=tmp;
-			free(m_fname);
-			free(m_ext);
+    char* filename = basename(argv[0]);
 
-		}
+    if (strlen(filename)+1 > sizeof(_progname))
+        filename = "udunits2";
+
+    (void)strcpy(_progname, filename);
+#else
+    {
+        size_t len = strlen(argv[0]);
+        char*  m_fname = (char*)malloc(sizeof(char)*(len+1));
+        char*  m_ext = (char*)malloc(sizeof(char)*(len+1));
+
+        _splitpath(argv[0], NULL, NULL, m_fname, m_ext);
+
+        if (strlen(m_fname)+1 > sizeof(_progname))
+            (void)strcpy(_progname, "udunits2");
+        else
+            (void)strcpy(_progname, m_fname);
+
+        free(m_fname);
+        free(m_ext);
+    }
 #endif
-
-
-
 
     while ((c = getopt(argc, argv, "ALUhrH:W:")) != -1) {
 	switch (c) {
