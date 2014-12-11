@@ -78,4 +78,4 @@ createrepo $repoDir
 
 # Copy the yum(1) repository to the publicly-accessible repository computer.
 #
-rsync --archive --relative --delete $repoDir webserver:/web/content/repos/yum
+rsync --archive --relative --delete $repoDir www:/web/content/repos/yum
