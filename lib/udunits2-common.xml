@@ -1967,8 +1967,7 @@ elements appear only within <aliases>.
             <definition></definition>
         </unit>
         <unit>
-            <comment>NIST 20130402</comment>
-            <def>mol/6.02214129e23</def>
+            <def>1/avogadro_constant</def>
             <name><singular>molecule</singular></name>
             <aliases>
                 <name><singular>molec</singular></name>

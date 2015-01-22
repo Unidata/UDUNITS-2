@@ -905,7 +905,7 @@ compositeGetExpression(
 	buf[max-1] = 0;
 
 	if (cvNeedsParentheses(buf)) {
-	    nchar = snprintf(tmpBuf, sizeof(tmpBuf), "(%s)", buf);
+	    (void)snprintf(tmpBuf, sizeof(tmpBuf), "(%s)", buf);
 	}
 	else {
 	    (void)strncpy(tmpBuf, buf, sizeof(tmpBuf));
@@ -1055,13 +1055,12 @@ cv_get_galilean(
 	conv = cv_get_scale(slope);
     }
     else {
-	cv_converter*	tmp = malloc(sizeof(GalileanConverter));
+	conv = malloc(sizeof(GalileanConverter));
 
-	if (tmp != NULL) {
-	    tmp->ops = &galileanOps;
-	    tmp->galilean.slope = slope;
-	    tmp->galilean.intercept = intercept;
-	    conv = tmp;
+	if (conv != NULL) {
+	    conv->ops = &galileanOps;
+	    conv->galilean.slope = slope;
+	    conv->galilean.intercept = intercept;
 	}
     }
 

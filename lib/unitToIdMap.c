@@ -288,7 +288,10 @@ utimAdd(
     else {
 	UnitAndId*	targetEntry = uaiNew(unit, id);
 
-	if (targetEntry != NULL) {
+	if (targetEntry == NULL) {
+            status = ut_get_status();
+        }
+        else {
 	    void**	rootp = selectTree(map, encoding);
 
 	    UnitAndId**	treeEntry = tsearch(targetEntry, rootp, compareUnits);
@@ -337,7 +340,6 @@ utimRemove(
     const ut_unit*	unit,
     ut_encoding		encoding)
 {
-    ut_status		status;
     UnitAndId		targetEntry;
     UnitAndId**		treeEntry;
 
@@ -347,17 +349,14 @@ utimRemove(
     targetEntry.unit = (ut_unit*)unit;
     treeEntry = tfind(&targetEntry, selectTree(map, encoding), compareUnits);
 
-    if (treeEntry == NULL || *treeEntry == NULL) {
-	status = UT_SUCCESS;
-    }
-    else {
+    if (treeEntry != NULL && *treeEntry != NULL) {
 	UnitAndId*	uai = *treeEntry;
 
 	(void)tdelete(uai, selectTree(map, encoding), compareUnits);
 	uaiFree(uai);
     }
 
-    return status;
+    return UT_SUCCESS;
 }
 
 

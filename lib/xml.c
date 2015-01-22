@@ -1525,7 +1525,7 @@ endSingular(
         XML_StopParser(currFile->parser, 0);
     }
     else {
-        (void)strcpy(currFile->singular, text);
+        (void)strncpy(currFile->singular, text, NAME_SIZE);
     }
 }
 
@@ -1573,7 +1573,7 @@ endPlural(
         XML_StopParser(currFile->parser, 0);
     }
     else {
-        (void)strcpy(currFile->plural, text);
+        (void)strncpy(currFile->plural, text, NAME_SIZE);
     }
 }
 

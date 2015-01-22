@@ -128,7 +128,10 @@ itumAdd(
 
     targetEntry = uaiNew(unit, id);
 
-    if (targetEntry != NULL) {
+    if (targetEntry == NULL) {
+        status = ut_get_status();
+    }
+    else {
 	UnitAndId**	treeEntry = tsearch(targetEntry, &map->tree,
 	    map->compare);
 

@@ -2780,6 +2780,7 @@ ut_new_system(void)
 	    ut_handle_error_message(
 		"ut_new_system(): Couldn't create dimensionless unit one");
 	    free(system);
+            system = NULL;
 	}
     }
 
