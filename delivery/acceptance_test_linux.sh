@@ -37,9 +37,6 @@ ext=${5:?Package extension not specified}
 install=${6:?Installation command not specified}
 binRepoDir=${7:?Platform-specific binary-repository directory not specified}
 
-binDistroName="$PKG_ID.$vmCpu"
-binDistroFilename=$binDistroName.$ext
-
 # Set the build directory to the directory that contains this script.
 builddir=`dirname $0`
 
@@ -54,6 +51,9 @@ cd $builddir
 
 # Set the release-variables.
 . ./release-vars.sh
+
+binDistroName="$PKG_ID.$vmCpu"
+binDistroFilename=$binDistroName.$ext
 
 # Start the virtual machine. Ensure that each virtual machine is started
 # separately because vagrant(1) doesn't support concurrent "vagrant up" 
