@@ -19,3 +19,4 @@ udunits2prog.pdf
 .vimrc
 *.vr
 *.t2p
+Makefile.in

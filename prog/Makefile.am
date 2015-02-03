@@ -30,3 +30,6 @@ EXTRA_DIST 		= \
 debug:		udunits2
 	UDUNITS2_XML_PATH=$(top_srcdir)/lib/udunits2.xml libtool \
 	    --mode=execute gdb udunits2
+
+check-local:	udunits2
+	./udunits2 $(top_srcdir)/lib/udunits2.xml </dev/null
