@@ -53,7 +53,7 @@ binDistroFilename=$binDistroName.$ext
 # invocations in the same directory.
 #
 trap "vagrant destroy --force $vmName; `trap -p EXIT`" EXIT
-flock -o /tmp/`basename $0`-$USER "vagrant up \"$vmName\""
+flock -o /tmp/`basename $0`-$USER vagrant up $vmName
 
 # On the virtual machine:
 #
