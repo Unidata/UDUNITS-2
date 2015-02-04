@@ -60,9 +60,8 @@ binDistroFilename=$binDistroName.$ext
 # invocations.
 #
 trap "vagrant destroy --force $vmName; `trap -p EXIT`" EXIT
-lockfile=/tmp/`basename $0`
-touch $lockfile
-flock $lockfile -c "vagrant up \"$vmName\""
+lockfile=/tmp/`basename $0`-$USER
+flock -o $lockfile vagrant up $vmName
 
 # On the virtual machine,
 #
@@ -96,7 +95,7 @@ EOF
 # Restart the virtual machine.
 #
 vagrant destroy --force $vmName
-flock $lockfile -c "vagrant up \"$vmName\""
+flock -o $lockfile vagrant up $vmName
 
 # On the virtual machine,
 #
