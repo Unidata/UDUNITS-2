@@ -1,9 +1,14 @@
 # Performs an acceptance-test of a package on a Linux system. Creates a binary
-# distribution file and a documentation distribution file. The directory that
-# contains this script must also contain the files
-#     - release-vars.sh
-#     - Vagrantfile
-#     - repo_add
+# distribution file and a documentation distribution file. Terminates the
+# virtual machine.
+#
+# Preconditions:
+#     - The current working directory contains:
+#         - the source-distribution tarball
+#         - release-vars.sh
+#         - Vagrantfile
+#         - repo_add
+#     - The virtual machine is running
 #
 # Usage: $0 tarball vmName vmCpu generator ext install [binRepoDir]
 #
@@ -17,7 +22,7 @@
 #     ext               Extension of the binary-distribution file (e.g., "rpm",
 #                       "deb")
 #     install           Command to install from the binary-distribution file
-#                       (e.g., "rpm --install", "dpkg --install")
+#                       (e.g., "rpm --inhe stall", "dpkg --install")
 #     binRepoDir        Path of the platform-specific binary-repository
 #                       directory (excluding the CPU type) relative to the root
 #                       directory of the package-manager-specific
@@ -37,33 +42,13 @@ ext=${5:?Package extension not specified}
 install=${6:?Installation command not specified}
 binRepoDir=${7:?Platform-specific binary-repository directory not specified}
 
-# Set the build directory to the directory that contains this script.
-builddir=`dirname $0`
-
-# Move the tarball to the build directory so that it appears in the "/vagrant"
-# directory.
-#
-mv $tarball $builddir
-
-# Make the build directory the current working directory.
-#
-cd $builddir
-
 # Set the release-variables.
 . ./release-vars.sh
 
 binDistroName="$PKG_ID.$vmCpu"
 binDistroFilename=$binDistroName.$ext
 
-# Start the virtual machine. Ensure that each virtual machine is started
-# separately because vagrant(1) doesn't support concurrent "vagrant up" 
-# invocations.
-#
-trap "vagrant destroy --force $vmName; `trap -p EXIT`" EXIT
-lockfile=/tmp/`basename $0`-$USER
-flock -o $lockfile vagrant up $vmName
-
-# On the virtual machine,
+# On the virtual machine:
 #
 vagrant ssh $vmName -- -T <<EOF
     set -e # terminate on error
@@ -85,22 +70,9 @@ vagrant ssh $vmName -- -T <<EOF
     make all test
     sudo make install install_test package
 
-    #
     # Copy the binary distribution to the host machine.
     #
     cp $binDistroFilename /vagrant
-EOF
-
-#
-# Restart the virtual machine.
-#
-vagrant destroy --force $vmName
-flock -o $lockfile vagrant up $vmName
-
-# On the virtual machine,
-#
-vagrant ssh $vmName -- -T <<EOF
-    set -e # terminate on error
 
     # Verify that the package installs correctly from the binary distribution.
     #
@@ -113,6 +85,6 @@ vagrant ssh $vmName -- -T <<EOF
             /vagrant/$binDistroFilename
 EOF
 
-# Move the binary distribution to the workspace.
+# Terminate the virtual machine
 #
-mv $binDistroFilename ../..
+vagrant destroy --force $vmName
