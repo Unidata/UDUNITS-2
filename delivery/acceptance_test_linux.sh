@@ -52,10 +52,11 @@ binDistroFilename=$binDistroName.$ext
 # separately because vagrant(1) doesn't support concurrent "vagrant up" 
 # invocations.
 #
-trap "vagrant destroy --force $vmName; `trap -p EXIT`" EXIT
 #flock -o /tmp/`basename $0`-$USER vagrant up $vmName
 (
 flock -n 9
+trap "vagrant destroy --force $vmName; `trap -p EXIT`" EXIT
+vagrant up $vmName
 
 # On the virtual machine:
 #

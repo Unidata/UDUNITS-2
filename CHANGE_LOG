@@ -1,4 +1,4 @@
-2.2.18	2015-02-04T15:22:44-0700
+2.2.18	2015-02-04T15:48:32-0700
     Library (udunits2(3)):
         Eliminated the use of <unistd.h> on Windows.
 
