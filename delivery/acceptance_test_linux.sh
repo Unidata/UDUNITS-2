@@ -50,10 +50,12 @@ binDistroFilename=$binDistroName.$ext
 
 # Start the virtual machine. Ensure that each virtual machine is started
 # separately because vagrant(1) doesn't support concurrent "vagrant up" 
-# invocations in the same directory.
+# invocations.
 #
 trap "vagrant destroy --force $vmName; `trap -p EXIT`" EXIT
-flock -o /tmp/`basename $0`-$USER vagrant up $vmName
+#flock -o /tmp/`basename $0`-$USER vagrant up $vmName
+(
+flock -n 9
 
 # On the virtual machine:
 #
@@ -95,3 +97,5 @@ EOF
 # Terminate the virtual machine
 #
 #vagrant destroy --force $vmName
+
+) 9>/tmp/`basename $0`-$USER
