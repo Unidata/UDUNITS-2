@@ -59,7 +59,7 @@ EOF
 
 # Unpack the tarball
 #
-pax -r <$SOURCE_DISTRO_NAME
+pax -zr <$SOURCE_DISTRO_NAME
 
 # Install the package in order to obtain the documentation.
 #
