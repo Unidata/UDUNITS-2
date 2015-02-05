@@ -6,6 +6,11 @@
 #    3) Copies all binary-repositories to the publicly-visible repository
 #       computer.
 #
+# Preconditions:
+#     - The current working directory contains
+#         - The source-distribution tarball
+#         - release-vars.sh
+#
 # The package is built in the current working directory and installed under a
 # temporary directory in order to extract the documentation.
 #
@@ -52,12 +57,18 @@ ssh -T $SOURCE_REPO_HOST bash --login <<EOF
     done
 EOF
 
+# Unpack the tarball
+#
+pax -r <$SOURCE_DISTRO_NAME
+
 # Install the package in order to obtain the documentation.
 #
+pushd $PKG_ID
 prefix=/tmp/$PKG_ID
 ./configure --prefix=$prefix >configure.log 2>&1
 trap "rm -rf $prefix; `trap -p EXIT`" EXIT
 make install install-info install-html >install.log 2>&1
+popd
 
 # Copy the documentation to the package's website.
 #
