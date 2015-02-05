@@ -54,7 +54,7 @@ binDistroFilename=$binDistroName.$ext
 #
 #flock -o /tmp/`basename $0`-$USER vagrant up $vmName
 (
-flock -n 9
+flock -9
 trap "vagrant destroy --force $vmName; `trap -p EXIT`" EXIT
 vagrant up $vmName
 
