@@ -31,15 +31,15 @@
 
 //We must accomodate the lack of snprintf in MSVC.
 //c99_snprintf is defined in c99_snprintf.c, in lib/.
-#define snprintf c99_snprintf
+#define snprintf udunits_c99_snprintf
 
-int c99_snprintf(
+int udunits_c99_snprintf(
    char* str,
      size_t size,
      const char* format,
      ...);
 
-int c99_vsnprintf(
+int udunits_c99_vsnprintf(
 char* str,
   size_t size,
   const char* format,
