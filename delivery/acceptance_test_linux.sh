@@ -8,7 +8,7 @@
 #         - release-vars.sh
 #         - Vagrantfile
 #         - repo_add
-#     - The virtual machine is running
+#     - The virtual machine is not running
 #
 # Usage: $0 tarball vmName vmCpu generator ext install [binRepoDir]
 #
@@ -49,14 +49,12 @@ binDistroName="$PKG_ID.$vmCpu"
 binDistroFilename=$binDistroName.$ext
 
 # Start the virtual machine. Ensure that each virtual machine is started
-# separately because vagrant(1) doesn't support concurrent "vagrant up" 
-# invocations.
+# separately because vagrant(1), apparently, doesn't has problems with
+# concurrent "up" commands.
 #
-#flock -o /tmp/`basename $0`-$USER vagrant up $vmName
-(
-flock 9
+( flock 9; vagrant up $vmName
+#flock /tmp/`basename $0`-$USER vagrant up $vmName
 trap "vagrant destroy --force $vmName; `trap -p EXIT`" EXIT
-vagrant up $vmName
 
 # On the virtual machine:
 #
@@ -94,9 +92,5 @@ vagrant ssh $vmName -- -T <<EOF
     bash -x /vagrant/repo_add /repo $binRepoDir/$vmCpu \
             /vagrant/$binDistroFilename
 EOF
-
-# Terminate the virtual machine
-#
-#vagrant destroy --force $vmName
 
 ) 9>/tmp/`basename $0`-$USER

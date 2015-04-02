@@ -2,12 +2,11 @@
     Added `tsearch.c` and `tsearch.h` to the distribution to support building
     on Windows.
 
-2.2.18	2015-04-02T10:32:50-0600
+2.2.18 2015-04-02T10:32:50-0600
     Library (udunits2(3)):
         Eliminated the use of <unistd.h> on Windows.
 
-        Improved support for static builds (i.e., builds that don't produce a
-        sharable library).
+        Improved support for static builds.
 
     Units Database:
         Corrected the definition of "dram" and added "fluid_dram".
@@ -15,6 +14,7 @@
         Changed the definition of "molecule" to "1/avogadro_constant".
 
         Added comments and human-readable definitions.
+        Improved support for static builds.
 
     Program (udunits2(1)):
         Removed latent bug on Windows in determining the name of the program.
@@ -103,6 +103,30 @@
         Library udunits2(3):
             Added ut_get_path_xml() to retrieve pathname of XML unit database.
                 
+        Units Database:
+            Added units "molecule" (for conversion with "mole") and "bit".
+
+        Misc:
+            Removed bundled EXPAT package.
+                
+            Ported code to 32-bit Windows-7 under MinGW.
+            
+            Added explicit chapters on the unit utility and unit library to the
+            top-level package documentation.
+
+    Bug Fixes:
+        Library udunits2(3):
+            Corrected logic of checking for location of <noplural> element.
+    
+        Units Database:
+            Corrected ISO Latin-1 encodings that somehow got corrupted.
+    
+    Release Engineering:
+        Added support for building by CMake and for creating binary
+        distributions by CPack.
+
+        Added scripts and configuration-files to support continuous-delivery.
+
         Units Database:
             Added units "molecule" (for conversion with "mole") and "bit".
 
@@ -305,30 +329,6 @@
 2.1.4	2009-03-24
 	Documented the change in meaning of the symbol "g" from the
 	original package (standard free fall) to this package (gram).
-
-	Returned HP-UX to the set of tested operating systems.
-
-2.1.3	2009-03-23
-	Corrected typos in XML units database for "US_survey_foot" and
-	"international_foot": removed embedded quotation marks.
-
-2.1.2	2009-03-19
-	Corrected program udunits2(1): it now correctly parses units
-	like "0.1 lg(re 1.0e-12 W.m-2)".
-
-	Made the dimensionless unit one format as "1".
-
-	Corrected rule for target "web-update": changed "distname" to
-	"distName".
-
-	Corrected the development make(1) target "hostcheck": added
-	setting of MAKEFLAGS to the empty string before invoking
-	make(1).
-
-2.1.1	2009-03-13
-	Corrected and improved the development make(1) targets "ftp"
-	and "download-update".
-
 	Added publication of the XML database on the UDUNITS website to
 	the target "web-update".
 
