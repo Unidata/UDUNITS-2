@@ -1,4 +1,4 @@
 @set UPDATED 18 April 2014
 @set UPDATED-MONTH April 2014
-@set EDITION 2.2.18
-@set VERSION 2.2.18
+@set EDITION 2.2.19
+@set VERSION 2.2.19

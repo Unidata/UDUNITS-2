@@ -1,4 +1,8 @@
-2.2.18	2015-02-04T17:52:02-0700
+2.2.19
+    Added `tsearch.c` and `tsearch.h` to the distribution to support building
+    on Windows.
+
+2.2.18	2015-04-02T10:32:50-0600
     Library (udunits2(3)):
         Eliminated the use of <unistd.h> on Windows.
 

@@ -7,6 +7,7 @@
 ## Process this file with automake to produce Makefile.in
 SUBDIRS	= xmlFailures xmlSuccesses
 lib_LTLIBRARIES = libudunits2.la
+EXTRA_DIST	= tsearch.c tsearch.h
 libudunits2_la_SOURCES = unitcore.c converter.c formatter.c \
     idToUnitMap.c idToUnitMap.h \
     unitToIdMap.c unitToIdMap.h \
