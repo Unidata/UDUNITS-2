@@ -1,4 +1,7 @@
-2.2.19
+2.2.20
+    Replaced use of deprecated atof() with strtod().
+
+2.2.19	2015-04-02T11:50:09-0600
     Added `tsearch.c` and `tsearch.h` to the distribution to support building
     on Windows.
 

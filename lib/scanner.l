@@ -83,7 +83,7 @@ static int decodeReal(
     double* const     value)
 {
     errno = 0;
-    *value = atof(text);
+    *value = strtod(text, NULL);
 
     if (errno == 0)
         return REAL;
