@@ -103,16 +103,16 @@ ssh -T $WEB_HOST bash --login <<EOF
         sed "s/$PKG_NAME-//" |
         sort -t. -k 1nr,1 -k 2nr,2 -k 3nr,3 |
         awk -F. '\$1!=ma||\$2!=mi{print}{ma=\$1;mi=\$2}' >versions
-    sed -n '1,/$BEGIN_VERSION_LINKS/p' index.html >index.html.new
+    sed -n '1,/$BEGIN_VERSION_LINKS/p' documentation.inc >documentation.inc.new
     for vers in \`cat versions\`; do
         href=\`find $PKG_NAME-\$vers -name udunits2.html\`
         test "\$href" || href=\`find $PKG_NAME-\$vers -name udunits2.html\`
         echo "            <li><a href=\"\$href\">\$vers</a>" \
-            >>index.html.new
+            >>documentation.inc.new
     done
-    sed -n '/$END_VERSION_LINKS/,\$p' index.html >>index.html.new
-    cp index.html index.html.old
-    mv index.html.new index.html
+    sed -n '/$END_VERSION_LINKS/,\$p' documentation.inc >>documentation.inc.new
+    cp documentation.inc documentation.inc.old
+    mv documentation.inc.new documentation.inc
 
     # Delete all versions not referenced in the top-level HTML file.
     #
