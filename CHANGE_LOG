@@ -1,4 +1,7 @@
 2.2.20
+    Building:
+        Add Ward Fisher's modifications for better portability.
+
     Library (udunits2(3)):
         Replaced use of deprecated atof() with strtod().
 
