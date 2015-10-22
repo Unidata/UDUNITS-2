@@ -116,13 +116,22 @@ Units accepted for use with the SI
             <definition>standard unit for indicating mass on an atomic or molecular scale; is approximately the mass of one nucleon (either a single proton or neutron), and equivalent to 1 g/mol</definition>
         </unit>
         <unit>
-            <comment>Unit's value is obtained experimentally</comment>
-            <def>1.495979e11 m</def>
+            <comment>According to resolution by the International Astronomical Union (IAU) in 2012 </comment>
+            <def>1.49597870700e11 m</def>
             <aliases>
                 <name><singular>astronomical_unit</singular></name>
-                <symbol>ua</symbol>
+                <symbol>au</symbol> <!-- Adopted by BIPM in 2014 -->
             </aliases>
-            <definition>unit of measurement equal to 149.6 million kilometers, the mean distance from the center of the earth to the center of the sun</definition>
+            <definition>Exact definition according to 2012 resolution by the International Astronomical Union (IAU). Ostensibly equal to the mean distance from the center of the earth to the center of the sun.</definition>
+        </unit>
+        <unit>
+            <comment>Pre-2012 resolution by the IAU</comment>
+            <def>1.495979e11 m</def>
+            <aliases>
+                <name><singular>astronomical_unit_BIPM_2006</singular></name>
+                <symbol>ua</symbol> 
+            </aliases>
+            <definition>unit of measurement equal to 149.6 million kilometers, the mean distance from the center of the earth to the center of the sun according to the International Bureau of Weights and Measures (BIPM) in 2006</definition>
         </unit>
 
     <!-- Units temporarily accepted for use with the SI.  NB: <name>
