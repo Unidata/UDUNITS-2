@@ -1,5 +1,13 @@
 2.2.20
-    Replaced use of deprecated atof() with strtod().
+    Library (udunits2(3)):
+        Replaced use of deprecated atof() with strtod().
+
+    Units Database:
+        Changed definition of "astronomical_unit" from "1.495979e11 m" to
+        "1.49597870700e11 m" and its symbol from "ua" to "au" based on 2012
+        resolution by the International Astronomical Union (IAU) and 2014
+        revision of the SI Brochure by the BIPM. Added the new unit
+        "astronomical_unit_BIPM_2006" with the old symbol and definition.
 
 2.2.19	2015-04-02T11:50:09-0600
     Added `tsearch.c` and `tsearch.h` to the distribution to support building
@@ -17,13 +25,13 @@
         Changed the definition of "molecule" to "1/avogadro_constant".
 
         Added comments and human-readable definitions.
-        Improved support for static builds.
 
     Program (udunits2(1)):
         Removed latent bug on Windows in determining the name of the program.
 
     Misc:
         Removed lint discovered by Coverity.
+        Improved support for static builds.
 
 2.2.17	2014-11-18T11:32:32-0700
     Modified the lexical scanner to accept the use of "ref" in an offset
@@ -129,9 +137,6 @@
         distributions by CPack.
 
         Added scripts and configuration-files to support continuous-delivery.
-
-        Units Database:
-            Added units "molecule" (for conversion with "mole") and "bit".
 
         Misc:
             Removed bundled EXPAT package.
