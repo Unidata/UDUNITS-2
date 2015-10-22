@@ -4,6 +4,10 @@ IF (CUNIT_INCLUDE_DIR)
     INCLUDE_DIRECTORIES("${CUNIT_INCLUDE_DIR}")
 ENDIF()
 
+IF(YY_NO_UNISTD_H)
+    ADD_DEFINITIONS(-DYY_NO_UNISTD_H)
+ENDIF(YY_NO_UNISTD_H)
+
 ##
 # Check to see if we have flex and bison.
 ##
@@ -16,8 +20,11 @@ FIND_PROGRAM(UD_BISON NAMES bison)
 # MODIFICATION: Instead of checking for Unix, see if flex and bison
 # are available.
 #
+# MODIFICATION 2: Moving back for now, but leaving framework.
+#  Other complications arose on Windows with MSVC.
+#
 
-IF(UD_FLEX AND UD_BISON)
+IF(UNIX)
     add_custom_command(
         OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/scanner.c
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
