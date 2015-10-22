@@ -38,6 +38,15 @@ IF(MSVC)
 
 ENDIF()
 
+###
+# Fix to make sure we don't try to include unistd.h
+# when using Visual Studio.
+###
+INCLUDE(${CMAKE_ROOT}/Modules/CheckIncludeFile.cmake)
+CHECK_INCLUDE_FILE("unistd.h" HAVE_UNISTD_H)
+IF(NOT HAVE_UNISTD_H)
+  SET(YY_NO_UNISTD_H TRUE)
+ENDIF()
 
 # Ensures a path in the native format.
 #FUNCTION(to_native_path input result)

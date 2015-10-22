@@ -4,18 +4,29 @@ IF (CUNIT_INCLUDE_DIR)
     INCLUDE_DIRECTORIES("${CUNIT_INCLUDE_DIR}")
 ENDIF()
 
+##
+# Check to see if we have flex and bison.
+##
+FIND_PROGRAM(UD_FLEX NAMES flex)
+FIND_PROGRAM(UD_BISON NAMES bison)
+
 # Ensure that the C source-files for the scanner and parser are up-to-date
 # on a Unix system.
-if (UNIX)
+#
+# MODIFICATION: Instead of checking for Unix, see if flex and bison
+# are available.
+#
+
+IF(UD_FLEX AND UD_BISON)
     add_custom_command(
         OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/scanner.c
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-        COMMAND flex -d -Put -o scanner.c scanner.l
+        COMMAND ${UD_FLEX} -d -Put -o scanner.c scanner.l
         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/scanner.l)
     add_custom_command(
         OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/parser.c
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-        COMMAND bison -t -p ut -o parser.c parser.y
+        COMMAND ${UD_BISON} -t -p ut -o parser.c parser.y
         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/parser.y)
     set_source_files_properties(parser.c
         PROPERTIES OBJECT_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/scanner.c)
