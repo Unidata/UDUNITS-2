@@ -164,6 +164,11 @@ elements appear only within <aliases>.
             </aliases>
             <definition>parts per quadrillion</definition>
         </unit>
+        <unit>
+            <def>lg(re 1)</def>
+            <aliases> <symbol>B</symbol> </aliases>
+            <definition>logarithmic unit used to express dimensionless ratios; a value of 0 B (0 dB) corresponds to a ratio of 1</definition>
+        </unit>
 
     <!-- Plane Angle -->
         <unit>
