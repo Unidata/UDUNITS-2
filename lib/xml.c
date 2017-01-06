@@ -1800,7 +1800,13 @@ endImport(
         path = text;
     }
     else {
-        (void)snprintf(buf, sizeof(buf), "%s/%s",
+        (void)snprintf(buf, sizeof(buf),
+#ifdef _MSC_VER
+            // The directory pathname has a trailing backslash on Windows
+            "%s%s"
+#else
+            "%s/%s",
+#endif
             XML_GetBase(currFile->parser), text);
 
         buf[sizeof(buf)-1] = 0;
@@ -2073,18 +2079,17 @@ readXml(
         char        base[_XOPEN_PATH_MAX];
 
         (void)strncpy(base, path, sizeof(base));
-        base[sizeof(base)-1] = 0;
-#ifndef _MSC_VER
-        (void)memmove(base, dirname(base), sizeof(base));
+#ifdef _MSC_VER
+        {
+            char drive[_MAX_DRIVE+1]; // Will have trailing colon
+            char directory[_MAX_DIR+1]; // Will have trailing backslash
+            _splitpath(base, drive, directory, NULL, NULL);
+            (void)snprintf(base, sizeof(base), "%s%s", drive, directory);
+        }
 #else
-		{
-			char *m_dir = (char*)malloc(sizeof(char)*1024);
-			_splitpath(base,NULL,m_dir,NULL,NULL);
-			(void)memmove(base,m_dir,sizeof(base));
-			free(m_dir);
-		}
+        (void)memmove(base, dirname(base), sizeof(base));
 #endif
-		base[sizeof(base)-1] = 0;
+        base[sizeof(base)-1] = 0;
 
         if (XML_SetBase(parser, base) != XML_STATUS_OK) {
             status = UT_OS;
