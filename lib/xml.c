@@ -2076,20 +2076,24 @@ readXml(
         ut_handle_error_message("Couldn't create XML parser");
     }
     else {
-        char        base[_XOPEN_PATH_MAX];
-
-        (void)strncpy(base, path, sizeof(base));
+        char base[_XOPEN_PATH_MAX];
 #ifdef _MSC_VER
         {
             char drive[_MAX_DRIVE+1]; // Will have trailing colon
             char directory[_MAX_DIR+1]; // Will have trailing backslash
-            _splitpath(base, drive, directory, NULL, NULL);
+            _splitpath(path, drive, directory, NULL, NULL);
             (void)snprintf(base, sizeof(base), "%s%s", drive, directory);
+            base[sizeof(base)-1] = 0;
         }
 #else
-        (void)memmove(base, dirname(base), sizeof(base));
+        {
+            // str*cpy() must not copy overlapping strings
+            char tmp[_XOPEN_PATH_MAX];
+            (void)strncpy(tmp, path, sizeof(tmp));
+            tmp[sizeof(tmp)-1] = 0;
+            (void)strcpy(base, dirname(tmp));
+        }
 #endif
-        base[sizeof(base)-1] = 0;
 
         if (XML_SetBase(parser, base) != XML_STATUS_OK) {
             status = UT_OS;
