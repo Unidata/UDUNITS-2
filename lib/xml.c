@@ -1803,7 +1803,7 @@ endImport(
         (void)snprintf(buf, sizeof(buf),
 #ifdef _MSC_VER
             // The directory pathname has a trailing backslash on Windows
-            "%s%s"
+            "%s%s",
 #else
             "%s/%s",
 #endif
