@@ -1,4 +1,4 @@
-2.2.22
+2.2.22	2017-01-20T10:33:42-0700
     Added missing files to distribution for building on Windows:
         lib/c99_snprintf.c
         lib/tsearch.c
