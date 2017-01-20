@@ -1,0 +1,48 @@
+# This script prepares the package for being pushed to the origin repository;
+# then pushes the package.
+
+set -e  # exit upon error
+
+# Go to the top-level directory of the working tree.
+cd `dirname $0`
+
+if git branch | grep '^\* *master$' >/dev/null; then
+    # The push is to the master branch.
+    #
+    # Get and vet the package version information from the CHANGE_LOG file.
+    versionId=`awk '{print $1;exit}' CHANGE_LOG`
+    majorId=`echo $versionId | cut -d . -f 1`
+    minorId=`echo $versionId | cut -d . -f 2`
+    bugfixId=`echo $versionId | cut -d . -f 3`
+    rcId=`echo $versionId | cut -d . -f 4`  # might be empty
+    test "$majorId"
+    test "$minorId"
+    test "$bugfixId"
+
+    ## Ensure the current time in the top line of the CHANGE_LOG file.
+    awk 'NR==1{print $1"\t'`date --iso-8601=seconds`'"}NR>1' CHANGE_LOG \
+        >CHANGE_LOG.tmp
+    mv CHANGE_LOG.tmp CHANGE_LOG
+
+    # Set the package version in the autoconf configuration-file.
+    sed '/^AC_INIT(/s/\[[0-9][0-9.]*\]/['$versionId']/' configure.ac \
+        >configure.ac.tmp
+    mv configure.ac.tmp configure.ac
+    git add configure.ac
+
+    # Set the package version in the release-variables file.
+    sed "/^export *PKG_VERSION=/cexport PKG_VERSION=$versionId" \
+            delivery/release-vars.sh >delivery/release-vars.sh.tmp
+    mv delivery/release-vars.sh.tmp delivery/release-vars.sh
+    git add delivery/release-vars.sh
+
+    # Commit the changes.
+    git commit -a -m "v$versionId"
+
+    # Tag the current version.
+    git tag -f "v$versionId"
+fi
+
+# Push to the origin repository
+git push
+git push --force --tags

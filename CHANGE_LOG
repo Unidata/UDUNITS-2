@@ -1,4 +1,8 @@
-2.2.23
+2.2.24
+    Added ./push(1) for pushing commits to the remote repository. Removed all
+    git(1) hooks.
+
+2.2.23	2017-01-20T11:06:47-0700
     Added missing comma to snprintf() call under Windows.
 
 2.2.22	2017-01-20T10:44:10-0700
