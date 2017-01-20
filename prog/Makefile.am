@@ -19,7 +19,8 @@ TAGS_FILES     	 	= $(top_srcdir)/lib/*.c $(top_srcdir)/lib/*.h
 EXTRA_DIST 		= \
     CMakeLists.txt \
     udunits2prog.html \
-    udunits2prog.pdf
+    udunits2prog.pdf \
+    XGetopt.c XGetopt.h
 
 .c.ln:
 	$(LINT.c) $(AM_CPPFLAGS) $(CPPFLAGS) -c $<

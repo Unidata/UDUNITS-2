@@ -1,4 +1,12 @@
-2.2.21
+2.2.22
+    Added missing files to distribution for building on Windows:
+        lib/c99_snprintf.c
+        lib/tsearch.c
+        lib/tsearch.h
+        prog/XGetopt.c
+        prog/XGetopt.h
+
+2.2.21	2017-01-07T10:51:38-0700
     Units Database:
         Corrected construction of the pathname of an imported database file
         under Windows.
