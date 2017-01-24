@@ -1596,13 +1596,13 @@ test_utOffsetByTime(void)
         }
 
         unit = ut_parse(unitSystem,
-                "second since 1970-01-01 0 +1", UT_ASCII);
+                "second since 1970-01-01 0 -1", UT_ASCII);
         CU_ASSERT_PTR_NOT_NULL(unit);
         if (unit) {
             converter = ut_get_converter(unit, secondsSinceTheEpoch);
             CU_ASSERT_PTR_NOT_NULL(converter);
             if (converter) {
-                CU_ASSERT_TRUE(areCloseDoubles(cv_convert_double(converter, 0), -3600));
+                CU_ASSERT_TRUE(areCloseDoubles(cv_convert_double(converter, 0), 3600));
                 cv_free(converter);
             }
             ut_free(unit);
