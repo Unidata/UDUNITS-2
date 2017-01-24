@@ -1641,7 +1641,6 @@ test_ut_decode_time(void)
 }
 
 
-
 static void
 test_utSetEncoding(void)
 {

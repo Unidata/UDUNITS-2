@@ -1,6 +1,8 @@
 2.2.24
     Added ./push(1) for pushing commits to the remote repository. Removed all
     git(1) hooks.
+    
+    Fixed utCalendar() in the UDUNITS-1 interface returning 60 seconds.
 
 2.2.23	2017-01-20T11:06:47-0700
     Added missing comma to snprintf() call under Windows.

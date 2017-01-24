@@ -163,9 +163,30 @@ utScan(
     return status;
 }
 
-/*
- * Convert a temporal value into a UTC Gregorian date and time.
+static int isLeapYear(const int year)
+{
+    return (year % 4 == 0) && !(year % 100 == 0 && year % 400 != 0);
+}
+
+/**
+ * Returns the number of days in a particular month.
  */
+static int daysInMonth(
+        const int year,
+        const int month)
+{
+    static int daysInMonth[2][12] = {
+            {31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31}, // Leap year
+            {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31}  // Regular year
+    };
+    return isLeapYear(year)
+            ? daysInMonth[0][month-1]
+            : daysInMonth[1][month-1];
+}
+
+/*
+* Convert a temporal value into a UTC Gregorian date and time.
+*/
 int
 utCalendar(
     double		value,
@@ -181,14 +202,34 @@ utCalendar(
 
     cv_converter* converter = ut_get_converter(unit->unit2, encodedTimeUnit);
     if (converter == NULL) {
-	status = encodedTimeUnit == NULL ? UT_ENOINIT : UT_EINVALID;
+        status = encodedTimeUnit == NULL ? UT_ENOINIT : UT_EINVALID;
     }
     else {
-	double	encodedTime = cv_convert_double(converter, value);
-	double	sec, res;
+        double	encodedTime = cv_convert_double(converter, value);
+        double	sec, res;
 
-	ut_decode_time(encodedTime, year, month, day, hour, minute, &sec, &res);
-	*second = (float)sec;
+        ut_decode_time(encodedTime, year, month, day, hour, minute, &sec, &res);
+        *second = (float)sec;
+        if (*second > 59) {
+            *second = 0;
+	    *minute += 1;
+	    if (*minute > 59) {
+	        *minute = 0;
+	        *hour += 1;
+	        if (*hour > 23) {
+	            *hour = 0;
+	            *day += 1;
+	            if (*day > daysInMonth(*year, *month)) {
+	                *day = 1;
+	                *month += 1;
+	                if (*month > 12) {
+	                    *month = 1;
+	                    *year += 1;
+	                }
+	            }
+	        }
+	    }
+	}
 	cv_free(converter);
     }
     return status;

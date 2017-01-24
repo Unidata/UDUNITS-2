@@ -97,6 +97,20 @@ test_utCalendar(void)
     CU_ASSERT_EQUAL(hour, 0);
     CU_ASSERT_EQUAL(minute, 0);
     CU_ASSERT_EQUAL(second, 1);
+    utFree(&unit);
+
+    utIni(&unit);
+    CU_ASSERT_EQUAL(utScan("hours since 1901-01-01 00:00:00", &unit), 0);
+    (void)utCalendar(876595, &unit, &year, &month, &day, &hour, &minute,
+            &second);
+    (void)printf("  Decoded date and time: %d-%02d-%02d %02d:%02d:%.7g UTC\n",
+            year, month, day, hour, minute, second);
+    CU_ASSERT_EQUAL(year, 2000);
+    CU_ASSERT_EQUAL(month, 12);
+    CU_ASSERT_EQUAL(day, 31);
+    CU_ASSERT_EQUAL(hour, 19);
+    CU_ASSERT_EQUAL(minute, 0);
+    utFree(&unit);
 }
 
 
