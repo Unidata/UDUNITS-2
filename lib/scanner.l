@@ -32,7 +32,7 @@
  * @retval     DATE     Success
  * @retval     ERR      Error
  */
-static double decodeDate(
+static int decodeDate(
     const char* const   text,
     const char* const   format,
     double* const       date)
