@@ -44,5 +44,4 @@ if git branch | grep '^\* *master$' >/dev/null; then
 fi
 
 # Push to the origin repository
-git push
-git push --force --tags
+git push --all --tags --force
