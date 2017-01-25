@@ -47,3 +47,5 @@ udunits2.t2p
 .settings
 build
 html
+stamp-vti
+version.texi
