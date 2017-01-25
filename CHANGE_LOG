@@ -1,3 +1,6 @@
+2.2.25	2017-01-25T09:55:28-0700
+    Added "stamp-vti" and "version.texi" to ".gitignore".
+
 2.2.24	2017-01-24T14:42:49-0700
     Added (against my better judgment) the unit "ppv". Use "1" instead and call
     the physical quantity "volume fraction".

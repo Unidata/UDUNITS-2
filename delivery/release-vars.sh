@@ -2,7 +2,7 @@
 
 # Base definitions:
 export PKG_NAME=udunits
-export PKG_VERSION=2.2.24
+export PKG_VERSION=2.2.25
 export SOURCE_DISTRO_EXT=tar.gz
 export ABSPATH_FTP_PUB_DIR=/web/ftp/pub
 export SOURCE_REPO_HOST=ftp
