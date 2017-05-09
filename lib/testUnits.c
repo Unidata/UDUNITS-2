@@ -1638,6 +1638,16 @@ test_ut_decode_time(void)
     CU_ASSERT_EQUAL(minute1, minute2);
     CU_ASSERT_EQUAL(second1, second2);
     CU_ASSERT_EQUAL(resolution1, resolution2);
+
+    /*
+     * User reported getting 60 seconds back from ut_decode_time() for a time
+     * value of -3240.0.
+     */
+    //timeval = ut_encode_time(2000, 12, 31, 23, 5, 60);
+    timeval = -3240.0;
+    ut_decode_time(timeval, &year2, &month2, &day2, &hour2, &minute2,
+        &second2, &resolution2);
+    CU_ASSERT_TRUE(second2 < 60.0);
 }
 
 
