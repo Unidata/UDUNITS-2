@@ -1,9 +1,9 @@
-2.2.25	2017-04-07T14:17:09-0600
-2.2.25	2017-04-07T14:17:09-0600
-2.2.25	2017-04-07T14:17:09-0600
-2.2.25	2017-04-07T14:17:09-0600
-2.2.25	2017-04-07T14:17:09-0600
-2.2.25	2017-04-07T14:17:09-0600
+2.2.25
+    Corrected temporal decomposition algorithm in ut_decode_time(). It
+    incorrectly returned a seconds value of 59.999999999998778 when decomposing
+    the input value -3240.0. It now returns a seconds value of 0 and correctly
+    increments the minutes value.
+
     Added "stamp-vti" and "version.texi" to ".gitignore".
 
 2.2.24	2017-01-24T14:42:49-0700
@@ -106,7 +106,7 @@
 2.2.7	2014-04-16T09:05:47-0600
     Documentation:
         Added more instances when ut_free() should be called.
-    
+
         Added hyperlinks for functions in the synopsis section.
 
 2.2.6	2014-04-08T12:57:50-0600
@@ -143,31 +143,31 @@
     New Features:
         Program udunits2(1):
             Added "-H have" and "-W want" options.
-    
+
             Added support for numeric unit amount so that "0 degC" equals "32
             degF".
-    
+
         Library udunits2(3):
             Added ut_get_path_xml() to retrieve pathname of XML unit database.
-                
+
         Units Database:
             Added units "molecule" (for conversion with "mole") and "bit".
 
         Misc:
             Removed bundled EXPAT package.
-                
+
             Ported code to 32-bit Windows-7 under MinGW.
-            
+
             Added explicit chapters on the unit utility and unit library to the
             top-level package documentation.
 
     Bug Fixes:
         Library udunits2(3):
             Corrected logic of checking for location of <noplural> element.
-    
+
         Units Database:
             Corrected ISO Latin-1 encodings that somehow got corrupted.
-    
+
     Release Engineering:
         Added support for building by CMake and for creating binary
         distributions by CPack.
@@ -176,19 +176,19 @@
 
         Misc:
             Removed bundled EXPAT package.
-                
+
             Ported code to 32-bit Windows-7 under MinGW.
-            
+
             Added explicit chapters on the unit utility and unit library to the
             top-level package documentation.
 
     Bug Fixes:
         Library udunits2(3):
             Corrected logic of checking for location of <noplural> element.
-    
+
         Units Database:
             Corrected ISO Latin-1 encodings that somehow got corrupted.
-    
+
     Release Engineering:
         Added support for building by CMake and for creating binary
         distributions by CPack.
@@ -198,11 +198,11 @@
         Added acceptance-test scripts for 32-bit Ubuntu 12 (Precise Pangolin)
         and 32-bit Windows-7. Currently, only the Ubuntu script is used in the
         continuous-delivery pipeline.
-    
+
     Misc:
         Changed file LICENSE to COPYRIGHT and corrected copyright year in many
         files.
-        
+
         Refactored the documentation to make it more version aware.
 
 2.1.24  2011-09-12 15:01-600
