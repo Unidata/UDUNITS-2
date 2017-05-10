@@ -397,48 +397,29 @@ ut_encode_clock(
     return (hours*60 + minutes)*60 + seconds;
 }
 
-
-/*
- * Decompose a value into a set of values accounting for uncertainty.
- */
-static void
-decompose(value, uncer, nbasis, basis, count)
-    double        value;
-    double        uncer;		/* >= 0 */
-    int           nbasis;
-    const double *basis;		/* all values > 0 */
-    double       *count;
+static int
+mydiv(  const double   numer,
+        const unsigned denom,
+        double* const  rem)
 {
-    int		i;
+    int n = abs(numer)/denom;
+    if (numer < 0)
+        n = -n;
+    *rem = numer - (long)n * (long)denom;
+    return n;
+}
 
-    for (i = 0; i < nbasis; i++)
-    {
-	double	r = fmod(value, basis[i]);	/* remainder */
-
-	/* Adjust remainder to minimum magnitude. */
-	if (ABS(2*r) > basis[i])
-	    r += r > 0
-		    ? -basis[i]
-		    :  basis[i];
-
-	if (ABS(r) <= uncer)
-	{
-	    /* The value equals a basis multiple within the uncertainty. */
-	    double	half = value < 0 ? -basis[i]/2 : basis[i]/2;
-	    modf((value+half)/basis[i], count+i);
-	    break;
-	}
-
-	value = basis[i] * modf(value/basis[i], count+i);
-    }
-
-    if (i >= nbasis) {
-	count[--i] += value;
-    }
-    else {
-	for (i++; i < nbasis; i++)
-	    count[i] = 0;
-    }
+static void
+decomp( double        value,
+        int* const    days,
+        int* const    hours,
+        int* const    minutes,
+        double* const seconds)
+{
+    double rem;
+    *days = mydiv(value, 86400, &rem);
+    *hours = mydiv(rem, 3600, &rem);
+    *minutes = mydiv(rem, 60, seconds);
 }
 
 
@@ -540,16 +521,11 @@ ut_decode_time(
 
     uncer = ldexp(value < 0 ? -value : value, -DBL_MANT_DIG);
 
-    days = (int)floor(value/basis.ind.days);
-    value -= days * basis.ind.days;		/* make positive excess */
-
-    decompose(value, uncer, (int)(sizeof(basis.vec)/sizeof(basis.vec[0])),
-	   basis.vec, counts.vec);
-
-    days += counts.ind.days;
-    hours = (int)counts.ind.hours12 * 12 + (int)counts.ind.hours;
-    minutes = (int)counts.ind.minutes10 * 10 + (int)counts.ind.minutes;
-    seconds = (int)counts.ind.seconds10 * 10 + counts.ind.seconds;
+    days = (int)floor(value/86400.0);
+    value -= days * (long)86400; // make positive excess
+    int d;
+    decomp(value, &d, &hours, &minutes, &seconds);
+    days += d;
 
     if (seconds >= 60) {
 	seconds -= 60;

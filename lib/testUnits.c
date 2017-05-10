@@ -322,9 +322,13 @@ test_utToString(void)
     CU_ASSERT_PTR_NOT_NULL(unit);
     CU_ASSERT(ut_format(unit, buf, sizeof(buf), asciiSymbolDef) != -1);
     CU_ASSERT_STRING_EQUAL(buf, string);
+    if (strcmp(buf, string))
+        printf("%d: buf=%s\n", __LINE__, buf);
 
     n = ut_format(unit, buf, 1, asciiSymbolDef);
     CU_ASSERT_EQUAL(n, strlen(string));
+    if (n != strlen(string))
+        printf("%d: n=%d\n", __LINE__, n);
     ut_free(unit);
 }
 
@@ -1460,6 +1464,8 @@ test_utOffsetByTime(void)
     CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
     buf[nchar] = 0;
     CU_ASSERT_STRING_EQUAL(buf, "s @ 19700101T000000.0000000 UTC");
+    if (strcmp(buf, "s @ 19700101T000000.0000000 UTC"))
+        fprintf(stderr, "buf=%s\n", buf);
 
     minutesSinceTheMillenium =
         ut_offset_by_time(minute, ut_encode_time(2001, 1, 1, 0, 0, 0));
@@ -1647,7 +1653,12 @@ test_ut_decode_time(void)
     timeval = -3240.0;
     ut_decode_time(timeval, &year2, &month2, &day2, &hour2, &minute2,
         &second2, &resolution2);
-    CU_ASSERT_TRUE(second2 < 60.0);
+    CU_ASSERT_EQUAL(year2, 2000);
+    CU_ASSERT_EQUAL(month2, 12);
+    CU_ASSERT_EQUAL(day2, 31);
+    CU_ASSERT_EQUAL(hour2, 23);
+    CU_ASSERT_EQUAL(minute2, 6);
+    CU_ASSERT_EQUAL(second2, 0);
 }
 
 
