@@ -6,7 +6,7 @@
     
     Removed some lint(1) reported by whatever compiler AppVeyor uses.
 
-    Added "stamp-vti" and "version.texi" to ".gitignore".
+    Told git(1) to ignore "lib/scanner.c", "stamp-vti", and "version.texi".
 
 2.2.24	2017-01-24T14:42:49-0700
     Added (against my better judgment) the unit "ppv". Use "1" instead and call

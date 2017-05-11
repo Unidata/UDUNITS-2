@@ -26,3 +26,4 @@ test_decode_time
 /iso_c_utilities.mod
 *.trs
 *.t2p
+scanner.c
