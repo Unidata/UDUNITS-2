@@ -100,7 +100,7 @@ smFind(
     Entry**	treeEntry;
 
     targetEntry.system = system;
-    treeEntry = tfind(&targetEntry, &map->tree, compareEntries);
+    treeEntry = tfind(&targetEntry, (void**)&map->tree, compareEntries);
 
     return
 	treeEntry == NULL

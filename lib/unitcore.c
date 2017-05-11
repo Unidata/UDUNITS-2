@@ -336,7 +336,7 @@ gregorianDateToJulianDay(year, month, day)
     if (jy >= 0)
     {
 	julday += 365 * jy;
-	julday += 0.25 * jy;
+	julday += (long)(0.25 * jy);
     }
     else
     {
@@ -402,7 +402,7 @@ mydiv(  const double   numer,
         const unsigned denom,
         double* const  rem)
 {
-    int n = abs(numer)/denom;
+    int n = (int)(abs(numer)/denom);
     if (numer < 0)
         n = -n;
     *rem = numer - (long)n * (long)denom;
@@ -497,33 +497,16 @@ ut_decode_time(
     double	*second,
     double	*resolution)
 {
-    int			days;
-    int			hours;
-    int			minutes;
-    double		seconds;
-    double		uncer;		/* uncertainty of input value */
-    typedef union
-    {
-	double	    vec[7];
-	struct
-	{
-	    double	days;
-	    double	hours12;
-	    double	hours;
-	    double	minutes10;
-	    double	minutes;
-	    double	seconds10;
-	    double	seconds;
-	}	    ind;
-    } Basis;
-    Basis		counts;
-    static const Basis	basis = {86400, 43200, 3600, 600, 60, 10, 1};
-
-    uncer = ldexp(value < 0 ? -value : value, -DBL_MANT_DIG);
+    int     days;
+    int     hours;
+    int     minutes;
+    int     d;
+    double  seconds;
+    /* Uncertainty of input value */
+    double  uncer = ldexp(value < 0 ? -value : value, -DBL_MANT_DIG);
 
     days = (int)floor(value/86400.0);
-    value -= days * (long)86400; // make positive excess
-    int d;
+    value -= days * (long)86400; /* make positive excess */
     decomp(value, &d, &hours, &minutes, &seconds);
     days += d;
 

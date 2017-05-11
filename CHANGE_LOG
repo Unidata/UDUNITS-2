@@ -1,8 +1,10 @@
-2.2.25	2017-05-11T09:39:26-0600
+2.2.25
     Corrected temporal decomposition algorithm in ut_decode_time(). It
     incorrectly returned a seconds value of 59.999999999998778 when decomposing
     the input value -3240.0. It now returns a seconds value of 0 and correctly
     increments the minutes value.
+    
+    Removed some lint(1) reported by whatever compiler AppVeyor uses.
 
     Added "stamp-vti" and "version.texi" to ".gitignore".
 
