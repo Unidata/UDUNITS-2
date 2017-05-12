@@ -27,7 +27,7 @@ static int		buflen = 80;
 static void*		unit2s = NULL;
 
 /*
- * Initialize the units(3) package.
+ * Initialize the udunits(3) package.
  */
 int
 utInit(

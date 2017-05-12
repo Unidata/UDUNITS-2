@@ -7,17 +7,19 @@
 ## Process this file with automake to produce Makefile.in
 SUBDIRS	= xmlFailures xmlSuccesses
 lib_LTLIBRARIES = libudunits2.la
-libudunits2_la_SOURCES = unitcore.c converter.c formatter.c \
-    idToUnitMap.c idToUnitMap.h \
-    unitToIdMap.c unitToIdMap.h \
-    unitAndId.c unitAndId.h \
-    systemMap.c systemMap.h \
-    prefix.c prefix.h \
-    parser.y \
-    status.c \
-    xml.c \
-    error.c \
-    ut_free_system.c
+libudunits2_la_SOURCES = unitcore.c \
+			 converter.c \
+			 formatter.c \
+                         idToUnitMap.c idToUnitMap.h \
+                         unitToIdMap.c unitToIdMap.h \
+                         unitAndId.c unitAndId.h \
+                         systemMap.c systemMap.h \
+                         prefix.c prefix.h \
+                         parser.y \
+                         status.c \
+                         xml.c \
+                         error.c \
+                         ut_free_system.c
 BUILT_SOURCES = parser.c scanner.c
 pkgdata_DATA = \
     udunits2.xml \
@@ -39,21 +41,21 @@ LEX_OUTPUT_ROOT = lex.$(lex_prefix)
 LFLAGS = -d -P$(lex_prefix)
 
 include_HEADERS = udunits2.h converter.h
-EXTRA_DIST = \
-    c99_snprintf.c \
-    CMakeLists.txt \
-    parser.c \
-    scanner.l \
-    scanner.c \
-    tsearch.c tsearch.h \
-    udunits2.xml \
-    udunits2-accepted.xml \
-    udunits2-base.xml \
-    udunits2-common.xml \
-    udunits2-derived.xml \
-    udunits2-prefixes.xml \
-    udunits2lib.html \
-    udunits2lib.pdf
+EXTRA_DIST = c99_snprintf.c \
+             CMakeLists.txt \
+             parser.c \
+             scanner.l \
+             scanner.c \
+             tsearch.c tsearch.h \
+             udunits-1.c udunits.h \
+             udunits2.xml \
+             udunits2-accepted.xml \
+             udunits2-base.xml \
+             udunits2-common.xml \
+             udunits2-derived.xml \
+             udunits2-prefixes.xml \
+             udunits2lib.html \
+             udunits2lib.pdf
 AM_YFLAGS = -t -p ut
 
 if HAVE_CUNIT
