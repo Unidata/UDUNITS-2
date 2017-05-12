@@ -4,6 +4,9 @@
     the input value -3240.0. It now returns a seconds value of 0 and correctly
     increments the minutes value.
     
+    Added missing UDUNITS-1 files to the distribution ("lib/udunits.h" and
+    "lib/udunits-1.c").
+    
     Removed some lint(1) reported by whatever compiler AppVeyor uses.
 
     Told git(1) to ignore "lib/scanner.c", "stamp-vti", and "version.texi".
