@@ -1,4 +1,4 @@
-2.2.25
+2.2.25	2017-05-15T16:55:03-0600
     Corrected temporal decomposition algorithm in ut_decode_time(). It
     incorrectly returned a seconds value of 59.999999999998778 when decomposing
     the input value -3240.0. It now returns a seconds value of 0 and correctly
