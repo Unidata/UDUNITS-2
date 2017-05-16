@@ -506,7 +506,8 @@ ut_decode_time(
     double  uncer = ldexp(value < 0 ? -value : value, -DBL_MANT_DIG);
 
     days = (int)floor(value/86400.0);
-    value -= days * (long)86400; /* make positive excess */
+    // `long long` is necessary for dates like `1-01-01`
+    value -= days * (long long)86400; /* make positive excess */
     decomp(value, &d, &hours, &minutes, &seconds);
     days += d;
 
