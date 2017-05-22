@@ -15,6 +15,7 @@ build:
 requirements:
   build:
     - python  # [win]
+    - cmake  # [win]
     - expat
     - vc 9  # [win and py27]
     - vc 10  # [win and py34]
