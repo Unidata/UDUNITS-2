@@ -8,3 +8,14 @@ components are:
         a) Obtaining the definition of a unit; and
         b) Converting a numeric value between compatible units; and
     3) An extensive database of units.
+
+To install this on Linux, you'll need to configure and make it, e.g. with:
+
+wget https://github.com/Unidata/UDUNITS-2/archive/master.zip
+unzip master.zip
+cd UDUNITS-2-master
+autoreconf -fi
+./configure
+make
+sudo make install
+udunits2 # test it works
