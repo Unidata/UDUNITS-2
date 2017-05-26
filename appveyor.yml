@@ -34,7 +34,7 @@ install:
 
     - cmd: conda config --set show_channel_urls true
     - cmd: conda config --add channels conda-forge
-    - cmd: conda install --yes conda-build
+    - cmd: conda install --yes conda-build=2.1.1
 
     - cmd: conda info
 
