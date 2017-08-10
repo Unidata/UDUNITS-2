@@ -15,6 +15,7 @@ AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([foreign subdir-objects])
 AC_CONFIG_HEADERS([config.h])
+LT_INIT([win32-dll])
 
 CFLAGS_COVERAGE=''
 LIBS_COVERAGE=''
