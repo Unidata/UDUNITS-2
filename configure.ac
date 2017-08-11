@@ -99,6 +99,8 @@ AC_SEARCH_LIBS([log10], [m], ,
 AC_SEARCH_LIBS([XML_StopParser], [expat], , 
     AC_MSG_ERROR([cannot find EXPAT function XML_StopParser]))
 
+AC_CHECK_LIB([dl], [dlopen])
+
 # Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS([float.h inttypes.h stddef.h stdlib.h string.h strings.h])

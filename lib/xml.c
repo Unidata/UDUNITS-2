@@ -18,6 +18,12 @@
 #   define _XOPEN_SOURCE 500
 #endif
 
+#if defined(__linux__)
+#   ifndef _GNU_SOURCE
+#       define _GNU_SOURCE
+#   endif
+#endif
+
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -34,6 +40,14 @@
 #endif
 #include <sys/stat.h>
 #include <sys/types.h>
+#if defined(__linux__)
+#include <dlfcn.h>
+#elif defined(__APPLE__)
+#define _DARWIN_C_SOURCE
+#include <dlfcn.h>
+#elif defined _WIN32
+#include <windows.h>
+#endif
 
 #ifndef DLL_UDUNITS2
 #define XML_STATIC
@@ -2116,6 +2130,45 @@ readXml(
 }
 
 
+/* A bit hacky but much better than modifying binaries. */
+const char*
+default_udunits2_xml_path()
+{
+    char const * soname = 0;
+#if defined(__APPLE__) || defined(__linux__)
+    #define END_BIT "/share/udunits/udunits2.xml"
+    #define SEP '/'
+    Dl_info info;
+    if (dladdr(default_udunits2_xml_path, &info)) {
+        soname = info.dli_fname;
+    }
+#elif defined(_WIN32)
+    #define END_BIT "\\share\\udunits\\udunits2.xml"
+    #define SEP '\\'
+    // NB: XP+ solution!
+    HMODULE hModule = NULL;
+    GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, (LPCTSTR)default_udunits2_xml_path, &hModule);
+    char tmpbuf[MAX_PATH * 4];
+    GetModuleFileName(hModule, &tmpbuf[0], MAX_PATH * 4);
+    soname = &tmpbuf[0];
+#endif
+    if (soname) {
+        char * result = malloc(strlen(soname) + strlen(END_BIT) + 1);
+        if (result) {
+            strcpy(result, soname);
+            if (strrchr(result, SEP)) {
+                *strrchr(result, SEP) = '\0';
+                if (strrchr(result, SEP)) {
+                    *strrchr(result, SEP) = '\0';
+                }
+            }
+            strcat(result, END_BIT);
+            return result;
+        }
+    }
+    return DEFAULT_UDUNITS2_XML_PATH;
+}
+
 /**
  * Returns the pathname of the XML database.
  *
@@ -2142,7 +2195,7 @@ ut_get_path_xml(
         	*status = UT_OPEN_ENV;
     	}
     	else {
-          	path = DEFAULT_UDUNITS2_XML_PATH;
+          	path = default_udunits2_xml_path();
         	*status = UT_OPEN_DEFAULT;
     	}
     }
