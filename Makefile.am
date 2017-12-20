@@ -24,10 +24,6 @@ distArchive 		= $(distName).tar.gz
 DISTCLEANFILES		= *.log $(distArchive)
 dist_doc_DATA		= CHANGE_LOG COPYRIGHT README
 
-remote-checks:	dist
-	cd test && $(MAKE) $(AM_MAKEFLAGS) $@
-	$(MAKE) udunits2.html
-
 ftp:	dist
 	-git commit -a
 	git tag -f v$(VERSION)
