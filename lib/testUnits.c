@@ -23,7 +23,7 @@
 
 #include "udunits2.h"
 
-static const char*  xmlPath;
+static const char*      xmlPath;
 static ut_system*	unitSystem;
 static ut_unit*		kilogram;
 static ut_unit*		meter;
@@ -2252,9 +2252,37 @@ test_xml(void)
     ut_free_system(xmlSystem);
 }
 
+static void
+test_mm2_day2_divide(void)
+{
+    ut_system*  xmlSystem;
+    ut_unit*    unit1;
+    ut_unit*    unit2;
+    const char* spec = "mm2 day-2";
+
+    ut_set_error_message_handler(ut_write_to_stderr);
+    xmlSystem = ut_read_xml(xmlPath);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(xmlSystem);
+
+    unit1 = ut_parse(xmlSystem, spec, UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit1);
+    unit2 = ut_divide(unit1, unit1);
+
+    const char* expect = "1";
+    char        actual[128];
+    ut_format(unit2, actual, 128, UT_ASCII);
+    CU_ASSERT_STRING_EQUAL(actual, expect);
+    if (strcmp(actual, expect))
+        fprintf(stderr, "(%s)/(%s) = \"%s\"\n", spec, spec, actual);
+
+    ut_free(unit1);
+    ut_free(unit2);
+    ut_free_system(xmlSystem);
+}
+
 int
 main(
-    const int		    argc,
+    const int           argc,
     const char* const*	argv)
 {
     int	exitCode = EXIT_FAILURE;
@@ -2267,6 +2295,7 @@ main(
 	CU_Suite*	testSuite = CU_add_suite(__FILE__, setup, teardown);
 
 	if (testSuite != NULL) {
+	    CU_ADD_TEST(testSuite, test_mm2_day2_divide);
 	    CU_ADD_TEST(testSuite, test_unitSystem);
 	    CU_ADD_TEST(testSuite, test_utNewBaseUnit);
 	    CU_ADD_TEST(testSuite, test_utNewDimensionlessUnit);

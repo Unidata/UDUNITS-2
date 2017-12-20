@@ -62,6 +62,7 @@
 #include <search.h>
 #endif
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -201,6 +202,19 @@ union ut_unit {
 #define IS_GALILEAN(unit)	((unit)->common.type == GALILEAN)
 #define IS_LOG(unit)		((unit)->common.type == LOG)
 #define IS_TIMESTAMP(unit)	((unit)->common.type == TIMESTAMP)
+
+static bool areAlmostEqual(
+        double d1,
+        double d2)
+{
+    double delta = d1 - d2;
+    if (delta == 0)
+        return true;
+    double eps = (d1 == 0 || d2 == 0)
+            ? delta
+            : (delta / fmax(fabs(d1), fabs(d2)));
+    return fabs(eps) < DBL_EPSILON;
+}
 
 /*
  * The following function are declared here because they are used in the
@@ -1593,7 +1607,7 @@ galileanNew(
 	unit = unit->galilean.unit;
     }
 
-    if (scale == 1 && offset == 0) {
+    if (areAlmostEqual(scale, 1) && areAlmostEqual(offset, 0)) {
 	newUnit = CLONE(unit);
     }
     else {
@@ -1751,8 +1765,8 @@ galileanMultiply(
 	}
     }
     else if (IS_GALILEAN(unit2)) {
-	const GalileanUnit* const	galilean2 = &unit2->galilean;
-	ut_unit*				tmp =
+	const GalileanUnit* const galilean2 = &unit2->galilean;
+	ut_unit*	          tmp =
 	    MULTIPLY(galilean1->unit, galilean2->unit);
 
 	if (tmp != NULL) {

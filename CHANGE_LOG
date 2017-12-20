@@ -1,3 +1,9 @@
+2.2.26
+    Merged changes necessary for CMake build on the Appveyer Windows CI system.
+    
+    Fixed problem with the definition of "(mm2 day-2)/(mm2 day-2)" being "1 1"
+    due to the scaling factor times its inverse not equaling one. 
+
 2.2.25	2017-05-16T10:17:38-0600
     Corrected temporal decomposition algorithm in ut_decode_time(). It
     incorrectly returned a seconds value of 59.999999999998778 when decomposing
