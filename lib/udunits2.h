@@ -481,7 +481,7 @@ ut_new_dimensionless_unit(
  */
 EXTERNL ut_unit*
 ut_clone(
-    const ut_unit*	unit);
+    const ut_unit* const unit);
 
 
 /*

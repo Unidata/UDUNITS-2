@@ -109,8 +109,8 @@ errMsg(
 
 static int
 decodeCommandLine(
-    int                 argc,
-    char* const*        argv)
+    int         argc,
+    char**      argv)
 {
     int		c;
     int		success = 0;
@@ -396,7 +396,7 @@ getSpec(
 
     if (fputs(prompt, stdout) == EOF) {
 	errMsg("Couldn't write prompt: %s", strerror(errno));
-    } else if (fgets(spec, size, stdin) == NULL) {
+    } else if (fgets(spec, (int)size, stdin) == NULL) {
 	putchar('\n');
 
 	if (feof(stdin)) {
@@ -410,7 +410,7 @@ getSpec(
 	 */
 	(void)ut_trim(spec, _encoding);
 
-        nbytes = strlen(spec);
+        nbytes = (int)strlen(spec);
     }
 
     return nbytes;
