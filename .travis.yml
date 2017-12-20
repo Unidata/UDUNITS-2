@@ -11,11 +11,11 @@ language: c
 
 before_install:
   - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
-  - sudo apt-get install cmake libcunit-dev libexpat-dev
 # - sudo dpkg -L libyaml-cpp-dev
 # - sudo find / -name yaml-cpp
 # - sudo find / -name yaml.h 
 # - sudo find / -name 'libyaml-cpp.*' 
+  - sudo apt-get install cmake libcunit1-dev libexpat-dev
   - mkdir m4
   - autoreconf -i
   - ./configure --enable-debug
