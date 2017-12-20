@@ -1,7 +1,6 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
 PROJECT(udunits C)
-SET(CMAKE_C_COMPILER "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\cl.exe")
 
 SET(VERSION_MAJOR 2)
 SET(VERSION_MINOR 2)
