@@ -35,7 +35,7 @@ AC_ARG_ENABLE([debug],
 [AS_HELP_STRING([--enable-debug],[Turn on debugging support])],
 [case "${enableval}" in
   yes)
-    CFLAGS="-g${CFLAGS:+ $CFLAGS}"
+    CFLAGS="${CFLAGS:+$CFLAGS }-g -O0"
     debug=true ;;
   no)
     CFLAGS="-O${CFLAGS:+ $CFLAGS}"
