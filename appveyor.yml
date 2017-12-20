@@ -4,9 +4,24 @@ environment:
       CONDA_PY: 27
       CONDA_INSTALL_LOCN: C:\\Miniconda-x64
 
-    - TARGET_ARCH: x64
-      CONDA_PY: 36
-      CONDA_INSTALL_LOCN: C:\\Miniconda36-x64
+    # Python 36 fails:
+        #conda build conda.recipe
+        #Traceback (most recent call last):
+          #File "C:\Miniconda36-x64\Scripts\conda-build-script.py", line 3, in <module>
+            #import conda_build.cli.main_build
+          #File "C:\Miniconda36-x64\lib\site-packages\conda_build\cli\main_build.py", line 16, in <module>
+            #import conda_build.api as api
+          #File "C:\Miniconda36-x64\lib\site-packages\conda_build\api.py", line 22, in <module>
+            #from conda_build.config import Config, get_or_merge_config, DEFAULT_PREFIX_LENGTH as _prefix_length
+          #File "C:\Miniconda36-x64\lib\site-packages\conda_build\config.py", line 14, in <module>
+            #from .conda_interface import root_dir, root_writable, cc, subdir, platform
+          #File "C:\Miniconda36-x64\lib\site-packages\conda_build\conda_interface.py", line 22, in <module>
+            #from conda.resolve import MatchSpec, NoPackagesFound, Resolve, Unsatisfiable, normalized_version  # NOQA
+        #ImportError: cannot import name 'NoPackagesFound'
+        #Command exited with code 1
+    #- TARGET_ARCH: x64
+      #CONDA_PY: 36
+      #CONDA_INSTALL_LOCN: C:\\Miniconda36-x64
 
 platform:
     - x64
