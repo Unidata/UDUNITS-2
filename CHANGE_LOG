@@ -1,4 +1,4 @@
-2.2.26
+2.2.26	2017-12-20T09:07:38-0700
     Merged changes necessary for CMake build on the Appveyer Windows CI system.
     
     Fixed problem with the definition of "(mm2 day-2)/(mm2 day-2)" being "1 1"
