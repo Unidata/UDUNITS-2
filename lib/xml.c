@@ -117,7 +117,7 @@ ut_form_plural(
     const char*	plural = NULL;		/* failure */
 
     if (singular != NULL) {
-        int     length = strlen(singular);
+        size_t length = strlen(singular);
 
 	if (length + 3 >= sizeof(buf)) {
             ut_set_status(UT_SYNTAX);
