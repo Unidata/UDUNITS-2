@@ -10,6 +10,8 @@ environment:
 
 platform:
     - x64
+    
+image: Visual Studio 2015
 
 install:
     # If there is a newer build queued for the same PR, cancel this one.
