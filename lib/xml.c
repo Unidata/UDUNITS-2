@@ -42,7 +42,7 @@
 #include "udunits2.h"
 
 #ifndef _XOPEN_PATH_MAX
-#   define _XOPEN_PATH_MAX 1024
+#   define _XOPEN_PATH_MAX 1024 // Includes terminating NUL
 #endif
 
 #define NAME_SIZE 128
@@ -97,7 +97,7 @@ static ut_status readXml(
 static File*            currFile = NULL;
 static ut_system*	unitSystem = NULL;
 static char*            text = NULL;
-static size_t           nbytes = 0;
+static size_t           nbytes = 0; /// Number of characters excluding NUL
 
 
 /*
@@ -2087,11 +2087,11 @@ readXml(
         }
 #else
         {
-            // str*cpy() must not copy overlapping strings
-            char tmp[_XOPEN_PATH_MAX];
-            (void)strncpy(tmp, path, sizeof(tmp));
-            tmp[sizeof(tmp)-1] = 0;
-            (void)strcpy(base, dirname(tmp));
+            // Temporary buffer used because `dirname()` modifies its argument
+            char tmp[strlen(path)+1];
+            (void)strcpy(tmp, path);
+            (void)strncpy(base, dirname(tmp), sizeof(base));
+            base[sizeof(base)-1] = 0;
         }
 #endif
 
