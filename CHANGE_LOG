@@ -3,6 +3,11 @@
     
     Fixed problem with the definition of "(mm2 day-2)/(mm2 day-2)" being "1 1"
     due to the scaling factor times its inverse not equaling one. 
+    
+    Fixed bug in the parsing of the have-unit of udunits2(1) that caused this:
+        $ udunits2 -H '1 second since 1970-01-01 00:00:00' \
+            -W 'second since 1970-01-01 00:00:00'
+        udunits2: Units are not convertible
 
 2.2.25	2017-05-16T10:17:38-0600
     Corrected temporal decomposition algorithm in ut_decode_time(). It
