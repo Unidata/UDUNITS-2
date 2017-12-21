@@ -16,7 +16,7 @@ before_install:
 # - sudo find / -name yaml.h 
 # - sudo find / -name 'libyaml-cpp.*' 
   - sudo apt-get install cmake libcunit1-dev libexpat-dev
-  - mkdir m4
+  - test -d m4 || mkdir m4
   - autoreconf -i
   - ./configure --enable-debug
 
