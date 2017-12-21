@@ -204,16 +204,12 @@ union ut_unit {
 #define IS_TIMESTAMP(unit)	((unit)->common.type == TIMESTAMP)
 
 static bool areAlmostEqual(
-        double d1,
-        double d2)
+        double x,
+        double y)
 {
-    double delta = d1 - d2;
-    if (delta == 0)
-        return true;
-    double eps = (d1 == 0 || d2 == 0)
-            ? delta
-            : (delta / fmax(fabs(d1), fabs(d2)));
-    return fabs(eps) < DBL_EPSILON;
+    return (x == 0 || y == 0)
+	? fabs(x - y) < 10*DBL_EPSILON
+	: fabs(1.0 - x / y) < 10*DBL_EPSILON;
 }
 
 /*
