@@ -4,9 +4,6 @@ env:
    # via the "travis encrypt" command using the project repo's public key
    - secure: "eQZ5QbKP1iD1AFbv03f8zh86A+3ZtuVssTLuHYaozwnESz4ZrvSxrRVe1x6oKy8MxNUjaawQjNMAAHxfE11Bsj5r2jzqb8xcHRIbqWGgEcz/CabQH4YXFgv3GqcDsUF+M26kJ3KqS9mkpiNcG3r2dfmZBSX33rfSluFDkeglhlQ="
 
-before_install:
-      - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
-
 dist: trusty
 sudo: required  # Needed to install Coverity certificate
 
@@ -21,8 +18,9 @@ before_install:
   - sudo apt-get install cmake libcunit1-dev libexpat-dev texinfo
   - test -d m4 || mkdir m4
   - autoreconf -i
-  - ./configure --enable-debug
+  - ./configure
 
+# The "addons" stage is executed before the "script" stage
 addons:
   coverity_scan:
     project:
