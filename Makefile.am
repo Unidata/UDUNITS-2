@@ -18,31 +18,27 @@ EXTRA_DIST = \
     udunits2.html \
     udunits2.pdf
 AM_MAKEINFOHTMLFLAGS 	= --no-split
-RSYNC_FLAGS		= --rsh=ssh --rsync-path=/opt/bin/rsync
+RSYNC_FLAGS		= --rsh=ssh --rsync-path=/usr/bin/rsync
 distName 		= $(PACKAGE)-$(VERSION)
 distArchive 		= $(distName).tar.gz
 DISTCLEANFILES		= *.log $(distArchive)
 dist_doc_DATA		= CHANGE_LOG COPYRIGHT README
 
+verify_on_master_branch:
+	git branch | grep '^\* *master$$' >/dev/null
+
+dist:	verify_on_master_branch
+
 ftp:	dist
-	-git commit -a
-	git tag -f v$(VERSION)
-	cp $(distArchive) /web/ftp/pub/$(PACKAGE)/
-	mailx -s '$(distName) now available' -a CHANGE_LOG \
-	    ed@unidata.ucar.edu </dev/null
+	scp $(distArchive) ftp.unidata.ucar.edu:/web/ftp/pub/$(PACKAGE)/
 
 web-update:	install install-html
-	cd $(DESTDIR)$(htmldir) \
-	&& rsync $(RSYNC_FLAGS) -aCu --delete --delete-excluded \
-	    *.html \
-	    /web/content/software/$(PACKAGE)/$(distName)
-	cd $(DESTDIR)$(pkgdatadir) \
-	&& rsync $(RSYNC_FLAGS) -aCu --delete \
-	    *.xml \
-	    conan:/content/software/$(PACKAGE)/$(distName)
-	echo 'cd /content/software/$(PACKAGE) && \
-	    rm $(PACKAGE)-2 && ln -s $(distName) $(PACKAGE)-2' | \
-	    ssh conan
+	cd $(DESTDIR)$(htmldir) && \
+            rsync $(RSYNC_FLAGS) -aCu --delete --delete-excluded \
+                $(DESTDIR)$(datarootdir)/ \
+                www.unidata.ucar.edu:/web/content/software/$(PACKAGE)/$(distName)
+	ssh www.unidata.ucar.edu rm -f /web/content/software/$(PACKAGE)/$(PACKAGE)-current
+	ssh www.unidata.ucar.edu ln -s $(distName) /web/content/software/$(PACKAGE)/$(PACKAGE)-current
 
 download-update:
 	cat /web/content/downloads/udunits/toc.xml \
@@ -55,8 +51,10 @@ download-update:
 
 available:	ftp web-update download-update
 
+release: 	ftp web-update
+
 .PHONY:	hostchecks hostcheck remote-checks web-update ftp \
-	download-update available
+	download-update available release verify_on_master_branch
 
 udunits2.info:	version.texi COPYRIGHT
 udunits2.html:	version.texi COPYRIGHT
