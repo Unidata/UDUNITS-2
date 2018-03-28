@@ -937,7 +937,7 @@ elements appear only within <aliases>.
             <aliases>
                 <name> <singular>sidereal_second</singular> </name>
             </aliases>
-            <definition>unit of time equal to 1/60 sidereal second</definition>
+            <definition>unit of time equal to 1/60 sidereal minute</definition>
         </unit>
         <unit>
             <def>3.155815e7 s</def>
