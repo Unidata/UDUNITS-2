@@ -34,7 +34,7 @@ info_TEXINFOS 	= udunits2lib.texi
 #pdf_DATA = udunits2lib.pdf
 AM_MAKEINFOFLAGS = -I $(top_srcdir)
 AM_MAKEINFOHTMLFLAGS = --no-split -I $(top_srcdir)
-libudunits2_la_LDFLAGS	= -version-number 0:1:0
+libudunits2_la_LDFLAGS	= -version-number 0:1:0 -no-undefined
 
 lex_prefix = ut
 LEX_OUTPUT_ROOT = lex.$(lex_prefix)

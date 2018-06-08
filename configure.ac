@@ -15,6 +15,7 @@ AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([foreign subdir-objects])
 AC_CONFIG_HEADERS([config.h])
+LT_INIT([win32-dll])
 
 CFLAGS_COVERAGE=''
 LIBS_COVERAGE=''
@@ -98,6 +99,8 @@ AC_SEARCH_LIBS([log10], [m], ,
     AC_MSG_ERROR([cannot find function log10]))
 AC_SEARCH_LIBS([XML_StopParser], [expat], , 
     AC_MSG_ERROR([cannot find EXPAT function XML_StopParser]))
+
+AC_CHECK_LIB([dl], [dlopen])
 
 # Checks for header files.
 AC_HEADER_STDC

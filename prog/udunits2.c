@@ -61,10 +61,14 @@ static int		_wantDefinition; /* "have" unit definition desired? */
 static int		_formattingOptions = UT_DEFINITION;
 static int		_exitStatus = EXIT_FAILURE;
 
+extern const char*
+default_udunits2_xml_path();
 
 static void
 usage(void)
 {
+    const char * default_xml = default_udunits2_xml_path();
+
     (void)fprintf(stderr,
 "Usage:\n"
 "    %s -h\n"
@@ -80,7 +84,8 @@ usage(void)
 "    -W want    Use \"want\" unit for conversion. Empty string requests\n"
 "               definition of \"have\" unit. Default is reply to prompt.\n"
 "    XML_file   XML database file. Default is \"%s\".\n",
-        _progname, _progname, DEFAULT_UDUNITS2_XML_PATH);
+        _progname, _progname, default_xml);
+    free(default_xml);
 }
 
 /**
