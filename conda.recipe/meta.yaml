@@ -8,23 +8,17 @@ source:
 build:
   detect_binary_files_with_prefix: true
   features:
-    - vc9  # [win and py27]
-    - vc10  # [win and py34]
-    - vc14  # [win and py>=35]
+    - vc14  # [win and py>=36]
 
 requirements:
   build:
     - python  # [win]
     - cmake  # [win]
     - expat
-    - vc 9  # [win and py27]
-    - vc 10  # [win and py34]
-    - vc 14  # [win and py>=35]
+    - vc 14  # [win and py>=36]
   run:
     - expat
-    - vc 9  # [win and py27]
-    - vc 10  # [win and py34]
-    - vc 14  # [win and py>=35]
+    - vc 14  # [win and py>=36]
 
 test:
   commands:

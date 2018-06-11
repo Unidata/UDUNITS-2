@@ -1,27 +1,8 @@
 environment:
   matrix:
     - TARGET_ARCH: x64
-      CONDA_PY: 27
-      CONDA_INSTALL_LOCN: C:\\Miniconda-x64
-
-    # Python 36 fails:
-        #conda build conda.recipe
-        #Traceback (most recent call last):
-          #File "C:\Miniconda36-x64\Scripts\conda-build-script.py", line 3, in <module>
-            #import conda_build.cli.main_build
-          #File "C:\Miniconda36-x64\lib\site-packages\conda_build\cli\main_build.py", line 16, in <module>
-            #import conda_build.api as api
-          #File "C:\Miniconda36-x64\lib\site-packages\conda_build\api.py", line 22, in <module>
-            #from conda_build.config import Config, get_or_merge_config, DEFAULT_PREFIX_LENGTH as _prefix_length
-          #File "C:\Miniconda36-x64\lib\site-packages\conda_build\config.py", line 14, in <module>
-            #from .conda_interface import root_dir, root_writable, cc, subdir, platform
-          #File "C:\Miniconda36-x64\lib\site-packages\conda_build\conda_interface.py", line 22, in <module>
-            #from conda.resolve import MatchSpec, NoPackagesFound, Resolve, Unsatisfiable, normalized_version  # NOQA
-        #ImportError: cannot import name 'NoPackagesFound'
-        #Command exited with code 1
-    #- TARGET_ARCH: x64
-      #CONDA_PY: 36
-      #CONDA_INSTALL_LOCN: C:\\Miniconda36-x64
+      CONDA_PY: 36
+      CONDA_INSTALL_LOCN: C:\\Miniconda36-x64
 
 platform:
     - x64
@@ -37,26 +18,24 @@ install:
          Where-Object pullRequestId -eq $env:APPVEYOR_PULL_REQUEST_NUMBER)[0].buildNumber) { `
            throw "There are newer queued builds for this pull request, failing early." }
 
-    # cygwin may break conda-build
-    - cmd: rmdir C:\cygwin /s /q
-
     # Add path, activate `conda` and update conda.
     - cmd: call %CONDA_INSTALL_LOCN%\Scripts\activate.bat
-    - cmd: conda update --yes --quiet conda
+    - cmd: conda config --set always_yes yes --set changeps1 no --set show_channel_urls true --set auto_update_conda false
+    - cmd: conda update conda
+    # We need to pin conda until https://github.com/conda/conda/issues/6556 is fixed.
+    - cmd: conda config --system --add pinned_packages defaults::conda
+    - cmd: conda config --add channels conda-forge --force
+
+    # Install conda-build.
+    - cmd: conda install conda-build
 
     - cmd: set PYTHONUNBUFFERED=1
-
-    - cmd: conda config --set show_channel_urls true
-    - cmd: conda config --add channels conda-forge
-    - cmd: conda install --yes conda-build=2.1.1
-
-    - cmd: conda info
-
-    - cmd: call "C:\Program Files\Microsoft SDKs\Windows\v7.1\Bin\SetEnv.cmd" /x64
-    - cmd: call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x86_amd64
+    
+    - cmd: conda info --all
 
 # Skip .NET project specific build phase.
 build: off
 
 test_script:
-    - "conda build conda.recipe"
+    - conda build conda.recipe
+    - if %ERRORLEVEL% NEQ 0 exit 1
