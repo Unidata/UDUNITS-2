@@ -1,4 +1,4 @@
-2.2.27.2
+2.2.27.2	2018-06-11T10:15:45-0600
     Replaced the use of function "default_udunits2_xml_path()" in program
     udunits2(1) with the public API function ut_get_path_xml(3) and made the
     former function static because it's only used internally.
