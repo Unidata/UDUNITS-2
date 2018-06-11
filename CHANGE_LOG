@@ -1,8 +1,13 @@
+2.2.27.2
+    Replaced the use of function "default_udunits2_xml_path()" in program
+    udunits2(1) with the public API function ut_get_path_xml(3) and made the
+    former function static because it's only used internally.
+
 2.2.27	2018-06-08T15:54:34-0600
     Merged pull requests #62 and #63 on the GitHub site to better support
     shared libraries under Windows and a default pathname for the units
     database that's relative to the shared library. Kudos to Ray Donnelly.
-    
+
 2.2.26	2017-12-22T12:34:49-0700
     Merged changes necessary for CMake build on the Appveyer Windows CI system.
     

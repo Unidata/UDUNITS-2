@@ -61,13 +61,11 @@ static int		_wantDefinition; /* "have" unit definition desired? */
 static int		_formattingOptions = UT_DEFINITION;
 static int		_exitStatus = EXIT_FAILURE;
 
-extern const char*
-default_udunits2_xml_path();
-
 static void
 usage(void)
 {
-    const char * default_xml = default_udunits2_xml_path();
+    ut_status    status;
+    const char * default_xml = ut_get_path_xml(NULL, &status);
 
     (void)fprintf(stderr,
 "Usage:\n"

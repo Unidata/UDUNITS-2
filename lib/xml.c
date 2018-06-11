@@ -2131,7 +2131,7 @@ readXml(
 
 
 /* A bit hacky but much better than modifying binaries. */
-const char*
+static const char*
 default_udunits2_xml_path()
 {
     char const * soname = 0;
@@ -2182,7 +2182,7 @@ default_udunits2_xml_path()
  */
 const char*
 ut_get_path_xml(
-	const char*	path,
+	const char* path,
 	ut_status*  status)
 {
     if (path != NULL) {
