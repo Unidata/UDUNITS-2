@@ -2147,7 +2147,8 @@ default_udunits2_xml_path()
     #define SEP '\\'
     // NB: XP+ solution!
     HMODULE hModule = NULL;
-    GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, (LPCTSTR)default_udunits2_xml_path, &hModule);
+    GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,
+            (LPCTSTR)default_udunits2_xml_path, &hModule);
     char tmpbuf[MAX_PATH * 4];
     GetModuleFileName(hModule, &tmpbuf[0], MAX_PATH * 4);
     soname = &tmpbuf[0];
