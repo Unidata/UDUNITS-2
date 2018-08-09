@@ -1,3 +1,8 @@
+2.2.27.7
+    Deleted "--mirror --force" option from "git push" in push(1) script to avoid
+    multiple committs to the remote repository and concommittant multiple Travis
+    executions.
+
 2.2.27.6	2018-08-09T11:32:13-0600
     Delete "m4/" from the repository.
 
