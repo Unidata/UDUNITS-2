@@ -1,3 +1,6 @@
+2.2.27.4
+    Have Coverity Scan work on every push to the master branch.
+
 2.2.27.3	2018-08-09T10:32:41-0600
     Replaced assert()s in galileanNew() with conditional and error-return.
     
