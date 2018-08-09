@@ -148,7 +148,7 @@ libraries (e.g., @code{/usr/local/lib}).
 @node Why, Unit-Systems, Synopsis, Top
 @chapter What's a Unit Package Good For?
 
-The existance of a software package is justified by what you can do with it.
+The existence of a software package is justified by what you can do with it.
 The three main things you can do with the UDUNIT-2 package are
 @enumerate
 @item
@@ -208,7 +208,7 @@ There are several categories of operations on unit-systems:
 * Extracting::  Getting a unit from a unit-system.
 * Adding::      Adding new units to a unit-system.
 * Prefixes::    Add new unit-prefixes to a unit-system.
-* Misc::        Miscelaneous unit-system operations.
+* Misc::        Miscellaneous unit-system operations.
 @end menu
 
 @node Obtaining, Extracting, , Unit-Systems
@@ -333,7 +333,7 @@ Operating-system error.  See @code{errno}.
 
 @strong{NOTE\:} This section covers low-level access to the indidual units of a
 @ref{unit-system}.
-General parsing of arbitrary unit specifications is coverted in
+General parsing of arbitrary unit specifications is covered in
 the section @ref{Parsing}.
 
 A @ref{unit-system} contains mappings from identifiers to units (and
@@ -520,7 +520,7 @@ Operating-system failure.  See @code{errno}.
 @end deftypefun
 
 @node Misc, , Prefixes, Unit-Systems
-@section Miscelaneous Operations on Unit-Systems
+@section Miscellaneous Operations on Unit-Systems
 
 @anchor{ut_free_system()}
 @deftypefun @code{void} ut_free_system @code{(ut_system* @var{system})}
