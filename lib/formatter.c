@@ -783,7 +783,7 @@ latin1PrintProduct(
  *
  * Arguments:
  *	unit		Pointer to the product-unit to be formatted.
- *	count		The number of basic-units that constitute the 
+ *	count		The number of basic-units that constitute the
  *			product-unit.
  *	basicUnits	Pointer to pointers to the basic-units that constitute
  *			the product-unit.
@@ -823,7 +823,7 @@ formatProduct(
 	else {
             const char*	id = formatPar->getId(unit, formatPar->encoding);
 
-            nchar = 
+            nchar =
                 id == NULL
                     ? formatPar->printProduct(basicUnits, powers, count,
                         formatPar->buf, formatPar->size, formatPar->getId)
@@ -854,7 +854,7 @@ formatProduct(
  *	getDefinition	Returns the definition of "unit" in terms of basic
  *			units.
  *	encoding	The type of encoding to use.
- *	addParens	Whether or not to add bracketing parentheses if 
+ *	addParens	Whether or not to add bracketing parentheses if
  *			whitespace is printed.
  * Returns:
  *	-1		Failure.  See errno.
@@ -970,7 +970,7 @@ formatGalilean(
     else {
 	const char*	id = formatPar->getId(unit, formatPar->encoding);
 
-	nchar = 
+	nchar =
 	    id == NULL
 		? printGalilean(scale, underlyingUnit, offset, formatPar->buf,
 		    formatPar->size, formatPar->getId, formatPar->getDefinition,
@@ -1007,7 +1007,7 @@ formatGalilean(
  *	getDefinition	Returns the definition of "unit" in terms of basic
  *			units.
  *	encoding	The type of encoding to use.
- *	addParens	Whether or not to add bracketing parentheses if 
+ *	addParens	Whether or not to add bracketing parentheses if
  *			whitespace is printed.
  * Returns:
  *	-1		Failure.  See errno.
@@ -1087,7 +1087,7 @@ printTimestamp(
 		}			/* sufficient precision for seconds */
 
 		if (nchar >= 0) {
-                    n = snprintf(buf+nchar, size, "%s", 
+                    n = snprintf(buf+nchar, size, "%s",
                             addParens ? " UTC)" : " UTC");
                     if (0 > n) {
                         nchar = -1;
@@ -1148,7 +1148,7 @@ formatTimestamp(
     else {
 	const char*	id = formatPar->getId(unit, formatPar->encoding);
 
-	nchar = 
+	nchar =
 	    id == NULL
 		? printTimestamp(underlyingUnit, year, month, day, hour, minute,
 		    second, resolution, formatPar->buf, formatPar->size,
@@ -1180,7 +1180,7 @@ formatTimestamp(
  *	getDefinition	Returns the definition of "unit" in terms of basic
  *			units.
  *	encoding	The type of encoding to use.
- *	addParens	Whether or not to add bracketing parentheses if 
+ *	addParens	Whether or not to add bracketing parentheses if
  *			whitespace is printed.
  * Returns:
  *	-1		Failure.  See errno.
@@ -1259,7 +1259,7 @@ formatLogarithmic(
     else {
 	const char*	id = formatPar->getId(unit, formatPar->encoding);
 
-	nchar = 
+	nchar =
 	    id == NULL
 		? printLogarithmic(base, reference, formatPar->buf,
 		    formatPar->size, formatPar->getId, formatPar->getDefinition,

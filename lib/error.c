@@ -74,7 +74,7 @@ static ut_error_message_handler	errorMessageHandler = ut_write_to_stderr;
  *
  * Arguments:
  *      handler		NULL or pointer to the error-message handler.  If NULL,
- *			then the handler is not changed.  The 
+ *			then the handler is not changed.  The
  *			currently-installed handler can be obtained this way.
  * Returns:
  *	Pointer to the previously-installed error-message handler.

@@ -47,7 +47,7 @@ sensitiveCompare(
     const void* const	node1,
     const void* const	node2)
 {
-    return strcmp(((const UnitAndId*)node1)->id, 
+    return strcmp(((const UnitAndId*)node1)->id,
 	((const UnitAndId*)node2)->id);
 }
 
@@ -57,7 +57,7 @@ insensitiveCompare(
     const void* const	node1,
     const void* const	node2)
 {
-    return strcasecmp(((const UnitAndId*)node1)->id, 
+    return strcasecmp(((const UnitAndId*)node1)->id,
 	((const UnitAndId*)node2)->id);
 }
 
@@ -178,7 +178,7 @@ itumRemove(
 
     assert(map != NULL);
     assert(id != NULL);
-    
+
     targetEntry.id = (char*)id;
     treeEntry = tfind(&targetEntry, &map->tree, map->compare);
 
@@ -316,7 +316,7 @@ unmapId(
 	IdToUnitMap** const	idToUnit =
 	    (IdToUnitMap**)smFind(systemMap, system);
 
-	status = 
+	status =
 	    (idToUnit == NULL || *idToUnit == NULL)
 		? UT_SUCCESS
 		: itumRemove(*idToUnit, id);
@@ -504,7 +504,7 @@ ut_get_unit_by_name(
 
 
 /*
- * Returns the unit with a given symbol from a unit-system.  Symbol 
+ * Returns the unit with a given symbol from a unit-system.  Symbol
  * comparisons are case-sensitive.
  *
  * Arguments:

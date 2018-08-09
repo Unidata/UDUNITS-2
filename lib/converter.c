@@ -482,9 +482,9 @@ offsetGetExpression(
 
     return
 	cvNeedsParentheses(variable)
-	    ? snprintf(buf, max, "(%s) %c %g", variable, oper, 
+	    ? snprintf(buf, max, "(%s) %c %g", variable, oper,
 		fabs(conv->offset.value))
-	    : snprintf(buf, max, "%s %c %g", variable, oper, 
+	    : snprintf(buf, max, "%s %c %g", variable, oper,
 		fabs(conv->offset.value));
 }
 
@@ -563,12 +563,12 @@ galileanConvertDoubles(
 
 	if (in < out) {
 	    for (i = count; i-- > 0;)
-		out[i] = conv->galilean.slope * in[i] + 
+		out[i] = conv->galilean.slope * in[i] +
 		    conv->galilean.intercept;
 	}
 	else {
 	    for (i = 0; i < count; i++)
-		out[i] = conv->galilean.slope * in[i] + 
+		out[i] = conv->galilean.slope * in[i] +
 		    conv->galilean.intercept;
 	}
     }
@@ -694,7 +694,7 @@ logGetExpression(
     const size_t		max,
     const char* const		variable)
 {
-    return 
+    return
         conv->log.logE == M_LOG2E
             ? snprintf(buf, max, "lb(%s)", variable)
             : conv->log.logE == 1
@@ -795,7 +795,7 @@ expGetExpression(
     const size_t		max,
     const char* const		variable)
 {
-    return 
+    return
 	cvNeedsParentheses(variable)
 	    ? snprintf(buf, max, "pow(%g, (%s))", conv->exp.base, variable)
 	    : snprintf(buf, max, "pow(%g, %s)", conv->exp.base, variable);
@@ -868,7 +868,7 @@ compositeConvertDoubles(
 	out = NULL;
     }
     else {
-	out = 
+	out =
 	    cv_convert_doubles(
 		conv->composite.second,
 		cv_convert_doubles(conv->composite.first, in, count, out),
@@ -1095,7 +1095,7 @@ cv_get_log(
 
 	if (conv != NULL) {
 	    conv->ops = &logOps;
-	    conv->log.logE = 
+	    conv->log.logE =
                 base == 2
                     ? M_LOG2E
                     : base == M_E
@@ -1195,20 +1195,20 @@ cv_combine(
 	    }
 	    else if (IS_GALILEAN(second)) {
 		conv = cv_get_galilean(
-		    first->scale.value * second->galilean.slope, 
+		    first->scale.value * second->galilean.slope,
 		    second->galilean.intercept);
 	    }
 	}
 	else if (IS_OFFSET(first)) {
 	    if (IS_SCALE(second)) {
-		conv = cv_get_galilean(second->scale.value, 
+		conv = cv_get_galilean(second->scale.value,
 		    first->offset.value * second->scale.value);
 	    }
 	    else if (IS_OFFSET(second)) {
 		conv = cv_get_offset(first->offset.value + second->offset.value);
 	    }
 	    else if (IS_GALILEAN(second)) {
-		conv = cv_get_galilean(second->galilean.slope, 
+		conv = cv_get_galilean(second->galilean.slope,
 		    first->offset.value * second->galilean.slope +
 			second->galilean.intercept);
 	    }

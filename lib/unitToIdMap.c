@@ -613,11 +613,11 @@ getId(
 	ut_handle_error_message("NULL unit argument");
     }
     else {
-	UnitToIdMap** const	unitToId = 
+	UnitToIdMap** const	unitToId =
 	    (UnitToIdMap**)smFind(systemMap, ut_get_system(unit));
 
 	if (unitToId != NULL) {
-	    UnitAndId*	mapEntry = 
+	    UnitAndId*	mapEntry =
 		encoding == UT_LATIN1
 		    ? utimFindLatin1ByUnit(*unitToId, unit)
 		    : encoding == UT_UTF8

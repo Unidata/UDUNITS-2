@@ -461,7 +461,7 @@ utCopy(
 utUnit*
 utMultiply(
     const utUnit	*term1,
-    const utUnit	*term2, 
+    const utUnit	*term2,
     utUnit		*result)
 {
     return term1 == NULL || term2 == NULL
@@ -475,7 +475,7 @@ utMultiply(
 utUnit*
 utDivide(
     const utUnit	*numer,
-    const utUnit	*denom, 
+    const utUnit	*denom,
     utUnit		*result)
 {
     return numer == NULL || denom == NULL

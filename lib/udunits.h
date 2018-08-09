@@ -26,7 +26,7 @@
 					 * (including all prefixes and EOS) */
 
 /*
- *	Macro for declaring functions regardless of the availability of 
+ *	Macro for declaring functions regardless of the availability of
  *	function prototypes.  NB: will need double parens in actual use (e.g.
  *	"int func PROTO((int a, char *cp))").
  */
@@ -160,7 +160,7 @@ EXTERNL utUnit*	utCopy		PROTO((
  */
 EXTERNL utUnit*	utMultiply	PROTO((
     const utUnit	*term1,
-    const utUnit	*term2, 
+    const utUnit	*term2,
     utUnit		*result
 ));
 
@@ -169,7 +169,7 @@ EXTERNL utUnit*	utMultiply	PROTO((
  */
 EXTERNL utUnit*	utDivide	PROTO((
     const utUnit	*numer,
-    const utUnit	*denom, 
+    const utUnit	*denom,
     utUnit		*result
 ));
 

@@ -167,7 +167,7 @@ static int clock_to_time(
     double* const time)
 {
     unsigned hour, minute, second;
-    
+
     if (value < 0)
         return -1;
 
@@ -193,7 +193,7 @@ static int isTime(
     ut_status   prev = ut_get_status();
     ut_unit*    second = ut_get_unit_by_name(_unitSystem, "second");
     int         isTime = ut_are_convertible(unit, second);
-    
+
     ut_free(second);
     ut_set_status(prev);
     return isTime;

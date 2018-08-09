@@ -14,19 +14,19 @@
  *	ProductUnit	A unit that, when it is created, contains all the
  *			BasicUnit-s that exist at the time, each raised
  *			to an integral power (that can be zero).
- *	GalileanUnit	A unit whose value is related to another unit by a 
+ *	GalileanUnit	A unit whose value is related to another unit by a
  *			Galilean transformation (y = ax + b).  Examples include
  *			"yard" and "degrees Fahrenheit".
  *	LogUnit		A unit that is related to another unit by a logarithmic
  *			transformation (y = a*log(x)).  The "Bel" is an example.
  *	TimestampUnit	A wrong-headed unit that shouldn't exist but does for
- *			backward compatibility.  It was intended to provide 
+ *			backward compatibility.  It was intended to provide
  *			similar functionality as the GalileanUnit, but for time
  *			units (e.g., "seconds since the epoch").  Unfortunately,
  *			people try to use it for more than it is capable (e.g.,
  *			days since some time on an imaginary world with only 360
  *			days per year).
- *	ut_unit		A data-structure that encapsulates ProductUnit, 
+ *	ut_unit		A data-structure that encapsulates ProductUnit,
  *			GalileanUnit, LogUnit, and TimestampUnit.
  *
  * This module is thread-compatible but not thread-safe: multi-thread access to
@@ -318,7 +318,7 @@ gregorianDateToJulianDay(year, month, day)
     long	julday;	/* returned Julian day number */
 
     /*
-     * Because there is no 0 BC or 0 AD, assume the user wants the start of 
+     * Because there is no 0 BC or 0 AD, assume the user wants the start of
      * the common era if they specify year 0.
      */
     if (year == 0)
@@ -456,7 +456,7 @@ ut_encode_date(
 
 /*
  * Encodes a time as a double-precision value.  The convenience function is
- * equivalent to "ut_encode_date(year,month,day) + 
+ * equivalent to "ut_encode_date(year,month,day) +
  * ut_encode_clock(hour,minute,second)"
  *
  * Arguments:
@@ -591,7 +591,7 @@ static UnitOps	basicOps;
  *
  * Arguments:
  *	system		The unit-system to be associated with the new instance.
- *	isDimensionless	Whether or not the unit is dimensionless (e.g., 
+ *	isDimensionless	Whether or not the unit is dimensionless (e.g.,
  *			"radian").
  *	index		The index of the basic-unit in "system".
  * Returns:
@@ -1104,7 +1104,7 @@ productMultiply(
 	    }
 	    else {
 		static short*	powers = NULL;
-		
+
 		powers = realloc(powers, sizeof(short)*sumCount);
 
 		if (powers == NULL) {
@@ -3347,7 +3347,7 @@ ut_divide(
  *
  * Arguments:
  *	unit	Pointer to the unit.
- *	power	The power by which to raise "unit".  Must be greater than or 
+ *	power	The power by which to raise "unit".  Must be greater than or
  *		equal to -255 and less than or equal to 255.
  * Returns:
  *	NULL	Failure.  "ut_get_status()" will be:
@@ -3374,7 +3374,7 @@ ut_raise(
 	ut_handle_error_message("ut_raise(): Invalid power argument");
     }
     else {
-	result = 
+	result =
 	    power == 0
 		? unit->common.system->one
 		: power == 1
@@ -3391,7 +3391,7 @@ ut_raise(
  *
  * Arguments:
  *	unit	Pointer to the unit.
- *	root	The root to take of "unit".  Must be greater than or 
+ *	root	The root to take of "unit".  Must be greater than or
  *		equal to 1 and less than or equal to 255.
  * Returns:
  *	NULL	Failure.  "ut_get_status()" will be:
@@ -3421,7 +3421,7 @@ ut_root(
 	ut_handle_error_message("ut_root(): Invalid root argument");
     }
     else {
-	result = 
+	result =
 	    root == 1
 		? CLONE(unit)
                 : ROOT(unit, root);
@@ -3497,7 +3497,7 @@ ut_log(
 
 /*
  * Indicates if numeric values in one unit are convertible to numeric values in
- * another unit via "ut_get_converter()".  In making this determination, 
+ * another unit via "ut_get_converter()".  In making this determination,
  * dimensionless units are ignored.
  *
  * Arguments:
@@ -3670,7 +3670,7 @@ ut_get_converter(
 		    }
 		    else {
 			cv_converter*	fromSeconds = ut_get_converter(
-			    to->common.system->second, to->timestamp.unit); 
+			    to->common.system->second, to->timestamp.unit);
 
 			if (fromSeconds == NULL) {
 			    ut_set_status(UT_OS);

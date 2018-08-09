@@ -1112,9 +1112,9 @@ test_utAreConvertible(void)
     CU_ASSERT_EQUAL(ut_are_convertible(secondsSinceTheEpoch,
 	secondsSinceTheEpoch), 1);
     CU_ASSERT_EQUAL(ut_are_convertible(secondsSinceTheEpoch, second), 0);
-    CU_ASSERT_EQUAL(ut_are_convertible(joulePerKilogram, 
+    CU_ASSERT_EQUAL(ut_are_convertible(joulePerKilogram,
 	meterSquaredPerSecondSquared), 1);
-    CU_ASSERT_EQUAL(ut_are_convertible(joulePerKilogram, 
+    CU_ASSERT_EQUAL(ut_are_convertible(joulePerKilogram,
 	meterPerSecondSquared), 0);
 
     unit = ut_raise(radian, 2);
@@ -1195,14 +1195,14 @@ test_utGetConverter(void)
     CU_ASSERT_EQUAL(cv_convert_floats(converter, floats, 1, floats+1), floats+1);
     CU_ASSERT_EQUAL(floats[1], 0);
     doubles[0] = 0; doubles[1] = 1000;
-    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles, 1, doubles+1), 
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles, 1, doubles+1),
 	doubles+1);
     CU_ASSERT_EQUAL(doubles[1], 0);
     floats[0] = 0; floats[1] = 1000;
     CU_ASSERT_EQUAL(cv_convert_floats(converter, floats+1, 1, floats), floats);
     CU_ASSERT_EQUAL(floats[0], 1);
     doubles[0] = 0; doubles[1] = 1000;
-    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles+1, 1, doubles), 
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles+1, 1, doubles),
 	doubles);
     CU_ASSERT_EQUAL(doubles[0], 1);
     cv_free(converter);
@@ -1222,14 +1222,14 @@ test_utGetConverter(void)
     CU_ASSERT_EQUAL(cv_convert_floats(converter, floats, 1, floats+1), floats+1);
     CU_ASSERT_EQUAL(floats[1], 0);
     doubles[0] = 0; doubles[1] = 1;
-    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles, 1, doubles+1), 
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles, 1, doubles+1),
 	doubles+1);
     CU_ASSERT_EQUAL(doubles[1], 0);
     floats[0] = 0; floats[1] = 1;
     CU_ASSERT_EQUAL(cv_convert_floats(converter, floats+1, 1, floats), floats);
     CU_ASSERT_EQUAL(floats[0], 1000);
     doubles[0] = 0; doubles[1] = 1;
-    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles+1, 1, doubles), 
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles+1, 1, doubles),
 	doubles);
     CU_ASSERT_EQUAL(doubles[0], 1000);
     cv_free(converter);
@@ -1249,14 +1249,14 @@ test_utGetConverter(void)
     CU_ASSERT_EQUAL(cv_convert_floats(converter, floats, 1, floats+1), floats+1);
     CU_ASSERT_TRUE(areCloseFloats(floats[1], -273.15));
     doubles[0] = 0; doubles[1] = 273.15;
-    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles, 1, doubles+1), 
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles, 1, doubles+1),
 	doubles+1);
     CU_ASSERT_EQUAL(doubles[1], -273.15);
     floats[0] = 0; floats[1] = 273.15;
     CU_ASSERT_EQUAL(cv_convert_floats(converter, floats+1, 1, floats), floats);
     CU_ASSERT_TRUE(areCloseFloats(floats[0], 0));
     doubles[0] = 0; doubles[1] = 273.15;
-    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles+1, 1, doubles), 
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles+1, 1, doubles),
 	doubles);
     CU_ASSERT_EQUAL(doubles[0], 0);
     cv_free(converter);
@@ -1276,14 +1276,14 @@ test_utGetConverter(void)
     CU_ASSERT_EQUAL(cv_convert_floats(converter, floats, 1, floats+1), floats+1);
     CU_ASSERT_TRUE(areCloseFloats(floats[1], 273.15));
     doubles[0] = 0; doubles[1] = -273.15;
-    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles, 1, doubles+1), 
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles, 1, doubles+1),
 	doubles+1);
     CU_ASSERT_EQUAL(doubles[1], 273.15);
     floats[0] = 0; floats[1] = -273.15;
     CU_ASSERT_EQUAL(cv_convert_floats(converter, floats+1, 1, floats), floats);
     CU_ASSERT_TRUE(areCloseFloats(floats[0], 0));
     doubles[0] = 0; doubles[1] = -273.15;
-    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles+1, 1, doubles), 
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles+1, 1, doubles),
 	doubles);
     CU_ASSERT_EQUAL(doubles[0], 0);
     cv_free(converter);
@@ -1303,14 +1303,14 @@ test_utGetConverter(void)
     CU_ASSERT_EQUAL(cv_convert_floats(converter, floats, 1, floats+1), floats+1);
     CU_ASSERT_TRUE(areCloseFloats(floats[1], 32));
     doubles[0] = 0; doubles[1] = 100;
-    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles, 1, doubles+1), 
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles, 1, doubles+1),
 	doubles+1);
     CU_ASSERT_TRUE(areCloseDoubles(doubles[1], 32));
     floats[0] = 0; floats[1] = 100;
     CU_ASSERT_EQUAL(cv_convert_floats(converter, floats+1, 1, floats), floats);
     CU_ASSERT_TRUE(areCloseFloats(floats[0], 212));
     doubles[0] = 0; doubles[1] = 100;
-    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles+1, 1, doubles), 
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles+1, 1, doubles),
 	doubles);
     CU_ASSERT_TRUE(areCloseDoubles(doubles[0], 212));
     cv_free(converter);
@@ -1330,14 +1330,14 @@ test_utGetConverter(void)
     CU_ASSERT_EQUAL(cv_convert_floats(converter, floats, 1, floats+1), floats+1);
     CU_ASSERT_TRUE(areCloseFloats(floats[1], 0));
     doubles[0] = 32; doubles[1] = 212;
-    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles, 1, doubles+1), 
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles, 1, doubles+1),
 	doubles+1);
     CU_ASSERT_TRUE(areCloseDoubles(doubles[1], 0));
     floats[0] = 32; floats[1] = 212;
     CU_ASSERT_EQUAL(cv_convert_floats(converter, floats+1, 1, floats), floats);
     CU_ASSERT_TRUE(areCloseFloats(floats[0], 100));
     doubles[0] = 32; doubles[1] = 212;
-    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles+1, 1, doubles), 
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles+1, 1, doubles),
 	doubles);
     CU_ASSERT_TRUE(areCloseDoubles(doubles[0], 100));
     cv_free(converter);
@@ -1362,14 +1362,14 @@ test_utGetConverter(void)
     CU_ASSERT_EQUAL(cv_convert_floats(converter, floats, 1, floats+1), floats+1);
     CU_ASSERT_TRUE(areCloseFloats(floats[1], 10));
     doubles[0] = 10; doubles[1] = 1000;
-    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles, 1, doubles+1), 
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles, 1, doubles+1),
 	doubles+1);
     CU_ASSERT_TRUE(areCloseDoubles(doubles[1], 10));
     floats[0] = 10; floats[1] = 1000;
     CU_ASSERT_EQUAL(cv_convert_floats(converter, floats+1, 1, floats), floats);
     CU_ASSERT_TRUE(areCloseFloats(floats[0], 30));
     doubles[0] = 10; doubles[1] = 1000;
-    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles+1, 1, doubles), 
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles+1, 1, doubles),
 	doubles);
     CU_ASSERT_TRUE(areCloseDoubles(doubles[0], 30));
     cv_free(converter);
@@ -1392,14 +1392,14 @@ test_utGetConverter(void)
     CU_ASSERT_EQUAL(cv_convert_floats(converter, floats, 1, floats+1), floats+1);
     CU_ASSERT_TRUE(areCloseFloats(floats[1], 10));
     doubles[0] = 10; doubles[1] = 30;
-    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles, 1, doubles+1), 
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles, 1, doubles+1),
 	doubles+1);
     CU_ASSERT_TRUE(areCloseDoubles(doubles[1], 10));
     floats[0] = 10; floats[1] = 30;
     CU_ASSERT_EQUAL(cv_convert_floats(converter, floats+1, 1, floats), floats);
     CU_ASSERT_TRUE(areCloseFloats(floats[0], 1000));
     doubles[0] = 10; doubles[1] = 30;
-    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles+1, 1, doubles), 
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles+1, 1, doubles),
 	doubles);
     CU_ASSERT_TRUE(areCloseDoubles(doubles[0], 1000));
     cv_free(converter);
@@ -1492,14 +1492,14 @@ test_utOffsetByTime(void)
     CU_ASSERT_EQUAL(cv_convert_floats(converter, floats, 1, floats+1), floats+1);
     CU_ASSERT_TRUE(areCloseFloats(floats[1], 0));
     doubles[0] = 0; doubles[1] = 1000;
-    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles, 1, doubles+1), 
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles, 1, doubles+1),
 	doubles+1);
     CU_ASSERT_TRUE(areCloseDoubles(doubles[1], 0));
     floats[0] = 0; floats[1] = 1000;
     CU_ASSERT_EQUAL(cv_convert_floats(converter, floats+1, 1, floats), floats);
     CU_ASSERT_TRUE(areCloseFloats(floats[0], 1000));
     doubles[0] = 0; doubles[1] = 1000;
-    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles+1, 1, doubles), 
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles+1, 1, doubles),
 	doubles);
     CU_ASSERT_TRUE(areCloseDoubles(doubles[0], 1000));
     cv_free(converter);
@@ -1530,14 +1530,14 @@ test_utOffsetByTime(void)
     CU_ASSERT_EQUAL(cv_convert_floats(converter, floats, 1, floats+1), floats+1);
     CU_ASSERT_TRUE(areCloseFloats(floats[1], 0));
     doubles[0] = 0; doubles[1] = 86400;
-    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles, 1, doubles+1), 
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles, 1, doubles+1),
 	doubles+1);
     CU_ASSERT_TRUE(areCloseDoubles(doubles[1], 0));
     floats[0] = 0; floats[1] = 86400;
     CU_ASSERT_EQUAL(cv_convert_floats(converter, floats+1, 1, floats), floats);
     CU_ASSERT_TRUE(areCloseFloats(floats[0], 1));
     doubles[0] = 0; doubles[1] = 86400;
-    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles+1, 1, doubles), 
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles+1, 1, doubles),
 	doubles);
     CU_ASSERT_TRUE(areCloseDoubles(doubles[0], 1));
     cv_free(converter);
@@ -1557,14 +1557,14 @@ test_utOffsetByTime(void)
     CU_ASSERT_EQUAL(cv_convert_floats(converter, floats, 1, floats+1), floats+1);
     CU_ASSERT_TRUE(areCloseFloats(floats[1], 0));
     doubles[0] = 0; doubles[1] = 1;
-    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles, 1, doubles+1), 
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles, 1, doubles+1),
 	doubles+1);
     CU_ASSERT_TRUE(areCloseDoubles(doubles[1], 0));
     floats[0] = 0; floats[1] = 1;
     CU_ASSERT_EQUAL(cv_convert_floats(converter, floats+1, 1, floats), floats);
     CU_ASSERT_TRUE(areCloseFloats(floats[0], 86400));
     doubles[0] = 0; doubles[1] = 1;
-    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles+1, 1, doubles), 
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles+1, 1, doubles),
 	doubles);
     CU_ASSERT_TRUE(areCloseDoubles(doubles[0], 86400));
     cv_free(converter);

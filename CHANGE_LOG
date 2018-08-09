@@ -1,3 +1,6 @@
+2.2.27.8
+    Removed all trailing whitespace from code files.
+
 2.2.27.7	2018-08-09T12:59:10-0600
     Deleted "--mirror --force" option from "git push" in push(1) script to avoid
     multiple committs to the remote repository and concommittant multiple Travis

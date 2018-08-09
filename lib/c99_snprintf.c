@@ -1,7 +1,7 @@
 /*! c99_snprintf class for use with Visual Studio.
 
   MSVC does not implement snprintf, so we must provide our own.
-  
+
   The following is adapted from:
 
   http://stackoverflow.com/questions/2915672/snprintf-and-visual-studio-2010

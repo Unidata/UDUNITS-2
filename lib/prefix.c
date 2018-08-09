@@ -225,7 +225,7 @@ ptvmFind(
 	    for (i = 0; i < len; i++) {
 		PrefixSearchEntry		targetEntry;
 		PrefixSearchEntry* const*	treeEntry;
-		
+
 		targetEntry.character = string[i];
 		treeEntry = tfind(&targetEntry, tree, map->compare);
 
@@ -314,7 +314,7 @@ addPrefix(
 		    const PrefixSearchEntry*	entry =
 			ptvmSearch(*prefixToValue, prefix, value);
 
-		    status = 
+		    status =
 			entry == NULL
 			    ? UT_OS
 			    : (entry->value == value)
@@ -399,7 +399,7 @@ ut_add_symbol_prefix(
  *	len		NULL or pointer to the memory location to receive the
  *			number of characters in the name-prefix, if one is
  *			discovered.
- *	
+ *
  * Returns:
  *	UT_SUCCESS	Success.
  *	UT_BAD_ARG	"system" is NULL, "systemMap" is NULL, "compare" is
