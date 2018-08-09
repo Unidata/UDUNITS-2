@@ -11,12 +11,8 @@ language: c
 
 before_install:
   - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
-# - sudo dpkg -L libyaml-cpp-dev
-# - sudo find / -name yaml-cpp
-# - sudo find / -name yaml.h 
-# - sudo find / -name 'libyaml-cpp.*' 
   - sudo apt-get install cmake libcunit1-dev libexpat-dev texinfo
-  - test -d m4 || mkdir m4
+  - mkdir m4
   - autoreconf -i
   - ./configure
 
@@ -24,18 +20,15 @@ before_install:
 addons:
   coverity_scan:
     project:
-      name: "Unidata/UDUNITS-2"
+      name: Unidata/UDUNITS-2
       description: "Units of physical quantities package"
     notification_email: emmerson@ucar.edu
     build_command_prepend: true
-    build_command:  "make"
+    build_command:  make
     branch_pattern: master
-#    branch_pattern: coverity_scan
 
-script: make distcheck >&distcheck.log
-#    if [ ${COVERITY_SCAN_BRANCH} != 1 ]; then make all check >&make.log; fi
+script: make all check >&allcheck.log
 
-after_failure: cat distcheck.log
-#  - cat config.log
-#  - cat make.log
-#  - files=`find . -name test\*.log`; cat ${files:-/dev/null}
+after_failure:
+  - cat configure.log
+  - cat allcheck.log
