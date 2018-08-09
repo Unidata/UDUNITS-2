@@ -1,4 +1,4 @@
 @set UPDATED 23 December 2017
 @set UPDATED-MONTH December 2017
-@set EDITION 2.2.27.3
-@set VERSION 2.2.27.3
+@set EDITION 2.2.27.4
+@set VERSION 2.2.27.4
