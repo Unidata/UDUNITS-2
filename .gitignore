@@ -15,6 +15,7 @@ failure.texi
 *.ky
 libtool
 *.log
+m4
 Makefile
 Makefile.in
 make.texi

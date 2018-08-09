@@ -29,6 +29,4 @@ addons:
 
 script: make all check >&allcheck.log
 
-after_failure:
-  - cat configure.log
-  - cat allcheck.log
+after_failure: cat allcheck.log

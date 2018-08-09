@@ -1,3 +1,6 @@
+2.2.27.6
+    Delete "m4/" from the repository.
+
 2.2.27.5	2018-08-09T11:20:04-0600
     Modified .travis.yml to make "all check" instead of "distcheck" because the
     latter didn't work.
