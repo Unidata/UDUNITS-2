@@ -1583,7 +1583,9 @@ the year 1 BCE is immediately followed by the year 1 CE.
 
 @anchor{ut_encode_clock()}
 @deftypefun @code{double} ut_encode_clock @code{(int @var{hour}, int @var{minute}, double @var{second})}
-Encodes a clock-time as a double-precision value.
+Encodes a clock-time as a double-precision value. @code{abs(hour)} must be less
+than 24; @code{abs(minute)} must be less than 60; and @code{fabs(second)} must
+be less than or equal to 62.
 You probably won't use this function.
 @end deftypefun
 
