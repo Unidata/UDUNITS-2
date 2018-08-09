@@ -25,15 +25,16 @@ addons:
   coverity_scan:
     project:
       name: "Unidata/UDUNITS-2"
-      description: "Build submitted via Travis CI"
+      description: "Units of physical quantities package"
     notification_email: emmerson@ucar.edu
     build_command_prepend: true
     build_command:  "make"
-    branch_pattern: coverity_scan
+#    branch_pattern: coverity_scan
 
-script: if [ ${COVERITY_SCAN_BRANCH} != 1 ]; then make all check >&make.log; fi
+script: make distcheck >&distcheck.log
+#    if [ ${COVERITY_SCAN_BRANCH} != 1 ]; then make all check >&make.log; fi
 
-after_failure:
-  - cat config.log
-  - cat make.log
-  - files=`find . -name test\*.log`; cat ${files:-/dev/null}
+after_failure: cat distcheck.log
+#  - cat config.log
+#  - cat make.log
+#  - files=`find . -name test\*.log`; cat ${files:-/dev/null}
