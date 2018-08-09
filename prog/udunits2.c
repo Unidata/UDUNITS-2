@@ -83,7 +83,6 @@ usage(void)
 "               definition of \"have\" unit. Default is reply to prompt.\n"
 "    XML_file   XML database file. Default is \"%s\".\n",
         _progname, _progname, default_xml);
-    free(default_xml);
 }
 
 /**
