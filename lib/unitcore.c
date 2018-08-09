@@ -407,12 +407,12 @@ ut_encode_clock(
     return (hours*60 + minutes)*60 + seconds;
 }
 
-static int
+inline static int
 mydiv(  const double   numer,
         const unsigned denom,
         double* const  rem)
 {
-    int n = (int)(abs(numer)/denom);
+    int n = abs((int)numer)/denom;
     if (numer < 0)
         n = -n;
     *rem = numer - (long)n * (long)denom;
