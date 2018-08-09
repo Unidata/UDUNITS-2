@@ -1573,18 +1573,17 @@ productIsDimensionless(
 static UnitOps	galileanOps;
 
 
-/*
+/**
  * Returns a new unit instance.  The returned instance is not necessarily a
  * Galilean unit.
  *
- * Arguments:
- *	scale	The scale-factor for the new unit.
- *	unit	The underlying unit.  May be freed upon return.
- *	offset	The offset for the new unit.
- * Returns:
- *	NULL	Failure.  "ut_get_status()" will be:
- *		    UT_OS	Operating-system error.  See "errno".
- *	else	The newly-allocated, galilean-unit.
+ * @param[in] scale	The scale-factor for the new unit.
+ * @param[in] unit	The underlying unit.  May be freed upon return.
+ * @param[in] offset	The offset for the new unit.
+ * @retval    NULL	Failure.  `ut_get_status()` will be:
+ *		          UT_OS	Operating-system error.  See `errno`.
+ *		          UT_BAD_ARG  `scale == 0 || unit == NULL`
+ * @return              The newly-allocated, galilean-unit.
  */
 static ut_unit*
 galileanNew(
@@ -1592,48 +1591,51 @@ galileanNew(
     const ut_unit*	unit,
     double		offset)
 {
-    ut_unit*	newUnit = NULL;	/* failure */
+    ut_unit*	newUnit;
 
-    assert(scale != 0);
-    assert(unit != NULL);
-
-    if (IS_GALILEAN(unit)) {
-	scale *= unit->galilean.scale;
-	offset += (unit->galilean.scale * unit->galilean.offset) / scale;
-	unit = unit->galilean.unit;
-    }
-
-    if (areAlmostEqual(scale, 1) && areAlmostEqual(offset, 0)) {
-	newUnit = CLONE(unit);
+    if (scale == 0 || unit == NULL) {
+        ut_set_status(UT_BAD_ARG);
+        newUnit = NULL;
     }
     else {
-	GalileanUnit*	galileanUnit = malloc(sizeof(GalileanUnit));
+        if (IS_GALILEAN(unit)) {
+            scale *= unit->galilean.scale;
+            offset += (unit->galilean.scale * unit->galilean.offset) / scale;
+            unit = unit->galilean.unit;
+        }
 
-	if (galileanUnit == NULL) {
-	    ut_set_status(UT_OS);
-	    ut_handle_error_message("galileanNew(): "
-		"Couldn't allocate %lu-byte Galilean unit",
-		sizeof(GalileanUnit));
-	}
-	else {
-	    int	error = 1;
+        if (areAlmostEqual(scale, 1) && areAlmostEqual(offset, 0)) {
+            newUnit = CLONE(unit);
+        }
+        else {
+            GalileanUnit*	galileanUnit = malloc(sizeof(GalileanUnit));
 
-	    if (commonInit(&galileanUnit->common, &galileanOps,
-		    unit->common.system, GALILEAN) == 0) {
-		galileanUnit->scale = scale;
-		galileanUnit->offset = offset;
-		galileanUnit->unit = CLONE(unit);
-		error = 0;
-	    }
+            if (galileanUnit == NULL) {
+                ut_set_status(UT_OS);
+                ut_handle_error_message("galileanNew(): "
+                    "Couldn't allocate %lu-byte Galilean unit",
+                    sizeof(GalileanUnit));
+            }
+            else {
+                int	error = 1;
 
-	    if (error) {
-		free(galileanUnit);
-		galileanUnit = NULL;
-	    }
-	}				/* "galileanUnit" allocated */
+                if (commonInit(&galileanUnit->common, &galileanOps,
+                        unit->common.system, GALILEAN) == 0) {
+                    galileanUnit->scale = scale;
+                    galileanUnit->offset = offset;
+                    galileanUnit->unit = CLONE(unit);
+                    error = 0;
+                }
 
-	newUnit = (ut_unit*)galileanUnit;
-    }					/* Galilean unit necessary */
+                if (error) {
+                    free(galileanUnit);
+                    galileanUnit = NULL;
+                }
+            }				/* "galileanUnit" allocated */
+
+            newUnit = (ut_unit*)galileanUnit;
+        }					/* Galilean unit necessary */
+    } // `scale != 0 && unit != NULL`
 
     return newUnit;
 }
