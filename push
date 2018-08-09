@@ -44,4 +44,4 @@ if git branch | grep '^\* *master$' >/dev/null; then
 fi
 
 # Push to the origin repository
-git push --mirror --force
+git push
