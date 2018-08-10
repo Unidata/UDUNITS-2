@@ -28,14 +28,20 @@
 #include <string.h>
 #include <strings.h>
 #endif
+
 #include "udunits2.h"
+#include "prefix.h"
+#include "parser.h"
+#include "scanner.h"
+
+char *utGetYyCBufP(void);
 
 static ut_unit*		_finalUnit;	/* fully-parsed specification */
 static ut_system*	_unitSystem;	/* The unit-system to use */
 static char*		_errorMessage;	/* last error-message */
 static ut_encoding	_encoding;	/* encoding of string to be parsed */
-static int		_restartScanner;/* restart scanner? */
-static int		_isTime;        /* product_exp is time? */
+int		_restartScanner;/* restart scanner? */
+int		_isTime;        /* product_exp is time? */
 
 
 /*
@@ -525,9 +531,6 @@ timestamp:	DATE {
 #define yyname		utyyname
 #define yyrule		utyyrule
 
-#include "scanner.c"
-
-
 /*
  * Converts a string in the Latin-1 character set (ISO 8859-1) to the UTF-8
  * character set.
@@ -652,7 +655,8 @@ ut_parse(
 
             if (utparse() == 0) {
                 int     status;
-                int	n = yy_c_buf_p  - buf->yy_ch_buf;
+                /* Offset from the beginning of the buffer. */
+                const int n = utGetYyCBufP() - buf->yy_ch_buf;
 
                 if (n >= strlen(utf8String)) {
                     unit = _finalUnit;	/* success */

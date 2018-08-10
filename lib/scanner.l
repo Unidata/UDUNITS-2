@@ -10,6 +10,7 @@
  */
 
 %option noyywrap
+%option header-file="scanner.h"
 
 %{
 
@@ -21,6 +22,20 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+
+
+#include "udunits2.h"
+#include "parser.h"
+/* Cannot include scanner.h as it undefs YY_DO_BEFORE_ACTION and YY_NEW_FILE */
+/* #include "scanner.h" */
+
+int		_restartScanner;/* restart scanner? */
+int		_isTime;        /* product_exp is time? */
+#define yylval          utlval
+
+char *utGetYyCBufP(void) {
+    return yy_c_buf_p;
+}
 
 /**
  * Decodes a date.

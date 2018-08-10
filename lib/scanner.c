@@ -861,7 +861,7 @@ char *uttext;
 /*
  * lex(1) specification for tokens for the Unidata units package, UDUNITS2.
  */
-#line 15 "scanner.l"
+#line 16 "scanner.l"
 
 #include <ctype.h>
 #include <errno.h>
@@ -871,6 +871,19 @@ char *uttext;
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+
+
+#include "udunits2.h"
+#include "parser.h"
+/* #include "scanner.h" */
+
+int		_restartScanner;/* restart scanner? */
+int		_isTime;        /* product_exp is time? */
+#define yylval          utlval
+
+char *utGetYyCBufP(void) {
+    return yy_c_buf_p;
+}
 
 /**
  * Decodes a date.
@@ -943,7 +956,7 @@ static int decodeReal(
 }
 
 
-#line 947 "scanner.c"
+#line 960 "scanner.c"
 
 #define INITIAL 0
 #define ID_SEEN 1
@@ -1165,14 +1178,14 @@ YY_DECL
 		}
 
 	{
-#line 145 "scanner.l"
+#line 159 "scanner.l"
 
     if (_restartScanner) {
 	BEGIN INITIAL;
 	_restartScanner = 0;
     }
 
-#line 1176 "scanner.c"
+#line 1189 "scanner.c"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -1231,7 +1244,7 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 151 "scanner.l"
+#line 165 "scanner.l"
 {
     BEGIN SHIFT_SEEN;
     return SHIFT;
@@ -1239,7 +1252,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 156 "scanner.l"
+#line 170 "scanner.l"
 {
     BEGIN INITIAL;
     return DIVIDE;
@@ -1247,7 +1260,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 161 "scanner.l"
+#line 175 "scanner.l"
 {
     BEGIN INITIAL;
     return MULTIPLY;
@@ -1255,7 +1268,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 166 "scanner.l"
+#line 180 "scanner.l"
 {
     int		status;
 
@@ -1273,7 +1286,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 181 "scanner.l"
+#line 195 "scanner.l"
 {
     int		status = EXPONENT;
     int		exponent = 0;
@@ -1333,7 +1346,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 238 "scanner.l"
+#line 252 "scanner.l"
 {
     BEGIN DATE_SEEN;
     return decodeDate((char*)uttext, "%d-%d-%d", &yylval.rval);
@@ -1341,7 +1354,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 243 "scanner.l"
+#line 257 "scanner.l"
 {
     if (_isTime) {
         BEGIN DATE_SEEN;
@@ -1355,7 +1368,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 254 "scanner.l"
+#line 268 "scanner.l"
 {
     yylval.rval = decodeClock((char*)uttext, "%d:%d:%lf");
     BEGIN CLOCK_SEEN;
@@ -1364,7 +1377,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 260 "scanner.l"
+#line 274 "scanner.l"
 {
     yylval.rval = decodeClock((char*)uttext, "%2d%2d%lf");
     BEGIN CLOCK_SEEN;
@@ -1373,7 +1386,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 266 "scanner.l"
+#line 280 "scanner.l"
 {
     yylval.rval	= decodeClock((char*)uttext, "%d:%d");
     BEGIN INITIAL;
@@ -1382,7 +1395,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 272 "scanner.l"
+#line 286 "scanner.l"
 {
     yylval.rval	= (utleng <= 3)
                         ? decodeClock((char*)uttext, "%d")
@@ -1395,7 +1408,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 282 "scanner.l"
+#line 296 "scanner.l"
 {
     yylval.rval	= (utleng <= 2)
                         ? decodeClock((char*)uttext, "%d")
@@ -1408,7 +1421,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 292 "scanner.l"
+#line 306 "scanner.l"
 {
     BEGIN INITIAL;
     return decodeReal((char*)uttext, &yylval.rval);
@@ -1416,7 +1429,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 297 "scanner.l"
+#line 311 "scanner.l"
 {
     int		status;
 
@@ -1437,7 +1450,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 315 "scanner.l"
+#line 329 "scanner.l"
 {
     yylval.rval = 10;
     return LOGREF;
@@ -1445,7 +1458,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 320 "scanner.l"
+#line 334 "scanner.l"
 {
     yylval.rval = M_E;
     return LOGREF;
@@ -1453,7 +1466,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 325 "scanner.l"
+#line 339 "scanner.l"
 {
     yylval.rval = 2;
     return LOGREF;
@@ -1461,7 +1474,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 330 "scanner.l"
+#line 344 "scanner.l"
 {
     yylval.id = strdup((char*)uttext);
 
@@ -1471,7 +1484,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 337 "scanner.l"
+#line 351 "scanner.l"
 {
     BEGIN INITIAL;
     return uttext[0];
@@ -1479,10 +1492,10 @@ YY_RULE_SETUP
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 342 "scanner.l"
+#line 356 "scanner.l"
 ECHO;
 	YY_BREAK
-#line 1486 "scanner.c"
+#line 1499 "scanner.c"
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(ID_SEEN):
 case YY_STATE_EOF(SHIFT_SEEN):
@@ -2487,7 +2500,7 @@ void utfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 342 "scanner.l"
+#line 356 "scanner.l"
 
 
 

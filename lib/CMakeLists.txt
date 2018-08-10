@@ -35,7 +35,7 @@ IF(UNIX)
     add_custom_command(
         OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/parser.c
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-        COMMAND ${UD_BISON} -p ut -o parser.c parser.y
+        COMMAND ${UD_BISON} -p ut --defines -o parser.c parser.y
         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/parser.y)
     set_source_files_properties(parser.c
         PROPERTIES OBJECT_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/scanner.c)
@@ -47,6 +47,7 @@ SET(libudunits2_src converter.c
 		    idToUnitMap.c
 		    parser.c
 		    prefix.c
+		    scanner.c
 		    status.c
 		    systemMap.c
 		    unitAndId.c

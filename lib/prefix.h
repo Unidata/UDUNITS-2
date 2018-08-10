@@ -26,11 +26,14 @@ extern "C" {
  *	UT_EXISTS	"name" already maps to a different value.
  *	UT_OS		Operating-system failure.  See "errno".
  */
+#if 0
+/* Already defined in udunits2.h. */
 ut_status
 ut_add_name_prefix(
     ut_system* const	system,
     const char* const	name,
     const double	value);
+#endif
 
 /*
  * Adds a symbol-prefix to a unit-system.  A symbol-prefix is something like
