@@ -23,7 +23,6 @@
 #include <string.h>
 #include <time.h>
 
-
 #include "udunits2.h"
 #include "parser.h"
 /* Cannot include scanner.h as it undefs YY_DO_BEFORE_ACTION and YY_NEW_FILE */
