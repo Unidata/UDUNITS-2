@@ -1197,17 +1197,17 @@ ut_encode_date(
 
 
 /*
- * Encodes a time as a double-precision value.
+ * Encodes a time as a double-precision value. If an input value isn't within
+ * its allowed range, then zero is returned and `ut_get_status()` will return
+ * `UT_BAD_ARG`.
  *
- * Arguments:
- *	hours		The number of hours (0 = midnight). `abs(hours)` must be
+ * @param[in] hours	The number of hours (0 = midnight). `abs(hours)` must be
  *	                less than 24.
- *	minutes		The number of minutes. `abs(minutes)` must be less than
+ * @param[in] minutes	The number of minutes. `abs(minutes)` must be less than
  *	                60.
- *	seconds		The number of seconds. `abs(seconds)` must be less than
+ * @param[in] seconds	The number of seconds. `fabs(seconds)` must be less than
  *	                or equal to 62.
- * Returns:
- *	The clock-time encoded as a scalar value.
+ * @return              The clock-time encoded as a scalar value.
  */
 EXTERNL double
 ut_encode_clock(

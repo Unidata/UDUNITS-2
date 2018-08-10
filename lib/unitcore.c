@@ -404,6 +404,11 @@ ut_encode_clock(
     int		minutes,
     double	seconds)
 {
+    if (abs(hours) >= 24 || abs(minutes) >= 60 || fabs(seconds) > 62) {
+        ut_set_status(UT_BAD_ARG);
+        return 0;
+    }
+
     return (hours*60 + minutes)*60 + seconds;
 }
 
