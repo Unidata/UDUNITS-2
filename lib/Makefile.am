@@ -16,6 +16,7 @@ libudunits2_la_SOURCES = unitcore.c \
                          systemMap.c systemMap.h \
                          prefix.c prefix.h \
                          parser.y \
+                         scanner.l \
                          status.c \
                          xml.c \
                          error.c \
@@ -44,8 +45,10 @@ include_HEADERS = udunits2.h converter.h
 EXTRA_DIST = c99_snprintf.c \
              CMakeLists.txt \
              parser.c \
+             parser.h \
              scanner.l \
              scanner.c \
+             scanner.h \
              tsearch.c tsearch.h \
              udunits-1.c udunits.h \
              udunits2.xml \
