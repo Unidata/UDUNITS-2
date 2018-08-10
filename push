@@ -37,7 +37,7 @@ if git branch | grep '^\* *master$' >/dev/null; then
     git add delivery/release-vars.sh
 
     # Commit the changes.
-    git commit -a -m "v$versionId"
+    git commit -a "$@"
 
     # Tag the current version.
     git tag -f "v$versionId"

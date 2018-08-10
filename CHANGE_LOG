@@ -1,4 +1,4 @@
-2.2.27.8
+2.2.27.8	2018-08-10T08:58:35-0600
     Removed all trailing whitespace from code files.
     
     Made ut_encode_clock() return 0 and ut_get_status() return UT_BAD_ARG if an
