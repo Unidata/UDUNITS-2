@@ -108,7 +108,7 @@ One thing that has not changed is that almost all unit string specifications
 understood by the @code{UDUNITS-1} package are also
 understood by the @code{UDUNITS-2} package.  One exception is
 the symbol @code{g}, which in version 1 of the package was associated with
-standard free fall (a unit of accelleration) but which is associated
+standard free fall (a unit of acceleration) but which is associated
 with the unit gram in version 2 of the package.
 
 @node Installation, Library, Differences, Top

@@ -87,7 +87,7 @@ hostchecks:	$(distArchive)
 
 # hostname:os:make:cc:config_opts:exit_status
 results.tab:	redo-results
-	sleep 2	# to accomodate broken HP-UX B.11.00 make(1)
+	sleep 2	# to accommodate broken HP-UX B.11.00 make(1)
 	ls *.results | sed 's/.results//' | \
 	while read host; do \
 	    IFS=':' read uname shell <$$host.host || break; \

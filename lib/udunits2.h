@@ -29,7 +29,7 @@
 #define stricmp _stricmp
 #define isatty _isatty
 
-//We must accomodate the lack of snprintf in MSVC.
+//We must accommodate the lack of snprintf in MSVC.
 //c99_snprintf is defined in c99_snprintf.c, in lib/.
 #define snprintf c99_snprintf
 
