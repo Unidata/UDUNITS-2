@@ -12,10 +12,9 @@
 #include <stddef.h>
 
 #ifdef _MSC_VER
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdarg.h>
 #include <io.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #define _USE_MATH_DEFINES
 

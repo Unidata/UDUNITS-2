@@ -5,6 +5,8 @@
 #ifndef UT_PREFIX_H
 #define UT_PREFIX_H
 
+#include <stddef.h>
+
 #include "udunits2.h"
 
 #ifdef __cplusplus
