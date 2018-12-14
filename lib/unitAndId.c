@@ -91,11 +91,11 @@ uaiNew(
  */
 void
 uaiFree(
-    UnitAndId* const	entry)
+    UnitAndId* const	node)
 {
-    if (entry != NULL) {
-	free(entry->id);
-	ut_free(entry->unit);
-	free(entry);
+    if (node != NULL) {
+	free(node->id);
+	ut_free(node->unit);
+	free(node);
     }
 }
