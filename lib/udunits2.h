@@ -29,17 +29,17 @@
 #define stricmp _stricmp
 #define isatty _isatty
 
-//We must accommodate the lack of snprintf in MSVC.
-//c99_snprintf is defined in c99_snprintf.c, in lib/.
-#define snprintf c99_snprintf
+//We must accommodate the lack of snprintf in versions of MSVC less than 1900.
+//udunits_snprintf is defined in udunits_snprintf.c, in lib/.
+#define snprintf udunits_snprintf
 
-int c99_snprintf(
+int udunits_snprintf(
    char* str,
      size_t size,
      const char* format,
      ...);
 
-int c99_vsnprintf(
+int udunits_vsnprintf(
 char* str,
   size_t size,
   const char* format,
