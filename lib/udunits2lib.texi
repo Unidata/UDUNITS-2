@@ -1229,7 +1229,7 @@ Also, @code{@ref{ut_get_status()}} will return @code{UT_BAD_ARG}.
 @anchor{ut_is_dimensionless()}
 @deftypefun @code{int} ut_is_dimensionless @code{(const ut_unit* @var{unit})}
 Indicates if unit @var{unit} is dimensionless (like ``radian'').
-This function returns a non-zero value if the unit is dimensionfull;
+This function returns a non-zero value if the unit is dimensionless;
 otherwise, @code{0} is returned and
 @ref{ut_get_status()} will return one of the following:
 
