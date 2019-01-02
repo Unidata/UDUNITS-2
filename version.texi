@@ -1,4 +1,4 @@
 @set UPDATED 10 August 2018
 @set UPDATED-MONTH August 2018
-@set EDITION 2.2.27.8
-@set VERSION 2.2.27.8
+@set EDITION 2.2.27.9
+@set VERSION 2.2.27.9
