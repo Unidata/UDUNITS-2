@@ -16,7 +16,6 @@ before_install:
   - autoreconf -i
   - ./configure
 
-# The "addons" stage is executed before the "script" stage
 addons:
   coverity_scan:
     project:
