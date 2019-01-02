@@ -41,7 +41,7 @@ LEX_OUTPUT_ROOT = lex.$(lex_prefix)
 LFLAGS = -d -P$(lex_prefix)
 
 include_HEADERS = udunits2.h converter.h
-EXTRA_DIST = c99_snprintf.c \
+EXTRA_DIST = udunits_snprintf.c \
              CMakeLists.txt \
              parser.c \
              scanner.l \
