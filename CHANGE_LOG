@@ -1,3 +1,10 @@
+2.2.27.9	2019-01-02T09:52:33-0700
+    Correct description of return-value of ut_is_dimensionless() in
+    documentation
+
+    Rename c99_snprintf() to udunits_snprintf() and c99_vsnprintf() to
+    udunits_vsnprintf() to avoid name-clash with HDF5.
+
 2.2.27.8	2018-08-10T08:59:49-0600
     Removed all trailing whitespace from code files.
     
