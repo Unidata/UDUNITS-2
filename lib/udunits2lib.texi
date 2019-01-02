@@ -896,7 +896,7 @@ DATE:
 CLOCK:
         <hour> ":" <minute> (":" <second>)?
 
-TIMSTAMP:
+TIMESTAMP:
         <year> (<month> <day>?)? "T" <hour> (<minute> <second>?)?
 
 <hour>:
