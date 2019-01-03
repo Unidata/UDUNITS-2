@@ -151,7 +151,7 @@ static int timezone_to_time(
 
     *time = (value >= 0)
             ? ut_encode_clock(hour, minute, second)
-            : -ut_encode_clock(hour, minute, second)
+            : -ut_encode_clock(hour, minute, second);
 
     return 0;
 }
