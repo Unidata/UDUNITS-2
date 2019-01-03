@@ -22,12 +22,14 @@
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
-#include <stdlib.h>
+#include <stddef.h>
 #include <stdio.h>
-#ifndef _MSC_VER
+#include <stdlib.h>
 #include <string.h>
+#ifndef _MSC_VER
 #include <strings.h>
 #endif
+#include "prefix.h"
 #include "udunits2.h"
 
 static ut_unit*		_finalUnit;	/* fully-parsed specification */
@@ -147,9 +149,9 @@ static int timezone_to_time(
     if (hour > 24 || minute >= 60)
         return -1;
 
-    *time = value < 0
-        ? ut_encode_clock(-hour, -minute, -second)
-        : ut_encode_clock(hour, minute, second);
+    *time = (value >= 0)
+            ? ut_encode_clock(hour, minute, second)
+            : -ut_encode_clock(hour, minute, second)
 
     return 0;
 }
@@ -651,8 +653,8 @@ ut_parse(
             _finalUnit = NULL;
 
             if (utparse() == 0) {
-                int     status;
-                int	n = yy_c_buf_p  - buf->yy_ch_buf;
+                int       status;
+                ptrdiff_t n = yy_c_buf_p  - buf->yy_ch_buf;
 
                 if (n >= strlen(utf8String)) {
                     unit = _finalUnit;	/* success */

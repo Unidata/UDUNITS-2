@@ -97,8 +97,8 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <stdio.h>
-#ifndef _MSC_VER
 #include <string.h>
+#ifndef _MSC_VER
 #include <strings.h>
 #endif
 #include "udunits2.h"
@@ -2273,8 +2273,8 @@ ut_parse(
             _finalUnit = NULL;
 
             if (utparse() == 0) {
-                int     status;
-                int	n = yy_c_buf_p  - buf->yy_ch_buf;
+                int             status;
+                ptrdiff_t	n = yy_c_buf_p  - buf->yy_ch_buf;
 
                 if (n >= strlen(utf8String)) {
                     unit = _finalUnit;	/* success */

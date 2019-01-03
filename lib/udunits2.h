@@ -1092,7 +1092,7 @@ EXTERNL ut_unit*
 ut_parse(
     const ut_system* const	system,
     const char* const		string,
-    const ut_encoding		encoding);
+    ut_encoding		        encoding);
 
 
 /*

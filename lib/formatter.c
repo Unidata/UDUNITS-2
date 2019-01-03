@@ -60,7 +60,7 @@ asciiPrintProduct(
     const int* const		powers,
     const int			count,
     char* const			buf,
-    const size_t		max,
+    size_t		        max,
     IdGetter			getId);
 static int
 latin1PrintProduct(
@@ -68,7 +68,7 @@ latin1PrintProduct(
     const int* const		powers,
     const int			count,
     char* const			buf,
-    const size_t		max,
+    size_t		        max,
     IdGetter			getId);
 static int
 utf8PrintProduct(
@@ -76,7 +76,7 @@ utf8PrintProduct(
     const int* const		powers,
     const int			count,
     char* const			buf,
-    const size_t		max,
+    size_t		        max,
     IdGetter			getId);
 
 static ut_visitor	formatter;
