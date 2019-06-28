@@ -66,6 +66,7 @@ set_target_properties(libudunits2 PROPERTIES ARCHIVE_OUTPUT_NAME udunits2)
 set_target_properties(libudunits2 PROPERTIES RUNTIME_OUTPUT_NAME udunits2)
 target_link_libraries(libudunits2 ${EXPAT_LIBRARIES})
 target_link_libraries(libudunits2 ${MATH_LIBRARY})
+target_link_libraries(libudunits2 ${CMAKE_DL_LIBS})
 
 IF(MSVC)
 	SET_TARGET_PROPERTIES(libudunits2 PROPERTIES
