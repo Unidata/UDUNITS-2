@@ -1589,7 +1589,7 @@ elements appear only within <aliases>.
         <unit>
             <def>lg(re 1 mW)</def>
             <aliases> <symbol>Bm</symbol> </aliases>
-            <definition>unit of power in decibel scale, referenced to 1 milliwatt; the power in bel-milliwatts is equal to 100 times the base 10 logarithm of the power in milliwatts (making decibel-milliwatt, the more common term, 10 times the base 10 log of the power in watts)</definition>
+            <definition>unit of power in decibel scale, referenced to 1 milliwatt; the power in bel-milliwatts is equal to 100 times the base 10 logarithm of the power in milliwatts (making decibel-milliwatt, the more common term, 10 times the base 10 log of the power in milliwatts)</definition>
         </unit>
 
     <!-- Heat -->
