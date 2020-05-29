@@ -1054,7 +1054,9 @@ printTimestamp(
 	nchar = n < 0 ? n : nchar + n;
 
 	if (nchar >= 0) {
-	    int	useSeparators = useNames || year < 1000 || year > 9999;
+            size = SUBTRACT_SIZET(size, n);
+
+            int	useSeparators = useNames || year < 1000 || year > 9999;
 
 	    n =  snprintf(buf+nchar, size,
 		useSeparators
