@@ -23,6 +23,7 @@ if git branch | grep '^\* *master$' >/dev/null; then
     awk 'NR==1{print $1"\t'`date --iso-8601=seconds`'"}NR>1' CHANGE_LOG \
         >CHANGE_LOG.tmp
     mv CHANGE_LOG.tmp CHANGE_LOG
+    git add CHANGE_LOG
 
     # Set the package version in the autoconf configuration-file.
     sed '/^AC_INIT(/s/\[[0-9][0-9.]*\]/['$versionId']/' configure.ac \
@@ -37,11 +38,14 @@ if git branch | grep '^\* *master$' >/dev/null; then
     git add delivery/release-vars.sh
 
     # Commit the changes.
-    git commit -a "$@"
+    git commit -m "v$versionId"
 
     # Tag the current version.
     git tag -f "v$versionId"
-fi
 
-# Push to the origin repository
-git push
+    # Push to the remote repository
+        git push
+
+    # Create a distribution
+        make dist
+fi
