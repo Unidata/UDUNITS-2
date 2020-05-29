@@ -2134,14 +2134,15 @@ readXml(
 static const char*
 default_udunits2_xml_path()
 {
-    char const * soname = 0;
+    const char* path;
+    char const* soname = 0;
+
 #if defined(__APPLE__) || defined(__linux__)
     #define END_BIT "/share/udunits/udunits2.xml"
     #define SEP '/'
     Dl_info info;
-    if (dladdr(default_udunits2_xml_path, &info)) {
+    if (dladdr(default_udunits2_xml_path, &info))
         soname = info.dli_fname;
-    }
 #elif defined(_WIN32)
     #define END_BIT "\\share\\udunits\\udunits2.xml"
     #define SEP '\\'
@@ -2153,21 +2154,30 @@ default_udunits2_xml_path()
     GetModuleFileName(hModule, &tmpbuf[0], MAX_PATH * 4);
     soname = &tmpbuf[0];
 #endif
-    if (soname) {
-        char * result = malloc(strlen(soname) + strlen(END_BIT) + 1);
-        if (result) {
-            strcpy(result, soname);
-            if (strrchr(result, SEP)) {
-                *strrchr(result, SEP) = '\0';
-                if (strrchr(result, SEP)) {
-                    *strrchr(result, SEP) = '\0';
-                }
-            }
-            strcat(result, END_BIT);
-            return result;
-        }
+    if (soname == NULL) {
+        path = DEFAULT_UDUNITS2_XML_PATH;
     }
-    return DEFAULT_UDUNITS2_XML_PATH;
+    else {
+        static char result[PATH_MAX];
+
+        if (result[0] == 0) {
+            int prefixLen = strlen(soname);
+
+            if (soname[prefixLen-1] == SEP) {
+                --prefixLen;
+                if (soname[prefixLen-1] == SEP)
+                    --prefixLen;
+            }
+
+            snprintf(result, sizeof(result), "%.*s%s", prefixLen, soname,
+                    END_BIT);
+            result[sizeof(result)-1] = 0;
+        }
+
+        path = result;
+    }
+
+    return path;
 }
 
 /**
@@ -2179,7 +2189,7 @@ default_udunits2_xml_path()
  *                  pathname specified by the environment variable
  *                  UDUNITS2_XML_PATH is returned if set; otherwise, the
  *                  compile-time pathname of the installed, default, unit
- *                  database is returned.
+ *                  database is returned. Caller must not free.
  */
 const char*
 ut_get_path_xml(
