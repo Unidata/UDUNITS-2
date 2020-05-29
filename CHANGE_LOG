@@ -1,5 +1,9 @@
+2.2.27.14	2020-05-29T14:22:11-0600
+    * Removed lint found by Coverity Scan in ut_get_path_xml()
+    * Corrected declaration of ut_get_path_xml() in synopsis section
+
 2.2.27.13	2020-05-29T11:39:15-0600
-    Corrected buffer overflow bug in printTimestamp().
+    Corrected buffer overflow bug in printTimestamp()
 
 2.2.27.12	2019-01-03T16:05:54-0700
     Recreate parser.c from parser.y
