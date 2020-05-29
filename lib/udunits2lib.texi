@@ -66,7 +66,7 @@ Coding:
 #include <udunits2.h>
 @quotation
 @multitable {ut_error_message_handler} {ut_get_dimensionless_unit_one(}
-@item const char*   @tab @ref{ut_get_path_xml(),ut_get_path_xml}(const char* @var{path});
+@item const char*   @tab @ref{ut_get_path_xml(),ut_get_path_xml}(const char* @var{path}, ut_status* @var{status});
 @item ut_system*    @tab @ref{ut_read_xml(),ut_read_xml}(const char* @var{path});
 @item ut_system*    @tab @ref{ut_new_system(),ut_new_system}(void);
 @item void          @tab @ref{ut_free_system(), ut_free_system}(ut_system* @var{system});
