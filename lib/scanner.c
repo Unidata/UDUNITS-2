@@ -921,7 +921,7 @@ static yy_state_type yy_last_accepting_state;
 static char *yy_last_accepting_cpos;
 
 extern int ut_flex_debug;
-int ut_flex_debug = 1;
+int ut_flex_debug = 0;
 
 static yyconst flex_int16_t yy_rule_linenum[20] =
     {   0,
