@@ -11,7 +11,7 @@
 #include <stdarg.h>
 #include <stddef.h>
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && _MSC_VER<1910
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
