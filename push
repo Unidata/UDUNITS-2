@@ -44,7 +44,7 @@ if git branch | grep '^\* *master$' >/dev/null; then
     git tag -f "v$versionId"
 
     # Push to the remote repository
-        git push
+    git push --tags origin master
 
     # Create a distribution
         make dist
