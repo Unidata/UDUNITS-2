@@ -213,7 +213,7 @@ duplower(
     else {
         char*   cp = copy;
 
-        while (*cp++ = tolower(*string++))
+        while ((*cp++ = tolower(*string++)))
             ; /* empty */
     }
 
