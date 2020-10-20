@@ -1,6 +1,7 @@
 %{
 /*
- * Copyright 2013 University Corporation for Atmospheric Research
+ * Copyright 2020 University Corporation for Atmospheric Research. All rights
+ * reserved.
  *
  * This file is part of the UDUNITS-2 package.  See the file COPYRIGHT
  * in the top-level source-directory of the package for copying and
@@ -9,8 +10,8 @@
 /*
  * bison(1)-based parser for decoding formatted unit specifications.
  *
- * This module is thread-compatible but not thread-safe.  Multi-threaded
- * access must be externally synchronized.
+ * This module is thread-compatible but not thread-safe: multi-threaded access
+ * must be externally synchronized.
  */
 
 /*LINTLIBRARY*/
@@ -31,6 +32,8 @@
 #endif
 #include "prefix.h"
 #include "udunits2.h"
+
+extern int utlex (void);
 
 static ut_unit*		_finalUnit;	/* fully-parsed specification */
 static ut_system*	_unitSystem;	/* The unit-system to use */
