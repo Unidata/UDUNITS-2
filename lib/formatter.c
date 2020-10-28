@@ -1073,7 +1073,9 @@ printTimestamp(
             }
 
 	    if (nchar >= 0) {
-		int	decimalCount = -(int)floor(log10(resolution));
+		int	decimalCount = resolution <= 0.0
+		        ? 9 // Nanosecond resolution
+		        : -(int)floor(log10(resolution));
 
 		if (decimalCount > -2) {
 		    n = snprintf(buf+nchar, size,

@@ -2026,9 +2026,9 @@ test_xml(void)
     int                 status;
     ut_unit*            unit1;
     ut_unit*            unit2;
-    cv_converter*	    converter;
-    char*		        spec;
-    ut_unit*		    unit;
+    cv_converter*	converter;
+    char*		spec;
+    ut_unit*		unit;
 
     ut_set_error_message_handler(ut_write_to_stderr);
     xmlSystem = ut_read_xml(xmlPath);
@@ -2280,6 +2280,29 @@ test_mm2_day2_divide(void)
     ut_free_system(xmlSystem);
 }
 
+
+test_timeResolution(void)
+{
+    ut_system*  xmlSystem;
+
+    ut_set_error_message_handler(ut_write_to_stderr);
+    xmlSystem = ut_read_xml(xmlPath);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(xmlSystem);
+
+    // Maximum temporal resolution:
+    const char string[] = "day since 2001-01-01 00:00:00.000000000 UTC";
+    ut_unit* unit = ut_parse(xmlSystem, string, UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(unit);
+
+    char buf[128];
+    int  len = ut_format(unit, buf, sizeof(buf), UT_ASCII | UT_NAMES);
+    CU_ASSERT_NOT_EQUAL_FATAL(len, -1);
+    printf("test_timeResolution() unit=\"%s\"", buf);
+    CU_ASSERT_STRING_EQUAL(buf, string);
+
+    ut_free(unit);
+}
+
 int
 main(
     const int           argc,
@@ -2331,6 +2354,7 @@ main(
 	    CU_ADD_TEST(testSuite, test_parsing);
 	    CU_ADD_TEST(testSuite, test_visitor);
 	    CU_ADD_TEST(testSuite, test_xml);
+	    CU_ADD_TEST(testSuite, test_timeResolution);
 	    /*
 	    */
 
