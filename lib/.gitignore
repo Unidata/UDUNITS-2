@@ -27,3 +27,4 @@ test_decode_time
 *.trs
 *.t2p
 scanner.c
+parser.c

@@ -50,3 +50,4 @@ build
 html
 stamp-vti
 version.texi
+aclocal.m4

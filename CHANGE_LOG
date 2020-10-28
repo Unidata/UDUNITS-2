@@ -1,3 +1,18 @@
+2.2.27.16
+    parser.y:
+        * Added utlex(1) declaration to accomodate clang(1) which error-exits
+          on encountering an undeclared function
+
+    ut_format():
+        * Fixed bug formatting the unit "day since 2001-01-01 00:00:00 UTC"
+
+    Developer:
+        * Added _XOPEN_SOURCE definition
+
+2.2.27.15
+    Developer:
+        push(1): Added "--tags origin master" to the "git push"
+
 2.2.27.14	2020-05-29T14:22:11-0600
     * Removed lint found by Coverity Scan in ut_get_path_xml()
     * Corrected declaration of ut_get_path_xml() in synopsis section

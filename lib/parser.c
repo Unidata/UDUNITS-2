@@ -73,7 +73,8 @@
 #line 1 "parser.y" /* yacc.c:339  */
 
 /*
- * Copyright 2013 University Corporation for Atmospheric Research
+ * Copyright 2020 University Corporation for Atmospheric Research. All rights
+ * reserved.
  *
  * This file is part of the UDUNITS-2 package.  See the file COPYRIGHT
  * in the top-level source-directory of the package for copying and
@@ -82,8 +83,8 @@
 /*
  * bison(1)-based parser for decoding formatted unit specifications.
  *
- * This module is thread-compatible but not thread-safe.  Multi-threaded
- * access must be externally synchronized.
+ * This module is thread-compatible but not thread-safe: multi-threaded access
+ * must be externally synchronized.
  */
 
 /*LINTLIBRARY*/
@@ -104,6 +105,8 @@
 #endif
 #include "prefix.h"
 #include "udunits2.h"
+
+extern int utlex (void);
 
 static ut_unit*		_finalUnit;	/* fully-parsed specification */
 static ut_system*	_unitSystem;	/* The unit-system to use */
@@ -275,7 +278,7 @@ static int isTime(
 }
 
 
-#line 279 "parser.c" /* yacc.c:339  */
+#line 282 "parser.c" /* yacc.c:339  */
 
 # ifndef YY_NULLPTR
 #  if defined __cplusplus && 201103L <= __cplusplus
@@ -340,14 +343,14 @@ extern int utdebug;
 
 union YYSTYPE
 {
-#line 206 "parser.y" /* yacc.c:355  */
+#line 209 "parser.y" /* yacc.c:355  */
 
     char*	id;			/* identifier */
     ut_unit*	unit;			/* "unit" structure */
     double	rval;			/* floating-point numerical value */
     long	ival;			/* integer numerical value */
 
-#line 351 "parser.c" /* yacc.c:355  */
+#line 354 "parser.c" /* yacc.c:355  */
 };
 
 typedef union YYSTYPE YYSTYPE;
@@ -364,7 +367,7 @@ int utparse (void);
 
 /* Copy the second part of user declarations.  */
 
-#line 368 "parser.c" /* yacc.c:358  */
+#line 371 "parser.c" /* yacc.c:358  */
 
 #ifdef short
 # undef short
@@ -662,10 +665,10 @@ static const yytype_uint8 yytranslate[] =
   /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint16 yyrline[] =
 {
-       0,   236,   236,   240,   244,   249,   252,   258,   264,   270,
-     278,   282,   290,   296,   304,   310,   318,   326,   329,   335,
-     341,   349,   402,   405,   411,   417,   423,   429,   432,   437,
-     440,   443,   446,   465,   468,   471
+       0,   239,   239,   243,   247,   252,   255,   261,   267,   273,
+     281,   285,   293,   299,   307,   313,   321,   329,   332,   338,
+     344,   352,   405,   408,   414,   420,   426,   432,   435,   440,
+     443,   446,   449,   468,   471,   474
 };
 #endif
 
@@ -1470,94 +1473,94 @@ yyreduce:
   switch (yyn)
     {
         case 2:
-#line 236 "parser.y" /* yacc.c:1646  */
+#line 239 "parser.y" /* yacc.c:1646  */
     {
 		    _finalUnit = ut_get_dimensionless_unit_one(_unitSystem);
 		    YYACCEPT;
 		}
-#line 1479 "parser.c" /* yacc.c:1646  */
+#line 1482 "parser.c" /* yacc.c:1646  */
     break;
 
   case 3:
-#line 240 "parser.y" /* yacc.c:1646  */
+#line 243 "parser.y" /* yacc.c:1646  */
     {
 		    _finalUnit = (yyvsp[0].unit);
 		    YYACCEPT;
 		}
-#line 1488 "parser.c" /* yacc.c:1646  */
+#line 1491 "parser.c" /* yacc.c:1646  */
     break;
 
   case 4:
-#line 244 "parser.y" /* yacc.c:1646  */
+#line 247 "parser.y" /* yacc.c:1646  */
     {
 		    YYABORT;
 		}
-#line 1496 "parser.c" /* yacc.c:1646  */
+#line 1499 "parser.c" /* yacc.c:1646  */
     break;
 
   case 5:
-#line 249 "parser.y" /* yacc.c:1646  */
+#line 252 "parser.y" /* yacc.c:1646  */
     {
 		    (yyval.unit) = (yyvsp[0].unit);
 		}
-#line 1504 "parser.c" /* yacc.c:1646  */
+#line 1507 "parser.c" /* yacc.c:1646  */
     break;
 
   case 6:
-#line 252 "parser.y" /* yacc.c:1646  */
+#line 255 "parser.y" /* yacc.c:1646  */
     {
 		    (yyval.unit) = ut_offset((yyvsp[-2].unit), (yyvsp[0].rval));
 		    ut_free((yyvsp[-2].unit));
 		    if ((yyval.unit) == NULL)
 			YYERROR;
 		}
-#line 1515 "parser.c" /* yacc.c:1646  */
+#line 1518 "parser.c" /* yacc.c:1646  */
     break;
 
   case 7:
-#line 258 "parser.y" /* yacc.c:1646  */
+#line 261 "parser.y" /* yacc.c:1646  */
     {
 		    (yyval.unit) = ut_offset((yyvsp[-2].unit), (yyvsp[0].ival));
 		    ut_free((yyvsp[-2].unit));
 		    if ((yyval.unit) == NULL)
 			YYERROR;
 		}
-#line 1526 "parser.c" /* yacc.c:1646  */
+#line 1529 "parser.c" /* yacc.c:1646  */
     break;
 
   case 8:
-#line 264 "parser.y" /* yacc.c:1646  */
+#line 267 "parser.y" /* yacc.c:1646  */
     {
 		    (yyval.unit) = ut_offset_by_time((yyvsp[-2].unit), (yyvsp[0].rval));
 		    ut_free((yyvsp[-2].unit));
 		    if ((yyval.unit) == NULL)
 			YYERROR;
 		}
-#line 1537 "parser.c" /* yacc.c:1646  */
+#line 1540 "parser.c" /* yacc.c:1646  */
     break;
 
   case 9:
-#line 270 "parser.y" /* yacc.c:1646  */
+#line 273 "parser.y" /* yacc.c:1646  */
     {
 		    ut_status	prev = ut_get_status();
 		    ut_free((yyvsp[-2].unit));
 		    ut_set_status(prev);
 		    YYERROR;
 		}
-#line 1548 "parser.c" /* yacc.c:1646  */
+#line 1551 "parser.c" /* yacc.c:1646  */
     break;
 
   case 10:
-#line 278 "parser.y" /* yacc.c:1646  */
+#line 281 "parser.y" /* yacc.c:1646  */
     {
 		    (yyval.unit) = (yyvsp[0].unit);
                     _isTime = isTime((yyval.unit));
 		}
-#line 1557 "parser.c" /* yacc.c:1646  */
+#line 1560 "parser.c" /* yacc.c:1646  */
     break;
 
   case 11:
-#line 282 "parser.y" /* yacc.c:1646  */
+#line 285 "parser.y" /* yacc.c:1646  */
     {
 		    (yyval.unit) = ut_multiply((yyvsp[-1].unit), (yyvsp[0].unit));
                     _isTime = isTime((yyval.unit));
@@ -1566,22 +1569,22 @@ yyreduce:
 		    if ((yyval.unit) == NULL)
 			YYERROR;
 		}
-#line 1570 "parser.c" /* yacc.c:1646  */
+#line 1573 "parser.c" /* yacc.c:1646  */
     break;
 
   case 12:
-#line 290 "parser.y" /* yacc.c:1646  */
+#line 293 "parser.y" /* yacc.c:1646  */
     {
 		    ut_status	prev = ut_get_status();
 		    ut_free((yyvsp[-1].unit));
 		    ut_set_status(prev);
 		    YYERROR;
 		}
-#line 1581 "parser.c" /* yacc.c:1646  */
+#line 1584 "parser.c" /* yacc.c:1646  */
     break;
 
   case 13:
-#line 296 "parser.y" /* yacc.c:1646  */
+#line 299 "parser.y" /* yacc.c:1646  */
     {
 		    (yyval.unit) = ut_multiply((yyvsp[-2].unit), (yyvsp[0].unit));
                     _isTime = isTime((yyval.unit));
@@ -1590,22 +1593,22 @@ yyreduce:
 		    if ((yyval.unit) == NULL)
 			YYERROR;
 		}
-#line 1594 "parser.c" /* yacc.c:1646  */
+#line 1597 "parser.c" /* yacc.c:1646  */
     break;
 
   case 14:
-#line 304 "parser.y" /* yacc.c:1646  */
+#line 307 "parser.y" /* yacc.c:1646  */
     {
 		    ut_status	prev = ut_get_status();
 		    ut_free((yyvsp[-2].unit));
 		    ut_set_status(prev);
 		    YYERROR;
 		}
-#line 1605 "parser.c" /* yacc.c:1646  */
+#line 1608 "parser.c" /* yacc.c:1646  */
     break;
 
   case 15:
-#line 310 "parser.y" /* yacc.c:1646  */
+#line 313 "parser.y" /* yacc.c:1646  */
     {
 		    (yyval.unit) = ut_divide((yyvsp[-2].unit), (yyvsp[0].unit));
                     _isTime = isTime((yyval.unit));
@@ -1614,63 +1617,63 @@ yyreduce:
 		    if ((yyval.unit) == NULL)
 			YYERROR;
 		}
-#line 1618 "parser.c" /* yacc.c:1646  */
+#line 1621 "parser.c" /* yacc.c:1646  */
     break;
 
   case 16:
-#line 318 "parser.y" /* yacc.c:1646  */
+#line 321 "parser.y" /* yacc.c:1646  */
     {
 		    ut_status	prev = ut_get_status();
 		    ut_free((yyvsp[-2].unit));
 		    ut_set_status(prev);
 		    YYERROR;
 		}
-#line 1629 "parser.c" /* yacc.c:1646  */
+#line 1632 "parser.c" /* yacc.c:1646  */
     break;
 
   case 17:
-#line 326 "parser.y" /* yacc.c:1646  */
+#line 329 "parser.y" /* yacc.c:1646  */
     {
 		    (yyval.unit) = (yyvsp[0].unit);
 		}
-#line 1637 "parser.c" /* yacc.c:1646  */
+#line 1640 "parser.c" /* yacc.c:1646  */
     break;
 
   case 18:
-#line 329 "parser.y" /* yacc.c:1646  */
+#line 332 "parser.y" /* yacc.c:1646  */
     {
 		    (yyval.unit) = ut_raise((yyvsp[-1].unit), (yyvsp[0].ival));
 		    ut_free((yyvsp[-1].unit));
 		    if ((yyval.unit) == NULL)
 			YYERROR;
 		}
-#line 1648 "parser.c" /* yacc.c:1646  */
+#line 1651 "parser.c" /* yacc.c:1646  */
     break;
 
   case 19:
-#line 335 "parser.y" /* yacc.c:1646  */
+#line 338 "parser.y" /* yacc.c:1646  */
     {
 		    (yyval.unit) = ut_raise((yyvsp[-1].unit), (yyvsp[0].ival));
 		    ut_free((yyvsp[-1].unit));
 		    if ((yyval.unit) == NULL)
 			YYERROR;
 		}
-#line 1659 "parser.c" /* yacc.c:1646  */
+#line 1662 "parser.c" /* yacc.c:1646  */
     break;
 
   case 20:
-#line 341 "parser.y" /* yacc.c:1646  */
+#line 344 "parser.y" /* yacc.c:1646  */
     {
 		    ut_status	prev = ut_get_status();
 		    ut_free((yyvsp[-1].unit));
 		    ut_set_status(prev);
 		    YYERROR;
 		}
-#line 1670 "parser.c" /* yacc.c:1646  */
+#line 1673 "parser.c" /* yacc.c:1646  */
     break;
 
   case 21:
-#line 349 "parser.y" /* yacc.c:1646  */
+#line 352 "parser.y" /* yacc.c:1646  */
     {
 		    double	prefix = 1;
 		    ut_unit*	unit = NULL;
@@ -1724,101 +1727,101 @@ yyreduce:
 		    if ((yyval.unit) == NULL)
 			YYERROR;
 		}
-#line 1728 "parser.c" /* yacc.c:1646  */
+#line 1731 "parser.c" /* yacc.c:1646  */
     break;
 
   case 22:
-#line 402 "parser.y" /* yacc.c:1646  */
+#line 405 "parser.y" /* yacc.c:1646  */
     {
 		    (yyval.unit) = (yyvsp[-1].unit);
 		}
-#line 1736 "parser.c" /* yacc.c:1646  */
+#line 1739 "parser.c" /* yacc.c:1646  */
     break;
 
   case 23:
-#line 405 "parser.y" /* yacc.c:1646  */
+#line 408 "parser.y" /* yacc.c:1646  */
     {
 		    ut_status	status = ut_get_status();
 		    ut_free((yyvsp[-1].unit));
 		    ut_set_status(status);
 		    YYERROR;
 		}
-#line 1747 "parser.c" /* yacc.c:1646  */
+#line 1750 "parser.c" /* yacc.c:1646  */
     break;
 
   case 24:
-#line 411 "parser.y" /* yacc.c:1646  */
+#line 414 "parser.y" /* yacc.c:1646  */
     {
 		    (yyval.unit) = ut_log((yyvsp[-2].rval), (yyvsp[-1].unit));
 		    ut_free((yyvsp[-1].unit));
 		    if ((yyval.unit) == NULL)
 			YYERROR;
 		}
-#line 1758 "parser.c" /* yacc.c:1646  */
+#line 1761 "parser.c" /* yacc.c:1646  */
     break;
 
   case 25:
-#line 417 "parser.y" /* yacc.c:1646  */
+#line 420 "parser.y" /* yacc.c:1646  */
     {
 		    ut_status	status = ut_get_status();
 		    ut_free((yyvsp[-1].unit));
 		    ut_set_status(status);
 		    YYERROR;
 		}
-#line 1769 "parser.c" /* yacc.c:1646  */
+#line 1772 "parser.c" /* yacc.c:1646  */
     break;
 
   case 26:
-#line 423 "parser.y" /* yacc.c:1646  */
+#line 426 "parser.y" /* yacc.c:1646  */
     {
 		    (yyval.unit) = ut_scale((yyvsp[0].rval),
                         ut_get_dimensionless_unit_one(_unitSystem));
 		}
-#line 1778 "parser.c" /* yacc.c:1646  */
+#line 1781 "parser.c" /* yacc.c:1646  */
     break;
 
   case 27:
-#line 429 "parser.y" /* yacc.c:1646  */
+#line 432 "parser.y" /* yacc.c:1646  */
     {
 		    (yyval.rval) = (yyvsp[0].ival);
 		}
-#line 1786 "parser.c" /* yacc.c:1646  */
+#line 1789 "parser.c" /* yacc.c:1646  */
     break;
 
   case 28:
-#line 432 "parser.y" /* yacc.c:1646  */
+#line 435 "parser.y" /* yacc.c:1646  */
     {
 		    (yyval.rval) = (yyvsp[0].rval);
 		}
-#line 1794 "parser.c" /* yacc.c:1646  */
+#line 1797 "parser.c" /* yacc.c:1646  */
     break;
 
   case 29:
-#line 437 "parser.y" /* yacc.c:1646  */
+#line 440 "parser.y" /* yacc.c:1646  */
     {
 		    (yyval.rval) = (yyvsp[0].rval);
 		}
-#line 1802 "parser.c" /* yacc.c:1646  */
+#line 1805 "parser.c" /* yacc.c:1646  */
     break;
 
   case 30:
-#line 440 "parser.y" /* yacc.c:1646  */
+#line 443 "parser.y" /* yacc.c:1646  */
     {
 		    (yyval.rval) = (yyvsp[-1].rval) + (yyvsp[0].rval);
 		}
-#line 1810 "parser.c" /* yacc.c:1646  */
+#line 1813 "parser.c" /* yacc.c:1646  */
     break;
 
   case 31:
-#line 443 "parser.y" /* yacc.c:1646  */
+#line 446 "parser.y" /* yacc.c:1646  */
     {
 		    (yyval.rval) = (yyvsp[-2].rval) + ((yyvsp[-1].rval) - (yyvsp[0].rval));
 		}
-#line 1818 "parser.c" /* yacc.c:1646  */
+#line 1821 "parser.c" /* yacc.c:1646  */
     break;
 
   case 32:
-#line 446 "parser.y" /* yacc.c:1646  */
+#line 449 "parser.y" /* yacc.c:1646  */
     {
 		    int	error = 0;
 
@@ -1838,27 +1841,27 @@ yyreduce:
 			YYERROR;
 		    }
 		}
-#line 1842 "parser.c" /* yacc.c:1646  */
+#line 1845 "parser.c" /* yacc.c:1646  */
     break;
 
   case 33:
-#line 465 "parser.y" /* yacc.c:1646  */
+#line 468 "parser.y" /* yacc.c:1646  */
     {
 		    (yyval.rval) = (yyvsp[0].rval);
 		}
-#line 1850 "parser.c" /* yacc.c:1646  */
+#line 1853 "parser.c" /* yacc.c:1646  */
     break;
 
   case 34:
-#line 468 "parser.y" /* yacc.c:1646  */
+#line 471 "parser.y" /* yacc.c:1646  */
     {
 		    (yyval.rval) = (yyvsp[-1].rval) - (yyvsp[0].rval);
 		}
-#line 1858 "parser.c" /* yacc.c:1646  */
+#line 1861 "parser.c" /* yacc.c:1646  */
     break;
 
   case 35:
-#line 471 "parser.y" /* yacc.c:1646  */
+#line 474 "parser.y" /* yacc.c:1646  */
     {
 		    int	error = 0;
 
@@ -1878,11 +1881,11 @@ yyreduce:
 			YYERROR;
 		    }
 		}
-#line 1882 "parser.c" /* yacc.c:1646  */
+#line 1885 "parser.c" /* yacc.c:1646  */
     break;
 
 
-#line 1886 "parser.c" /* yacc.c:1646  */
+#line 1889 "parser.c" /* yacc.c:1646  */
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -2110,7 +2113,7 @@ yyreturn:
 #endif
   return yyresult;
 }
-#line 492 "parser.y" /* yacc.c:1906  */
+#line 495 "parser.y" /* yacc.c:1906  */
 
 
 #define yymaxdepth	utmaxdepth
