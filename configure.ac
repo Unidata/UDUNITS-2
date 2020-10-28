@@ -92,6 +92,9 @@ AC_PROG_YACC
 AM_PROG_LEX
 AC_PROG_FC
 
+# NB: Solaris 10 doesn't support _XOPEN_SOURCE beyond 600
+AC_DEFINE([_XOPEN_SOURCE], [600], [Level of X/OPEN compliance])
+
 # Checks for libraries.
 AC_SEARCH_LIBS([dirname], [gen], , 
     AC_MSG_ERROR([cannot find function dirname]))

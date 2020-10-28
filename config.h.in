@@ -104,6 +104,9 @@
    `char[]'. */
 #undef YYTEXT_POINTER
 
+/* Level of X/OPEN compliance */
+#undef _XOPEN_SOURCE
+
 /* Define to empty if `const' does not conform to ANSI C. */
 #undef const
 
