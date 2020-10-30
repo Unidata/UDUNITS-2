@@ -15,6 +15,7 @@
 
 #include <ctype.h>
 #include <errno.h>
+#include <limits.h>
 #include <math.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -209,6 +210,11 @@ per                     [Pp][Ee][Rr]
 	    {"\xe2\x81\xb8", 3},        /* 8 */
 	    {"\xe2\x81\xb9", 3},        /* 9 */
 	};
+
+        if (exponent > INT_MAX/10) {
+            status = ERR;
+            break;
+        }
 
 	exponent *= 10;
 
