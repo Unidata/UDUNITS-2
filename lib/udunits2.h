@@ -1201,19 +1201,19 @@ ut_encode_date(
  * its allowed range, then zero is returned and `ut_get_status()` will return
  * `UT_BAD_ARG`.
  *
- * @param[in] hours	The number of hours (0 = midnight). `abs(hours)` must be
- *	                less than 24.
- * @param[in] minutes	The number of minutes. `abs(minutes)` must be less than
- *	                60.
- * @param[in] seconds	The number of seconds. `fabs(seconds)` must be less than
- *	                or equal to 62.
- * @return              The clock-time encoded as a scalar value.
+ * @param[in] hours    The number of hours (0 = midnight). `abs(hours)` must be
+ *                     less than 24.
+ * @param[in] minutes  The number of minutes. `abs(minutes)` must be less than
+ *                     60.
+ * @param[in] seconds  The number of seconds. `fabs(seconds)` must be less than
+ *                     or equal to 62.
+ * @return             The clock-time encoded as a scalar value.
  */
 EXTERNL double
 ut_encode_clock(
-    int		hours,
-    int		minutes,
-    double	seconds);
+    int    hours,
+    int    minutes,
+    double seconds);
 
 
 /*
