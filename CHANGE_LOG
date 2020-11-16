@@ -1,6 +1,6 @@
 2.2.27.18
     Developer:
-        * Ignored "version.texi"
+        * Added "version.texi" to ".gitignore"
 
 2.2.27.17	2020-11-16T10:53:19-0700
     converter.c: Replaced default definition of _XOPEN_SOURCE with #include of
