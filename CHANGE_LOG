@@ -2,6 +2,13 @@
     Developer:
         * Added "version.texi" to ".gitignore"
 
+    formatter.c: Replaced default definition of _XOPEN_SOURCE with #include of
+        "config.h" to accomodate "clang -std=c99"
+
+    Documentation:
+        * Corrected wget(1) command by removing "-Source" from file name of
+          tarball
+
 2.2.27.17	2020-11-16T10:53:19-0700
     converter.c: Replaced default definition of _XOPEN_SOURCE with #include of
         "config.h" to accomodate "clang -std=c99"
