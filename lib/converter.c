@@ -11,9 +11,9 @@
 
 /*LINTLIBRARY*/
 
-#ifndef	_XOPEN_SOURCE
-#   define _XOPEN_SOURCE 500
-#endif
+#include "config.h"
+
+#include "converter.h"		/* this module's API */
 
 #ifdef _MSC_VER
 #define _USE_MATH_DEFINES
@@ -25,7 +25,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "converter.h"		/* this module's API */
 
 typedef struct {
     cv_converter*	(*clone)(cv_converter*);
