@@ -24,11 +24,6 @@ distArchive 		= $(distName).tar.gz
 DISTCLEANFILES		= *.log $(distArchive)
 dist_doc_DATA		= CHANGE_LOG COPYRIGHT README
 
-verify_on_master_branch:
-	git branch | grep '^\* *master$$' >/dev/null
-
-dist:	verify_on_master_branch
-
 ftp:	dist
 	scp $(distArchive) ftp.unidata.ucar.edu:/web/ftp/pub/$(PACKAGE)/
 
@@ -54,7 +49,7 @@ available:	ftp web-update download-update
 release: 	ftp web-update
 
 .PHONY:	hostchecks hostcheck remote-checks web-update ftp \
-	download-update available release verify_on_master_branch
+	download-update available release
 
 udunits2.info:	version.texi COPYRIGHT
 udunits2.html:	version.texi COPYRIGHT

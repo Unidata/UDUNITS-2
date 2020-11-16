@@ -14,6 +14,7 @@
         * push(1):
             * Made branch independent
             * Replaced "git push" arguments with "--mirror"
+        * Removed dependence of "makde dist" on master branch
 
     Developer:
 
