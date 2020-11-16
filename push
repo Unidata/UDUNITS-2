@@ -47,4 +47,4 @@ git tag -f $tag
 git push --mirror
 
 # Create a distribution
-    make dist
+make dist
