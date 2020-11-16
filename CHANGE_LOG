@@ -1,3 +1,8 @@
+2.2.27.16
+    Documentation:
+        * Corrected wget(1) command by removing "-Source" from file name of
+          tarball
+    
 2.2.27.15	2020-11-16T09:27:44-0700
     scanner.l:
         * Added test for too-large exponent. Thanks Kurt.
@@ -15,8 +20,6 @@
             * Made branch independent
             * Replaced "git push" arguments with "--mirror"
         * Removed dependence of "makde dist" on master branch
-
-    Developer:
 
 2.2.27.14	2020-05-29T14:22:11-0600
     * Removed lint found by Coverity Scan in ut_get_path_xml()

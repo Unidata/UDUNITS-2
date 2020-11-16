@@ -148,7 +148,7 @@ and unpack it in an appropriate place. For example,
 @example
 su -
 cd /usr/local/src
-wget -O - ftp://ftp.unidata.ucar.edu/pub/udunits/udunits-@value{VERSION}-Source.tar.gz |
+wget -O - ftp://ftp.unidata.ucar.edu/pub/udunits/udunits-@value{VERSION}.tar.gz |
 gunzip -c | pax -r
 @end example
 
