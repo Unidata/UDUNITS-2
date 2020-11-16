@@ -1,14 +1,13 @@
 /*
- * Copyright 2013 University Corporation for Atmospheric Research
+ * Copyright 2020 University Corporation for Atmospheric Research
  *
  * This file is part of the UDUNITS-2 package.  See the file COPYRIGHT
  * in the top-level source-directory of the package for copying and
  * redistribution conditions.
  */
-#ifndef	_XOPEN_SOURCE
-#   define _XOPEN_SOURCE 500
-#endif
+#include "config.h"
 
+#include "udunits.h"
 
 #include <float.h>
 #include <glob.h>
@@ -19,8 +18,6 @@
 #include <unistd.h>
 #include <CUnit/CUnit.h>
 #include <CUnit/Basic.h>
-
-#include "udunits.h"
 
 
 static utUnit		kilogram;

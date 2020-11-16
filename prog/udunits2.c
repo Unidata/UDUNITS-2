@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 University Corporation for Atmospheric Research. All rights
+ * Copyright 2020 University Corporation for Atmospheric Research. All rights
  * reserved.
  *
  * This file is part of the UDUNITS-2 package.  See the file COPYRIGHT
@@ -12,10 +12,6 @@
  */
 
 #include "config.h"
-
-#ifndef	_XOPEN_SOURCE
-#   define _XOPEN_SOURCE 500
-#endif
 
 #ifdef _MSC_VER
 #include "XGetOpt.h"
@@ -213,7 +209,7 @@ duplower(
     else {
         char*   cp = copy;
 
-        while (*cp++ = tolower(*string++))
+        while ((*cp++ = tolower(*string++)))
             ; /* empty */
     }
 

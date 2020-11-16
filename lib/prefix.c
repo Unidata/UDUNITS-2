@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 University Corporation for Atmospheric Research
+ * Copyright 2020 University Corporation for Atmospheric Research
  *
  * This file is part of the UDUNITS-2 package.  See the file COPYRIGHT
  * in the top-level source-directory of the package for copying and
@@ -11,9 +11,11 @@
 
 /*LINTLIBRARY*/
 
-#ifndef	_XOPEN_SOURCE
-#   define _XOPEN_SOURCE 500
-#endif
+#include "config.h"
+
+#include "prefix.h"
+#include "udunits2.h"
+#include "systemMap.h"
 
 #include <ctype.h>
 #include <errno.h>
@@ -23,12 +25,7 @@
 #include <search.h>
 #endif
 #include <stdlib.h>
-
 #include <string.h>
-
-#include "prefix.h"
-#include "udunits2.h"
-#include "systemMap.h"
 
 typedef struct {
     void*	tree;

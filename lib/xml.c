@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 University Corporation for Atmospheric Research
+ * Copyright 2020 University Corporation for Atmospheric Research
  *
  * This file is part of the UDUNITS-2 package.  See the file COPYRIGHT
  * in the top-level source-directory of the package for copying and
@@ -14,9 +14,7 @@
 
 #include <config.h>
 
-#ifndef	_XOPEN_SOURCE
-#   define _XOPEN_SOURCE 500
-#endif
+#include "udunits2.h"
 
 #if defined(__linux__)
 #   ifndef _GNU_SOURCE
@@ -48,12 +46,11 @@
 #elif defined _WIN32
 #include <windows.h>
 #endif
+#include <expat.h>
 
 #ifndef DLL_UDUNITS2
 #define XML_STATIC
 #endif
-#include "expat.h"
-#include "udunits2.h"
 
 #ifndef _XOPEN_PATH_MAX
 #   define _XOPEN_PATH_MAX 1024 // Includes terminating NUL

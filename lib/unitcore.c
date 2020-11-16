@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 University Corporation for Atmospheric Research
+ * Copyright 2020 University Corporation for Atmospheric Research
  *
  * This file is part of the UDUNITS-2 package.  See the file COPYRIGHT
  * in the top-level source-directory of the package for copying and
@@ -35,9 +35,10 @@
 
 /*LINTLIBRARY*/
 
-#ifndef	_XOPEN_SOURCE
-#   define _XOPEN_SOURCE 500
-#endif
+#include "config.h"
+
+#include "udunits2.h"		/* this module's API */
+#include "converter.h"
 
 #include <assert.h>
 #include <ctype.h>
@@ -71,9 +72,6 @@
 
 #include <strings.h>
 #endif
-
-#include "udunits2.h"		/* this module's API */
-#include "converter.h"
 
 typedef enum {
     PRODUCT_EQUAL = 0,		/* The units are equal -- ignoring dimensionless
