@@ -1,4 +1,4 @@
-2.2.27.15
+2.2.27.15	2020-11-16T09:27:44-0700
     scanner.l:
         * Added test for too-large exponent. Thanks Kurt.
 
