@@ -1,4 +1,4 @@
-2.2.27.19
+2.2.27.19	2020-11-16T16:27:58-0700
     All source files: Replaced default definition of _XOPEN_SOURCE with #include
         of "config.h" to accomodate "clang -std=c99"
 
