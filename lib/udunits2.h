@@ -66,6 +66,9 @@ char* str,
 #   define EXTERNL MSC_EXTRA extern
 #endif
 
+#undef EXTERNL
+#define EXTERNL extern
+
 
 #include "converter.h"
 
