@@ -1,3 +1,6 @@
+2.2.27.20	2020-11-18T09:36:46-0700
+    Modified xml.c and unitcore.c to accomodate Windows and AppVeyor
+
 2.2.27.19	2020-11-16T16:27:58-0700
     All source files: Replaced default definition of _XOPEN_SOURCE with #include
         of "config.h" to accomodate "clang -std=c99"
