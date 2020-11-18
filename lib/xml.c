@@ -25,9 +25,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
-#ifndef _MSC_VER
 #include <libgen.h>
-#endif
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
