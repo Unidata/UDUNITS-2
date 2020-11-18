@@ -49,11 +49,11 @@
 #include <expat.h>
 
 #ifndef DLL_UDUNITS2
-#define XML_STATIC
+#   define XML_STATIC
 #endif
 
-#ifndef _XOPEN_PATH_MAX
-#   define _XOPEN_PATH_MAX 1024 // Includes terminating NUL
+#ifndef PATH_MAX
+#   define PATH_MAX 4096 // Includes terminating NUL
 #endif
 
 #define NAME_SIZE 128
@@ -1804,7 +1804,7 @@ static void
 endImport(
     void*		data)
 {
-    char        buf[_XOPEN_PATH_MAX];
+    char        buf[PATH_MAX];
     const char* path;
 
     if (text[0] == '/') {
@@ -2087,7 +2087,7 @@ readXml(
         ut_handle_error_message("Couldn't create XML parser");
     }
     else {
-        char base[_XOPEN_PATH_MAX];
+        char base[PATH_MAX];
 #ifdef _MSC_VER
         {
             char drive[_MAX_DRIVE+1]; // Will have trailing colon

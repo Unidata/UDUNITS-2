@@ -15,7 +15,7 @@
  *			BasicUnit-s that exist at the time, each raised
  *			to an integral power (that can be zero).
  *	GalileanUnit	A unit whose value is related to another unit by a
- *			Galilean transformation (y = ax + b).  Examples include
+ *			Galilean transformation (y = ax + b). Examples include
  *			"yard" and "degrees Fahrenheit".
  *	LogUnit		A unit that is related to another unit by a logarithmic
  *			transformation (y = a*log(x)).  The "Bel" is an example.
