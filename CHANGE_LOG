@@ -1,3 +1,6 @@
+2.2.27.25	2020-11-18T16:28:20-0700
+    xml.c: Made #include of libgen.h unconditional
+
 2.2.27.24	2020-11-18T16:13:46-0700
     xml.c: Corrected determination of pathname of XML database on Windows
 
