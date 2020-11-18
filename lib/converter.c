@@ -13,12 +13,7 @@
 
 #include "config.h"
 
-#include "converter.h"		/* this module's API */
-
-#ifdef _MSC_VER
-#define _USE_MATH_DEFINES
-#include "udunits2.h" /* For the MSVC-specific defines. */
-#endif
+#include "udunits2.h" // Accomodates Windows & includes "converter.h"
 
 #include <math.h>
 #include <stddef.h>
