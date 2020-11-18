@@ -1,3 +1,6 @@
+2.2.27.22	2020-11-18T11:06:46-0700
+    udunits2.h: Defined "EXTERNL" to "extern"
+
 2.2.27.21	2020-11-18T10:08:02-0700
     udunits2.h: Defined EXTERNL only if it wasn't already defined
 
