@@ -1,3 +1,7 @@
+2.2.27.23	2020-11-18T11:42:57-0700
+    converter.c: Replace #include of converter.h with udunits.h to get Windows
+        modifications
+
 2.2.27.22	2020-11-18T11:06:46-0700
     udunits2.h: Defined "EXTERNL" to "extern"
 
