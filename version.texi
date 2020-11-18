@@ -1,4 +1,0 @@
-@set UPDATED 16 November 2020
-@set UPDATED-MONTH November 2020
-@set EDITION 2.2.27.18
-@set VERSION 2.2.27.18

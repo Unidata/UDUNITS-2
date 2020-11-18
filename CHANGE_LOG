@@ -1,3 +1,6 @@
+2.2.27.21	2020-11-18T10:08:02-0700
+    udunits2.h: Defined EXTERNL only if it wasn't already defined
+
 2.2.27.20	2020-11-18T09:36:46-0700
     Modified xml.c and unitcore.c to accomodate Windows and AppVeyor
 
