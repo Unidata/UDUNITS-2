@@ -1,3 +1,6 @@
+2.2.27.24	2020-11-18T16:13:46-0700
+    xml.c: Corrected determination of pathname of XML database on Windows
+
 2.2.27.23	2020-11-18T11:42:57-0700
     converter.c: Replace #include of converter.h with udunits.h to get Windows
         modifications
