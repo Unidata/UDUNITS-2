@@ -1,3 +1,6 @@
+2.2.27.26	2020-11-18T17:18:23-0700
+    xml.c: Replaced dirname() with strrchr() under Windows
+
 2.2.27.25	2020-11-18T16:28:20-0700
     xml.c: Made #include of libgen.h unconditional
 
