@@ -25,7 +25,9 @@
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
+#ifndef _MSC_VER
 #include <libgen.h>
+#endif
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -2143,7 +2145,8 @@ default_udunits2_xml_path()
     #define SEP '\\'
     char tmpbuf[MAX_PATH * 4];
     GetModuleFileName(NULL, &tmpbuf[0], sizeof(tmpbuf)); // Pathname of program
-    soname = dirname(tmpbuf);
+    *strrchr(tmpbuf, SEP) = 0;
+    soname = tmpbuf;
 #endif
     if (soname == NULL) {
         path = DEFAULT_UDUNITS2_XML_PATH;
