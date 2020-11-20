@@ -1,3 +1,6 @@
+2.2.27.27	2020-11-20T13:55:28-0700
+    xml.c: Corrected default_udunits_xml_path()
+
 2.2.27.26	2020-11-18T17:18:23-0700
     xml.c: Replaced dirname() with strrchr() under Windows
 
