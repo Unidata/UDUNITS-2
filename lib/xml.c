@@ -2131,47 +2131,54 @@ readXml(
 static const char*
 default_udunits2_xml_path()
 {
-    const char* path;
-    char const* soname = 0;
+    // Returned absolute pathname of XML database
+    static char absXmlPathname[PATH_MAX];
 
-#if defined(__APPLE__) || defined(__linux__)
-    #define END_BIT "/share/udunits/udunits2.xml"
-    #define SEP '/'
-    Dl_info info;
-    if (dladdr(default_udunits2_xml_path, &info))
-        soname = info.dli_fname;
-#elif defined(_WIN32)
-    #define END_BIT "\\share\\udunits\\udunits2.xml"
-    #define SEP '\\'
-    char tmpbuf[MAX_PATH * 4];
-    GetModuleFileName(NULL, &tmpbuf[0], sizeof(tmpbuf)); // Pathname of program
-    *strrchr(tmpbuf, SEP) = 0;
-    soname = tmpbuf;
-#endif
-    if (soname == NULL) {
-        path = DEFAULT_UDUNITS2_XML_PATH;
-    }
-    else {
-        static char result[PATH_MAX];
+    if (absXmlPathname[0] == 0) {
+#       if defined(__APPLE__) || defined(__linux__)
+            Dl_info     info;
+            const char  sep = '/'; ///< Pathname component separator
+            char        buf[PATH_MAX];
+            const char  relXmlPathname[] = "share/udunits/udunits2.xml";
+            const char* prefix = NULL; // Installation prefix
 
-        if (result[0] == 0) {
-            int prefixLen = strlen(soname);
+            // The following should get pathname of shared-library
+            if (dladdr(default_udunits2_xml_path, &info)) {
+                strncpy(buf, info.dli_fname, sizeof(buf))[sizeof(buf)-1] = 0;
+                prefix = dirname(dirname(buf));
+            }
+#       elif defined(_WIN32)
+            const char sep = '\\'; // Pathname component separator
+            char       buf[MAX_PATH * 4];
+            const char relXmlPathname[] = "share\\udunits\\udunits2.xml";
 
-            if (soname[prefixLen-1] == SEP) {
+            GetModuleFileName(NULL, &buf[0], sizeof(buf)); // Program pathname
+            *strrchr(buf, sep) = 0; // Executable directory
+            *strrchr(buf, sep) = 0; // Installation prefix
+
+            const char* const prefix = buf;
+#       endif
+
+        if (prefix == NULL) {
+            strncpy(absXmlPathname, DEFAULT_UDUNITS2_XML_PATH,
+                    sizeof(absXmlPathname));
+        } // Use default pathname
+        else {
+            int prefixLen = strlen(prefix);
+            if (prefix[prefixLen-1] == sep) {
                 --prefixLen;
-                if (soname[prefixLen-1] == SEP)
+                if (prefix[prefixLen-1] == sep)
                     --prefixLen;
             }
 
-            snprintf(result, sizeof(result), "%.*s%s", prefixLen, soname,
-                    END_BIT);
-            result[sizeof(result)-1] = 0;
-        }
+            snprintf(absXmlPathname, sizeof(absXmlPathname), "%.*s%c%s",
+                    prefixLen, prefix, sep, relXmlPathname);
+        } // Use computed pathname
 
-        path = result;
-    }
+        absXmlPathname[sizeof(absXmlPathname)-1] = 0;
+    } // `absXmlPathname` not set
 
-    return path;
+    return absXmlPathname;
 }
 
 /**
