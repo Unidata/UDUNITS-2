@@ -40,8 +40,14 @@ tag="v$versionId"
 # Commit the changes.
 git commit -m $tag
 
-# Tag the current version.
-git tag -f $tag
+# Commits to branches other than the main branch are not tagged because tagging
+# causes GitHub to interpret the commit as a release. Consequently, commit times
+# rather than tags must be used when investigating changes on branches other
+# than the main branch.
+if git status | head -1 | egrep -i 'main|master'; then
+    # Tag the current version.
+    git tag -f $tag
+endif
 
 # Push to the remote repository
 git push --mirror
