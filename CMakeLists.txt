@@ -1,10 +1,10 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.10)
 
-PROJECT(udunits C)
+PROJECT(udunits VERSION 2.2.27)
 
-SET(VERSION_MAJOR 2)
-SET(VERSION_MINOR 2)
-SET(VERSION_PATCH 26)
+# Specify the C standard
+set(CMAKE_C_STANDARD 99)
+set(CMAKE_C_STANDARD_REQUIRED True)
 
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
   set(CMAKE_INSTALL_PREFIX ".." CACHE PATH "..." FORCE)
@@ -17,12 +17,12 @@ FUNCTION(to_common_path input result)
     SET(${result} ${tmp} PARENT_SCOPE)
 ENDFUNCTION(to_common_path)
 
-
+# Build a shared library by default
 INCLUDE(GenerateExportHeader)
-OPTION(BUILD_SHARED_LIBS "Whether or not to build a shared library" ON)
-IF(BUILD_SHARED_LIBS)
-    SET(CMAKE_POSITION_INDEPENDENT_CODE ON)
-ENDIF()
+option(BUILD_SHARED_LIBS "Build using shared libraries" ON)
+if(BUILD_SHARED_LIBS)
+    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+endif()
 
 # A little bit of Windows/Visual Studio housekeeping.
 IF(MSVC)
@@ -39,7 +39,6 @@ IF(MSVC)
        ADD_DEFINITIONS(-DDLL_UDUNITS2)
        ADD_DEFINITIONS(-DDLL_EXPORT)
     ENDIF()
-
 ENDIF()
 
 ##
@@ -68,13 +67,7 @@ IF(NOT MSVC)
   IF("${isSystemDir}" STREQUAL "-1")
     SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
   ENDIF("${isSystemDir}" STREQUAL "-1")
-
 ENDIF()
-
-##
-# End configuration for post-install RPath
-##
-
 
 ###
 # Fix to make sure we don't try to include unistd.h
@@ -114,13 +107,13 @@ MESSAGE("DEFAULT_UDUNITS2_XML_PATH = \"${DEFAULT_UDUNITS2_XML_PATH}\"")
 
 INCLUDE(CheckFunctionExists)
 INCLUDE(CTest)
+enable_testing()
+
 # The following fails on Gilda:
 #INCLUDE(GNUInstallDirs)
 # Hence:
 SET(CMAKE_INSTALL_INFODIR share/info)
 SET(CMAKE_INSTALL_DOCDIR share/doc/udunits)
-
-
 
 to_common_path(${CMAKE_SOURCE_DIR} common_source_dir)
 to_common_path(${CMAKE_INSTALL_INFODIR} common_install_infodir)
