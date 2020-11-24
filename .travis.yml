@@ -24,7 +24,7 @@ addons:
     notification_email: emmerson@ucar.edu
     build_command_prepend: true
     build_command:  make
-    branch_pattern: master
+    branch_pattern: .*
 
 # "make distcheck" didn't work; thus "make all check"
 script: make all check >&allcheck.log
