@@ -1,3 +1,7 @@
+2.2.27.30	2020-11-24T09:57:01-0700
+    Developer:
+        * Have Coverity Scan run on all branches
+
 2.2.27.29	2020-11-23T17:04:17-0700
     Developer:
         * push(1): Corrected "endif" to "fi"
