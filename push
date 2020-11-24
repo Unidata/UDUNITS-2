@@ -47,7 +47,7 @@ git commit -m $tag
 if git status | head -1 | egrep -i 'main|master'; then
     # Tag the current version.
     git tag -f $tag
-endif
+fi
 
 # Push to the remote repository
 git push --mirror
