@@ -1,3 +1,10 @@
+2.2.27.28	2020-11-23T17:02:36-0700
+    Developer:
+        * AppVeyor: Moved testing from "appveyor.yml" to "bld.bat"
+        * CMakeLists.txt: Updated to CMake 3.10 (hopefully)
+        * push(1): Tag commit only on main branch to accommodate GitHub
+          interpreting tagged commits as releases
+
 2.2.27.27	2020-11-20T13:55:28-0700
     xml.c: Corrected default_udunits_xml_path()
 
