@@ -1,0 +1,72 @@
+# This script checks this package by building it and running tests
+
+set -e # Exit on unhandled error
+
+#
+# Checks the package using CMake
+#
+# @param[in] $1  C compiler
+#
+checkCmake()
+{
+    status=1
+    if ! test "$1"; then
+        echo "C compiler isn't set" 1>&2
+    else
+        rm -rf build
+        mkdir build
+        cd build
+        if ! cmake .. -D CMAKE_C_COMPILER="$1"; then
+            echo "cmake(1) failed" 1>&2
+        else
+            if ! cmake --build .; then
+                echo "Build failed" 1>&2
+            else
+                if ! ctest -V; then
+                    echo "Test failed" 1>&2
+                else
+                    if ! cmake --install . --prefix ../..; then
+                        echo "Install failed" 1>&2
+                    else
+                        status=0;
+                    fi
+                fi
+            fi
+        fi
+        cd ..
+    fi
+    return $status
+}
+
+#
+# Checks the package using CMake
+#
+# @param[in] $1  C compiler
+#
+checkAutomake()
+{
+    status=1
+    if ! test "$1"; then
+        echo "C compiler isn't set" 1>&2
+    else
+        if ! make distcheck CC="$1"; then
+            echo "Distcheck failed" 1>&2
+        else
+            status=0
+        fi
+    fi
+    return $status
+}
+
+status=0
+for check in checkCmake checkAutomake; do
+    for cc in gcc clang; do
+        if ! $check $cc; then
+            echo "\"$check $cc\" failed" 1>&2
+            status=1
+            break
+        fi
+    done
+    test $status -ne 0 && break
+done
+exit $status
