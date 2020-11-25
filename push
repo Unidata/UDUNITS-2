@@ -1,7 +1,7 @@
 # This script prepares the package for being pushed to the origin repository;
 # then pushes the package.
 
-set -e  # exit upon error
+set -e  # exit on unhandled error
 
 # Go to the top-level directory of the working tree.
 cd `dirname $0`
