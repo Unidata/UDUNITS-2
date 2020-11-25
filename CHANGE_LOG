@@ -1,3 +1,8 @@
+2.2.27.31	2020-11-25T13:26:42-0700
+    Developer:
+        * Created check(1) for checking package with multiple compilers and
+          build systems
+
 2.2.27.30	2020-11-24T09:57:01-0700
     Developer:
         * Have Coverity Scan run on all branches
