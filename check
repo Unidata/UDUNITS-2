@@ -7,8 +7,7 @@ set -e # Exit on unhandled error
 #
 # @param[in] $1  C compiler
 #
-checkCmake()
-{
+checkCmake() (
     status=1
     if ! test "$1"; then
         echo "C compiler isn't set" 1>&2
@@ -36,15 +35,14 @@ checkCmake()
         cd ..
     fi
     return $status
-}
+)
 
 #
 # Checks the package using CMake
 #
 # @param[in] $1  C compiler
 #
-checkAutomake()
-{
+checkAutomake() (
     status=1
     if ! test "$1"; then
         echo "C compiler isn't set" 1>&2
@@ -56,7 +54,7 @@ checkAutomake()
         fi
     fi
     return $status
-}
+)
 
 status=0
 for check in checkCmake checkAutomake; do
