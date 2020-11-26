@@ -264,7 +264,9 @@ from step 2:
 @subsection CMake-based Installation
 
 @example
-cmake
+mkdir build
+cd build
+cmake ..
 make all [test] install [install_test]
 @end example
 
