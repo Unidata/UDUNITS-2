@@ -16,16 +16,16 @@ checkCmake() (
         mkdir build
         cd build
         if ! cmake .. -D CMAKE_C_COMPILER="$1"; then
-            echo "cmake(1) failed" 1>&2
+            echo "\"cmake ..\" failed" 1>&2
         else
             if ! cmake --build .; then
-                echo "Build failed" 1>&2
+                echo "\"cmake --Build\" failed" 1>&2
             else
                 if ! ctest -V; then
-                    echo "Test failed" 1>&2
+                    echo "\"ctest\" failed" 1>&2
                 else
                     if ! cmake --install . --prefix ../..; then
-                        echo "Install failed" 1>&2
+                        echo "\"cmake --install\" failed" 1>&2
                     else
                         status=0;
                     fi
@@ -48,7 +48,7 @@ checkAutomake() (
         echo "C compiler isn't set" 1>&2
     else
         if ! make distcheck CC="$1"; then
-            echo "Distcheck failed" 1>&2
+            echo "\"make distcheck\" failed" 1>&2
         else
             status=0
         fi
