@@ -9,7 +9,7 @@ set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED True)
 
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-  set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}/.." CACHE PATH
+  set(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}/.." CACHE PATH
         "Installation root directory" FORCE)
 endif()
 
@@ -22,9 +22,19 @@ ENDFUNCTION(to_common_path)
 
 # Build a shared library by default
 INCLUDE(GenerateExportHeader)
-option(BUILD_SHARED_LIBS "Build using shared libraries" ON)
+option(BUILD_SHARED_LIBS "Build a shared library" ON)
 if(BUILD_SHARED_LIBS)
     set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+    IF(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+        set(CMAKE_BUILD_RPATH "$ORIGIN/../lib")
+        set(CMAKE_INSTALL_RPATH "$ORIGIN/../lib")
+    ELSEIF(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+        set(CMAKE_BUILD_RPATH "@executable_path/../../lib")
+        set(CMAKE_INSTALL_RPATH "@executable_path/../../lib")
+    ELSE()
+        MESSAGE(WARNING "Relocatable binary distribution is not supported for "
+                "O/S \"${CMAKE_SYSTEM_NAME}\"")
+    ENDIF()
 endif()
 
 # A little bit of Windows/Visual Studio housekeeping.
@@ -42,34 +52,6 @@ IF(MSVC)
        ADD_DEFINITIONS(-DDLL_UDUNITS2)
        ADD_DEFINITIONS(-DDLL_EXPORT)
     ENDIF()
-ENDIF()
-
-##
-# Configuration for post-install RPath
-# Adapted from http://www.cmake.org/Wiki/CMake_RPATH_handling
-##
-IF(NOT MSVC)
-  # use, i.e. don't skip the full RPATH for the build tree
-  SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
-
-  # when building, don't use the install RPATH already
-  # (but later on when installing)
-  SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
-
-  if(APPLE)
-    set(CMAKE_MACOSX_RPATH ON)
-  endif(APPLE)
-
-  # add the automatically determined parts of the RPATH
-  # which point to directories outside the build tree to the install RPATH
-  SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-
-  # the RPATH to be used when installing,
-  # but only if it's not a system directory
-  LIST(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}" isSystemDir)
-  IF("${isSystemDir}" STREQUAL "-1")
-    SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
-  ENDIF("${isSystemDir}" STREQUAL "-1")
 ENDIF()
 
 ###
@@ -234,16 +216,15 @@ IF(BUILD_DLL)
     REMOVE_DEFINITIONS(-DDLL_EXPORT)
 ENDIF()
 
-
 ADD_SUBDIRECTORY (prog)
 
 # The documentation is in texinfo(5) format
 texi_doc(udunits2.texi version.texi COPYRIGHT)
 
 # Install CHANGE_LOG and COPYRIGHT
-install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/CHANGE_LOG" DESTINATION
+install(FILES "${CMAKE_SOURCE_DIR}/CHANGE_LOG" DESTINATION
             ${CMAKE_INSTALL_DOCDIR})
-install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/COPYRIGHT" DESTINATION
+install(FILES "${CMAKE_SOURCE_DIR}/COPYRIGHT" DESTINATION
             ${CMAKE_INSTALL_DOCDIR})
 
 # Test the installation
@@ -273,20 +254,40 @@ IF (WIN32)
 #   SET(CPACK_PACKAGE_ICON "${CMake_SOURCE_DIR}/Utilities/Release\\\\InstallIcon.bmp")
 #   SET(CPACK_NSIS_INSTALLED_ICON_NAME "bin\\\\MyExecutable.exe")
 ENDIF()
+
 SET(CPACK_DEBIAN_PACKAGE_DEPENDS "expat, libexpat-dev")
+SET(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "${CMAKE_HOST_SYSTEM_PROCESSOR}")
+SET(CPACK_RPM_PACKAGE_REQUIRES "expat, expat-devel")
+SET(CPACK_RPM_PACKAGE_PROVIDES "udunits2(1), libudunits2, udunits2.h, converter.h")
+
+SET(CPACK_PACKAGE_FILE_NAME "${CMAKE_PROJECT_NAME}-${CMAKE_PROJECT_VERSION}-${CMAKE_HOST_SYSTEM_PROCESSOR}")
 SET(CPACK_PACKAGE_CONTACT "support-udunits@unidata.ucar.edu")
-SET(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_CURRENT_SOURCE_DIR}/README")
+SET(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_SOURCE_DIR}/README")
 SET(CPACK_PACKAGE_EXECUTABLES "udunits2;udunits2")
 SET(CPACK_PACKAGE_VENDOR "University Corporation for Atmospheric Research")
 SET(CPACK_PACKAGING_INSTALL_PREFIX "/usr/local")
-SET(CPACK_RESOURCE_FILE_README "${CMAKE_CURRENT_SOURCE_DIR}/README")
-SET(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/COPYRIGHT")
-# The following causes cpack(1) to fail
-#SET(CPACK_RPM_CHANGELOG_FILE "${CMAKE_CURRENT_SOURCE_DIR}/CHANGE_LOG")
+SET(CPACK_RESOURCE_FILE_README "${CMAKE_SOURCE_DIR}/README")
+SET(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/COPYRIGHT")
 SET(CPACK_PACKAGE_RELOCATABLE "ON")
-SET(CPACK_SOURCE_GENERATOR "TGZ;ZIP")
+SET(CPACK_GENERATOR "RPM;DEB")
+SET(CPACK_SOURCE_GENERATOR "TGZ")
 SET(CPACK_SOURCE_IGNORE_FILES
-    "${CPACK_SOURCE_IGNORE_FILES};config\\\\.h$;/xmlFailures/;/xmlSuccesses/;/m4/;/\\\\.gradle/;\\\\.git;Makefile$")
+    "ANNOUNCEMENT;BACKLOG;configure\\\\.scan;delivery;udunits2prog\\\\.t2p;")
+SET(CPACK_SOURCE_IGNORE_FILES
+    "${CPACK_SOURCE_IGNORE_FILES};\\\\.pdf;\\\\.info;\\\\.html;\\\\.o$\\\\.libs")
+SET(CPACK_SOURCE_IGNORE_FILES
+    "${CPACK_SOURCE_IGNORE_FILES};release-vars;\\\\.settings;\\\\.gz")
+SET(CPACK_SOURCE_IGNORE_FILES
+    "${CPACK_SOURCE_IGNORE_FILES};\\\\.developer;stamp-vti;check-commit")
+SET(CPACK_SOURCE_IGNORE_FILES
+    "${CPACK_SOURCE_IGNORE_FILES};yum-upload;stamp-h1;\\\\.ac$;push;\\\\.travis")
+SET(CPACK_SOURCE_IGNORE_FILES
+    "${CPACK_SOURCE_IGNORE_FILES};version\\\\.texi;publish;\\\\.exrc")
+SET(CPACK_SOURCE_IGNORE_FILES
+    "${CPACK_SOURCE_IGNORE_FILES};scanner\\\\.c;parser\\\\.c;conda;appveyor")
+SET(CPACK_SOURCE_IGNORE_FILES
+    "${CPACK_SOURCE_IGNORE_FILES};check")
+
 SET(CPACK_SOURCE_IGNORE_FILES
     "${CPACK_SOURCE_IGNORE_FILES};Makefile\\\\.in;\\\\.log$;config\\\\.status;\\\\.cproject;\\\\.project")
 SET(CPACK_SOURCE_IGNORE_FILES
@@ -295,6 +296,7 @@ SET(CPACK_SOURCE_IGNORE_FILES
     "${CPACK_SOURCE_IGNORE_FILES};\\\\.metadata/;/CMakeFiles/;/build/")
 SET(CPACK_SOURCE_STRIP_FILES "")
 SET(CPACK_STRIP_FILES "bin/udunits2")
+# The following causes cpack(1) to fail
 INCLUDE(CPack)
 #include(UseRPMTools)
 #    if(RPMTools_ADD_RPM_TARGETS("udunits"))
