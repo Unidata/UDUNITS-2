@@ -2135,28 +2135,38 @@ default_udunits2_xml_path()
     static char absXmlPathname[PATH_MAX];
 
     if (absXmlPathname[0] == 0) {
+        const char* prefix = NULL; // Installation directory
+
 #       if defined(__APPLE__) || defined(__linux__)
             Dl_info     info;
-            const char  sep = '/'; ///< Pathname component separator
+            const char  sep = '/'; // Pathname component separator
             char        buf[PATH_MAX];
             const char  relXmlPathname[] = "share/udunits/udunits2.xml";
-            const char* prefix = NULL; // Installation prefix
 
             // The following should get pathname of shared-library
-            if (dladdr(default_udunits2_xml_path, &info)) {
+            if (!dladdr(default_udunits2_xml_path, &info)) {
+                prefix = NULL;
+            }
+            else {
                 strncpy(buf, info.dli_fname, sizeof(buf))[sizeof(buf)-1] = 0;
-                prefix = dirname(dirname(buf));
+                memmove(buf, dirname(buf), sizeof(buf)); // "lib"
+                memmove(buf, dirname(buf), sizeof(buf)); // "lib/.."
+                prefix = buf;
             }
 #       elif defined(_WIN32)
             const char sep = '\\'; // Pathname component separator
             char       buf[MAX_PATH * 4];
             const char relXmlPathname[] = "share\\udunits\\udunits2.xml";
+            HMODULE    hModule = NULL;
 
-            GetModuleFileName(NULL, &buf[0], sizeof(buf)); // Program pathname
-            *strrchr(buf, sep) = 0; // Executable directory
-            *strrchr(buf, sep) = 0; // Installation prefix
+            GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,
+                    (LPCTSTR)default_udunits2_xml_path, &hModule);
 
-            const char* const prefix = buf;
+            GetModuleFileName(hModule, buf, sizeof(buf)); // Library pathname
+            *strrchr(buf, sep) = 0; // "lib"
+            *strrchr(buf, sep) = 0; // "lib/.."
+
+            prefix = buf;
 #       endif
 
         if (prefix == NULL) {
@@ -2175,7 +2185,7 @@ default_udunits2_xml_path()
                     prefixLen, prefix, sep, relXmlPathname);
         } // Use computed pathname
 
-        absXmlPathname[sizeof(absXmlPathname)-1] = 0;
+        absXmlPathname[sizeof(absXmlPathname)-1] = 0; // Ensure NUL terminated
     } // `absXmlPathname` not set
 
     return absXmlPathname;
