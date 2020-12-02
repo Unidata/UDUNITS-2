@@ -250,8 +250,8 @@ using the @var{make} utility from step 2:
 @end example
 
 @item
-Clean up by making the @code{clean} target using the @var{make} utility
-from step 2:
+(Optional) Clean up by making the @code{clean} target using the @var{make}
+utility from step 2:
 @example
 @var{make} clean
 @end example
