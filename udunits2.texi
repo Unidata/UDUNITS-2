@@ -192,27 +192,24 @@ the @code{distclean} target using the @var{make} utility from step 2:
 @var{make} distclean
 @end example
 
-The option @code{--disable-shared} causes the build process to create
-a static library only: a sharable library is not created.
-This option is necessary if the @code{libtool} utility that's included
-in this package can't build a sharable library using the given compiler.
-
 @item
 Execute the @code{configure} script.
 Specify the installation prefix, the compiler from the
 previous step, and any required option.
 For example, if you are on an HP-UX system and want to use
-the @code{/bin/c89} compiler and install under @code{/opt},
-then the following command is appropriate:
+the @code{/bin/c89} compiler, create a static library, and install under
+@code{/opt}, then the following command is appropriate:
 
 @example
 ./configure --prefix=/opt --disable-shared CC=/bin/c89
 @end example
 
-If the installation prefix is not specified, then the default
-is to install under @code{/usr/local}.
+The option @code{--disable-shared} causes the build process to create
+a static library only: a sharable library is not created.
+This option is necessary if the @code{libtool} utility that's included
+in this package can't build a sharable library using the given compiler.
 
-If the compiler isn't specified, then the default is to use
+The default installation prefix is @code{/usr/local} and the default compiler is
 @code{gcc}.
 
 @item
