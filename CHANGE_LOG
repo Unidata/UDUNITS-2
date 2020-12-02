@@ -1,3 +1,15 @@
+2.2.27.32	2020-12-01T17:21:01-0700
+    CMake Installation:
+        * Set the installation directory to the parent directory of the
+          top-level source-directory regardless of the location of the build
+          directory if the user doesn't explicitly specify the installation
+          directory
+        * Added support for relocatable binaries
+        * Added "version.tex" to distribution
+
+    Documentation:
+        * Updated CMake instructions for installing from source
+
 2.2.27.31	2020-11-25T13:26:42-0700
     Developer:
         * Created check(1) for checking package with multiple compilers and
