@@ -1,0 +1,7 @@
+make maintainer-clean
+mkdir build
+cd build
+cmake ..
+make all test
+cpack
+cpack -D CPACK_PACKAGING_INSTALL_PREFIX='' --config CPackSourceConfig.cmake
