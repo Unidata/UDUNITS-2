@@ -149,7 +149,7 @@ and unpack it in an appropriate place. For example,
 su -
 cd /usr/local/src
 wget -O - ftp://ftp.unidata.ucar.edu/pub/udunits/udunits-@value{VERSION}.tar.gz |
-gunzip -c | pax -r
+pax -rz
 @end example
 
 @node Unix, Windows, Obtain, Installation
