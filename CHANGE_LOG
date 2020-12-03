@@ -1,3 +1,7 @@
+2.2.27.36	2020-12-03T16:48:48-0700
+    Developer:
+        * .github/workflows/check-push.yml: Added installation of texinfo
+
 2.2.27.35	2020-12-03T16:26:33-0700
     Developer:
         * push(1): Replaced "git add ..." with "git -a ..."
