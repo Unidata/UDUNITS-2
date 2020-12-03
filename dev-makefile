@@ -1,3 +1,14 @@
+check-make-cc: CHANGE_LOG
+	$(MAKE) $(MAKEFLAGS) CC=cc distcheck
+	touch $@
+
+check-make-clang: CHANGE_LOG
+	$(MAKE) $(MAKEFLAGS) CC=clang distcheck
+	touch $@
+
+check-make: check-make-cc check-make-clang
+	touch $@
+
 check-cmake-cc: CHANGE_LOG
 	rm -rf build
 	mkdir build
@@ -19,17 +30,6 @@ check-cmake-clang: CHANGE_LOG
 check-cmake: check-cmake-cc check-cmake-clang
 	touch $@
 
-check-make-cc: CHANGE_LOG
-	$(MAKE) $(MAKEFLAGS) CC=cc distcheck
-	touch $@
-
-check-make-clang: CHANGE_LOG
-	$(MAKE) $(MAKEFLAGS) CC=clang distcheck
-	touch $@
-
-check-make: check-make-cc check-make-clang
-	touch $@
-
 # NB: CHANGE_LOG must be modified in order for this to have any effect
-check:  CHANGE_LOG check-cmake check-make
+check:  CHANGE_LOG check-make check-cmake
 	touch $@
