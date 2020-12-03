@@ -11,7 +11,7 @@ jobs:
 
     steps:
     - name: texinfo
-      run: apt-get install texlive
+      run: sudo apt-get install texlive
     - uses: actions/checkout@v2
     - name: m4
       run: mkdir m4
