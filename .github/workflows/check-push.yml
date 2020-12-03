@@ -10,6 +10,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - name: texinfo
+      run: apt-get install texlive
     - uses: actions/checkout@v2
     - name: m4
       run: mkdir m4
