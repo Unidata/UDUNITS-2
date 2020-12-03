@@ -20,28 +20,25 @@ test "$bugfixId"
 awk 'NR==1{print $1"\t'`date --iso-8601=seconds`'"}NR>1' CHANGE_LOG \
     >CHANGE_LOG.tmp
 mv CHANGE_LOG.tmp CHANGE_LOG
-git add CHANGE_LOG
 
 # Set the package version in the autoconf configuration-file.
 sed '/^AC_INIT(/s/\[[0-9][0-9.]*\]/['$versionId']/' configure.ac \
     >configure.ac.tmp
 mv configure.ac.tmp configure.ac
-git add configure.ac
 
 # Set the package version in the release-variables file.
 sed "/^export *PKG_VERSION=/cexport PKG_VERSION=$versionId" \
         delivery/release-vars.sh >delivery/release-vars.sh.tmp
 mv delivery/release-vars.sh.tmp delivery/release-vars.sh
-git add delivery/release-vars.sh
 
-# Create a distribution
+# Create a distribution to ensure up-to-date files
 make dist
 
 # Set the tag
 tag="v$versionId" 
 
 # Commit the changes.
-git commit -m $tag
+git commit -a -m $tag
 
 # Commits to branches other than the main branch are not tagged because tagging
 # causes GitHub to interpret the commit as a release. Consequently, commit times
