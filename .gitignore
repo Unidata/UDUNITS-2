@@ -51,3 +51,9 @@ html
 stamp-vti
 version.texi
 aclocal.m4
+/check-cmake
+/check-cmake-cc
+/check-cmake-clang
+/check-make
+/check-make-cc
+/check-make-clang
