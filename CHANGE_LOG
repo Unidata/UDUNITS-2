@@ -1,3 +1,11 @@
+2.2.27.33	2020-12-03T15:45:59-0700
+    Developer:
+        * check-commit(1): Deleted
+        * CMakeLists.txt: Removed creation of source distribution
+        * dev-makefile: Created target "check" that checks outer product of {cc,
+          clang} and {cmake, make}
+        * .github/check-push.yml: Created to check all pushes
+
 2.2.27.32	2020-12-01T17:21:01-0700
     CMake Installation:
         * Set the installation directory to the parent directory of the
