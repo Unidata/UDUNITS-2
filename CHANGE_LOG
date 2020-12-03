@@ -1,3 +1,8 @@
+2.2.27.37	2020-12-03T16:52:37-0700
+    Developer:
+        * .github/workflows/check-push.yml: Added sudo(1) to texinfo
+          installation
+
 2.2.27.36	2020-12-03T16:48:48-0700
     Developer:
         * .github/workflows/check-push.yml: Added installation of texinfo
