@@ -1,0 +1,35 @@
+check-cmake-cc:
+	rm -rf build
+	mkdir build
+	cd build; \
+	cmake .. -D CMAKE_C_COMPILER=cc; \
+	$(MAKE) $(MAKEFLAGS) all test install; \
+	cpack
+	touch $@
+
+check-cmake-clang:
+	rm -rf build
+	mkdir build
+	cd build; \
+	cmake .. -D CMAKE_C_COMPILER=clang; \
+	$(MAKE) $(MAKEFLAGS) all test install; \
+	cpack
+	touch $@
+
+check-cmake: check-cmake-cc check-cmake-clang
+	touch $@
+
+check-make-cc:
+	$(MAKE) $(MAKEFLAGS) CC=cc distcheck
+	touch $@
+
+check-make-clang:
+	$(MAKE) $(MAKEFLAGS) CC=clang distcheck
+	touch $@
+
+check-make: check-make-cc check-make-clang
+	touch $@
+
+# NB: CHANGE_LOG must be modified in order to start this
+check:  CHANGE_LOG check-cmake check-make
+	touch $@
