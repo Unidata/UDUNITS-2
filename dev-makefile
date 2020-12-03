@@ -1,4 +1,4 @@
-check-cmake-cc:
+check-cmake-cc: CHANGE_LOG
 	rm -rf build
 	mkdir build
 	cd build; \
@@ -7,7 +7,7 @@ check-cmake-cc:
 	cpack
 	touch $@
 
-check-cmake-clang:
+check-cmake-clang: CHANGE_LOG
 	rm -rf build
 	mkdir build
 	cd build; \
@@ -19,17 +19,17 @@ check-cmake-clang:
 check-cmake: check-cmake-cc check-cmake-clang
 	touch $@
 
-check-make-cc:
+check-make-cc: CHANGE_LOG
 	$(MAKE) $(MAKEFLAGS) CC=cc distcheck
 	touch $@
 
-check-make-clang:
+check-make-clang: CHANGE_LOG
 	$(MAKE) $(MAKEFLAGS) CC=clang distcheck
 	touch $@
 
 check-make: check-make-cc check-make-clang
 	touch $@
 
-# NB: CHANGE_LOG must be modified in order to start this
+# NB: CHANGE_LOG must be modified in order for this to have any effect
 check:  CHANGE_LOG check-cmake check-make
 	touch $@
