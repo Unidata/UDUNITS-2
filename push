@@ -34,6 +34,9 @@ sed "/^export *PKG_VERSION=/cexport PKG_VERSION=$versionId" \
 mv delivery/release-vars.sh.tmp delivery/release-vars.sh
 git add delivery/release-vars.sh
 
+# Create a distribution
+make dist
+
 # Set the tag
 tag="v$versionId" 
 
@@ -51,6 +54,3 @@ fi
 
 # Push to the remote repository
 git push --mirror
-
-# Create a distribution
-make dist
