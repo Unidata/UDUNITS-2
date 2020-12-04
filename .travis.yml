@@ -1,32 +1,32 @@
-env:
-  global:
-   # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
-   # via the "travis encrypt" command using the project repo's public key
-   - secure: "eQZ5QbKP1iD1AFbv03f8zh86A+3ZtuVssTLuHYaozwnESz4ZrvSxrRVe1x6oKy8MxNUjaawQjNMAAHxfE11Bsj5r2jzqb8xcHRIbqWGgEcz/CabQH4YXFgv3GqcDsUF+M26kJ3KqS9mkpiNcG3r2dfmZBSX33rfSluFDkeglhlQ="
-
-dist: trusty
-sudo: required  # Needed to install Coverity certificate
-
-language: c
-
-before_install:
-  - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
-  - sudo apt-get install cmake libcunit1-dev libexpat-dev texinfo
-  - mkdir m4
-  - autoreconf -i
-  - ./configure
-
-addons:
-  coverity_scan:
-    project:
-      name: Unidata/UDUNITS-2
-      description: "Units of physical quantities package"
-    notification_email: emmerson@ucar.edu
-    build_command_prepend: true
-    build_command:  make
-    branch_pattern: .*
-
-# "make distcheck" didn't work; thus "make all check"
-script: make all check >&allcheck.log
-
-after_failure: cat allcheck.log
+#env:
+#  global:
+#   # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
+#   # via the "travis encrypt" command using the project repo's public key
+#   - secure: "eQZ5QbKP1iD1AFbv03f8zh86A+3ZtuVssTLuHYaozwnESz4ZrvSxrRVe1x6oKy8MxNUjaawQjNMAAHxfE11Bsj5r2jzqb8xcHRIbqWGgEcz/CabQH4YXFgv3GqcDsUF+M26kJ3KqS9mkpiNcG3r2dfmZBSX33rfSluFDkeglhlQ="
+#
+#dist: trusty
+#sudo: required  # Needed to install Coverity certificate
+#
+#language: c
+#
+#before_install:
+#  - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
+#  - sudo apt-get install cmake libcunit1-dev libexpat-dev texinfo
+#  - mkdir m4
+#  - autoreconf -i
+#  - ./configure
+#
+#addons:
+#  coverity_scan:
+#    project:
+#      name: Unidata/UDUNITS-2
+#      description: "Units of physical quantities package"
+#    notification_email: emmerson@ucar.edu
+#    build_command_prepend: true
+#    build_command:  make
+#    branch_pattern: .*
+#
+## "make distcheck" didn't work; thus "make all check"
+#script: make all check >&allcheck.log
+#
+#after_failure: cat allcheck.log
