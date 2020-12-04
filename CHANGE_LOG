@@ -1,3 +1,11 @@
+2.2.27.38	2020-12-04T12:07:22-0700
+    Developer:
+        * dev-makefile:
+            * Moved make(1) check before cmake(1) check
+            * Added targets "clang-scan" and "coverity-scan"
+        * .github/workflows/check-push.yml: Disabled by commenting-out all lines
+        * .travis.yml: Disabled by commenting-out all lines
+
 2.2.27.37	2020-12-03T16:52:37-0700
     Developer:
         * .github/workflows/check-push.yml: Added sudo(1) to texinfo
