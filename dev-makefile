@@ -1,7 +1,9 @@
+# Check package using make(1) and cc(1)
 check-make-cc: CHANGE_LOG
 	$(MAKE) $(MAKEFLAGS) CC=cc distcheck
 	touch $@
 
+# Check package using make(1) and clang(1)
 check-make-clang: CHANGE_LOG
 	$(MAKE) $(MAKEFLAGS) CC=clang distcheck
 	touch $@
@@ -9,6 +11,7 @@ check-make-clang: CHANGE_LOG
 check-make: check-make-cc check-make-clang
 	touch $@
 
+# Check package using cmake(1) and cc(1)
 check-cmake-cc: CHANGE_LOG
 	rm -rf build
 	mkdir build
@@ -18,6 +21,7 @@ check-cmake-cc: CHANGE_LOG
 	cpack
 	touch $@
 
+# Check package using cmake(1) and clang(1)
 check-cmake-clang: CHANGE_LOG
 	rm -rf build
 	mkdir build
@@ -30,6 +34,30 @@ check-cmake-clang: CHANGE_LOG
 check-cmake: check-cmake-cc check-cmake-clang
 	touch $@
 
-# NB: CHANGE_LOG must be modified in order for this to have any effect
+# Check package using cross product of build tools and compilers
 check:  CHANGE_LOG check-make check-cmake
 	touch $@
+
+# Scan code using clang(1)
+clang-scan:   check
+	scan-build --view $(MAKE)
+
+COVERITY_SCAN_FILE      = udunits2.tgz
+
+# Create a submission file for Coverity Scan
+$(COVERTIY_SCAN_FILE):   check
+	$(MAKE) $(MAKEFLAGS) clean
+	cov-build --dir cov-int $(MAKE) $(MAKEFLAGS)
+	tar czvf $(COVERITY_SCAN_FILE) cov-int
+
+# Scan code using Coverity Scan
+coverity-scan:  $(COVERITY_SCAN_FILE) 
+	curl --form token=82K450SW7qhKbtYSaXaSVA \
+	--form email=emmerson@ucar.edu \
+	--form file=@$(COVERITY_SCAN_FILE)  \
+	--form version=`awk '{print $$1; exit} CHANGE_LOG'` \
+	--form description="make scan" \
+	https://scan.coverity.com/builds?project=Unidata%2FUDUNITS-2 \
+	   > $@.log # Redirection is necessary to avoid appearance of hanging
+	mv $@.log $@
+	rm -rf cov-int
