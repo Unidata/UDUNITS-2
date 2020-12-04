@@ -2252,6 +2252,7 @@ test_xml(void)
     ut_free_system(xmlSystem);
 }
 
+
 static void
 test_mm2_day2_divide(void)
 {
@@ -2281,6 +2282,7 @@ test_mm2_day2_divide(void)
 }
 
 
+static void
 test_timeResolution(void)
 {
     ut_system*  xmlSystem;
