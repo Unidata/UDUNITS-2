@@ -1,4 +1,23 @@
-2.2.27.15
+2.2.27
+    Codebase:
+        * Merged pull requests #62 and #63 on the GitHub site to better support
+          shared libraries under Windows and a default pathname for the units
+          database that's relative to the shared library. Kudos to Ray Donnelly.
+        * version.texi:
+            * Re-added to distribution to support downstream developers
+
+    CMake:
+        * Set the installation directory to the parent directory of the
+          top-level source-directory regardless of the location of the build
+          directory if the user doesn't explicitly specify the installation
+          directory
+        * Added support for relocatable binaries
+
+    All source files:
+        * Replaced default definition of _XOPEN_SOURCE with #include
+          of "config.h" to accomodate "clang -std=c99"
+        * Removed lint reported by clang(1)'s scan-build(1)
+
     scanner.l:
         * Added test for too-large exponent. Thanks Kurt.
 
@@ -6,79 +25,74 @@
         * Added utlex(1) declaration to accomodate clang(1) which error-exits
           on encountering an undeclared function
 
-    ut_format():
-        * Fixed bug formatting the unit "day since 2001-01-01 00:00:00 UTC"
+    udunits2.h:
+        * Defined "EXTERNL" to "extern"
+
+    unitCore.c:
+        * Replaced the use of function "default_udunits2_xml_path()" in program
+          udunits2(1) with the public API function ut_get_path_xml(3) and made
+          the former function static because it's only used internally.
+        * Replaced assert()s in galileanNew() with conditional and error-return.
+        * Removed lint from mydiv()
+        * ut_encode_clock():
+            * Modified to return 0 and have ut_get_status() return UT_BAD_ARG if
+              an input value is out of range. Thanks Kurt.
+        * printTimestamp(): Corrected buffer overflow bug
+        * ut_format():
+            * Fixed bug formatting the unit "day since 2001-01-01 00:00:00 UTC"
+        * Modified to accomodate Windows and AppVeyor
+
+    xml.c:
+        * Modified to accomodate Windows and AppVeyor
+
+    converter.c:
+        * Replace #include of "converter.h" with "udunits2.h" to get Windows
+          modifications
+
+    udunits2(1):
+        * Removed free()ing of environment variable
+        * Corrected description of return-value of ut_is_dimensionless() in
+          documentation
+
+    Documentation:
+        * Documented allowable ranges of ut_encode_clock() arguments
+        * Corrected declaration of ut_get_path_xml() in synopsis section
+        * Corrected wget(1) command by removing "-Source" from file name of
+          tarball
+        * Updated CMake instructions for installing from source
+
+    Misc:
+        * Rename c99_snprintf() to udunits_snprintf() and c99_vsnprintf() to
+          udunits_vsnprintf() to avoid name-clash with HDF5.
+        * Removed lint reported by AppVeyer
+        * Removed lint found by Coverity Scan
 
     Developer:
-        * configure(1): Added _XOPEN_SOURCE definition
-        * push(1):
-            * Made branch independent
-            * Replaced "git push" arguments with "--mirror"
-
-    Developer:
-
-2.2.27.14	2020-05-29T14:22:11-0600
-    * Removed lint found by Coverity Scan in ut_get_path_xml()
-    * Corrected declaration of ut_get_path_xml() in synopsis section
-
-2.2.27.13	2020-05-29T11:39:15-0600
-    Corrected buffer overflow bug in printTimestamp()
-
-2.2.27.12	2019-01-03T16:05:54-0700
-    Recreate parser.c from parser.y
-
-2.2.27.11	2019-01-03T13:47:17-0700
-    Remove lint reported by AppVeyer
-
-2.2.27.10	2019-01-02T13:01:19-0700
-    Rename "c99_snprintf.c" to "udunits_snprintf.c" in build files
-
-2.2.27.9	2019-01-02T09:54:01-0700
-    Correct description of return-value of ut_is_dimensionless() in
-    documentation
-
-    Rename c99_snprintf() to udunits_snprintf() and c99_vsnprintf() to
-    udunits_vsnprintf() to avoid name-clash with HDF5.
-
-2.2.27.8	2018-08-10T08:59:49-0600
-    Removed all trailing whitespace from code files.
-    
-    Made ut_encode_clock() return 0 and ut_get_status() return UT_BAD_ARG if an
-    input value is out of range. Thanks Kurt.
-
-2.2.27.7	2018-08-09T12:59:10-0600
-    Deleted "--mirror --force" option from "git push" in push(1) script to avoid
-    multiple committs to the remote repository and concommittant multiple Travis
-    executions.
-
-2.2.27.6	2018-08-09T11:32:13-0600
-    Delete "m4/" from the repository.
-
-2.2.27.5	2018-08-09T11:20:04-0600
-    Modified .travis.yml to make "all check" instead of "distcheck" because the
-    latter didn't work.
-
-2.2.27.4	2018-08-09T10:47:29-0600
-    Have Coverity Scan work on every push to the master branch.
-
-2.2.27.3	2018-08-09T10:32:41-0600
-    Replaced assert()s in galileanNew() with conditional and error-return.
-    
-    Removed lint from mydiv().
-    
-    Removed free()ing of environment variable in udunits2(1).
-    
-    Documented allowable ranges of ut_encode_clock() arguments.
-
-2.2.27.2	2018-06-11T10:15:45-0600
-    Replaced the use of function "default_udunits2_xml_path()" in program
-    udunits2(1) with the public API function ut_get_path_xml(3) and made the
-    former function static because it's only used internally.
-
-2.2.27.1	2018-06-08T15:54:34-0600
-    Merged pull requests #62 and #63 on the GitHub site to better support
-    shared libraries under Windows and a default pathname for the units
-    database that's relative to the shared library. Kudos to Ray Donnelly.
+        * Git:
+            * pre-commit hook:
+                * Created
+                * Error-exits if file "CHANGE_LOG" has a newer version
+            * Stop tagging commits that are not on the main branch because
+              they're interpreted as a release
+        * GitHub:
+            * Delete "m4/" from the repository
+            * Stop using Travis CI because it now charges
+        * configure(1):
+            * Added _XOPEN_SOURCE definition
+        * AppVeyor:
+            * Moved testing from "appveyor.yml" to "bld.bat"
+        * CMake:
+            * Updated to CMake 3.10 (hopefully)
+            * Removed creation of source distribution
+        * dev-makefile:
+            * Created targets:
+                * check: Checks outer product of {cc, clang} and {cmake, make}
+                * clang-scan: Performs static code analysis
+                * coverity-scan: Performs static code analysis
+        * Deleted:
+            * check-commit(1)
+            * "delivery/"
+            * "release-vars.sh"
 
 2.2.26	2017-12-22T12:34:49-0700
     Merged changes necessary for CMake build on the Appveyer Windows CI system.

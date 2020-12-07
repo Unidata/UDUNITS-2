@@ -1,14 +1,13 @@
 /*
- * Copyright 2014 University Corporation for Atmospheric Research
+ * Copyright 2020 University Corporation for Atmospheric Research
  *
  * This file is part of the UDUNITS-2 package.  See the file COPYRIGHT
  * in the top-level source-directory of the package for copying and
  * redistribution conditions.
  */
-#ifndef	_XOPEN_SOURCE
-#   define _XOPEN_SOURCE 500
-#endif
+#include "config.h"
 
+#include "udunits2.h"
 
 #include <float.h>
 #include <glob.h>
@@ -20,8 +19,6 @@
 #include <unistd.h>
 #include <CUnit/CUnit.h>
 #include <CUnit/Basic.h>
-
-#include "udunits2.h"
 
 static const char*      xmlPath;
 static ut_system*	unitSystem;
@@ -2281,6 +2278,7 @@ test_mm2_day2_divide(void)
 }
 
 
+static void
 test_timeResolution(void)
 {
     ut_system*  xmlSystem;

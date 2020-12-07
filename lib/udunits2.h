@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 University Corporation for Atmospheric Research
+ * Copyright 2020 University Corporation for Atmospheric Research
  *
  * This file is part of the UDUNITS-2 package.  See the file COPYRIGHT
  * in the top-level source-directory of the package for copying and
@@ -62,8 +62,21 @@ char* str,
 # define MSC_EXTRA
 #endif /* defined(DLL_UDUNITS2) */
 
-#define EXTERNL MSC_EXTRA extern
+/*
+ * Results in
+ * udunits2.c.obj : error LNK2019: unresolved external symbol cv_free referenced in function handleRequest
+ * udunits2.c.obj : error LNK2019: unresolved external symbol cv_convert_double referenced in function handleRequest
+ * udunits2.c.obj : error LNK2019: unresolved external symbol cv_get_expression referenced in function handleRequest
+ */
+#ifndef EXTERNL
+#   define EXTERNL MSC_EXTRA extern
+#endif
 
+/*
+ * Results in "NMAKE : fatal error U1073: don't know how to make 'lib\udunits2.lib'"
+#undef EXTERNL
+#define EXTERNL extern
+ */
 
 #include "converter.h"
 

@@ -1,4 +1,5 @@
-# Copyright 2013 University Corporation for Atmospheric Research
+# Copyright 2020 University Corporation for Atmospheric Research. All rights
+# reserved.
 #
 # This file is part of the UDUNITS-2 package.  See the file COPYRIGHT
 # in the top-level source-directory of the package for copying and
@@ -10,24 +11,20 @@ SUBDIRS			= lib prog
 DIST_SUBDIRS		= lib prog
 info_TEXINFOS		= udunits2.texi
 EXTRA_DIST = \
-    ANNOUNCEMENT \
     CHANGE_LOG \
     CMakeLists.txt \
-    config.h.cmake \
     COPYRIGHT \
     udunits2.html \
-    udunits2.pdf
+    udunits2.pdf \
+    version.texi
 AM_MAKEINFOHTMLFLAGS 	= --no-split
 RSYNC_FLAGS		= --rsh=ssh --rsync-path=/usr/bin/rsync
 distName 		= $(PACKAGE)-$(VERSION)
 distArchive 		= $(distName).tar.gz
-DISTCLEANFILES		= *.log $(distArchive)
+CLEANFILES		= *~
+MAINTAINERCLEANFILES	= *.gz build *~
+DISTCLEANFILES		= *.log *.gz build *~
 dist_doc_DATA		= CHANGE_LOG COPYRIGHT README
-
-verify_on_master_branch:
-	git branch | grep '^\* *master$$' >/dev/null
-
-dist:	verify_on_master_branch
 
 ftp:	dist
 	scp $(distArchive) ftp.unidata.ucar.edu:/web/ftp/pub/$(PACKAGE)/
@@ -54,7 +51,7 @@ available:	ftp web-update download-update
 release: 	ftp web-update
 
 .PHONY:	hostchecks hostcheck remote-checks web-update ftp \
-	download-update available release verify_on_master_branch
+	download-update available release
 
 udunits2.info:	version.texi COPYRIGHT
 udunits2.html:	version.texi COPYRIGHT

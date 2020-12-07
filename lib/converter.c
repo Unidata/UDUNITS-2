@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 University Corporation for Atmospheric Research
+ * Copyright 2020 University Corporation for Atmospheric Research
  *
  * This file is part of the UDUNITS-2 package.  See the file COPYRIGHT
  * in the top-level source-directory of the package for copying and
@@ -11,21 +11,15 @@
 
 /*LINTLIBRARY*/
 
-#ifndef	_XOPEN_SOURCE
-#   define _XOPEN_SOURCE 500
-#endif
+#include "config.h"
 
-#ifdef _MSC_VER
-#define _USE_MATH_DEFINES
-#include "udunits2.h" /* For the MSVC-specific defines. */
-#endif
+#include "udunits2.h" // Accommodates Windows & includes "converter.h"
 
 #include <math.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "converter.h"		/* this module's API */
 
 typedef struct {
     cv_converter*	(*clone)(cv_converter*);
@@ -984,7 +978,7 @@ cv_get_scale(
 	conv = &trivialConverter;
     }
     else {
-	conv = malloc(sizeof(ScaleConverter));
+	conv = malloc(sizeof(*conv));
 
 	if (conv != NULL) {
 	    conv->ops = &scaleOps;
@@ -1017,7 +1011,7 @@ cv_get_offset(
 	conv = &trivialConverter;
     }
     else {
-	conv = malloc(sizeof(OffsetConverter));
+	conv = malloc(sizeof(*conv));
 
 	if (conv != NULL) {
 	    conv->ops = &offsetOps;
@@ -1055,7 +1049,7 @@ cv_get_galilean(
 	conv = cv_get_scale(slope);
     }
     else {
-	conv = malloc(sizeof(GalileanConverter));
+	conv = malloc(sizeof(*conv));
 
 	if (conv != NULL) {
 	    conv->ops = &galileanOps;
@@ -1091,7 +1085,7 @@ cv_get_log(
 	conv = NULL;
     }
     else {
-	conv = malloc(sizeof(LogConverter));
+	conv = malloc(sizeof(*conv));
 
 	if (conv != NULL) {
 	    conv->ops = &logOps;
@@ -1132,7 +1126,7 @@ cv_get_pow(
 	conv = NULL;
     }
     else {
-	conv = malloc(sizeof(ExpConverter));
+	conv = malloc(sizeof(*conv));
 
 	if (conv != NULL) {
 	    conv->ops = &expOps;
@@ -1242,7 +1236,7 @@ cv_combine(
                 cv_converter*	c2 = CV_CLONE(second);
 
                 if (c2 != NULL) {
-                    conv = malloc(sizeof(CompositeConverter));
+                    conv = malloc(sizeof(*conv));
 
                     if (conv != NULL) {
                         conv->composite.ops = &compositeOps;

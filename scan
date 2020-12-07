@@ -1,0 +1,3 @@
+# This script performs a static code analysis of this package
+
+exec make -f dev-makefile clang-scan coverity-scan

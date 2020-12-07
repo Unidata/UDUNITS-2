@@ -1,0 +1,23 @@
+#on: push
+##  push:
+##    branches: [ master ]
+##  pull_request:
+##    branches: [ master ]
+#
+#jobs:
+#  build:
+#
+#    runs-on: ubuntu-latest
+#
+#    steps:
+#    - name: texinfo
+#      run: sudo apt-get install texlive
+#    - uses: actions/checkout@v2
+#    - name: m4
+#      run: mkdir m4
+#    - name: autoreconf
+#      run: autoreconf -i
+#    - name: configure
+#      run: ./configure
+#    - name: check
+#      run: make -f dev-makefile check

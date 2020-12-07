@@ -36,6 +36,7 @@ install:
 # Skip .NET project specific build phase.
 build: off
 
-test_script:
-    - conda build conda.recipe
-    - if %ERRORLEVEL% NEQ 0 exit 1
+# The following has been replaced by executing ctest(1) in "conda.recipe/bld.bat"
+#test_script:
+#    - conda build conda.recipe
+#    - if %ERRORLEVEL% NEQ 0 exit 1

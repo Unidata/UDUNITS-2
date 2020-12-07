@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 University Corporation for Atmospheric Research
+ * Copyright 2020 University Corporation for Atmospheric Research
  *
  * This file is part of the UDUNITS-2 package.  See the file COPYRIGHT
  * in the top-level source-directory of the package for copying and
@@ -14,9 +14,7 @@
 
 #include <config.h>
 
-#ifndef	_XOPEN_SOURCE
-#   define _XOPEN_SOURCE 500
-#endif
+#include "udunits2.h"
 
 #if defined(__linux__)
 #   ifndef _GNU_SOURCE
@@ -48,15 +46,14 @@
 #elif defined _WIN32
 #include <windows.h>
 #endif
+#include <expat.h>
 
 #ifndef DLL_UDUNITS2
-#define XML_STATIC
+#   define XML_STATIC
 #endif
-#include "expat.h"
-#include "udunits2.h"
 
-#ifndef _XOPEN_PATH_MAX
-#   define _XOPEN_PATH_MAX 1024 // Includes terminating NUL
+#ifndef PATH_MAX
+#   define PATH_MAX 4096 // Includes terminating NUL
 #endif
 
 #define NAME_SIZE 128
@@ -1807,7 +1804,7 @@ static void
 endImport(
     void*		data)
 {
-    char        buf[_XOPEN_PATH_MAX];
+    char        buf[PATH_MAX];
     const char* path;
 
     if (text[0] == '/') {
@@ -2090,7 +2087,7 @@ readXml(
         ut_handle_error_message("Couldn't create XML parser");
     }
     else {
-        char base[_XOPEN_PATH_MAX];
+        char base[PATH_MAX];
 #ifdef _MSC_VER
         {
             char drive[_MAX_DRIVE+1]; // Will have trailing colon
@@ -2134,50 +2131,64 @@ readXml(
 static const char*
 default_udunits2_xml_path()
 {
-    const char* path;
-    char const* soname = 0;
+    // Returned absolute pathname of XML database
+    static char absXmlPathname[PATH_MAX];
 
-#if defined(__APPLE__) || defined(__linux__)
-    #define END_BIT "/share/udunits/udunits2.xml"
-    #define SEP '/'
-    Dl_info info;
-    if (dladdr(default_udunits2_xml_path, &info))
-        soname = info.dli_fname;
-#elif defined(_WIN32)
-    #define END_BIT "\\share\\udunits\\udunits2.xml"
-    #define SEP '\\'
-    // NB: XP+ solution!
-    HMODULE hModule = NULL;
-    GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,
-            (LPCTSTR)default_udunits2_xml_path, &hModule);
-    char tmpbuf[MAX_PATH * 4];
-    GetModuleFileName(hModule, &tmpbuf[0], MAX_PATH * 4);
-    soname = &tmpbuf[0];
-#endif
-    if (soname == NULL) {
-        path = DEFAULT_UDUNITS2_XML_PATH;
-    }
-    else {
-        static char result[PATH_MAX];
+    if (absXmlPathname[0] == 0) {
+        const char* prefix = NULL; // Installation directory
 
-        if (result[0] == 0) {
-            int prefixLen = strlen(soname);
+#       if defined(__APPLE__) || defined(__linux__)
+            Dl_info     info;
+            const char  sep = '/'; // Pathname component separator
+            char        buf[PATH_MAX];
+            const char  relXmlPathname[] = "share/udunits/udunits2.xml";
 
-            if (soname[prefixLen-1] == SEP) {
+            // The following should get pathname of shared-library
+            if (!dladdr(default_udunits2_xml_path, &info)) {
+                prefix = NULL;
+            }
+            else {
+                strncpy(buf, info.dli_fname, sizeof(buf))[sizeof(buf)-1] = 0;
+                memmove(buf, dirname(buf), sizeof(buf)); // "lib"
+                memmove(buf, dirname(buf), sizeof(buf)); // "lib/.."
+                prefix = buf;
+            }
+#       elif defined(_WIN32)
+            const char sep = '\\'; // Pathname component separator
+            char       buf[MAX_PATH * 4];
+            const char relXmlPathname[] = "share\\udunits\\udunits2.xml";
+            HMODULE    hModule = NULL;
+
+            GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,
+                    (LPCTSTR)default_udunits2_xml_path, &hModule);
+
+            GetModuleFileName(hModule, buf, sizeof(buf)); // Library pathname
+            *strrchr(buf, sep) = 0; // "lib"
+            *strrchr(buf, sep) = 0; // "lib/.."
+
+            prefix = buf;
+#       endif
+
+        if (prefix == NULL) {
+            strncpy(absXmlPathname, DEFAULT_UDUNITS2_XML_PATH,
+                    sizeof(absXmlPathname));
+        } // Use default pathname
+        else {
+            int prefixLen = strlen(prefix);
+            if (prefix[prefixLen-1] == sep) {
                 --prefixLen;
-                if (soname[prefixLen-1] == SEP)
+                if (prefix[prefixLen-1] == sep)
                     --prefixLen;
             }
 
-            snprintf(result, sizeof(result), "%.*s%s", prefixLen, soname,
-                    END_BIT);
-            result[sizeof(result)-1] = 0;
-        }
+            snprintf(absXmlPathname, sizeof(absXmlPathname), "%.*s%c%s",
+                    prefixLen, prefix, sep, relXmlPathname);
+        } // Use computed pathname
 
-        path = result;
-    }
+        absXmlPathname[sizeof(absXmlPathname)-1] = 0; // Ensure NUL terminated
+    } // `absXmlPathname` not set
 
-    return path;
+    return absXmlPathname;
 }
 
 /**

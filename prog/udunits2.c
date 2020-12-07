@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 University Corporation for Atmospheric Research. All rights
+ * Copyright 2020 University Corporation for Atmospheric Research. All rights
  * reserved.
  *
  * This file is part of the UDUNITS-2 package.  See the file COPYRIGHT
@@ -12,10 +12,6 @@
  */
 
 #include "config.h"
-
-#ifndef	_XOPEN_SOURCE
-#   define _XOPEN_SOURCE 500
-#endif
 
 #ifdef _MSC_VER
 #include "XGetOpt.h"
@@ -70,18 +66,18 @@ usage(void)
     (void)fprintf(stderr,
 "Usage:\n"
 "    %s -h\n"
-"    %s [-A|-L|-U] [-r] [-H have] [-W want] [XML_file]\n"
+"    %s [-A|-L|-U] [-r] [-H <have>] [-W <want>] [<XML_file>]\n"
 "\n"
 "where:\n"
-"    -A         Use ASCII encoding (default).\n"
-"    -L         Use ISO-8859-1 (ISO Latin-1) encoding.\n"
-"    -U         Use UTF-8 encoding.\n"
-"    -h         Help.  Print this message.\n"
-"    -r         Reveal any problems in the database.\n"
-"    -H have    Use \"have\" unit for conversion. Default is reply to prompt.\n"
-"    -W want    Use \"want\" unit for conversion. Empty string requests\n"
-"               definition of \"have\" unit. Default is reply to prompt.\n"
-"    XML_file   XML database file. Default is \"%s\".\n",
+"    -A          Use ASCII encoding (default).\n"
+"    -L          Use ISO-8859-1 (ISO Latin-1) encoding.\n"
+"    -U          Use UTF-8 encoding.\n"
+"    -h          Help.  Print this message.\n"
+"    -r          Reveal any problems in the database.\n"
+"    -H <have>   Use <have> unit for conversion. Default is reply to prompt.\n"
+"    -W <want>   Use <want> unit for conversion. Empty string requests\n"
+"                definition of <have> unit. Default is reply to prompt.\n"
+"    <XML_file>  XML database file. Default is \"%s\".\n",
         _progname, _progname, default_xml);
 }
 
@@ -213,7 +209,7 @@ duplower(
     else {
         char*   cp = copy;
 
-        while (*cp++ = tolower(*string++))
+        while ((*cp++ = tolower(*string++)))
             ; /* empty */
     }
 

@@ -21,7 +21,7 @@ if errorlevel 1 exit 1
 
 nmake libudunits2 || exit 1
 nmake udunits2 || exit 1
-
+ctest || exit 1
 
 copy prog\udunits2.exe %SCRIPTS%\udunits2.exe || exit 1
 copy lib\udunits2.dll %SCRIPTS%\udunits2.dll || exit 1

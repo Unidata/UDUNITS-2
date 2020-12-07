@@ -1,5 +1,6 @@
+#line 2 "scanner.c"
 
-#line 3 "<stdout>"
+#line 4 "scanner.c"
 
 #define  YY_INT_ALIGNED short int
 
@@ -1031,7 +1032,7 @@ static int decodeReal(
 }
 
 
-#line 1035 "<stdout>"
+#line 1036 "scanner.c"
 
 #define INITIAL 0
 #define ID_SEEN 1
@@ -1284,7 +1285,7 @@ YY_DECL
 	_restartScanner = 0;
     }
 
-#line 1288 "<stdout>"
+#line 1289 "scanner.c"
 
 	if ( !(yy_init) )
 		{
@@ -1656,7 +1657,7 @@ YY_RULE_SETUP
 #line 348 "scanner.l"
 ECHO;
 	YY_BREAK
-#line 1660 "<stdout>"
+#line 1661 "scanner.c"
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(ID_SEEN):
 case YY_STATE_EOF(SHIFT_SEEN):

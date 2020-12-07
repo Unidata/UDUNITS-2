@@ -16,9 +16,10 @@
 
 /*LINTLIBRARY*/
 
-#ifndef	_XOPEN_SOURCE
-#   define _XOPEN_SOURCE 500
-#endif
+#include "config.h"
+
+#include "prefix.h"
+#include "udunits2.h"
 
 #include <assert.h>
 #include <ctype.h>
@@ -30,8 +31,6 @@
 #ifndef _MSC_VER
 #include <strings.h>
 #endif
-#include "prefix.h"
-#include "udunits2.h"
 
 extern int utlex (void);
 

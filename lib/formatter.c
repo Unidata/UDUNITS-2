@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 University Corporation for Atmospheric Research
+ * Copyright 2020 University Corporation for Atmospheric Research
  *
  * This file is part of the UDUNITS-2 package.  See the file COPYRIGHT
  * in the top-level source-directory of the package for copying and
@@ -10,9 +10,10 @@
  */
 /*LINTLIBRARY*/
 
-#ifndef	_XOPEN_SOURCE
-#   define _XOPEN_SOURCE 500
-#endif
+#include "config.h"
+
+#include "udunits2.h"
+#include "unitToIdMap.h"
 
 #ifdef _MSC_VER
 #define _USE_MATH_DEFINES
@@ -27,9 +28,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-
-#include "udunits2.h"
-#include "unitToIdMap.h"
 
 typedef const char*	(*IdGetter)(const ut_unit*, ut_encoding);
 typedef	int		(*ProductPrinter)(const ut_unit* const*, const int*,
@@ -762,7 +760,7 @@ latin1PrintProduct(
                                 }
                                 else {
                                     nchar += n;
-                                    size = SUBTRACT_SIZET(size, n);
+                                    // size = SUBTRACT_SIZET(size, n); // not used
                                 }
                             }
                         }
@@ -925,7 +923,7 @@ printGalilean(
                     }
                     else {
                         nchar += n;
-                        size = SUBTRACT_SIZET(size, n);
+                        // size = SUBTRACT_SIZET(size, n); // Not used
                     }
                 }
             }			        /* printed offset if appropriate */
@@ -1098,7 +1096,7 @@ printTimestamp(
                     }
                     else {
                         nchar += n;
-                        size = SUBTRACT_SIZET(size, n);
+                        // size = SUBTRACT_SIZET(size, n); // Not used
                     }
 		}			/* printed seconds if appropriate */
 	    }				/* printed year through minute */

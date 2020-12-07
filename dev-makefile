@@ -1,0 +1,87 @@
+FORCE:
+
+TRIGGER_FILES   = lib prog test dev-makefile
+
+# Check package using make(1) and given compiler
+check-make-comp:
+	-if find $(TRIGGER_FILES) Makefile -newer $(TARGET) | \
+	       fgrep -v .git/ | egrep '.+' >/dev/null; then \
+	    rm -f *.gz; \
+	    $(MAKE) CC=$(CC) distcheck; \
+	fi
+	touch $(TARGET)
+
+# Check package using make(1) and cc(1)
+check-make-cc: FORCE
+	$(MAKE) -f dev-makefile CC=cc TARGET=$@ check-make-comp
+
+# Check package using make(1) and clang(1)
+check-make-clang: FORCE
+	$(MAKE) -f dev-makefile CC=clang TARGET=$@ check-make-comp
+
+check-make: check-make-clang check-make-cc
+	touch $@
+
+# Check package using cmake(1) and given compiler
+check-cmake-comp:
+	-if find $(TRIGGER_FILES) CMakeLists.txt -newer $(TARGET) | \
+	       fgrep -v .git/ | egrep '.+' >/dev/null; then \
+	    rm *.rpm; \
+	    rm -rf build; \
+	    mkdir build; \
+	    cd build; \
+	    cmake .. -D CMAKE_C_COMPILER=cc; \
+	    $(MAKE) all test install; \
+	    cpack; \
+	    mv *.rpm ..; \
+	fi
+	touch $(TARGET)
+
+# Check package using cmake(1) and cc(1)
+check-cmake-cc: FORCE
+	$(MAKE) -f dev-makefile CC=cc TARGET=$@ check-cmake-comp
+
+# Check package using cmake(1) and clang(1)
+check-cmake-clang: FORCE
+	$(MAKE) -f dev-makefile CC=clang TARGET=$@ check-cmake-comp
+
+check-cmake: check-cmake-clang check-cmake-cc
+	touch $@
+
+# Check package using cross product of build tools and compilers
+check:  check-make check-cmake
+	touch $@
+
+# Scan code using clang(1)
+clang-scan:   check
+	scan-build --view $(MAKE)
+
+COVERITY_SCAN_FILE      = udunits2.tgz
+
+# Create a submission file for Coverity Scan
+$(COVERTIY_SCAN_FILE):   check
+	$(MAKE) clean
+	cov-build --dir cov-int $(MAKE)
+	tar czvf $(COVERITY_SCAN_FILE) cov-int
+
+# Scan code using Coverity Scan
+coverity-scan:  $(COVERITY_SCAN_FILE) 
+	curl --form token=82K450SW7qhKbtYSaXaSVA \
+	--form email=emmerson@ucar.edu \
+	--form file=@$(COVERITY_SCAN_FILE)  \
+	--form version=`awk '{print $$1; exit} CHANGE_LOG'` \
+	--form description="make scan" \
+	https://scan.coverity.com/builds?project=Unidata%2FUDUNITS-2 \
+	   > $@.log # Redirection is necessary to avoid appearance of hanging
+	mv $@.log $@
+	rm -rf cov-int
+
+push:   check
+	./push
+	touch $@
+
+release:        push
+	@username=`awk '{print $$1; exit}' $$HOME/.ssh/nexus; \
+	password=`awk '{print $$2; exit}' $$HOME/.ssh/nexus; \
+	curl -v --user "$$username:$$password" --upload-file *.rpm \
+	    http://localhost:8081/repository/yum-hosted/test.rpm

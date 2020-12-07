@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 University Corporation for Atmospheric Research
+ * Copyright 2020 University Corporation for Atmospheric Research
  *
  * This file is part of the UDUNITS-2 package.  See the file COPYRIGHT
  * in the top-level source-directory of the package for copying and
@@ -15,7 +15,7 @@
  *			BasicUnit-s that exist at the time, each raised
  *			to an integral power (that can be zero).
  *	GalileanUnit	A unit whose value is related to another unit by a
- *			Galilean transformation (y = ax + b).  Examples include
+ *			Galilean transformation (y = ax + b). Examples include
  *			"yard" and "degrees Fahrenheit".
  *	LogUnit		A unit that is related to another unit by a logarithmic
  *			transformation (y = a*log(x)).  The "Bel" is an example.
@@ -35,9 +35,10 @@
 
 /*LINTLIBRARY*/
 
-#ifndef	_XOPEN_SOURCE
-#   define _XOPEN_SOURCE 500
-#endif
+#include "config.h"
+
+#include "udunits2.h"		/* this module's API */
+#include "converter.h"
 
 #include <assert.h>
 #include <ctype.h>
@@ -71,9 +72,6 @@
 
 #include <strings.h>
 #endif
-
-#include "udunits2.h"		/* this module's API */
-#include "converter.h"
 
 typedef enum {
     PRODUCT_EQUAL = 0,		/* The units are equal -- ignoring dimensionless
@@ -640,7 +638,7 @@ basicNew(
 	    basicUnit->index = index;
 	    basicUnit->isDimensionless = isDimensionless;
 	    basicUnit->product = product;
-	    error = 0;
+	    error = 0;                  // Success
 	}				/* "basicUnit" allocated */
 
 	if (error)
