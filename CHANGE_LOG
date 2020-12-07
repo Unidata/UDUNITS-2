@@ -1,4 +1,4 @@
-2.2.27
+2.2.27	2020-12-07T16:09:38-0700
     Codebase:
         * Merged pull requests #62 and #63 on the GitHub site to better support
           shared libraries under Windows and a default pathname for the units
