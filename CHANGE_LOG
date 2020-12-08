@@ -1,3 +1,10 @@
+2.2.28
+    Developer:
+        * pre-push hook:
+            * Removed setting of timestamp field in file CHANGE_LOG
+        * push(1):
+            * Added setting of timestamp field in file CHANGE_LOG
+
 2.2.27	2020-12-07T16:09:38-0700
     Codebase:
         * Merged pull requests #62 and #63 on the GitHub site to better support
