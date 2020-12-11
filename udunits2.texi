@@ -141,16 +141,21 @@ directory/folder "MinGW".
 @section Obtaining this Package
 @cindex obtaining this package
 
-Get the source for this package from its download-page at
-@uref{ftp://ftp.unidata.ucar.edu/pub/udunits/}
+Get the source for this package from its source-repository at
+@uref{https://artifacts.unidata.ucar.edu/service/rest/repository/browse/downloads-udunits/}
 and unpack it in an appropriate place. For example,
 
 @example
 su -
-cd /usr/local/src
-wget -O - ftp://ftp.unidata.ucar.edu/pub/udunits/udunits-@value{VERSION}.tar.gz |
-pax -rz
+cd /opt
+sudo wget -O - \
+    https://artifacts.unidata.ucar.edu/repository/downloads-udunits/udunits-@value{VERSION}.tar.gz |
+    pax -rz
 @end example
+
+Be advised that, if you use a browser to download the compressed tarball, it
+might be saved uncompressed (yet still with the extension @code{.gz}) due to 
+your browser trying to be helpful.
 
 @node Unix, Windows, Obtain, Installation
 @section Unix Installation Instructions
