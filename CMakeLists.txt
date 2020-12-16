@@ -1,6 +1,6 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.19)
 
-PROJECT(udunits VERSION 2.2.28
+PROJECT(udunits VERSION 2.2.28.1
         DESCRIPTION "C library and utility for units of physical quantities")
 set(CMAKE_PROJECT_HOMEPAGE_URL https://www.unidata.ucar.edu/software/udunits)
 
@@ -271,6 +271,41 @@ SET(CPACK_RESOURCE_FILE_README "${CMAKE_SOURCE_DIR}/README")
 SET(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/COPYRIGHT")
 SET(CPACK_PACKAGE_RELOCATABLE "ON")
 SET(CPACK_GENERATOR "RPM;DEB")
+
+SET(CPACK_SOURCE_GENERATOR "ZIP")
+set(CPACK_SOURCE_IGNORE_FILES
+        /\\.
+        ~$
+        \\.t2p/
+        \\.o$
+        \\.lo$
+        \\.la$
+        \\.libs/
+        /udunits2$
+        /test/
+        /autom4te\\.cache/
+        /build
+        /conda\\.recipe
+        \\.log
+        /appveyor\\.yml
+        /BACKLOG$
+        /build\\.gradle$
+        /check.*$
+        /commit$
+        /config\\.status$
+        /dev-makefile$
+        /Makefile$
+        /publish$
+        /push$
+        /scan$
+        /stamp-h1$
+        /t.t$
+        \\.gz$
+        \\.rpm$
+        /yum-upload$
+)
+
+SET(CPACK_VERBATIM_VARIABLES YES)
 # The following causes cpack(1) to fail
 INCLUDE(CPack)
 #include(UseRPMTools)
