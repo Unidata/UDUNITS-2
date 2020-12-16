@@ -9,13 +9,15 @@
 #
 
 AC_PREREQ(2.59)
-AC_INIT([UDUNITS], [2.2.28], [support-udunits@unidata.ucar.edu])
+AC_INIT([UDUNITS], [2.2.28.1], [support-udunits@unidata.ucar.edu])
 AC_CONFIG_SRCDIR([lib/converter.c])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([foreign subdir-objects])
 AC_CONFIG_HEADERS([config.h])
 LT_INIT([win32-dll])
+
+test -z "$prefix" -o "$prefix" = NONE && prefix=`(cd .. && pwd)`
 
 CFLAGS_COVERAGE=''
 LIBS_COVERAGE=''
