@@ -24,10 +24,12 @@ test "$bugfixId"
 tag="v$versionId" 
 
 # Ensure that the first line of file CHANGE_LOG has the current time
-awk 'NR==1{print $1"\t'`date --iso-8601=seconds`'"}NR>1' CHANGE_LOG \
-    >CHANGE_LOG.tmp
-mv CHANGE_LOG.tmp CHANGE_LOG
-git commit -m $tag CHANGE_LOG
+if test `head -1 CHANGE_LOG | wc -w` -ne 2; then
+    awk 'NR==1{print $1"\t'`date --iso-8601=seconds`'"}NR>1' CHANGE_LOG \
+        >CHANGE_LOG.tmp
+    mv CHANGE_LOG.tmp CHANGE_LOG
+    git commit -m $tag CHANGE_LOG
+fi
 
 # Because GitHub interprets tagged commits as a release -- regardless of which
 # branch they're on -- commits to branches other than the main branch are not
@@ -39,4 +41,4 @@ if git status | head -1 | grep -E -i 'main|master' >/dev/null; then
     git tag -f $tag
 fi
 
-git push
+git push "$@"
