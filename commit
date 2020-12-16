@@ -8,13 +8,13 @@ set -e
 exec 1>&2
 
 # Go to the top-level directory of the working tree.
-pushd `dirname $0`
+pushd `dirname $0` >/dev/null
 
     # Ensure that the package is consistent
     make -f dev-makefile consistent
 
 # Return to the starting directory
-popd
+popd >/dev/null
 
 # Commit any modifications
 git commit "$@"
