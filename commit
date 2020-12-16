@@ -1,0 +1,20 @@
+# This script ensures that the package is consistent and then commits any
+# modifications.
+
+# Exit on unhandled error
+set -e
+
+# Redirect the standard output stream to the standard error stream
+exec 1>&2
+
+# Go to the top-level directory of the working tree.
+pushd `dirname $0`
+
+    # Ensure that the package is consistent
+    make -f dev-makefile consistent
+
+# Return to the starting directory
+popd
+
+# Commit any modifications
+git commit "$@"
