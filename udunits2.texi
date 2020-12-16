@@ -115,6 +115,8 @@ with the unit gram in version 2 of the package.
 @chapter Installing this Package
 @cindex installation
 
+@ignore
+
 @menu
 * Prerequisites::       Prerequisites for this package
 * Obtain::              Obtaining this package
@@ -137,160 +139,111 @@ If this package is to be built on a Windows system, then the CMake and MinGW
 packages must be installed. Look for the utility "cmake" and the
 directory/folder "MinGW".
 
-@node Obtain, Unix, Prerequisites, Installation
-@section Obtaining this Package
-@cindex obtaining this package
-
-Get the source for this package from its source-repository at
-@uref{https://artifacts.unidata.ucar.edu/service/rest/repository/browse/downloads-udunits/}
-and unpack it in an appropriate place. For example,
-
-@example
-su -
-cd /opt
-sudo wget -O - \
-    https://artifacts.unidata.ucar.edu/repository/downloads-udunits/udunits-@value{VERSION}.tar.gz |
-    pax -rz
-@end example
-
-Be advised that, if you use a browser to download the compressed tarball, it
-might be saved uncompressed (yet still with the extension @code{.gz}) due to 
-your browser trying to be helpful.
-
-@node Unix, Windows, Obtain, Installation
-@section Unix Installation Instructions
+@end ignore
 
 @menu
-* Autoconf::    Autoconf-based installation
-* CMake::       CMake-based installation
+* Prerequisites::       Prerequisites for this package
+* Binary::              Installing from a binary distribution
+* Source::              Installing from a source distribution
 @end menu
 
-@node Autoconf, CMake, , Unix
-@subsection Autoconf-based Installation
+@node Prerequisites, Binary, , Installation
+@section Prerequisites for This Package
+@cindex prerequisites for this package
 
-Short instructions:
+The Expat library and header-files must be installed. Look for the library 
+"libexpat" and the header-file "expat.h".
 
+If this package is to be tested (which is optional), then the CUnit library
+and header-files must be installed. Look for the library "libcunit" and the
+header-files "CUnit/CUnit.h" and "CUnit/Basic.h".
+
+If this package is to be built on a Windows system, then the CMake and MinGW
+packages must be installed. Look for the utility "cmake" and the
+directory/folder "MinGW".
+
+@node Binary, Source, Prerequisites, Installation
+@section Installing from a Binary Distribution
+@cindex installation, binary
+
+Currently, only an RPM binary distribution is supported.
+
+Download the distribution by browsing to the Unidata UDUNITS RPM repository at
+@uref{https://artifacts.unidata.ucar.edu/service/rest/repository/browse/rpm-udunits/udunits/}
+or by executing, for example, the following commands:
 @example
-./configure [--prefix=@var{root}] [--disable-shared] [CC=@var{path}]
-make
-make check                      # optional; requires CUNIT installation
-make install                    # also installs INFO documentation
-make install-html install-pdf   # optional
-make clean
+cd ~/Downloads
+wget https://artifacts.unidata.ucar.edu/repository/rpm-udunits/udunits/udunits-@value{VERSION}-x86_64.rpm
 @end example
 
-By default, the installation root is @code{/usr/local}.
-
-Long instructions:
-
-@enumerate
-@item
-Go to the top-level source-directory of this package, e.g.,
+Install the distribution. For example,
 @example
-cd udunits-@value{VERSION}
+sudo rpm --install [--prefix=/opt/udunits] ~/Downloads/udunits-@value{VERSION}-x86_64.rpm
+@end example
+where the argument in square brackets is optional. The default installation
+directory is @code{/usr/local}.
+
+@node Source, , Binary, Installation
+@section Installing from a Source Distribution
+@cindex installation, source
+
+@menu
+* Unix::     Building and installing in Unix-like environments
+* Windows::  Building and installing in Windows environments
+@end menu
+
+@node Unix, Windows, , Source
+@subsection Installing from source on Unix
+@cindex installing from source on Unix
+
+Download the source by browsing to the Unidata UDUNITS source repository at
+@uref{https://artifacts.unidata.ucar.edu/service/rest/repository/browse/downloads-udunits/}
+or by executing, for example, the following commands:
+@example
+cd ~/Downloads
+curl -O https://artifacts.unidata.ucar.edu/repository/downloads-udunits/udunits-@value{VERSION}.tar.gz
 @end example
 
-@item
-If necessary, clean-up from a previous installation attempt by making
-the @code{distclean} target using the @var{make} utility from step 2:
+Unpack the distribution in an appropriate place. For example,
 @example
-@var{make} distclean
+cd /opt
+sudo pax -rz < ~/Downloads/udunits-@value{VERSION}.tar.gz
 @end example
 
-@item
-Execute the @code{configure} script.
-Specify the installation prefix, the compiler from the
-previous step, and any required option.
-For example, if you are on an HP-UX system and want to use
-the @code{/bin/c89} compiler, create a static library, and install under
-@code{/opt}, then the following command is appropriate:
-
+Build and install the package. For example
 @example
-./configure --prefix=/opt --disable-shared CC=/bin/c89
+cd udunits2-@value{VERSION}
+./configure [--prefix=@var{install_prefix}] >&configure.log
+make all [check] install [install-html] [install-pdf]
+@end example
+where the arguments in square brackets are optional. The default installation 
+prefix is the parent directory of the source directory.
+
+@node Windows, , Unix, Source
+@subsection Installing from source on Windows
+@cindex installing from source on Windows
+
+Download the source by browsing to the Unidata UDUNITS source repository at
+@uref{https://artifacts.unidata.ucar.edu/service/rest/repository/browse/downloads-udunits/}
+or by executing, for example, the following commands:
+@example
+cd C:\Users\@var{current_user}\Downloads
+curl -O https://artifacts.unidata.ucar.edu/repository/downloads-udunits/udunits-@value{VERSION}-Source.zip
 @end example
 
-The option @code{--disable-shared} causes the build process to create
-a static library only: a sharable library is not created.
-This option is necessary if the @code{libtool} utility that's included
-in this package can't build a sharable library using the given compiler.
+Unpack the distribution by opening the downloaded file and extracting the
+contents to, for example, the user's "Downloads" folder.
 
-The default installation prefix is @code{/usr/local} and the default compiler is
-@code{gcc}.
-
-@item
-Build this package by making the default target using the @var{make} utility
-from step 2:
+Build and install the package using cmake(1). For example
 @example
-@var{make}
-@end example
-
-@item
-If you wish to verify that this package works correctly,
-then make the @code{check} target using the
-@var{make} utility from step 2:
-@example
-@var{make} check
-@end example
-This step is only effective if the @code{configure} script found an
-installed @code{CUNIT} unit-testing package.  If that package wasn't
-found, then the above command will quickly exit without testing this
-package.
-
-@item
-Install the @ref{Top, , library, udunits2lib}, 
-@ref{Top, , utility, udunits2prog}, header-files, units-database, and
-INFO documentation files by making 
-the @code{install} target using the @var{make} utility from
-step 2:
-@example
-@var{make} install
-@end example
-
-@item
-If desired, install the HTML and PDF documentation files by making 
-one or more of the following targets 
-using the @var{make} utility from step 2:
-@example
-@var{make} install-html install-pdf
-@end example
-
-@item
-(Optional) Clean up by making the @code{clean} target using the @var{make}
-utility from step 2:
-@example
-@var{make} clean
-@end example
-@end enumerate
-
-@node CMake, , Autoconf, Unix
-@subsection CMake-based Installation
-
-@example
+cd C:\Users\@var{current_user}\udunits2-@value{VERSION}-Source
 mkdir build
 cd build
-cmake ..
-make all [test] install [install_test]
+cmake [-D CMAKE_INSTALL_PREFIX=@var{install_prefix}] ..
+make all install
 @end example
-
-where the arguments in square brackets are optional.
-
-@node Windows, , Unix, Installation
-@section Windows Installation Instructions
-
-Currently, only a 32-bit @uref{http://www.mingw.org,MinGW}-based installation is
-supported:
-
-@example
-cmake -G "MinGW Makefiles"
-cmake --build . [-DCMAKE_INSTALL_PREFIX=@emph{dir}] -- all [test] install [install_test]
-@end example
-
-where arguments in square brackets are optional.
-
-The default installation-prefix is 
-"@code{C:\Program Files (x86)\udunits-2.}@var{minor}.@var{bug}", where 
-@var{minor} and @var{bug} are the minor version and bug-fix level,
-respectively.
+where the argument in square brackets is optional. The default installation 
+prefix is the parent directory of the source directory.
 
 @node Library, Utility, Installation, Top
 @chapter Unit Library
