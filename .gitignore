@@ -59,3 +59,4 @@ aclocal.m4
 /check-make-clang
 /*.rpm
 *.tmp
+consistent
