@@ -1,6 +1,6 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.19)
 
-PROJECT(udunits VERSION 2.2.28.1
+PROJECT(udunits VERSION 2.2.28
         DESCRIPTION "C library and utility for units of physical quantities")
 set(CMAKE_PROJECT_HOMEPAGE_URL https://www.unidata.ucar.edu/software/udunits)
 
@@ -272,7 +272,7 @@ SET(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/COPYRIGHT")
 SET(CPACK_PACKAGE_RELOCATABLE "ON")
 SET(CPACK_GENERATOR "RPM;DEB")
 
-SET(CPACK_SOURCE_GENERATOR "ZIP")
+SET(CPACK_SOURCE_GENERATOR "TGZ;ZIP")
 set(CPACK_SOURCE_IGNORE_FILES
         /\\.
         ~$
@@ -281,13 +281,14 @@ set(CPACK_SOURCE_IGNORE_FILES
         \\.lo$
         \\.la$
         \\.libs/
-        /udunits2$
         /test/
         /autom4te\\.cache/
-        /build
-        /conda\\.recipe
-        \\.log
-        /appveyor\\.yml
+        /build/
+        /conda\\.recipe/
+        /consistent$
+        /udunits2$
+        \\.log$
+        /appveyor\\.yml$
         /BACKLOG$
         /build\\.gradle$
         /check.*$
