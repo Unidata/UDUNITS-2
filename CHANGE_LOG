@@ -1,7 +1,5 @@
-2.2.28.1	2020-12-16T14:17:41-0700
+2.2.28  2020-12-16T14:17:41-0700
     Documentation:
-        * Changed download source from ftp.unidata.ucar.edu to 
-          artifacts.unidata.ucar.edu
         * Modified installation instructions to use the Unidata repository
           server
 
@@ -11,8 +9,7 @@
         * pre-push hook:
             * Removed setting of timestamp field in file CHANGE_LOG
         * push(1):
-            * Added setting of timestamp field in file CHANGE_LOG if it doesn't
-              exist
+            * Added setting of timestamp field in file CHANGE_LOG
         * publish(1):
             * Created
         * configure(1):
