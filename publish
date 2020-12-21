@@ -36,8 +36,6 @@ fi
 
 pkgName=udunits
 version=`awk 'NR==1{print $1; exit;}' CHANGE_LOG`
-tarball=$pkgName-$version.tar.gz
-zipball=$pkgName-$version-Source.zip
 docDir=../share/doc/$pkgName                           # Installation documentation directory
 ftpDir=/web/ftp/pub/$pkgName                           # Package's FTP directory on $host
 downloadDir=/web/content/downloads/$pkgName            # Package's download directory on $host
@@ -50,19 +48,20 @@ debUrl=$nexusUrl/deb-$pkgName/$pkgName                 # Repository of binary DE
 # Copies a version-specific file to a host's directory and links to it
 # symbolically with a version-independent name
 #
-# @param $1  Filename
+# @param $1  Pathname of file
 # @param $2  Hostname
 # @param $3  Pathname of directory
 # @param $4  Name of symbolic link
 copyAndLink()
 (
-    filename=${1?Filename not specified}
+    pathname=${1?Pathname not specified}
     host=${2?Host not specified}
     dir=${3?Directory not specified}
     symLink=${4?Symbolic link not specified}
     status=1
+    filename=`basename $pathname`
 
-    if scp $filename $host:$dir/$filename; then
+    if scp $pathname $host:$dir/$filename; then
         if ssh -T $host bash --login <<EOF; then
             set -e
             cd $dir
@@ -265,45 +264,44 @@ status=1
     mkdir build
     cd build
         cmake ..
-        make all test install >&make.log
-        cpack
-        cpack -D CPACK_PACKAGING_INSTALL_PREFIX='' --config \
-                CPackSourceConfig.cmake >&cpack.log
+        make all test install package >&make.log
+        cpack -G 'TGZ;ZIP' -D CPACK_PACKAGING_INSTALL_PREFIX='' --config \
+                CPackSourceConfig.cmake >&tgz.log
     cd ..
 
-    echo "$0: Creating source tarball using make"
-    make dist >&dist.log
+    tarball=`ls build/*.tar.gz`
+    zipball=`ls build/*.zip`
+    
+    echo "$0: Copying source distributions to Nexus server"
+    if curl -u emmerson --upload-file "{$tarball,$zipball}" $srcUrl/; then
 
-    echo "$0: Copying source $tarball to $host:$ftpDir"
-    if copyAndLink $tarball $host $ftpDir $pkgName.tar.gz; then
+        echo "$0: Copying binary RPM to Nexus server"
+        rpm=`ls build/*.rpm`
+        if curl -u emmerson --upload-file $rpm \
+                $rpmUrl/`basename $rpm`; then
 
-        echo "$0: Purging $host:$ftpDir of older bug-fix versions"
-        if purgeDir $host $ftpDir $pkgName; then
+#           DEB repository isn't ready yet
+#           echo "$0: Copying binary DEB to Nexus server"
+#           deb=`ls build/*.deb`
+#           if curl -u emmerson --upload-file $deb \
+#                   $debUrl/`basename $deb`; then
 
-            echo "$0: Copying source distributions to Nexus server"
-            if curl -u emmerson --upload-file "{$tarball,$zipball}" $srcUrl/;
-            then
+#               echo "$0: Copying source distribution, $tarball, to $host:$ftpDir"
+#               if copyAndLink $tarball $host $ftpDir $pkgName.tar.gz; then
 
-                echo "$0: Copying binary RPM to Nexus server"
-                rpm=`ls build/*.rpm`
-                if curl -u emmerson --upload-file $rpm \
-                        $rpmUrl/`basename $rpm`; then
-
-# DEB archive isn't ready yet
-#                   echo "$0: Copying binary DEB to Nexus server"
-#                   deb=`ls build/*.deb`
-#                   if curl -u emmerson --upload-file $deb \
-#                           $debUrl/`basename $deb`; then
-
-                        echo "$0: Copying documentation to $host:$docWebDir"
-                        if copyDirTree $host $docDir $docWebDir; then
+#                   echo "$0: Purging $host:$ftpDir of older bug-fix versions"
+#                   if purgeDir $host $ftpDir $pkgName; then
+#
+#                       echo "$0: Copying documentation to $host:$docWebDir"
+#                       if copyDirTree $host $docDir $docWebDir; then
                             status=0
-                        fi # Documentation copied to website
-#                   fi # Binary DEB copied to Nexus server
-                fi # Binary RPM copied to Nexus server
-            fi # Source tarball copied to Nexus server
-        fi # FTP directory purged
-    fi # Source tarball copied to FTP directory
+#                       fi # Documentation copied to website
+#                   fi # FTP directory purged
+#               fi # Source distribution copied to FTP directory
+
+#           fi # Binary DEB copied to Nexus server
+        fi # Binary RPM copied to Nexus server
+    fi # Source distributions copied to Nexus server
 
     echo "$0: Deleting CMake directory \"build\""
     rm -rf build
