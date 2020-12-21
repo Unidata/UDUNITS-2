@@ -232,18 +232,21 @@ curl -O https://artifacts.unidata.ucar.edu/repository/downloads-udunits/udunits-
 @end example
 
 Unpack the distribution by opening the downloaded file and extracting the
-contents to, for example, the user's "Downloads" folder.
+contents to, for example, the user's "Downloads" folder. Note that, by default,
+the extractor might create an extra top-level folder with a duplicate name.
+Remove the extra folder from the destination path if this is the case -- either
+before or after extraction.
 
 Build and install the package using cmake(1). For example
 @example
-cd C:\Users\@var{current_user}\udunits2-@value{VERSION}-Source
+cd C:\Users\@var{current_user}\Downloads\udunits2-@value{VERSION}-Source
 mkdir build
 cd build
 cmake [-D CMAKE_INSTALL_PREFIX=@var{install_prefix}] ..
 make all install
 @end example
 where the argument in square brackets is optional. The default installation 
-prefix is the parent directory of the source directory.
+folder is the parent folder of the source folder.
 
 @node Library, Utility, Installation, Top
 @chapter Unit Library
