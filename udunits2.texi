@@ -228,7 +228,7 @@ Download the source by browsing to the Unidata UDUNITS source repository at
 or by executing, for example, the following commands:
 @example
 cd C:\Users\@var{current_user}\Downloads
-curl -O https://artifacts.unidata.ucar.edu/repository/downloads-udunits/udunits-@value{VERSION}-Source.zip
+curl -O https://artifacts.unidata.ucar.edu/repository/downloads-udunits/udunits-@value{VERSION}.zip
 @end example
 
 Unpack the distribution by opening the downloaded file and extracting the
@@ -239,7 +239,7 @@ before or after extraction.
 
 Build and install the package using cmake(1). For example
 @example
-cd C:\Users\@var{current_user}\Downloads\udunits2-@value{VERSION}-Source
+cd C:\Users\@var{current_user}\Downloads\udunits2-@value{VERSION}
 mkdir build
 cd build
 cmake [-D CMAKE_INSTALL_PREFIX=@var{install_prefix}] ..
