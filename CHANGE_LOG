@@ -3,7 +3,7 @@
         * Modified installation instructions to use the Unidata repository
           server
 
-    Developer:
+    DevOps:
         * commit(1):
             * Created to ensure consistency of version ID
         * pre-push hook:

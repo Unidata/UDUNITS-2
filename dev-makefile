@@ -59,7 +59,7 @@ clang-scan:   check
 COVERITY_SCAN_FILE      = udunits2.tgz
 
 # Create a submission file for Coverity Scan
-$(COVERTIY_SCAN_FILE):   check
+$(COVERITY_SCAN_FILE):   check
 	$(MAKE) clean
 	cov-build --dir cov-int $(MAKE)
 	tar czvf $(COVERITY_SCAN_FILE) cov-int
@@ -69,7 +69,7 @@ coverity-scan:  $(COVERITY_SCAN_FILE)
 	curl --form token=82K450SW7qhKbtYSaXaSVA \
 	--form email=emmerson@ucar.edu \
 	--form file=@$(COVERITY_SCAN_FILE)  \
-	--form version=`awk '{print $$1; exit} CHANGE_LOG'` \
+	--form version=`awk '{print $$1; exit}' CHANGE_LOG` \
 	--form description="make scan" \
 	https://scan.coverity.com/builds?project=Unidata%2FUDUNITS-2 \
 	   > $@.log # Redirection is necessary to avoid appearance of hanging
