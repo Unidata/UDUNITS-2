@@ -60,3 +60,5 @@ aclocal.m4
 /*.rpm
 *.tmp
 consistent
+coverity-scan
+*.tgz
