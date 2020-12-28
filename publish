@@ -36,10 +36,12 @@ fi
 
 pkgName=udunits
 version=`awk 'NR==1{print $1; exit;}' CHANGE_LOG`
+nameVersSep='-'                                        # Name/Version Separator
+pkgId=$pkgName$nameVersSep$version                     # Package identifier
 docDir=../share/doc/$pkgName                           # Installation documentation directory
 ftpDir=/web/ftp/pub/$pkgName                           # Package's FTP directory on $host
 downloadDir=/web/content/downloads/$pkgName            # Package's download directory on $host
-docWebDir=/web/pub/$pkgName                            # Package's documentation directory on $host
+docWebDir=/web/content/software/$pkgName               # Package's documentation directory on $host
 nexusUrl=https://artifacts.unidata.ucar.edu/repository # Root of Nexus repostories
 srcUrl=$nexusUrl/downloads-$pkgName                    # Repository of source distributions
 rpmUrl=$nexusUrl/rpm-$pkgName/$pkgName                 # Repository of binary RPM-s
@@ -75,12 +77,12 @@ EOF
     return $status
 )
 
-# Purge a directory on a host of older, bug-fix versions.
+# Purge an FTP directory on a host of older, bug-fix versions.
 #
 # @param $1  Hostname
 # @param $2  Pathname of directory
 # @param $3  Name of package
-purgeDir()
+purgeFtpDir()
 (
     host=${1?Host not specified}
     dir=${2?Directory not specified}
@@ -88,21 +90,12 @@ purgeDir()
 
     ssh -T $host bash --login <<EOF
         set -e
-        status=1
         cd $dir
-        if ! ls -d $pkgName-[0-9.]*.tar.gz |
-                sed "s/$pkgName-//" |
+        ls -d $pkgName*.tar.* |
+                sed -nr 's/.*(([0-9]+\.){2}[0-9]+).*/\1/p' |
                 sort -t. -k 1nr,1 -k 2nr,2 -k 3nr,3 |
-                awk -F. '\$1!=ma||\$2!=mi{print}{ma=\$1;mi=\$2}' >versions; then
-            rm -f versions
-        else
-            for vers in \`ls -d $pkgName-[0-9.]*.tar.gz | sed "s/$pkgName-//"\`; do
-                fgrep -s \$vers versions || rm -rf $pkgName-\$vers
-            done
-            rm -f versions
-            status=0;
-        fi
-        exit $status
+                awk -F. 'NR>1&&(\$1==ma&&\$2==mi){print}{ma=\$1;mi=\$2}' |
+                sed "s/^/$pkgName\*/" | sed 's/$/\.tar\.\*/' | xargs rm -f
 EOF
 )
 
@@ -129,20 +122,20 @@ EOF
 #
 # @param $1  Name of host
 # @param $2  Pathname of directory
-# @param $3  Name of package
-# @param $4  Version identifier
+# @param $3  Package name
+# @param $4  Package version
 adjustDownloadHtml()
 (
     host=${1?Host not specified}
     downloadDir=${2?Pathname of directory not specified}
     pkgName=${3?Package name not specified}
-    version=${4?Version not specified}
+    version=${4?Package version not specified}
 
     ssh -T $host bash --login <<EOF
         set -e
         status=1
         cd $downloadDir
-        if ! sed "s/$pkgName-[0-9]\{1,\}\.[0-9]\{1,\}\.[0-9]\{1,\}/$pkgName-$version/g" \
+        if ! sed "s/$pkgName$nameVersSep[0-9]\{1,\}\.[0-9]\{1,\}\.[0-9]\{1,\}/$pkgId/g" \
                 index.html >index.html.new; then
             rm -f index.html.new
         else
@@ -166,13 +159,99 @@ copyDirTree()
     dstDir=${3?Destination directory not specified}
 
     status=1
-    ssh -T $host rm -rf $dstDir
-    if ! scp -Br $srcDir $host:$dstDir >/dev/null; then
-        ssh -T $host rm -rf $dstDir
+    if ! scp -Br "$srcDir" "$host:$dstDir.new" >/dev/null; then
+        ssh -T "$host" rm -f "$host:$dstDir.new"
     else
+        ssh -T "$host" mv -f "$dstDir".new "$dstDir"
         status=0
     fi
     return $status
+)
+
+# Copies documentation to the publically visible website
+#
+# @param $1  Package name
+# @param $2  Package version of the form <major>.<minor>.<patch>
+# @param $3  Pathname of package's local documentation
+# @param $4  Name of host
+# @param $5  Absolute pathname of package's remote documentation directory
+# @param $6  Filename of HTML file to be modified in documentation directory
+# @param $7  Filename of top-level, package-specific HTML file. If not found,
+#            then "index.html" will be used
+copyDoc()
+(
+   set -e
+
+   pkgName=${1:?Package name not specified}
+   pkgVers=${2:?Package version not specified}
+   srcDir=${3:?Source documentation directory not specified}
+   host=${4:?Remote host not specified}
+   absDstDir=${5:?Destination directory not specified}
+   modHtmlName=${6:?HTML file to be modified not specified}
+   pkgHtmlName=${7:?Package HTML file not specified}
+
+   absNewDstDir=$absDstDir.new
+   versDir=$pkgName-$pkgVers
+   absVersDir=$absNewDstDir/$versDir
+   status=1
+
+   trap "ssh -T $host rm -rf $absNewDstDir" EXIT
+   ssh -T $host cp -R $absDstDir $absNewDstDir
+
+   if scp -Br $srcDir $host:$absVersDir >/dev/null; then
+      if ssh -T $host bash --login <<EOF; then
+         set -e # Exit on unhandled error
+         umask 02
+
+         cd $absNewDstDir
+         chmod -R g+w $versDir
+
+         if cp -f \`find $versDir -name CHANGE_LOG\` CHANGE_LOG; then
+            if ls -d $pkgName-*.*.* |
+                  sed "s/$pkgName-//" |
+                  sort -t. -k 1nr,1 -k 2nr,2 -k 3nr,3 |
+                  awk -F. '\$1!=ma||\$2!=mi{print}{ma=\$1;mi=\$2}' |
+                  sed "s/^/$pkgName-/" >keepVersions
+            then
+               if sed -n '1,/BEGIN VERSION LINKS/p' $modHtmlName \
+                     >$modHtmlName.new; then
+                  while read pkgId; do
+                     href=\`find \$pkgId -name $pkgHtmlName\`
+                     test "\$href" ||
+                           href=\`find \$pkgId -name index.html\`
+                     test "\$href"
+                     echo "            <li><a href=\"\$href\">\$pkgId</a>" \
+                           >>$modHtmlName.new
+                  done <keepVersions
+                  sed -n '/END VERSION LINKS/,\$p' $modHtmlName \
+                        >>$modHtmlName.new
+                  mv -f $modHtmlName.new $modHtmlName
+
+                  for pkgId in \`ls -d $pkgName-*.*.*\`; do
+                     grep -Fq \$pkgId keepVersions || rm -rf \$pkgId
+                  done
+
+                  rm -f $pkgName-current
+                  ln -s $versDir $pkgName-current
+
+                  rm keepVersions
+
+                  exit 0
+               fi # '$modHtmlName.new' created
+            fi # "keepVersions" created
+         fi # CHANGE_LOG.new created
+
+         exit 1
+EOF
+
+         ssh -T $host rm -rf $absDstDir.prev
+         ssh -T $host mv $absDstDir $absDstDir.prev
+         ssh -T $host mv $absNewDstDir $absDstDir
+         status=0
+      fi # Commands successfuly executed on remote host
+   fi # $host:$absVersDir created
+
+   return $status
 )
 
 # Ensure that a package's home-page references its documentation.
@@ -240,9 +319,9 @@ END_VERS
                 done
 
                 # Set the symbolic link to the current version
-                echo "$0: Making $pkgName-$version the current version"
+                echo "$0: Making $pkgId the current version"
                 rm -f $pkgName-current
-                ln -s $pkgName-$version $pkgName-current
+                ln -s $pkgId $pkgName"$nameVersSep"current
 
                 status=0
             fi # "versions.inc.new" created
@@ -266,7 +345,7 @@ status=1
         cmake ..
         make all test install package >&make.log
         cpack -G 'TGZ;ZIP' -D CPACK_PACKAGING_INSTALL_PREFIX='' --config \
-                CPackSourceConfig.cmake >&tgz.log
+                CPackSourceConfig.cmake >&cpack.log
     cd ..
 
     tarball=`ls build/*.tar.gz`
@@ -286,18 +365,18 @@ status=1
 #           if curl -u emmerson --upload-file $deb \
 #                   $debUrl/`basename $deb`; then
 
-#               echo "$0: Copying source distribution, $tarball, to $host:$ftpDir"
-#               if copyAndLink $tarball $host $ftpDir $pkgName.tar.gz; then
+                echo "$0: Copying source distribution, $tarball, to " \
+                        "$host:$ftpDir"
+                if copyAndLink $tarball $host $ftpDir $pkgName.tar.gz; then
 
-#                   echo "$0: Purging $host:$ftpDir of older bug-fix versions"
-#                   if purgeDir $host $ftpDir $pkgName; then
-#
-#                       echo "$0: Copying documentation to $host:$docWebDir"
-#                       if copyDirTree $host $docDir $docWebDir; then
-                            status=0
-#                       fi # Documentation copied to website
-#                   fi # FTP directory purged
-#               fi # Source distribution copied to FTP directory
+                    echo "$0: Purging $host:$ftpDir of older, bug-fix versions"
+                    if purgeFtpDir $host $ftpDir $pkgName; then
+ 
+                        echo "$0: Copying documentation to $host:$docWebDir/$pkgId"
+                        copyDoc $pkgName $version $docDir $host $docWebDir \
+                                documentation.inc udunits2.html && status=0
+                    fi # FTP directory purged
+                fi # Source distribution copied to FTP directory
 
 #           fi # Binary DEB copied to Nexus server
         fi # Binary RPM copied to Nexus server
