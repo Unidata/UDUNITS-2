@@ -338,17 +338,22 @@ status=1
 #if ! git status | head -1 | egrep 'main|master' >/dev/null; then
 #    echo "$0: Working tree isn't on main branch" 1>&2
 #else
+    # Ensure that the source directory-hierarchy is clean and complete (e.g.,
+    # that it contains "version.texi")
+    rm *.tar.gz
+    echo "$0: Making targets \"clean\" and \"dist\""
+    make clean dist >&clean-dist.log
+    tarball=`ls *.tar.gz`
+
     echo "$0: Building, installing, and packaging using CMake"
     rm -rf build
     mkdir build
     cd build
         cmake ..
         make all test install package >&make.log
-        cpack -G 'TGZ;ZIP' -D CPACK_PACKAGING_INSTALL_PREFIX='' --config \
+        cpack -G 'ZIP' -D CPACK_PACKAGING_INSTALL_PREFIX='' --config \
                 CPackSourceConfig.cmake >&cpack.log
     cd ..
-
-    tarball=`ls build/*.tar.gz`
     zipball=`ls build/*.zip`
     
     echo "$0: Copying source distributions to Nexus server"
