@@ -206,7 +206,8 @@ copyDoc()
          cd $absNewDstDir
          chmod -R g+w $versDir
 
-         if cp -f \`find $versDir -name CHANGE_LOG\` CHANGE_LOG; then
+         rm -f CHANGE_LOG
+         if ln -s \`find $versDir -name CHANGE_LOG\` CHANGE_LOG; then
             if ls -d $pkgName-*.*.* |
                   sed "s/$pkgName-//" |
                   sort -t. -k 1nr,1 -k 2nr,2 -k 3nr,3 |
