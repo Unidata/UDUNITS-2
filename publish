@@ -361,8 +361,7 @@ status=1
 
         echo "$0: Copying binary RPM to Nexus server"
         rpm=`ls build/*.rpm`
-        if curl -u emmerson --upload-file $rpm \
-                $rpmUrl/`basename $rpm`; then
+        if curl -u emmerson --upload-file $rpm $rpmUrl/`basename $rpm`; then
 
 #           DEB repository isn't ready yet
 #           echo "$0: Copying binary DEB to Nexus server"
