@@ -331,7 +331,7 @@ Operating-system error.  See @code{errno}.
 @node Extracting, Adding, Obtaining, Unit-Systems
 @section Extracting Units from a Unit-System
 
-@strong{NOTE\:} This section covers low-level access to the indidual units of a
+@strong{NOTE:} This section covers low-level access to the indidual units of a
 @ref{unit-system}.
 General parsing of arbitrary unit specifications is covered in
 the section @ref{Parsing}.
@@ -1320,7 +1320,7 @@ This function returns @code{@ref{ut_status,UT_SUCCESS}} on and only on success.
 
 Binary unit operations act on two units.
 
-@strong{NOTE\:} The functions
+@strong{NOTE:} The functions
 @code{@ref{ut_are_convertible()}} and @code{@ref{ut_get_converter()}} are also
 binary unit operations but are documented elsewhere.
 
