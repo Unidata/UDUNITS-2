@@ -1,14 +1,12 @@
-2.2.29  2021-01-05T11:00:19-0700
+2.2.29
     Documentation:
-        * udunits2lib.texi:
-            * Corrected "NOTE:"
+        * udunits2lib.texi: Corrected "NOTE:"
 
     DevOps:
         * pre-commit(1): Replaced modifying version ID-s in files with verifying
           them
-        * Procedure:
-            * Add timestamp to CHANGE_LOG on commit just before pushing and
-              publishing
+        * Procedure: Add timestamp to CHANGE_LOG on commit just before pushing
+          and publishing
         * commit(1): Deleted because pre-commit(1) now checks
         * push(1): Deleted because pre-push(1) now checks
 
