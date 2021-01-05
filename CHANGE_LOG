@@ -1,3 +1,17 @@
+2.2.29
+    Documentation:
+        * udunits2lib.texi:
+            * Corrected "NOTE:"
+
+    DevOps:
+        * pre-commit(1): Replaced modifying version ID-s in files with verifying
+          them
+        * Procedure:
+            * Add timestamp to CHANGE_LOG on commit just before pushing and
+              publishing
+        * commit(1): Deleted because pre-commit(1) now checks
+        * push(1): Deleted because pre-push(1) now checks
+
 2.2.28	2020-12-28T15:27:12-0700
     Documentation:
         * Modified installation instructions to use the Unidata repository
@@ -8,8 +22,6 @@
             * Created to ensure consistency of version ID
         * pre-push hook:
             * Removed setting of timestamp field in file CHANGE_LOG
-        * push(1):
-            * Added setting of timestamp field in file CHANGE_LOG
         * publish(1):
             * Created
         * configure(1):
