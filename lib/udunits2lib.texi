@@ -10,7 +10,7 @@
 @syncodeindex fn cp
 @syncodeindex tp cp
 @copying
-@include COPYRIGHT
+@include LICENSE
 @end copying
 
 @titlepage
