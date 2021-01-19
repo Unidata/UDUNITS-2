@@ -53,8 +53,9 @@ check:  check-make check-cmake
 	touch $@
 
 # Scan code using clang(1)
-clang-scan:   check
+clang-scan: FORCE
 	scan-build --view $(MAKE)
+	touch $@
 
 COVERITY_SCAN_FILE      = udunits2.tgz
 
@@ -75,6 +76,7 @@ coverity-scan:  $(COVERITY_SCAN_FILE)
 	   > $@.log # Redirection is necessary to avoid appearance of hanging
 	mv $@.log $@
 	rm -rf cov-int
+	touch $@
 
 configure.ac:  CHANGE_LOG
 	versionId=`awk '{print $$1;exit}' CHANGE_LOG`; \
