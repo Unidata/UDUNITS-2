@@ -78,6 +78,9 @@ coverity-scan:  $(COVERITY_SCAN_FILE)
 	rm -rf cov-int
 	touch $@
 
+scan: clang-scan coverity-scan
+	touch $@
+
 configure.ac:  CHANGE_LOG
 	versionId=`awk '{print $$1;exit}' CHANGE_LOG`; \
 	if ! `echo "$$versionId" | egrep '^[0-9.]+$$' >/dev/null`; then \

@@ -62,3 +62,4 @@ aclocal.m4
 consistent
 coverity-scan
 *.tgz
+/clang-scan
