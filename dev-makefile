@@ -3,12 +3,8 @@ FORCE:
 TRIGGER_FILES   = lib prog test dev-makefile
 
 # Check package using make(1) and given compiler
-check-make-comp:
-	-if find $(TRIGGER_FILES) Makefile -newer $(TARGET) | \
-	       fgrep -v .git/ | egrep '.+' >/dev/null; then \
-	    rm -f *.gz; \
-	    $(MAKE) CC=$(CC) distcheck; \
-	fi
+check-make-comp: FORCE
+	$(MAKE) CC=$(CC) distcheck
 	touch $(TARGET)
 
 # Check package using make(1) and cc(1)
@@ -23,18 +19,15 @@ check-make: check-make-clang check-make-cc
 	touch $@
 
 # Check package using cmake(1) and given compiler
-check-cmake-comp:
-	-if find $(TRIGGER_FILES) CMakeLists.txt -newer $(TARGET) | \
-	       fgrep -v .git/ | egrep '.+' >/dev/null; then \
-	    rm *.rpm; \
-	    rm -rf build; \
-	    mkdir build; \
-	    cd build; \
+check-cmake-comp: FORCE
+	rm *.rpm
+	rm -rf build
+	mkdir build
+	cd build; \
 	    cmake .. -D CMAKE_C_COMPILER=cc; \
 	    $(MAKE) all test install; \
 	    cpack; \
-	    mv *.rpm ..; \
-	fi
+	    mv *.rpm ..
 	touch $(TARGET)
 
 # Check package using cmake(1) and cc(1)
@@ -95,7 +88,7 @@ configure:	configure.ac
 	autoreconf -fi
 
 Makefile:	configure
-	./configure --prefix=`cd .. && pwd`--enable-debug >&configure.log
+	./configure --prefix=`cd .. && pwd` --enable-debug >&configure.log
 
 CMakeLists.txt:	CHANGE_LOG
 	versionId=`awk '{print $$1;exit}' CHANGE_LOG`; \
