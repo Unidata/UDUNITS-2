@@ -2,6 +2,10 @@
     Documentation:
         * udunits2lib.texi: Corrected "NOTE:"
 
+    Legal:
+        * Replaced file COPYRIGHT with LICENSE
+        * Replaced vanity license with Apache License 2.0
+
     DevOps:
         * pre-commit(1): Replaced modifying version ID-s in files with verifying
           them
