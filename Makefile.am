@@ -1,11 +1,22 @@
-# Copyright 2020 University Corporation for Atmospheric Research. All rights
-# reserved.
+#  @file:  Makefile.am
+# @author: Steven R. Emmerson
 #
-# This file is part of the UDUNITS-2 package.  See the file COPYRIGHT
-# in the top-level source-directory of the package for copying and
-# redistribution conditions.
+#    Copyright 2021 University Corporation for Atmospheric Research
 #
-## Process this file with automake to produce Makefile.in
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# Process this file with automake to produce Makefile.in
+
 ACLOCAL_AMFLAGS		= -I m4
 SUBDIRS			= lib prog
 DIST_SUBDIRS		= lib prog
@@ -13,7 +24,7 @@ info_TEXINFOS		= udunits2.texi
 EXTRA_DIST = \
     CHANGE_LOG \
     CMakeLists.txt \
-    COPYRIGHT \
+    LICENSE \
     udunits2.html \
     udunits2.pdf \
     version.texi
@@ -24,7 +35,7 @@ distArchive 		= $(distName).tar.gz
 CLEANFILES		= *~
 MAINTAINERCLEANFILES	= *.gz build *~
 DISTCLEANFILES		= *.log *.gz build *~
-dist_doc_DATA		= CHANGE_LOG COPYRIGHT README
+dist_doc_DATA		= CHANGE_LOG LICENSE README
 
 ftp:	dist
 	scp $(distArchive) ftp.unidata.ucar.edu:/web/ftp/pub/$(PACKAGE)/
@@ -53,9 +64,9 @@ release: 	ftp web-update
 .PHONY:	hostchecks hostcheck remote-checks web-update ftp \
 	download-update available release
 
-udunits2.info:	version.texi COPYRIGHT
-udunits2.html:	version.texi COPYRIGHT
-udunits2.pdf:	version.texi COPYRIGHT
+udunits2.info:	version.texi LICENSE
+udunits2.html:	version.texi LICENSE
+udunits2.pdf:	version.texi LICENSE
 
 $(srcdir)/version.texi:  $(srcdir)/stamp-vti
 	@cp $(srcdir)/stamp-vti $@

@@ -11,7 +11,7 @@
 * udunits-2: (udunits2).  The Unidata package for units of physical quantities.
 @end direntry
 @copying
-@include COPYRIGHT
+@include LICENSE
 @end copying
 
 @titlepage
