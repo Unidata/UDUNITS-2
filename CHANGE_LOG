@@ -1,10 +1,12 @@
-2.2.29
+2.3.0.0
     Documentation:
         * udunits2lib.texi: Corrected "NOTE:"
 
     Legal:
         * Replaced file COPYRIGHT with LICENSE
-        * Replaced vanity license with Apache License 2.0
+        * Replaced vanity license with Apache License 2.0. While not a new
+          capability of the package, this is a big enough change to warant
+          incrementing the version ID from 2.2 to 2.3.
 
     DevOps:
         * pre-commit(1): Replaced modifying version ID-s in files with verifying
