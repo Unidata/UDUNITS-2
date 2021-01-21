@@ -8,7 +8,10 @@
 * udunits2: (udunits2prog).     The Unidata units-conversion program.
 @end direntry
 @copying
-@include LICENSE
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this package except in compliance with the License.
+A copy of the License is included in this package's top-level manual
+@ref{, , , udunits2}.
 @end copying
 
 @titlepage
@@ -115,7 +118,7 @@ You have:
 Details of the formatting depend on the character-set being used.
 @xref{Options}.
 
-Alternatively, at the ``@kbd{You want:}'' prompt you can enter the unit
+Alternatively, at the @samp{You want:} prompt, you can enter the unit
 in which you want the previously-entered value.
 For example,
 
@@ -127,12 +130,12 @@ You want: mi/h
 You have:
 @end example
 
-The first line after ``@kbd{You want:}'' shows the ``have'' value in the 
-desired ``want'' unit.
+The first line after @samp{You want:} shows the @samp{have} value in the 
+desired @samp{want} unit.
 
 The second line shows the transformation between numerical values
-in the ``have'' unit to numerical values in the ``want'' unit.  The
-symbol ``@kbd{x}'' represents the physical quantity in question.
+in the @samp{have} unit to numerical values in the @samp{want} unit.  The
+symbol @samp{x} represents the physical quantity in question.
 See @url{http://physics.nist.gov/Pubs/SP811/sec07.html}.
 
 @node See Also, Complete Index, Description, Top

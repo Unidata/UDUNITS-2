@@ -10,7 +10,10 @@
 @syncodeindex fn cp
 @syncodeindex tp cp
 @copying
-@include LICENSE
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this package except in compliance with the License.
+A copy of the License is included in this package's top-level manual
+@ref{, , , udunits2}.
 @end copying
 
 @titlepage

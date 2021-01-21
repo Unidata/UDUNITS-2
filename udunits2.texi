@@ -11,7 +11,9 @@
 * udunits-2: (udunits2).  The Unidata package for units of physical quantities.
 @end direntry
 @copying
-@include LICENSE
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this package except in compliance with the License.
+A copy of the License is included in the section entitled ``License''.
 @end copying
 
 @titlepage
@@ -31,18 +33,18 @@
 This manual describes the UDUNITS-2 package, which contains
 a C library for units of physical quantities and a unit-definition
 and value-conversion utility.
-
 @insertcopying
 @end ifnottex
 
 @menu
 * Introduction::        Introduction
-* Differences::		    How this package differs from the UDUNITS-1 package
+* Differences::         How this package differs from the UDUNITS-1 package
 * Installation::        Installing this package
 * Library::             The unit library
 * Utility::             The unit utility
 * Database::            The unit database
 * Support::             Support for this package
+* License::             Licensing terms and conditions
 * Complete Index::      Complete index
 @end menu
 
@@ -51,12 +53,20 @@ and value-conversion utility.
 @cindex Introduction
 
 The UDUNITS-2 package provides support for units of physical quantities.
-Its three main components are: 1) @ref{Top, , a C library, udunits2lib}
-for units of physical quantities;
-2) @ref{Top, , a utility, udunits2prog};
+Its three main components are:
+@enumerate
+@item
+A C library
+for units of physical quantities
+@ref{, , , udunits2lib};
+@item
+A utility
 for obtaining the definition of a unit and for
-converting numeric values between compatible units;
-and 3) an @ref{Database, , extensive database of units}.
+converting numeric values between compatible units
+@ref{, , , udunits2prog}; and
+@item
+An @ref{Database, , extensive database of units}.
+@end enumerate
 
 @node Differences, Installation, Introduction, Top
 @chapter How This Package Differs from the Original @code{UDUNITS} Package
@@ -274,7 +284,7 @@ unit prefixes and four XML files containing unit definitions:
 @item @uref{../../udunits/udunits2-common.xml,Non-SI units}
 @end itemize
 
-@node Support, Complete Index, Database, Top
+@node Support, License, Database, Top
 @chapter Support for this Package
 @cindex support
 @cindex package, support
@@ -285,7 +295,12 @@ The home-page for this package can be found at
 Bug reports should be sent to
 @email{support-udunits@@unidata.ucar.edu}.
 
-@node Complete Index, , Support, Top
+@node License, Complete Index, Support, Top
+@chapter License
+@cindex License
+@verbatiminclude LICENSE
+
+@node Complete Index, , License, Top
 @unnumbered Index
 
 @printindex cp
