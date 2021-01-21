@@ -94,7 +94,8 @@ purgeFtpDir()
         ls -d $pkgName*.tar.* |
                 sed -nr 's/.*(([0-9]+\.){2}[0-9]+).*/\1/p' |
                 sort -t. -k 1nr,1 -k 2nr,2 -k 3nr,3 |
-                awk -F. 'NR>1&&(\$1==ma&&\$2==mi){print}{ma=\$1;mi=\$2}' |
+#               No longer deleting older, bug-fix versions due to user requests
+#               awk -F. 'NR>1&&(\$1==ma&&\$2==mi){print}{ma=\$1;mi=\$2}' |
                 sed "s/^/$pkgName\*/" | sed 's/$/\.tar\.\*/' | xargs rm -f
 EOF
 )
@@ -211,7 +212,8 @@ copyDoc()
             if ls -d $pkgName-*.*.* |
                   sed "s/$pkgName-//" |
                   sort -t. -k 1nr,1 -k 2nr,2 -k 3nr,3 |
-                  awk -F. '\$1!=ma||\$2!=mi{print}{ma=\$1;mi=\$2}' |
+#                 No longer deleting older, bug-fix version due to user requests
+#                 awk -F. '\$1!=ma||\$2!=mi{print}{ma=\$1;mi=\$2}' |
                   sed "s/^/$pkgName-/" >keepVersions
             then
                if sed -n '1,/BEGIN VERSION LINKS/p' $modHtmlName \
@@ -282,7 +284,9 @@ referenceDoc()
         if ! ls -d $pkgName-[0-9.]* |
                 sed "s/$pkgName-//" |
                 sort -t. -k 1nr,1 -k 2nr,2 -k 3nr,3 |
-                awk -F. '\$1!=ma||\$2!=mi{print}{ma=\$1;mi=\$2}' >versions; then
+#               No longer deleting older, bug-fix versions due to user requests
+#               awk -F. '\$1!=ma||\$2!=mi{print}{ma=\$1;mi=\$2}' |
+                cat >versions; then
             rm -f versions
         else
             if ! sed -n '1,/BEGIN VERSION LINKS/p' versions.inc >versions.inc.new; then
@@ -374,13 +378,14 @@ status=1
                         "$host:$ftpDir"
                 if copyAndLink $tarball $host $ftpDir $pkgName.tar.gz; then
 
-                    echo "$0: Purging $host:$ftpDir of older, bug-fix versions"
-                    if purgeFtpDir $host $ftpDir $pkgName; then
+#                   No longer purging older, bug-fix versions due to user requests
+#                   echo "$0: Purging $host:$ftpDir of older, bug-fix versions"
+#                   if purgeFtpDir $host $ftpDir $pkgName; then
  
                         echo "$0: Copying documentation to $host:$docWebDir/$pkgId"
                         copyDoc $pkgName $version $docDir $host $docWebDir \
                                 documentation.inc udunits2.html && status=0
-                    fi # FTP directory purged
+#                   fi # FTP directory purged
                 fi # Source distribution copied to FTP directory
 
 #           fi # Binary DEB copied to Nexus server
