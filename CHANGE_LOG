@@ -31,6 +31,7 @@
             * Created to ensure consistency of version ID
         * pre-push hook:
             * Removed setting of timestamp field in file CHANGE_LOG
+            * Removed check for uncommitted changes
         * publish(1):
             * Created
         * configure(1):
