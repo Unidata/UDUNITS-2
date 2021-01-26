@@ -277,11 +277,11 @@ The database for the UDUNITS-2 package comprises one XML file containing
 unit prefixes and four XML files containing unit definitions:
 
 @itemize
-@item @uref{../../udunits/udunits2-prefixes.xml,SI unit prefixes}
-@item @uref{../../udunits/udunits2-base.xml,SI base units}
-@item @uref{../../udunits/udunits2-derived.xml,SI derived units}
-@item @uref{../../udunits/udunits2-accepted.xml,Units accepted for use with the SI}
-@item @uref{../../udunits/udunits2-common.xml,Non-SI units}
+@item @uref{udunits2-prefixes.xml,SI unit prefixes}
+@item @uref{udunits2-base.xml,SI base units}
+@item @uref{udunits2-derived.xml,SI derived units}
+@item @uref{udunits2-accepted.xml,Units accepted for use with the SI}
+@item @uref{udunits2-common.xml,Non-SI units}
 @end itemize
 
 @node Support, License, Database, Top
