@@ -92,6 +92,7 @@ TESTS += testUnits-1
 endif
 endif
 
+CLEANFILES	= *.info
 DISTCLEANFILES	= *.log
 MOSTLYCLEANFILES = lint.log *.ln *.i core core.[0-9]* *.gcov *.gcda *.gcno
 TAGS_FILES = parser.c

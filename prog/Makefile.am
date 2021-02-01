@@ -24,6 +24,7 @@ info_TEXINFOS		= udunits2prog.texi
 AM_MAKEINFOFLAGS	= -I $(top_srcdir)
 AM_MAKEINFOHTMLFLAGS	= --no-split -I $(top_srcdir)
 AM_CPPFLAGS		= -I$(top_srcdir)/lib
+CLEANFILES		= *.info
 MOSTLYCLEANFILES	= lint.log *.ln
 LINTFLAGS		= -u
 LINT			= lint

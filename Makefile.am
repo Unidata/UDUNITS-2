@@ -32,7 +32,7 @@ AM_MAKEINFOHTMLFLAGS 	= --no-split
 RSYNC_FLAGS		= --rsh=ssh --rsync-path=/usr/bin/rsync
 distName 		= $(PACKAGE)-$(VERSION)
 distArchive 		= $(distName).tar.gz
-CLEANFILES		= *~
+CLEANFILES		= *~ *.info
 MAINTAINERCLEANFILES	= *.gz build *~
 DISTCLEANFILES		= *.log *.gz build *~
 dist_doc_DATA		= CHANGE_LOG LICENSE README
