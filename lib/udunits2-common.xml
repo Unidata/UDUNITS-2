@@ -178,6 +178,11 @@ elements appear only within <aliases>.
             </aliases>
             <definition>parts per quadrillion</definition>
         </unit>
+        <unit>
+            <def>lg(re 1)</def>
+            <aliases> <symbol>B</symbol> </aliases>
+            <definition>logarithmic unit used to express dimensionless ratios; a value of 0 B (0 dB) corresponds to a ratio of 1</definition>
+        </unit>
 
     <!-- Plane Angle -->
         <unit>
@@ -899,10 +904,14 @@ elements appear only within <aliases>.
             </aliases>
             <definition>unit of volume for liquid measure in the Imperial system, equal to 1/160 liquid gallon</definition>
         </unit>
+        <!-- See http://dx.doi.org/10.1175/2009JTECHA1360.1 for more information on proper spelling of dBz -->
         <unit>
             <def>lg(re (1e-6 m)^3)</def>
-            <aliases> <symbol>BZ</symbol> </aliases>
-            <definition>logarithmic unit used to compare the reflectivity (Z) of an unknown remote object, to the reflective return created by a droplet of rain with a diameter of 1 mm; is the base unit for "dBz", which is the typical logarithmic unit for measuring atmospheric radar reflectivity; a value of 0 Bz (0 DBz) corresponds to the return from a single cubic micron; a value of 6 Bz (60 DBz) corresponds to extremely heavy rain.</definition>
+            <aliases>
+                <symbol>BZ</symbol>
+                <symbol>Bz</symbol>
+            </aliases>
+            <definition>logarithmic unit used to compare the reflectivity (Z) of an unknown remote object, to the reflective return created by a rain with a density of a single drop with a diameter of 1 mm in every 1 m^3 of air; is the base unit for "dBz", which is the typical logarithmic unit for measuring atmospheric radar reflectivity; a value of 0 Bz (0 dBz) corresponds to the return from a single cubic micron; a value of 6 Bz (60 dBz) corresponds to extremely heavy rain.</definition>
         </unit>
 
     <!-- Time -->
