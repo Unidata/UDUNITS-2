@@ -553,7 +553,7 @@ test_utMultiply(void)
     CU_ASSERT_TRUE_FATAL(nchar > 0);
     CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
     buf[nchar] = 0;
-    CU_ASSERT_STRING_EQUAL(buf, "m.s");
+    CU_ASSERT_STRING_EQUAL(buf, "m s");
 
     nchar = ut_format(meterSecond, buf, sizeof(buf)-1, asciiNameDef);
     CU_ASSERT_TRUE_FATAL(nchar > 0);
@@ -568,7 +568,7 @@ test_utMultiply(void)
     CU_ASSERT_TRUE_FATAL(nchar > 0);
     CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
     buf[nchar] = 0;
-    CU_ASSERT_STRING_EQUAL(buf, "m.K");
+    CU_ASSERT_STRING_EQUAL(buf, "m K");
 
     meterRadian = ut_multiply(meter, radian);
     CU_ASSERT_PTR_NOT_NULL(meterRadian);
@@ -577,7 +577,7 @@ test_utMultiply(void)
     CU_ASSERT_TRUE_FATAL(nchar > 0);
     CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
     buf[nchar] = 0;
-    CU_ASSERT_STRING_EQUAL(buf, "m.rad");
+    CU_ASSERT_STRING_EQUAL(buf, "m rad");
 
     kilometerMinute = ut_multiply(kilometer, minute);
     CU_ASSERT_PTR_NOT_NULL(kilometerMinute);
@@ -586,7 +586,7 @@ test_utMultiply(void)
     CU_ASSERT_TRUE_FATAL(nchar > 0);
     CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
     buf[nchar] = 0;
-    CU_ASSERT_STRING_EQUAL(buf, "60000 m.s");
+    CU_ASSERT_STRING_EQUAL(buf, "60000 m s");
 
     nchar = ut_format(kilometerMinute, buf, sizeof(buf)-1, asciiNameDef);
     CU_ASSERT_TRUE_FATAL(nchar > 0);
@@ -666,7 +666,7 @@ test_utInvert(void)
     CU_ASSERT_TRUE_FATAL(nchar > 0);
     CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
     buf[nchar] = 0;
-    CU_ASSERT_STRING_EQUAL(buf, "m-1.s-1");
+    CU_ASSERT_STRING_EQUAL(buf, "m-1 s-1");
 
     ut_free(inverseMeter);
     ut_free(inverseMinute);
@@ -711,7 +711,7 @@ test_utDivide(void)
     CU_ASSERT_TRUE_FATAL(nchar > 0);
     CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
     buf[nchar] = 0;
-    CU_ASSERT_STRING_EQUAL(buf, "m.s-1");
+    CU_ASSERT_STRING_EQUAL(buf, "m s-1");
 
     kilometerPerMinute = ut_divide(kilometer, minute);
     CU_ASSERT_PTR_NOT_NULL(kilometerPerMinute);
@@ -720,7 +720,7 @@ test_utDivide(void)
     CU_ASSERT_TRUE_FATAL(nchar > 0);
     CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
     buf[nchar] = 0;
-    CU_ASSERT_STRING_EQUAL(buf, "16.6666666666667 m.s-1");
+    CU_ASSERT_STRING_EQUAL(buf, "16.6666666666667 m s-1");
 
     celsiusPerMeter = ut_divide(celsius, meter);
     CU_ASSERT_PTR_NOT_NULL(celsiusPerMeter);
@@ -729,7 +729,7 @@ test_utDivide(void)
     CU_ASSERT_TRUE_FATAL(nchar > 0);
     CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
     buf[nchar] = 0;
-    CU_ASSERT_STRING_EQUAL(buf, "m-1.K");
+    CU_ASSERT_STRING_EQUAL(buf, "m-1 K");
 
     meterPerCelsius = ut_divide(meter, celsius);
     CU_ASSERT_PTR_NOT_NULL(meterPerCelsius);
@@ -738,7 +738,7 @@ test_utDivide(void)
     CU_ASSERT_TRUE_FATAL(nchar > 0);
     CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
     buf[nchar] = 0;
-    CU_ASSERT_STRING_EQUAL(buf, "m.K-1");
+    CU_ASSERT_STRING_EQUAL(buf, "m K-1");
 
     unit = ut_raise(second, 2);
     meterPerSecondSquared = ut_divide(meter, unit);
@@ -750,7 +750,7 @@ test_utDivide(void)
     CU_ASSERT_TRUE_FATAL(nchar > 0);
     CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
     buf[nchar] = 0;
-    CU_ASSERT_STRING_EQUAL(buf, "m.s-2");
+    CU_ASSERT_STRING_EQUAL(buf, "m s-2");
 
     unit = ut_divide(meter, second);
     meterSquaredPerSecondSquared = ut_raise(unit, 2);
@@ -762,7 +762,7 @@ test_utDivide(void)
     CU_ASSERT_TRUE_FATAL(nchar > 0);
     CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
     buf[nchar] = 0;
-    CU_ASSERT_STRING_EQUAL(buf, "m2.s-2");
+    CU_ASSERT_STRING_EQUAL(buf, "m2 s-2");
 
     unit = ut_divide(meter, second);
     unit2 = ut_raise(unit, 2);
@@ -777,7 +777,7 @@ test_utDivide(void)
     CU_ASSERT_TRUE_FATAL(nchar > 0);
     CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
     buf[nchar] = 0;
-    CU_ASSERT_STRING_EQUAL(buf, "m2.s-2");
+    CU_ASSERT_STRING_EQUAL(buf, "m2 s-2");
 
     unit = ut_divide(meter, second);
     unit2 = ut_raise(unit, 2);
@@ -792,7 +792,7 @@ test_utDivide(void)
     CU_ASSERT_TRUE_FATAL(nchar > 0);
     CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
     buf[nchar] = 0;
-    CU_ASSERT_STRING_EQUAL(buf, "kg.m2.s-3");
+    CU_ASSERT_STRING_EQUAL(buf, "kg m2 s-3");
 
     ut_free(meterPerSecond);
     ut_free(kilometerPerMinute);
@@ -822,7 +822,7 @@ test_utRaise(void)
     CU_ASSERT_TRUE_FATAL(nchar > 0);
     CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
     buf[nchar] = 0;
-    CU_ASSERT_STRING_EQUAL(buf, "kg2.m4.s-6");
+    CU_ASSERT_STRING_EQUAL(buf, "kg2 m4 s-6");
 
     perCubicMeter = ut_raise(meter, -3);
     CU_ASSERT_PTR_NOT_NULL(perCubicMeter);
@@ -852,7 +852,7 @@ test_utRaise(void)
     CU_ASSERT_TRUE_FATAL(nchar > 0);
     CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
     buf[nchar] = 0;
-    CU_ASSERT_STRING_EQUAL(buf, "277.777777777778 m2.s-2");
+    CU_ASSERT_STRING_EQUAL(buf, "277.777777777778 m2 s-2");
 
     ut_free(perCubicMeter);
     ut_free(celsiusCubed);
@@ -934,7 +934,7 @@ test_utLog(void)
     CU_ASSERT_TRUE_FATAL(nchar > 0);
     CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
     buf[nchar] = 0;
-    CU_ASSERT_STRING_EQUAL(buf, "lg(re 0.001 kg.m2.s-3)");
+    CU_ASSERT_STRING_EQUAL(buf, "lg(re 0.001 kg m2 s-3)");
 
     decibel_1_mW = ut_scale(0.1, bel_1_mW);
     CU_ASSERT_PTR_NOT_NULL(decibel_1_mW);
@@ -943,7 +943,7 @@ test_utLog(void)
     CU_ASSERT_TRUE_FATAL(nchar > 0);
     CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
     buf[nchar] = 0;
-    CU_ASSERT_STRING_EQUAL(buf, "0.1 lg(re 0.001 kg.m2.s-3)");
+    CU_ASSERT_STRING_EQUAL(buf, "0.1 lg(re 0.001 kg m2 s-3)");
 
     unit = ut_log(-10, milliwatt);
     CU_ASSERT_PTR_NULL(unit);
@@ -1683,7 +1683,7 @@ test_utSetEncoding(void)
     CU_ASSERT_TRUE_FATAL(nchar > 0);
     CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
     buf[nchar] = 0;
-    CU_ASSERT_STRING_EQUAL(buf, "kg.m2.s-3");
+    CU_ASSERT_STRING_EQUAL(buf, "kg m2 s-3");
 
     nchar = ut_format(watt, buf, sizeof(buf)-1, latin1SymbolDef);
     CU_ASSERT_TRUE_FATAL(nchar > 0);
@@ -1704,7 +1704,7 @@ test_utSetEncoding(void)
     buf[nchar] = 0;
     CU_ASSERT_STRING_EQUAL(buf,
 	"kg\xc2\xb2\xc2\xb7m\xe2\x81\xb4\xc2\xb7s\xe2\x81\xbb\xe2\x81\xb6");
-        /* kg2.m4.s-6 */
+        /* kg2 m4 s-6 */
 }
 
 
