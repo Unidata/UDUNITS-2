@@ -84,7 +84,7 @@ if (CUNIT_LIBRARY)
 endif()
 
 # The documentation is in multiple texinfo(5) format files
-texi_doc(udunits2lib.texi ${CMAKE_SOURCE_DIR}/COPYRIGHT)
+texi_doc(udunits2lib.texi ${CMAKE_SOURCE_DIR}/LICENSE)
     
 install(TARGETS libudunits2 EXPORT udunits2-targets
     ARCHIVE DESTINATION lib

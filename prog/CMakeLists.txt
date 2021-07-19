@@ -26,6 +26,6 @@ IF(MSVC)
 ENDIF()
 
 # The documentation is in multiple texinfo(5) format files
-texi_doc(udunits2prog.texi ${CMAKE_SOURCE_DIR}/COPYRIGHT)
+texi_doc(udunits2prog.texi ${CMAKE_SOURCE_DIR}/LICENSE)
 
 install(TARGETS udunits2 DESTINATION bin)
