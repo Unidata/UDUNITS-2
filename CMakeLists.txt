@@ -194,17 +194,18 @@ FIND_LIBRARY(CUNIT_LIBRARY cunit)
 IF(CUNIT_LIBRARY)
     FIND_PATH(CUNIT_INCLUDE_DIR "CUnit/CUnit.h")
     IF (NOT CUNIT_INCLUDE_DIR)
-        MESSAGE(STATUS "Unable to find CUnit header-file. Unit-testing not enabled.")
+        MESSAGE(STATUS "Unable to find CUnit header-file. "
+                "Unit-testing isn't enabled.")
     ELSE()
-        MESSAGE(STATUS "Found CUnit. Unit-testing enabled.")
+        MESSAGE(STATUS "Found CUnit. Unit-testing is enabled.")
         ENABLE_TESTING()
     ENDIF()
 ELSE()
-    MESSAGE(STATUS "Unable to find CUnit library. Unit-testing not enabled.")
+    MESSAGE(STATUS "Unable to find CUnit library. Unit-testing isn't enabled.")
 ENDIF()
 
 CONFIGURE_FILE(
-    "${PROJECT_SOURCE_DIR}/config.h.cmake"
+    "${PROJECT_SOURCE_DIR}/config-cmake.h"
     "${PROJECT_BINARY_DIR}/config.h")
 # Necessary for the compiler to find "config.h":
 INCLUDE_DIRECTORIES("${PROJECT_BINARY_DIR}")
@@ -271,6 +272,7 @@ SET(CPACK_PACKAGE_VENDOR "University Corporation for Atmospheric Research")
 SET(CPACK_PACKAGING_INSTALL_PREFIX "/usr/local")
 SET(CPACK_RESOURCE_FILE_README "${CMAKE_SOURCE_DIR}/README")
 SET(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE")
+SET(CPACK_RPM_PACKAGE_LICENSE "Apache License Version 2.0")
 SET(CPACK_PACKAGE_RELOCATABLE "ON")
 SET(CPACK_GENERATOR "RPM;DEB")
 
