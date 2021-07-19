@@ -1,4 +1,11 @@
 2.3.0.0
+    Library:
+        * formatter.c: Replaced use of period as a multiplication indicator in
+          ASCII output with a space because the use of a period is no longer
+          recommended by BIPM or NIST. A period is still correctly interpreted
+          for input, however.
+        * Remove restrictions on range for arguments to ut_encode_clock()
+    
     Documentation:
         * Modified to use the new license
         * Improved slightly
