@@ -136,6 +136,16 @@ elements appear only within <aliases>.
         physical quantities and units and enables fewer and simpler units. -->
         <unit>
             <comment>Constant</comment>
+            <def>0.001</def>
+            <aliases>
+                <name><singular>permil</singular></name>
+                <noplural/>
+                <symbol>‰</symbol>
+            </aliases>
+            <definition>parts per thousand</definition>
+        </unit>
+        <unit>
+            <comment>Constant</comment>
             <def>1</def>
             <aliases>
                 <symbol>ppv</symbol>
