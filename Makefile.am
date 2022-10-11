@@ -24,6 +24,7 @@ info_TEXINFOS		= udunits2.texi
 EXTRA_DIST = \
     CHANGE_LOG \
     CMakeLists.txt \
+    config-cmake.h \
     LICENSE \
     udunits2.html \
     udunits2.pdf \
