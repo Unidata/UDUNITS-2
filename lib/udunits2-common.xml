@@ -121,8 +121,7 @@ elements appear only within <aliases>.
             <comment>Constant; value is +-30e15</comment>
             <def>6.02214179e23/mol</def>
             <aliases>
-                <name><singular>avogadro_constant</singular></name>
-                <noplural/>
+                <name><singular>avogadro_constant</singular><noplural/></name>
             </aliases>
             <definition>number of constituent particles (usually atoms or molecules) per mole of a given substance</definition>
         </unit>
@@ -130,11 +129,21 @@ elements appear only within <aliases>.
             <comment>Constant</comment>
             <def>0.01</def>
             <aliases>
-                <name><singular>percent</singular></name>
-                <noplural/>
+                <name><singular>percent</singular><noplural/></name>
                 <symbol>%</symbol>
             </aliases>
             <definition>number of parts per hundred</definition>
+        </unit>
+        <unit>
+            <comment>Constant</comment>
+            <def>0.001</def>
+            <aliases>
+                <name><singular>permille</singular><noplural/></name>
+                <name><singular>per_thousand</singular><noplural/></name>
+                <symbol>&#xB0;</symbol>             
+                <symbol>ppt</symbol>
+            </aliases>
+            <definition>number of parts per thousand</definition>
         </unit>
         <!-- I loathe and despise units like this: one's that contain 
         information about the physical quantity in their name or symbol (e.g.,
