@@ -41,9 +41,9 @@ pkgId=$pkgName$nameVersSep$version                     # Package identifier
 docDir=../share/doc/$pkgName                           # Installation documentation directory
 ftpDir=/web/ftp/pub/$pkgName                           # Package's FTP directory on $host
 downloadDir=/web/content/downloads/$pkgName            # Package's download directory on $host
-docWebDir=/web/content/software/$pkgName               # Package's documentation directory on $host
+docWebDir=/web/docs/$pkgName/$version                  # Package's documentation directory on $host
 nexusUrl=https://artifacts.unidata.ucar.edu/repository # Root of Nexus repostories
-srcUrl=$nexusUrl/downloads-$pkgName                    # Repository of source distributions
+srcUrl=$nexusUrl/downloads-$pkgName/$version                    # Repository of source distributions
 rpmUrl=$nexusUrl/rpm-$pkgName/$pkgName                 # Repository of binary RPM-s
 debUrl=$nexusUrl/deb-$pkgName/$pkgName                 # Repository of binary DEB-s
 
@@ -345,7 +345,7 @@ status=1
 #else
     # Ensure that the source directory-hierarchy is clean and complete (e.g.,
     # that it contains "version.texi")
-    rm *.tar.gz
+    rm -f *.tar.gz
     echo "$0: Making targets \"clean\" and \"dist\""
     make clean dist >&clean-dist.log
     tarball=`ls *.tar.gz`
@@ -362,7 +362,9 @@ status=1
     zipball=`ls build/*.zip`
     
     echo "$0: Copying source distributions to Nexus server"
-    if curl -u emmerson --upload-file "{$tarball,$zipball}" $srcUrl/; then
+    if curl -u emmerson --upload-file "{$tarball,$zipball}" $srcUrl/;
+    then
+        exit
 
         echo "$0: Copying binary RPM to Nexus server"
         rpm=`ls build/*.rpm`

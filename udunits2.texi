@@ -207,11 +207,11 @@ directory is @code{/usr/local}.
 @cindex installing from source on Unix
 
 Download the source by browsing to the Unidata UDUNITS source repository at
-@uref{https://artifacts.unidata.ucar.edu/service/rest/repository/browse/downloads-udunits/}
+@uref{https://downloads.unidata.ucar.edu/udunits/}
 or by executing, for example, the following commands:
 @example
 cd ~/Downloads
-curl -O https://artifacts.unidata.ucar.edu/repository/downloads-udunits/udunits-@value{VERSION}.tar.gz
+curl -O https://downloads.unidata.ucar.edu/udunits/@value{VERSION}/udunits-@value{VERSION}.tar.gz
 @end example
 
 Unpack the distribution in an appropriate place. For example,
