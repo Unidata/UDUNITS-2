@@ -1,4 +1,7 @@
 2.3.0.0
+    Database:
+        * Added "permille" unit with appropriate symbol and "ppt"
+
     Library:
         * formatter.c: Replaced use of period as a multiplication indicator in
           ASCII output with a space because the use of a period is no longer
