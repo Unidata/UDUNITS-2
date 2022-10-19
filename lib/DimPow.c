@@ -75,8 +75,8 @@ static void reduce(DimPow* dimPow)
 
 void dp_init(
         DimPow* dimPow,
-        int     numer,
-        int     denom)
+        short   numer,
+        short   denom)
 {
     assert(denom != 0);
 
@@ -96,8 +96,8 @@ void dp_initDefault(DimPow* dimPow)
 }
 
 DimPow* dp_new(
-    const int numer,
-    const int denom)
+    const short numer,
+    const short denom)
 {
     DimPow* dimPow = malloc(sizeof(DimPow));
     if (dimPow)
@@ -115,12 +115,12 @@ void dp_free(DimPow* dimPow)
     free(dimPow);
 }
 
-int dp_getNumerator(const DimPow* dimPow)
+short dp_getNumerator(const DimPow* dimPow)
 {
     return dimPow->numer;
 }
 
-int dp_getDenominator(const DimPow* dimPow)
+short dp_getDenominator(const DimPow* dimPow)
 {
     return dimPow->denom;
 }
@@ -147,8 +147,8 @@ bool dp_equal(
 
 void dp_add(
         DimPow* dimPow,
-        int     numer,
-        int     denom)
+        short   numer,
+        short   denom)
 {
     assert(denom != 0);
 
@@ -171,8 +171,8 @@ void dp_add(
 
 void dp_multiply(
         DimPow* dimPow,
-        int     numer,
-        int     denom)
+        short   numer,
+        short   denom)
 {
     assert(denom != 0);
 
