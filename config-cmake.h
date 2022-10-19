@@ -1,3 +1,5 @@
+#define _XOPEN_SOURCE 700
+
 /*
  * C macros set by cmake(1)
  */
