@@ -40,6 +40,8 @@ IF(UNIX)
 endif()
 
 SET(libudunits2_src converter.c
+            DimPow.c DimPow.h
+            DimVec.c DimVec.h
 		    error.c
 		    formatter.c
 		    idToUnitMap.c
@@ -81,6 +83,13 @@ if (CUNIT_LIBRARY)
     add_test(
         NAME testUnits
         COMMAND testUnits ${CMAKE_CURRENT_SOURCE_DIR}/udunits2.xml)
+
+    add_executable(testDimVec testDimVec.c)
+    target_link_libraries (testDimVec libudunits2)
+    target_link_libraries (testDimVec ${CUNIT_LIBRARY})
+    add_test(
+        NAME testDimVec
+        COMMAND testDimVec)
 endif()
 
 # The documentation is in multiple texinfo(5) format files
