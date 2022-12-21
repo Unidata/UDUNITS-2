@@ -140,7 +140,7 @@ elements appear only within <aliases>.
             <aliases>
                 <name><singular>permille</singular><noplural/></name>
                 <name><singular>per_thousand</singular><noplural/></name>
-                <symbol>&#xB0;</symbol>             
+                <symbol comment="PER MILLE SIGN">&#x2030;</symbol>             
                 <symbol>ppt</symbol>
             </aliases>
             <definition>number of parts per thousand</definition>
@@ -176,15 +176,6 @@ elements appear only within <aliases>.
                 <symbol>ppbv</symbol>
             </aliases>
             <definition>parts per billion</definition>
-        </unit>
-        <unit>
-            <comment>Constant</comment>
-            <def>1e-12</def>
-            <aliases>
-                <symbol>ppt</symbol>
-                <symbol>pptv</symbol>
-            </aliases>
-            <definition>parts per trillion</definition>
         </unit>
         <unit>
             <comment>Constant</comment>
