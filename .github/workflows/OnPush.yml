@@ -61,17 +61,13 @@ jobs:
         if: contains(matrix.os, 'ubuntu')
         run: |
           sudo apt-get install cunit texinfo cmake
-#         autoreconf -fi
 
       - name: Provision MacOS
         if: matrix.os == 'macos-latest'
         run: |
-#         brew install autoconf@2.69
-#         brew install automake
           brew install cunit
           brew install texinfo
           brew install cmake
-#         /usr/local/opt/autoconf@2.69/bin/autoreconf -fi
 
 # Coverity Scan is better
 #     - name: Initialize CodeQL
@@ -87,6 +83,7 @@ jobs:
           make all test install
           cpack -G 'DEB;RPM;TGZ'
           ls -l
+
 #         ./configure --prefix=/tmp/ldm --with-noaaport --with-gribinsert \
 #           || { cat configure; exit 1; }
 #         make all
