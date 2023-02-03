@@ -63,4 +63,4 @@ consistent
 coverity-scan
 *.tgz
 /clang-scan
-_build
+/_build/

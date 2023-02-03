@@ -23,14 +23,18 @@
 #define LIB_DIMPOW_H_
 
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdlib.h>
 
+typedef int8_t DimPowType;
+#define DIMPOW_MAX_DIGITS 3
+
 typedef struct DimPow {
-    int  numer;       ///< Numerator of the power. May be negative.
-    int  denom;       ///< Denominator of the power. Will always be positive.
-    bool contributes; ///< If this contributes to the unit's dimensionality. For example, "g/g"
-                      ///< doesn't contribute to dimensionality but one might want that in a string
-                      ///< representation.
+    DimPowType numer;       ///< Numerator of the power. May be negative.
+    DimPowType denom;       ///< Denominator of the power. Will always be positive.
+    bool       contributes; ///< If this contributes to the unit's dimensionality. For example, "g/g"
+                            ///< doesn't contribute to dimensionality but one might want that in a string
+                            ///< representation.
 } DimPow; ///< Exponent of a unit dimension
 
 #ifdef __cplusplus
@@ -46,8 +50,8 @@ extern "C" {
  */
 void dp_init(
         DimPow* dp,
-        int     numer,
-        int     denom);
+        short   numer,
+        short   denom);
 
 /**
  * Default initializes.
@@ -66,8 +70,8 @@ void dp_initDefault(DimPow* dp);
  * @see `dp_free()`
  */
 DimPow* dp_new(
-    const int numer,
-    const int denom);
+    const short numer,
+    const short denom);
 
 /**
  * Returns a new, default dimension power.
@@ -89,7 +93,7 @@ void dp_free(DimPow* dp);
  * @param[in] dimPow  The dimension power
  * @return            The numerator of the power
  */
-int dp_getNumerator(const DimPow* dimPow);
+short dp_getNumerator(const DimPow* dimPow);
 
 /**
  * Returns the denominator of a dimension power.
@@ -97,7 +101,7 @@ int dp_getNumerator(const DimPow* dimPow);
  * @param[in] dimPow  The dimension power
  * @return            The denominator of the power
  */
-int dp_getDenominator(const DimPow* dimPow);
+short dp_getDenominator(const DimPow* dimPow);
 
 /**
  * Indicates if this dimension power contributes to a unit's dimensionality.
@@ -107,6 +111,15 @@ int dp_getDenominator(const DimPow* dimPow);
  * @retval    `false`  This dimension power does not contribute
  */
 bool dp_contributes(const DimPow* dimPow);
+
+/**
+ * Indicates if this dimension power is unity (i.e., one).
+ *
+ * @param[in] dimPow   The dimension power
+ * @retval    `true`   This dimension power is unity
+ * @retval    `false`  This dimension power is not unity
+ */
+bool dp_isUnity(const DimPow* dimPow);
 
 /**
  * Copies.
@@ -119,6 +132,19 @@ void dp_copy(
         const DimPow* rhs);
 
 /**
+ * Compares two dimension powers. Returns an integer that is less than, equal to, or greater than
+ * zero as the first power is considered less than, equal to, or greater than the second power,
+ * respectively.
+ *
+ * @param[in] lhs  First dimension power
+ * @param[in] rhs  Second dimension power
+ * @return         A value less than, equal to, or greater than zero.
+ */
+int dp_compare(
+        const DimPow* lhs,
+        const DimPow* rhs);
+
+/**
  * Indicates if two dimension powers are equal.
  *
  * @param[in] lhs      One dimension power
@@ -126,7 +152,19 @@ void dp_copy(
  * @return    `true`   They are equal
  * @return    `false`  They are not equal
  */
-bool dp_equal(
+bool dp_areEqual(
+        const DimPow* lhs,
+        const DimPow* rhs);
+
+/**
+ * Indicates if two dimension powers are the inverse of each other.
+ *
+ * @param[in] lhs      One dimension power
+ * @param[in] rhs      Other dimension power
+ * @return    `true`   They are the inverse of each other
+ * @return    `false`  They are not the inverse of each other
+ */
+bool dp_areInverse(
         const DimPow* lhs,
         const DimPow* rhs);
 
@@ -139,20 +177,28 @@ bool dp_equal(
  */
 void dp_multiply(
         DimPow* dimPow,
-        int     numer,
-        int     denom);
+        short   numer,
+        short   denom);
 
 /**
  * Adds to a dimension power. This is called when a unit is multiplied by another unit.
  *
  * @param[in,out] dimPow  Dimension power to be multiplied
- * @param[in]     numer   Numerator of the multiplier
- * @param[in]     denom   Denominator of the multiplier
+ * @param[in]     term    Dimension power to multiply
  */
 void dp_add(
-        DimPow* dimPow,
-        int     numer,
-        int     denom);
+        DimPow*       dimPow,
+        const DimPow* term);
+
+/**
+ * Subtracts from a dimension power. This is called when a unit is divided by another unit.
+ *
+ * @param[in,out] dimPow  Dimension power to be subtracted from
+ * @param[in]     term    Dimension power to subtract
+ */
+void dp_subtract(
+        DimPow*       dimPow,
+        const DimPow* term);
 
 /**
  * Returns a string representation of a dimension power. Formats include
@@ -173,9 +219,9 @@ void dp_add(
  * @return             A negative value on error
  */
 int dp_toString(
-        const DimPow* dimPow,
-        char*         buf,
-        const size_t  size);
+        const DimPow* const dimPow,
+        char*               buf,
+        const size_t        size);
 
 #ifdef __cplusplus
 }

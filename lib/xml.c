@@ -27,13 +27,16 @@
 
 #include <config.h>
 
-#include "udunits2.h"
-
 #if defined(__linux__)
 #   ifndef _GNU_SOURCE
 #       define _GNU_SOURCE
 #   endif
+#   ifndef __USE_GNU
+#       define __USE_GNU
+#   endif
 #endif
+
+#include "udunits2.h"
 
 #include <assert.h>
 #include <errno.h>

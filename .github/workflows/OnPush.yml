@@ -1,0 +1,179 @@
+name: On Push
+
+on:
+  push:
+    branches: [ "devel", "main" ]
+#    branches: [ "*" ]
+
+jobs:
+  check:
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    environment: Publish
+
+    strategy:
+      matrix:
+        os: [ubuntu-20.04, ubuntu-22.04, macos-latest]
+#        os: [ubuntu-22.04]
+
+#   The name of the operating system for performing single O/S actions
+    env:
+      MAIN_OS: ubuntu-22.04
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.ref_name }}
+
+#     The version identifier is the first word in CHANGE_LOG and must have 4 or 3 components on the
+#     "devel" and "main" branches respectively. Additionally, the second word in CHANGE_LOG must be
+#     a valid timestamp for a push to the "main" branch.
+      - name: Vet CHANGE_LOG
+        if: matrix.os == env.MAIN_OS
+        run: |
+          versionId=`awk '{print $1;exit}' CHANGE_LOG`
+          if test ${{ github.ref_name }} = devel; then
+            echo $versionId | egrep '^[0-9]+(\.[0-9]+){3}$' >/dev/null || exit 1
+          elif test ${{ github.ref_name }} = main; then
+            echo $versionId | egrep '^[0-9]+(\.[0-9]+){2}$' >/dev/null || exit 1
+            awk '{print $2;exit}' CHANGE_LOG | 
+              egrep '^20[0-9]{2}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3])(:[0-5][0-9]){2}[-+]((0[0-9]|1[0-3])([0-5][0-9]))$' \
+                >/dev/null || exit 1
+          fi
+
+#     File "configure.ac" must have the same version identifier as CHANGE_LOG
+      - name: Vet configure.ac
+        if: matrix.os == env.MAIN_OS
+        run: |
+          versionId=`awk '{print $1;exit}' CHANGE_LOG`
+          egrep "^AC_INIT.*\[$versionId\]" configure.ac >/dev/null || exit 1
+
+#     Gnu autotools require an "m4" subdirectory
+#     - run: mkdir m4
+
+      - name: Provision Ubuntu
+        if: contains(matrix.os, 'ubuntu')
+        run: |
+          sudo apt-get install cunit texinfo cmake
+
+      - name: Provision MacOS
+        if: matrix.os == 'macos-latest'
+        run: |
+          brew install cunit
+          brew install texinfo
+          brew install cmake
+
+# Coverity Scan is better
+#     - name: Initialize CodeQL
+#       if: matrix.os == env.MAIN_OS &&  github.ref_name == 'devel'
+#       uses: github/codeql-action/init@v2
+#       with:
+#         languages: "cpp"
+
+      - name: Build and test
+        run: |
+          mkdir -p _build/Debug; cd _build/Debug
+          cmake -G 'Unix Makefiles' ../..
+          make all test install
+          cpack -G 'DEB;RPM;TGZ'
+          ls -l
+
+#         ./configure --prefix=/tmp/ldm --with-noaaport --with-gribinsert \
+#           || { cat configure; exit 1; }
+#         make all
+#         if test "${{ github.ref_name }}" = "main"; then
+#           make dist
+#         else
+#           make distcheck
+#         fi
+
+#     - name: Perform CodeQL Analysis
+#       if: matrix.os == env.MAIN_OS &&  github.ref_name == 'devel'
+#       uses: github/codeql-action/analyze@v2
+#       with:
+#         category: "cpp"
+
+#     - name: Publish Source Distribution and Documentation
+#       if: matrix.os == env.MAIN_OS && github.ref_name == 'main'
+#       env:
+#         USER: ${{ secrets.NEXUS_USER }}
+#         PW: ${{ secrets.NEXUS_PW }}
+#       run: |
+#         # Publish the tarball
+#         tarball=`ls *.gz`
+#         version=`echo $tarball | sed -r 's/ldm-([0-9]+(\.[0-9]+)*)\.tar.gz/\1/'`
+#         curl -u "$USER":"$PW" \
+#           -T $tarball https://artifacts.unidata.ucar.edu/repository/downloads-ldm/$version/ \
+#           -T $tarball https://artifacts.unidata.ucar.edu/repository/downloads-ldm/current/
+
+#         # Update the information file on the source distributions if necessary
+#         wget https://artifacts.unidata.ucar.edu/repository/downloads-ldm/release_info.json
+#         if ! grep '"version": "'$version'",' release_info.json; then
+#           sed -n '1,/"releases":/p' release_info.json >release_info.json.new
+#           cat <<EOF >>release_info.json.new
+#             {
+#               "version": "$version",
+#               "releaseDate": "`date +%Y-%m-%d`",
+#               "status": "current",
+#               "description": "",
+#               "baseURL": "https://downloads.unidata.ucar.edu/ldm/$version/",
+#               "resources": {
+#                 "jar": {
+#                   "type": "application",
+#                   "package": "$tarball",
+#                   "name": "GZipped TAR file",
+#                   "hash": {
+#                     "MD5": "",
+#                     "SHA1": "",
+#                     "SHA256": ""
+#                   },
+#                   "info": ""
+#                 }
+#               }
+#             },
+#         EOF
+#           sed -n '/"releases":/,$p' release_info.json | sed '1d' | sed 's/current/previous/' \
+#             >>release_info.json.new
+#           curl -u "$USER":"$PW" -T release_info.json.new \
+#             https://artifacts.unidata.ucar.edu/repository/downloads-ldm/release_info.json
+#         fi
+
+#         # Publish the documentation
+#         make install
+#         cd /tmp/ldm/share/doc/ldm
+#         find . -type f | sed 's/^\.\///' | while read path; do
+#           curl -u "$USER":"$PW" \
+#             -T $path https://artifacts.unidata.ucar.edu/repository/docs-ldm/$version/$path \
+#             -T $path https://artifacts.unidata.ucar.edu/repository/docs-ldm/current/$path
+#         done
+
+#         # Update the versions file on the documentation if necessary
+#         filename=versions.html
+#         wget https://artifacts.unidata.ucar.edu/repository/docs-ldm/$filename
+#         if ! grep -w '"version": "'$version'",' $filename; then
+#           sed -n '1,/<tr>/p' $filename >$filename.new
+#           cat <<EOF >>$filename.new
+#                 <td>
+#                   <b>$version</b>
+#                 </td>
+#                 <td>
+#                   <a href="https://docs.unidata.ucar.edu/ldm/$version/">Documentation</a>
+#                 </td>
+#                 <td>
+#                   <a href="https://downloads.unidata.ucar.edu/ldm/$version/ldm-$version.tar.gz">Download</a>
+#                 </td>
+#                 <td>
+#                   <a href="https://docs.unidata.ucar.edu/ldm/$version/CHANGE_LOG">Release Notes</a>
+#                 </td>
+#               </tr>
+#         EOF
+#           sed -n '/<tr>/,$p' $filename | >>$filename.new
+#           curl -u "$USER":"$PW" -T $filename.new \
+#             https://artifacts.unidata.ucar.edu/repository/docs-ldm/$filename
+#         fi

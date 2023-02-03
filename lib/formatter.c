@@ -34,6 +34,7 @@
 #define _USE_MATH_DEFINES
 #endif
 
+#include <assert.h>
 #include <ctype.h>
 #include <float.h>
 #include <limits.h>
@@ -41,12 +42,18 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <string.h>
 #include <time.h>
 
 typedef const char*	(*IdGetter)(const ut_unit*, ut_encoding);
-typedef	int		(*ProductPrinter)(const ut_unit* const*, const int*,
-    int, char*, size_t, IdGetter);
+typedef	int		(*ProductPrinter)(
+        const ut_unit* const* const basicUnits,
+        const DimPow* const         powers,
+        const int                   count,
+        char* const                 buf,
+        size_t                      size,
+        IdGetter                    getId);
 
 /*
  * Formatting parameters:
@@ -70,26 +77,26 @@ typedef struct {
 static int
 asciiPrintProduct(
     const ut_unit* const* const	basicUnits,
-    const int* const		powers,
+    const DimPow* const		powers,
     const int			count,
-    char* const			buf,
-    size_t		        max,
+    char* const			unitStr,
+    size_t		        size,
     IdGetter			getId);
 static int
 latin1PrintProduct(
     const ut_unit* const* const	basicUnits,
-    const int* const		powers,
+    const DimPow* const		powers,
     const int			count,
     char* const			buf,
-    size_t		        max,
+    size_t		        size,
     IdGetter			getId);
 static int
 utf8PrintProduct(
     const ut_unit* const* const	basicUnits,
-    const int* const		powers,
+    const DimPow* const		powers,
     const int			count,
     char* const			buf,
-    size_t		        max,
+    size_t		        size,
     IdGetter			getId);
 
 static ut_visitor	formatter;
@@ -288,9 +295,8 @@ formatBasic(
  *			the product-unit.
  *	powers		Pointer to the powers associated with each basic-unit.
  *	count		The number of basic-units.
- *	buf		Pointer to the buffer into which to print the basic-
- *			units.
- *	size		The size of "buf" in bytes.
+ *	unitStr         Pointer to the buffer into which to print the basic-units.
+ *	size		The size of "unitStr" in bytes.
  *	getId		Returns the identifier for a unit.
  * Returns:
  *	-1		Failure.  See errno.
@@ -301,13 +307,13 @@ formatBasic(
 static int
 asciiPrintProduct(
     const ut_unit* const* const	basicUnits,
-    const int* const		powers,
+    const DimPow* const		powers,
     const int			count,
-    char* const			buf,
+    char* const			unitStr,
     size_t		        size,
     IdGetter			getId)
 {
-    int		nchar = snprintf(buf, size, "%s", "");
+    int		nchar = snprintf(unitStr, size, "%s", "");
 
     if (nchar >= 0) {
         int	i;
@@ -315,109 +321,16 @@ asciiPrintProduct(
         size = SUBTRACT_SIZET(size, nchar);
 
         for (i = 0; i < count && nchar >= 0; i++) {
-            int	n;
-
-            /*
-             * Append separator if appropriate.
-             */
-            if (nchar > 0) {
-                n = RETURNS_NAME(getId)
-                    ? snprintf(buf+nchar, size, "%s", "-")
-                    : snprintf(buf+nchar, size, "%s", " "); // Period not recommended
-
-                if (n < 0) {
-                    nchar = n;
-                    break;
-                }
-
-                nchar += n;
-                size = SUBTRACT_SIZET(size, n);
-            }
-
-            /*
-             * Append unit identifier.
-             */
-            n = printBasic(basicUnits[i], buf+nchar, size, getId, UT_ASCII);
-
-            if (n < 0) {
-                nchar = n;
-                break;
-            }
-
-            nchar += n;
-            size = SUBTRACT_SIZET(size, n);
-
-            /*
-             * Append exponent if appropriate.
-             */
-            if (powers[i] != 1) {
-                n = RETURNS_NAME(getId)
-                    ? snprintf(buf+nchar, size, "^%d", powers[i])
-                    : snprintf(buf+nchar, size, "%d", powers[i]);
-
-                if (n < 0) {
-                    nchar = n;
-                    break;
-                }
-
-                nchar += n;
-                size = SUBTRACT_SIZET(size, n);
-            }
-        }				/* loop over basic-units */
-    }				/* "buf" initialized */
-
-    return nchar;
-}
-
-
-/*
- * Prints a product of basic-units using the UTF-8 character-set.
- *
- * Arguments:
- *	basicUnits	Pointer to pointers to the basic-units whose product
- *			is to be printed.
- *	powers		Pointer to the powers associated with each basic-unit.
- *	count		The number of basic-units.
- *	buf		Pointer to the buffer into which to print the basic-
- *			units.
- *	size		The size of "buf" in bytes.
- *	getId		Returns the identifier for a unit.
- * Returns:
- *	-1		Failure.  See errno.
- *	else	        Success. Number of bytes that would be printed if
- *	                "size" were sufficiently large excluding the
- *	                terminating NUL.
- */
-static int
-utf8PrintProduct(
-    const ut_unit* const* const	basicUnits,
-    const int* const		powers,
-    const int			count,
-    char* const			buf,
-    size_t		        size,
-    IdGetter			getId)
-{
-    int		nchar = snprintf(buf, size, "%s", "");
-
-    if (nchar >= 0) {
-        int	iBasic;
-
-        size = SUBTRACT_SIZET(size, nchar);
-
-        for (iBasic = 0; iBasic < count; iBasic++) {
-            int	power = powers[iBasic];
-
-            if (power != 0) {
-                /*
-                 * The current basic-unit must be printed.
-                 */
+            if (dp_contributes(powers+i)) {
                 int	n;
 
+                /*
+                 * Append separator if appropriate.
+                 */
                 if (nchar > 0) {
-                    /*
-                     * Append mid-dot separator.
-                     */
-                    n = snprintf(buf+nchar, size, "%s", "\xc2\xb7");
+                    n = RETURNS_NAME(getId)
+                        ? snprintf(unitStr+nchar, size, "%s", "-")
+                        : snprintf(unitStr+nchar, size, "%s", " "); // Period not recommended
 
                     if (n < 0) {
                         nchar = n;
@@ -431,8 +344,7 @@ utf8PrintProduct(
                 /*
                  * Append unit identifier.
                  */
-                n = printBasic(basicUnits[iBasic], buf+nchar, size, getId,
-                        UT_UTF8);
+                n = printBasic(basicUnits[i], unitStr+nchar, size, getId, UT_ASCII);
 
                 if (n < 0) {
                     nchar = n;
@@ -442,28 +354,95 @@ utf8PrintProduct(
                 nchar += n;
                 size = SUBTRACT_SIZET(size, n);
 
-                if (power != 1) {
-                    /*
-                     * Append exponent.
-                     */
-                    static const char*	exponentStrings[10] = {
-                        "\xe2\x81\xb0",	/* 0 */
-                        "\xc2\xb9",	/* 1 */
-                        "\xc2\xb2",	/* 2 */
-                        "\xc2\xb3",	/* 3 */
-                        "\xe2\x81\xb4",	/* 4 */
-                        "\xe2\x81\xb5",	/* 5 */
-                        "\xe2\x81\xb6",	/* 6 */
-                        "\xe2\x81\xb7",	/* 7 */
-                        "\xe2\x81\xb8",	/* 8 */
-                        "\xe2\x81\xb9",	/* 9 */
-                    };
+                /*
+                 * Append exponent if appropriate.
+                 */
+                if (!dp_isUnity(powers+i)) {
+                    char expStr[80];
+                    dp_toString(powers+i, expStr, sizeof(expStr));
+                    const bool needsParens = strchr(expStr, '/');
+                    n = RETURNS_NAME(getId)
+                        ? snprintf(unitStr+nchar, size, needsParens ? "^(%s)" : "^%s", expStr)
+                        : snprintf(unitStr+nchar, size, needsParens ? "(%s)" : "%s", expStr);
 
-                    if (power < 0) {
+                    if (n < 0) {
+                        nchar = n;
+                        break;
+                    }
+
+                    nchar += n;
+                    size = SUBTRACT_SIZET(size, n);
+                }
+            } // `powers[i]` contributes to dimensionality
+        } // loop over basic-units
+    } // "unitStr" initialized
+
+    return nchar;
+}
+
+
+/*
+ * Prints a product of basic-units using the UTF-8 character-set.
+ *
+ * Arguments:
+ *	basicUnits	Pointer to pointers to the basic-units whose product
+ *			is to be printed.
+ *	powers		Pointer to the powers associated with each basic-unit.
+ *	count   	The number of basic-units.
+ *	unitStr		Pointer to the buffer into which to print the basic-units.
+ *	size		The size of "unitStr" in bytes.
+ *	getId		Returns the identifier for a unit.
+ * Returns:
+ *	-1		Failure.  See errno.
+ *	else	        Success. Number of bytes that would be printed if
+ *	                "size" were sufficiently large excluding the
+ *	                terminating NUL.
+ */
+static int
+utf8PrintProduct(
+    const ut_unit* const* const	basicUnits,
+    const DimPow* const		powers,
+    const int			count,
+    char* const			unitStr,
+    size_t		        size,
+    IdGetter			getId)
+{
+    int nchar;
+    int	i;
+
+    for (i = 0; i < count; i++)
+	if (powers[i].denom != 1)
+	    break;
+
+    if (i < count) {
+	/*
+	 * The exponent can't be represented in UTF-8 because there's no superscript slash in
+	 * Unicode. Use the ASCII encoding instead.
+	 */
+	nchar = asciiPrintProduct(basicUnits, powers, count, unitStr, size, getId);
+    }
+    else {
+        nchar = snprintf(unitStr, size, "%s", "");
+
+        if (nchar >= 0) {
+            int	basicIndex;
+
+            size = SUBTRACT_SIZET(size, nchar);
+
+            for (basicIndex = 0; basicIndex < count; basicIndex++) {
+                const DimPow* power = powers+basicIndex;
+
+                if (dp_contributes(power)) {
+                    /*
+                     * The current basic-unit must be printed.
+                     */
+                    int	n;
+
+                    if (nchar > 0) {
                         /*
-                         * Append superscript minus sign.
+                         * Append mid-dot separator.
                          */
-                        n = snprintf(buf+nchar, size, "%s", "\xe2\x81\xbb");
+                        n = snprintf(unitStr+nchar, size, "%s", "\xc2\xb7");
 
                         if (n < 0) {
                             nchar = n;
@@ -472,30 +451,63 @@ utf8PrintProduct(
 
                         nchar += n;
                         size = SUBTRACT_SIZET(size, n);
-                        power = -power;
                     }
 
                     /*
-                     * Append UTF-8 encoding of exponent magnitude.
+                     * Append unit identifier.
                      */
-                    {
-                        static int*	digit = NULL;
+                    n = printBasic(basicUnits[basicIndex], unitStr+nchar, size, getId, UT_UTF8);
 
-                        digit = realloc(digit, (size_t)((sizeof(powers[0])*
-                                        CHAR_BIT*(M_LOG10E/M_LOG2E)) + 1));
+                    if (n < 0) {
+                        nchar = n;
+                        break;
+                    }
 
-                        if (digit == NULL) {
-                            nchar = -1;
+                    nchar += n;
+                    size = SUBTRACT_SIZET(size, n);
+
+                    if (!dp_isUnity(power)) {
+                        // Append exponent.
+
+                        assert(power->denom == 1);
+
+                        static const char* exponentStrings[10] = {
+                            "\xe2\x81\xb0",	// 0
+                            "\xc2\xb9",	        // 1
+                            "\xc2\xb2",	        // 2
+                            "\xc2\xb3",	        // 3
+                            "\xe2\x81\xb4",	// 4
+                            "\xe2\x81\xb5",	// 5
+                            "\xe2\x81\xb6",	// 6
+                            "\xe2\x81\xb7",	// 7
+                            "\xe2\x81\xb8",	// 8
+                            "\xe2\x81\xb9",	// 9
+                        };
+
+                        if (power->numer < 0) {
+                            // Append superscript minus sign.
+                            n = snprintf(unitStr+nchar, size, "%s", "\xe2\x81\xbb");
+
+                            if (n < 0) {
+                                nchar = n;
+                                break;
+                            }
+
+                            nchar += n;
+                            size = SUBTRACT_SIZET(size, n);
                         }
-                        else {
-                            int	idig = 0;
 
-                            for (; power > 0; power /= 10)
-                                digit[idig++] = power % 10;
+                        // Append UTF-8 encoding of exponent magnitude.
+                        {
+                            uint8_t digits[DIMPOW_MAX_DIGITS];
+                            int	    idig;
+                            int     numer = ABS(power->numer);
+
+                            for (idig = 0; numer > 0; numer /= 10)
+                                digits[idig++] = numer % 10;
 
                             while (idig-- > 0) {
-                                n = snprintf(buf+nchar, size, "%s",
-                                        exponentStrings[digit[idig]]);
+                                n = snprintf(unitStr+nchar, size, "%s", exponentStrings[digits[idig]]);
 
                                 if (n < 0) {
                                     nchar = n;
@@ -508,18 +520,18 @@ utf8PrintProduct(
 
                             if (nchar < 0)
                                 break;
-                        }
-                    }		/* exponent digits block */
-                }		/* must print exponent */
-            }			/* must print basic-unit */
-        }				/* loop over basic-units */
-    }				/* "buf" initialized */
+                        } // numerator digits block
+                    } // must print exponent
+                } // `power` contributes to the dimensionality
+            } // loop over basic-units
+        } // "unitStr" initialized
+    } // UTF-8 encoding is possible
 
     return nchar;
 }
 
 
-static const int*	globalPowers = NULL;
+static const DimPow*	globalPowers = NULL;
 
 
 static int
@@ -527,7 +539,7 @@ compareExponents(
     const void*	i,
     const void*	j)
 {
-    return globalPowers[*(const int*)j] - globalPowers[*(const int*)i];
+    return dp_compare(globalPowers+(*(const int*)j), globalPowers+(*(const int*)i));
 }
 
 
@@ -537,10 +549,10 @@ compareExponents(
  * Arguments:
  *	powers		Pointer to the powers of the basic-units.
  *	count		The number of powers.
- *	positiveCount	Pointer to pointer to the number of positive powers.
- *			Set on and only on success.
- *	negativeCount	Pointer to pointer to the number of negative powers.
- *			Set on and only on success.
+ *	order           Order for printing basic units. Basic unit `order[i]` should be raised to
+ *	                the `powers[i]` power.
+ *	positiveCount	Pointer to the number of positive powers. Set on and only on success.
+ *	negativeCount	Pointer to the number of negative powers. Set on and only on success.
  * Returns:
  *	NULL		Failure.  See errno.
  *	else		Success.  Pointer to indexes of "powers" in decreasing
@@ -548,7 +560,7 @@ compareExponents(
  */
 static void
 getBasicOrder(
-    const int* const	powers,
+    const DimPow* const	powers,
     const int		count,
     int* const		order,
     int* const		positiveCount,
@@ -560,11 +572,11 @@ getBasicOrder(
     int		i;
 
     for (i = 0; i < count; i++) {
-	if (powers[i] < 0) {
+	if (powers[i].numer < 0) {
 	    ++nNeg;
 	    order[n++] = i;
 	}
-	else if (powers[i] > 0) {
+	else if (powers[i].numer > 0) {
 	    ++nPos;
 	    order[n++] = i;
 	}
@@ -591,7 +603,7 @@ getBasicOrder(
  *	order		Pointer to indexes of "powers".  "order[i]" is the
  *			index of "basicUnits" and "powers" for the "i"th
  *			position.
- *	count		The number of basic-units.
+ *	factorCount     The number of factors.
  *	getId		Returns the identifier for a unit.
  * Returns:
  *	-1		Failure.  See errno.
@@ -604,19 +616,21 @@ latin1PrintBasics(
     char* const			buf,
     size_t			size,
     const ut_unit* const*	basicUnits,
-    const int* const		powers,
+    const DimPow* const		powers,
     const int* const		order,
-    const int			count,
+    const int			factorCount,
     IdGetter			getId)
 {
     int	needSeparator = 0;
     int	nchar = 0;
-    int	i;
+    int	factorIndex;
 
-    for (i = 0; i < count; i++) {
+    for (factorIndex = 0; factorIndex < factorCount; factorIndex++) {
 	int	n;
-	int	j = order[i];
-	int	power = ABS(powers[j]);
+	int	basicIndex = order[factorIndex];
+	int	power = ABS(powers[basicIndex].numer);
+
+	assert(powers[basicIndex].denom == 1);
 
 	if (power != 0) {
 	    if (needSeparator) {
@@ -634,7 +648,7 @@ latin1PrintBasics(
             /*
              * Append unit identifier.
              */
-            n = printBasic(basicUnits[j], buf+nchar, size, getId, UT_LATIN1);
+            n = printBasic(basicUnits[basicIndex], buf+nchar, size, getId, UT_LATIN1);
 
             if (n < 0) {
                 nchar = n;
@@ -675,9 +689,8 @@ latin1PrintBasics(
  *			the product-unit.
  *	powers		Pointer to the powers associated with each basic-unit.
  *	count		The number of basic-units.
- *	buf		Pointer to the buffer into which to print the basic-
- *			units.
- *	size		The size of "buf" in bytes.
+ *	unitStr		Pointer to the buffer into which to print the basic-units.
+ *	size		The size of "unitStr" in bytes.
  *	getId		Returns the identifier for a unit.
  * Returns:
  *	-1		Failure.  See errno.
@@ -688,9 +701,9 @@ latin1PrintBasics(
 static int
 latin1PrintProduct(
     const ut_unit* const* const	basicUnits,
-    const int* const		powers,
+    const DimPow* const		powers,
     const int			count,
-    char* const			buf,
+    char* const			unitStr,
     size_t		        size,
     IdGetter			getId)
 {
@@ -698,15 +711,14 @@ latin1PrintProduct(
     int				i;
 
     for (i = 0; i < count; i++)
-	if (powers[i] < -3 || powers[i] > 3)
+	if (powers[i].denom != 1 || powers[i].numer < -3 || powers[i].numer > 3)
 	    break;
 
     if (i < count) {
 	/*
-	 * At least one exponent can't be represented in ISO 8859-1.  Use
-	 * the ASCII encoding instead.
+	 * The exponent can't be represented in ISO 8859-1. Use the ASCII encoding instead.
 	 */
-	nchar = asciiPrintProduct(basicUnits, powers, count, buf, size, getId);
+	nchar = asciiPrintProduct(basicUnits, powers, count, unitStr, size, getId);
     }
     else {
 	int		positiveCount;
@@ -719,7 +731,7 @@ latin1PrintProduct(
 	else {
 	    getBasicOrder(powers, count, order, &positiveCount, &negativeCount);
 
-            nchar = snprintf(buf, size, "%s", "");
+            nchar = snprintf(unitStr, size, "%s", "");
 
             if (nchar >= 0 && (positiveCount + negativeCount > 0)) {
                 int		n;
@@ -727,7 +739,7 @@ latin1PrintProduct(
                 size = SUBTRACT_SIZET(size, nchar);
 
                 if (positiveCount == 0) {
-                    n = snprintf(buf+nchar, size, "%s", "1");
+                    n = snprintf(unitStr+nchar, size, "%s", "1");
                     if (0 > n) {
                         nchar = n;
                     }
@@ -737,7 +749,7 @@ latin1PrintProduct(
                     }
                 }
                 else {
-                    n = latin1PrintBasics(buf+nchar, size, basicUnits,
+                    n = latin1PrintBasics(unitStr+nchar, size, basicUnits,
                             powers, order, positiveCount, getId);
                     if (0 > n) {
                         nchar = n;
@@ -749,7 +761,7 @@ latin1PrintProduct(
                 }
 
                 if (nchar >= 0 && negativeCount > 0) {
-                    n = snprintf(buf+nchar, size, "%s",
+                    n = snprintf(unitStr+nchar, size, "%s",
                         negativeCount == 1 ? "/" : "/(");
                     if (0 > n) {
                         nchar = n;
@@ -758,7 +770,7 @@ latin1PrintProduct(
                         nchar += n;
                         size = SUBTRACT_SIZET(size, n);
 
-                        n = latin1PrintBasics(buf+nchar, size, basicUnits,
+                        n = latin1PrintBasics(unitStr+nchar, size, basicUnits,
                                 powers, order+positiveCount, negativeCount,
                                 getId);
                         if (0 > n) {
@@ -769,7 +781,7 @@ latin1PrintProduct(
                             size = SUBTRACT_SIZET(size, n);
 
                             if (negativeCount > 1) {
-                                n = snprintf(buf+nchar, size, "%s", ")");
+                                n = snprintf(unitStr+nchar, size, "%s", ")");
                                 if (0 > n) {
                                     nchar = n;
                                 }
@@ -779,9 +791,9 @@ latin1PrintProduct(
                                 }
                             }
                         }
-                    }		        /* solidus appended */
+                    }		        /* solidus/slash appended */
                 }			/* positive exponents printed */
-            }				/* "buf" initialized */
+            }				/* "unitStr" initialized */
 
 	    (void)free(order);
 	}				/* "order" allocated */
@@ -814,7 +826,7 @@ formatProduct(
     const ut_unit* const	unit,
     const int			count,
     const ut_unit* const* const	basicUnits,
-    const int* const		powers,
+    const DimPow* const		powers,
     void*			arg)
 {
     FormatPar*	formatPar = (FormatPar*)arg;

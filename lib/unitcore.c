@@ -52,6 +52,7 @@
 
 #include "config.h"
 
+#include "DimPow.h"		/* Dimension powers */
 #include "udunits2.h"		/* this module's API */
 #include "converter.h"
 
@@ -178,7 +179,7 @@ struct BasicUnit {
 struct ProductUnit {
     Common		common;
     short*		indexes;
-    short*		powers;
+    DimPow*	        powers;
     int			count;
 };
 
@@ -232,7 +233,7 @@ static bool areAlmostEqual(
 static ProductUnit*	productNew(
     ut_system* const		system,
     const short* const		indexes,
-    const short* const		powers,
+    const DimPow* const		powers,
     const int			count);
 static void		productFree(
     ut_unit* const		unit);
@@ -627,12 +628,13 @@ basicNew(
 {
     BasicUnit*		basicUnit = NULL;	/* failure */
     int			error = 1;
-    short		power = 1;
+    DimPow              power;
     short		shortIndex = (short)index;
     ProductUnit*	product;
 
     assert(system != NULL);
 
+    dp_init(&power, 1, 1);
     product = productNew(system, &shortIndex, &power, 1);
 
     if (product == NULL) {
@@ -903,7 +905,7 @@ static ProductUnit*
 productNew(
     ut_system* const	system,
     const short* const	indexes,
-    const short* const	powers,
+    const DimPow* const	powers,
     const int		count)
 {
     ProductUnit*	productUnit;
@@ -933,23 +935,33 @@ productNew(
                 error = 0;
             }
             else {
-                size_t	nbytes = sizeof(short)*count;
-                short*	newIndexes = malloc(nbytes*2);
+                short*	newIndexes = malloc(sizeof(short)*count);
 
-                if (count > 0 && newIndexes == NULL) {
+                if (newIndexes == NULL) {
                     ut_set_status(UT_OS);
                     ut_handle_error_message(strerror(errno));
                     ut_handle_error_message("productNew(): "
                         "Couldn't allocate %d-element index array", count);
                 }
                 else {
-                    short*	newPowers = newIndexes + count;
+                    DimPow*	newPowers = malloc(count*sizeof(DimPow));
 
-                    productUnit->count = count;
-                    productUnit->indexes = memcpy(newIndexes, indexes, nbytes);
-                    productUnit->powers = memcpy(newPowers, powers, nbytes);
-                    error = 0;
-                }
+                    if (newPowers == NULL) {
+                        ut_set_status(UT_OS);
+                        ut_handle_error_message(strerror(errno));
+                        ut_handle_error_message("productNew(): "
+                            "Couldn't allocate %d-element power array", count);
+                    }
+                    else {
+                        productUnit->count = count;
+                        productUnit->indexes = memcpy(newIndexes, indexes, sizeof(short)*count);
+                        productUnit->powers = memcpy(newPowers, powers, sizeof(DimPow)*count);
+                        error = 0;
+                    }                   /* Power array allocated */
+
+                    if (error)
+                        free(newIndexes);
+                }                       /* Index array allocated */
 	    }                           /* "count > 0" */
 	}                               /* "productUnit->common" initialized */
 
@@ -1024,15 +1036,15 @@ productCompare(
         if (cmp == 0) {
 	    const short* const	indexes1 = product1->indexes;
 	    const short* const	indexes2 = product2->indexes;
-	    const short* const	powers1	= product1->powers;
-	    const short* const	powers2	= product2->powers;
+	    const DimPow* const	powers1	= product1->powers;
+	    const DimPow* const	powers2	= product2->powers;
 	    int			i;
 
 	    for (i = 0; i < product1->count; ++i) {
 		cmp = indexes1[i] - indexes2[i];
 
 		if (cmp == 0)
-		    cmp = powers1[i] - powers2[i];
+		    cmp = dp_compare(powers1+i, powers2+i);
 
 		if (cmp != 0)
 		    break;
@@ -1050,12 +1062,19 @@ productReallyFree(
 {
     if (unit != NULL) {
 	assert(IS_PRODUCT(unit));
+
 	free(unit->product.indexes);
 	unit->product.indexes = NULL;
+
+	free(unit->product.powers);
+	unit->product.powers = NULL;
+
 	cv_free(unit->common.toProduct);
 	unit->common.toProduct = NULL;
+
 	cv_free(unit->common.fromProduct);
 	unit->common.fromProduct = NULL;
+
 	free(unit);
     }
 }
@@ -1102,8 +1121,8 @@ productMultiply(
 	const ProductUnit* const	product2 = &unit2->product;
 	short*				indexes1 = product1->indexes;
 	short*				indexes2 = product2->indexes;
-	short*				powers1 = product1->powers;
-	short*				powers2 = product2->powers;
+	DimPow* 			powers1 = product1->powers;
+	DimPow* 		        powers2 = product2->powers;
 	int				count1 = product1->count;
 	int				count2 = product2->count;
 	int				sumCount = count1 + count2;
@@ -1112,66 +1131,43 @@ productMultiply(
 	    result = unit1->common.system->one;
 	}
 	else {
-	    static short*		indexes = NULL;
+	    short  indexes[sumCount];
+            DimPow powers[sumCount];
 
-	    indexes = realloc(indexes, sizeof(short)*sumCount);
+            int	count = 0;
+            int	i1 = 0;
+            int	i2 = 0;
 
-	    if (indexes == NULL) {
-		ut_set_status(UT_OS);
-		ut_handle_error_message(strerror(errno));
-		ut_handle_error_message("productMultiply(): "
-		    "Couldn't allocate %d-element index array", sumCount);
-	    }
-	    else {
-		static short*	powers = NULL;
+            while (i1 < count1 || i2 < count2) {
+                if (i1 >= count1) {
+                    indexes[count] = indexes2[i2];
+                    powers[count++] = powers2[i2++];
+                }
+                else if (i2 >= count2) {
+                    indexes[count] = indexes1[i1];
+                    powers[count++] = powers1[i1++];
+                }
+                else if (indexes1[i1] > indexes2[i2]) {
+                    indexes[count] = indexes2[i2];
+                    powers[count++] = powers2[i2++];
+                }
+                else if (indexes1[i1] < indexes2[i2]) {
+                    indexes[count] = indexes1[i1];
+                    powers[count++] = powers1[i1++];
+                }
+                else {
+                    indexes[count] = indexes1[i1];
+                    powers[count] = powers1[i1];
+                    dp_add(powers+count, powers2+i2);
 
-		powers = realloc(powers, sizeof(short)*sumCount);
+                    ++count;
+                    ++i1;
+                    ++i2;
+                }
+            }
 
-		if (powers == NULL) {
-		    ut_set_status(UT_OS);
-		    ut_handle_error_message(strerror(errno));
-		    ut_handle_error_message("productMultiply(): "
-			"Couldn't allocate %d-element power array",
-			sumCount);
-		}
-		else {
-		    int				count = 0;
-		    int				i1 = 0;
-		    int				i2 = 0;
-
-		    while (i1 < count1 || i2 < count2) {
-			if (i1 >= count1) {
-			    indexes[count] = indexes2[i2];
-			    powers[count++] = powers2[i2++];
-			}
-			else if (i2 >= count2) {
-			    indexes[count] = indexes1[i1];
-			    powers[count++] = powers1[i1++];
-			}
-			else if (indexes1[i1] > indexes2[i2]) {
-			    indexes[count] = indexes2[i2];
-			    powers[count++] = powers2[i2++];
-			}
-			else if (indexes1[i1] < indexes2[i2]) {
-			    indexes[count] = indexes1[i1];
-			    powers[count++] = powers1[i1++];
-			}
-			else {
-			    if (powers1[i1] != -powers2[i2]) {
-				indexes[count] = indexes1[i1];
-				powers[count++] = powers1[i1] + powers2[i2];
-			    }
-
-			    i1++;
-			    i2++;
-			}
-		    }
-
-		    result = (ut_unit*)productNew(unit1->common.system,
-			indexes, powers, count);
-		}			/* "powers" re-allocated */
-	    }				/* "indexes" re-allocated */
-	}				/* "sumCount > 0" */
+            result = (ut_unit*)productNew(unit1->common.system, indexes, powers, count);
+        }				/* "sumCount > 0" */
     }					/* "unit2" is a product-unit */
 
     return result;
@@ -1213,26 +1209,18 @@ productRaise(
         result = unit->common.system->one;
     }
     else {
-        newPowers = malloc(sizeof(short)*count);
+        DimPow newPowers[count];
 
-        if (newPowers == NULL) {
-            ut_set_status(UT_OS);
-            ut_handle_error_message(strerror(errno));
-            ut_handle_error_message("productRaise(): "
-                "Couldn't allocate %d-element powers-buffer", count);
+        const DimPow* const	oldPowers = product->powers;
+        int			i;
+
+        for (i = 0; i < count; i++) {
+            newPowers[i] = oldPowers[i];
+            dp_multiply(newPowers+i, power, 1);
         }
-        else {
-            const short* const	oldPowers = product->powers;
-            int			i;
 
-            for (i = 0; i < count; i++)
-                newPowers[i] = (short)(oldPowers[i] * power);
-
-            result = (ut_unit*)productNew(unit->common.system,
-                product->indexes, newPowers, count);
-
-            free(newPowers);
-        }				/* "newPowers" allocated */
+        result = (ut_unit*)productNew(unit->common.system,
+            product->indexes, newPowers, count);
     }				        /* "count > 0" */
 
     return result;
@@ -1272,49 +1260,16 @@ productRoot(
         result = unit->common.system->one;
     }
     else {
-        newPowers = malloc(sizeof(short)*count);
+        DimPow                  newPowers[count];
+        const DimPow* const	oldPowers = product->powers;
+        int			i;
 
-        if (newPowers == NULL) {
-            ut_set_status(UT_OS);
-            ut_handle_error_message(strerror(errno));
-            ut_handle_error_message("productRoot(): "
-                "Couldn't allocate %d-element powers-buffer", count);
+        for (i = 0; i < count; i++) {
+            newPowers[i] = oldPowers[i];
+            dp_multiply(newPowers+i, 1, root);
         }
-        else {
-            const short* const	oldPowers = product->powers;
-            int			i;
 
-            for (i = 0; i < count; i++) {
-                if ((oldPowers[i] % root) != 0) {
-                    break;
-                }
-                newPowers[i] = (short)(oldPowers[i] / root);
-            }
-
-            if (i < count) {
-                char buf[80];
-
-                if (ut_format(unit, buf, sizeof(buf), UT_ASCII) == -1) {
-                    ut_set_status(UT_MEANINGLESS);
-                    ut_handle_error_message("productRoot(): "
-                        "Can't take root of unit");
-                }
-                else {
-                    ut_set_status(UT_MEANINGLESS);
-                    buf[sizeof(buf)-1] = 0;
-                    ut_handle_error_message("productRoot(): "
-                        "It's meaningless to take the %d%s root of \"%s\"",
-                        root, root == 2 ? "nd" : root == 3 ? "rd" : "th",
-                        buf);
-                }
-            }
-            else {
-                result = (ut_unit*)productNew(unit->common.system,
-                    product->indexes, newPowers, count);
-            }
-
-            free(newPowers);
-        }				/* "newPowers" allocated */
+        result = (ut_unit*)productNew(unit->common.system, product->indexes, newPowers, count);
     }				        /* "count > 0" */
 
     return result;
@@ -1409,8 +1364,8 @@ productRelationship(
     {
 	const short* const	indexes1 = unit1->indexes;
 	const short* const	indexes2 = unit2->indexes;
-	const short* const	powers1 = unit1->powers;
-	const short* const	powers2 = unit2->powers;
+	const DimPow* const	powers1 = unit1->powers;
+	const DimPow* const	powers2 = unit2->powers;
 	const int		count1 = unit1->count;
 	const int		count2 = unit2->count;
 	const ut_system* const	system = unit1->common.system;
@@ -1419,22 +1374,27 @@ productRelationship(
 
 	while (i1 < count1 || i2 < count2) {
 	    int	iBasic = -1;
+	    bool contributes = false;
 
 	    if (i1 >= count1) {
+		contributes = dp_contributes(powers2+i2);
 		iBasic = indexes2[i2++];
 	    }
 	    else if (i2 >= count2) {
+		contributes = dp_contributes(powers1+i1);
 		iBasic = indexes1[i1++];
 	    }
 	    else if (indexes1[i1] > indexes2[i2]) {
+		contributes = dp_contributes(powers2+i2);
 		iBasic = indexes2[i2++];
 	    }
 	    else if (indexes1[i1] < indexes2[i2]) {
+		contributes = dp_contributes(powers1+i1);
 		iBasic = indexes1[i1++];
 	    }
 
 	    if (iBasic != -1) {
-		if (!system->basicUnits[iBasic]->isDimensionless) {
+		if (!system->basicUnits[iBasic]->isDimensionless && contributes) {
 		    relationship = PRODUCT_UNCONVERTIBLE;
 		    break;
 		}
@@ -1443,7 +1403,7 @@ productRelationship(
 		iBasic = indexes1[i1];
 
 		if (!system->basicUnits[iBasic]->isDimensionless) {
-		    if (powers1[i1] == powers2[i2]) {
+		    if (dp_areEqual(powers1+i1, powers2+i2)) {
 			if (relationship == PRODUCT_INVERSE) {
 			    relationship = PRODUCT_UNCONVERTIBLE;
 			    break;
@@ -1451,7 +1411,7 @@ productRelationship(
 
 			relationship = PRODUCT_EQUAL;
 		    }
-		    else if (powers1[i1] == -powers2[i2]) {
+		    else if (dp_areInverse(powers1+i1, powers2+i2)) {
 			if (relationship == PRODUCT_EQUAL) {
 			    relationship = PRODUCT_UNCONVERTIBLE;
 			    break;
@@ -1502,30 +1462,17 @@ productAcceptVisitor(
 	    "Couldn't allocate %d-element basic-unit array", count);
     }
     else {
-        int*	powers = (count > 0 ? malloc(sizeof(int)*count) : NULL);
+        DimPow                  powers[count];
+        const ProductUnit*	prodUnit = &unit->product;
+        int			i;
 
-	if (count != 0 && powers == NULL) {
-	    ut_set_status(UT_OS);
-	    ut_handle_error_message(strerror(errno));
-	    ut_handle_error_message("productAcceptVisitor(): "
-		"Couldn't allocate %d-element power array", count);
-	}
-	else {
-	    const ProductUnit*	prodUnit = &unit->product;
-	    int			i;
+        for (i = 0; i < count; ++i) {
+            basicUnits[i] = unit->common.system->basicUnits[prodUnit->indexes[i]];
+            powers[i] = prodUnit->powers[i];
+        }
 
-	    for (i = 0; i < count; ++i) {
-		basicUnits[i] =
-		    unit->common.system->basicUnits[prodUnit->indexes[i]];
-		powers[i] = prodUnit->powers[i];
-	    }
-
-	    ut_set_status(visitor->visit_product(unit, count,
-		(const ut_unit**)basicUnits, powers, arg));
-
-            if (powers)
-                free(powers);
-	}				/* "powers" allocated */
+        ut_set_status(visitor->visit_product(unit, count, (const ut_unit**)basicUnits, powers,
+                arg));
 
 	free(basicUnits);
     }					/* "basicUnits" allocated */
@@ -3611,7 +3558,10 @@ ut_get_converter(
     else {
 	ut_set_status(UT_SUCCESS);
 
-	if (!IS_TIMESTAMP(from) && !IS_TIMESTAMP(to)) {
+	if (ut_compare(from, to) == 0) {
+            converter = cv_get_trivial();
+	}
+	else if (!IS_TIMESTAMP(from) && !IS_TIMESTAMP(to)) {
 	    ProductRelationship	relationship =
 		productRelationship(GET_PRODUCT(from), GET_PRODUCT(to));
 

@@ -1,6 +1,10 @@
 2.3.0.0
     Database:
-        * Added "permille" unit with appropriate symbol and "ppt"
+        * Added "per mille" unit with appropriate symbol and "ppt"
+        * Removed "ppt" as "parts per trillion" due to conflict with the more common meaning of
+          "parts per thousand"
+        * Added new prefixes quetta (1e30, Q), ronna (1e27, R), ronto (1e-27, r), and quecto
+          (1e-30, q)
 
     Library:
         * formatter.c: Replaced use of period as a multiplication indicator in
@@ -8,6 +12,8 @@
           recommended by BIPM or NIST. A period is still correctly interpreted
           for input, however.
         * Remove restrictions on range for arguments to ut_encode_clock()
+        * Replaced representation of dimensionality by a vector of shorts with a DimVec, which
+          is a vector of DimPow-s. A DimPow is a rational number and can be fractional.
     
     Documentation:
         * Modified to use the new license
@@ -21,15 +27,15 @@
           incrementing the version ID from 2.2 to 2.3.
 
     DevOps:
-        * pre-commit(1): Replaced modifying version ID-s in files with verifying
-          them
-        * Procedure: Add timestamp to CHANGE_LOG on commit just before pushing
-          and publishing
-        * commit(1): Deleted because .git/hooks/pre-commit now vets version ID-s
-          and timestamp
-        * push(1): Deleted because .git/hooks/pre-push now vets timestamp
-        * dev-makefile: Improved dependencies
-        * publish(1): Stop deleting older, bug-fix versions due to user requests
+        * pre-commit(1): Now vets version ID in "CHANGE_LOG" and ensures that "configure.ac",
+          "CMakeLists.txt", and "version.texi" have the same
+        * Procedure: Add timestamp to CHANGE_LOG on commit to the main branch
+        * commit(1): Deleted because vetting of version ID is now handled by "pre-commit" hook
+        * push(1): Deleted because now using GitHub actions
+        * dev-makefile: No long needed?
+        * publish(1): No long needed?
+        * Makefile.am: Added rule for setting version ID in CMakelist.txt from CHANGE_LOG
+        * .github/workflows/OnPush.yml: Initial creation
 
 2.2.28	2020-12-28T15:27:12-0700
     Documentation:

@@ -108,7 +108,7 @@ bool dv_equal(
     if (lhs->numDim != rhs->numDim)
         return false;
     for (int i = 0; i < lhs->numDim; ++i)
-        if (!dp_equal(lhs->dimPows+i, rhs->dimPows+i))
+        if (!dp_areEqual(lhs->dimPows+i, rhs->dimPows+i))
             return false;
     return true;
 }
@@ -128,8 +128,7 @@ void dv_add(
 {
     assert(dimVec->numDim == term->numDim);
     for (int i = 0; i < dimVec->numDim; ++i)
-        dp_add(dimVec->dimPows+i, dp_getNumerator(term->dimPows+i),
-                dp_getDenominator(term->dimPows+i));
+        dp_add(dimVec->dimPows+i, term->dimPows+i);
 }
 
 void dv_subtract(
@@ -138,8 +137,7 @@ void dv_subtract(
 {
     assert(dimVec->numDim == term->numDim);
     for (int i = 0; i < dimVec->numDim; ++i)
-        dp_add(dimVec->dimPows+i, -dp_getNumerator(term->dimPows+i),
-                dp_getDenominator(term->dimPows+i));
+        dp_subtract(dimVec->dimPows+i, term->dimPows+i);
 }
 
 int dv_toString(

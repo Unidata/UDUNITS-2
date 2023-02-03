@@ -75,8 +75,8 @@ static void reduce(DimPow* dimPow)
 
 void dp_init(
         DimPow* dimPow,
-        int     numer,
-        int     denom)
+        short   numer,
+        short   denom)
 {
     assert(denom != 0);
 
@@ -88,6 +88,7 @@ void dp_init(
     dimPow->numer = numer;
     dimPow->denom = denom;
     dimPow->contributes = numer != 0;
+    reduce(dimPow);
 }
 
 void dp_initDefault(DimPow* dimPow)
@@ -96,8 +97,8 @@ void dp_initDefault(DimPow* dimPow)
 }
 
 DimPow* dp_new(
-    const int numer,
-    const int denom)
+    const short numer,
+    const short denom)
 {
     DimPow* dimPow = malloc(sizeof(DimPow));
     if (dimPow)
@@ -115,12 +116,12 @@ void dp_free(DimPow* dimPow)
     free(dimPow);
 }
 
-int dp_getNumerator(const DimPow* dimPow)
+short dp_getNumerator(const DimPow* dimPow)
 {
     return dimPow->numer;
 }
 
-int dp_getDenominator(const DimPow* dimPow)
+short dp_getDenominator(const DimPow* dimPow)
 {
     return dimPow->denom;
 }
@@ -130,6 +131,11 @@ bool dp_contributes(const DimPow* dimPow)
     return dimPow->contributes;
 }
 
+bool dp_isUnity(const DimPow* dimPow)
+{
+    return dimPow->numer == dimPow->denom;
+}
+
 void dp_copy(
         DimPow*       lhs,
         const DimPow* rhs)
@@ -137,28 +143,45 @@ void dp_copy(
     *lhs = *rhs;
 }
 
-bool dp_equal(
+int dp_compare(
         const DimPow* lhs,
         const DimPow* rhs)
 {
-    return (lhs->contributes == rhs->contributes &&
-            lhs->numer*rhs->denom == lhs->denom*rhs->numer);
+    if (lhs->contributes != rhs->contributes)
+        return lhs->contributes
+                ? 1
+                : -1;
+    const int left  = lhs->numer*rhs->denom;
+    const int right = rhs->numer*lhs->denom;
+    return left < right
+            ? -1
+            : left > right
+              ? 1
+              : 0;
+}
+
+bool dp_areEqual(
+        const DimPow* lhs,
+        const DimPow* rhs)
+{
+    return dp_compare(lhs, rhs) == 0;
+}
+
+bool dp_areInverse(
+        const DimPow* lhs,
+        const DimPow* rhs)
+{
+    return lhs->contributes == rhs->contributes &&
+            lhs->numer*rhs->denom == -rhs->numer*lhs->denom;
 }
 
 void dp_add(
-        DimPow* dimPow,
-        int     numer,
-        int     denom)
+        DimPow*       dimPow,
+        const DimPow* term)
 {
-    assert(denom != 0);
-
-    if (denom < 0) {
-        denom *= -1;
-        numer *= -1;
-    }
-
-    const int multiple = lcm(dimPow->denom, denom);
-    const int newNumer = dimPow->numer*(multiple/dimPow->denom) + numer*(multiple/denom);
+    const int multiple = lcm(dimPow->denom, term->denom);
+    const int newNumer = dimPow->numer*(multiple/dimPow->denom) +
+            term->numer*(multiple/term->denom);
     if (newNumer == 0) {
         dimPow->contributes = false; // No longer contributes but memoizes previous state
     }
@@ -167,12 +190,31 @@ void dp_add(
         dimPow->denom = multiple;
         dimPow->contributes = true;
     }
+    reduce(dimPow);
+}
+
+void dp_subtract(
+        DimPow*       dimPow,
+        const DimPow* term)
+{
+    const int multiple = lcm(dimPow->denom, term->denom);
+    const int newNumer = dimPow->numer*(multiple/dimPow->denom) -
+            term->numer*(multiple/term->denom);
+    if (newNumer == 0) {
+        dimPow->contributes = false; // No longer contributes but memoizes previous state
+    }
+    else {
+        dimPow->numer = newNumer;
+        dimPow->denom = multiple;
+        dimPow->contributes = true;
+    }
+    reduce(dimPow);
 }
 
 void dp_multiply(
         DimPow* dimPow,
-        int     numer,
-        int     denom)
+        short   numer,
+        short   denom)
 {
     assert(denom != 0);
 
@@ -184,16 +226,15 @@ void dp_multiply(
     dimPow->numer *= numer;
     dimPow->denom *= denom;
     dimPow->contributes = dimPow->contributes && numer != 0;
+    reduce(dimPow);
 }
 
 int dp_toString(
-        const DimPow* dimPow,
-        char*         buf,
-        const size_t  size)
+        const DimPow* const dimPow,
+        char*               buf,
+        const size_t        size)
 {
     char* fmt;
-
-    reduce(dimPow);
 
     if (dimPow->contributes) {
         assert(dimPow->numer != 0);

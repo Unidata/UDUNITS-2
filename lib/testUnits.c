@@ -1145,6 +1145,7 @@ test_utGetConverter(void)
     float		floats[2];
 
     CU_ASSERT_PTR_NOT_NULL(converter);
+
     CU_ASSERT_EQUAL(cv_convert_double(converter, 1.0), 1.0);
     floats[0] = 1; floats[1] = 2;
     CU_ASSERT_EQUAL(cv_convert_floats(converter, floats, 2, floats), floats);
@@ -1156,16 +1157,35 @@ test_utGetConverter(void)
     CU_ASSERT_EQUAL(doubles[1], 2);
     CU_ASSERT_EQUAL(cv_convert_floats(converter, floats, 1, floats+1), floats+1);
     CU_ASSERT_EQUAL(floats[1], 1);
-    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles, 1, doubles+1),
-	doubles+1);
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles, 1, doubles+1), doubles+1);
     CU_ASSERT_EQUAL(doubles[1], 1);
     floats[0] = 1; floats[1] = 2;
     CU_ASSERT_EQUAL(cv_convert_floats(converter, floats+1, 1, floats), floats);
     CU_ASSERT_EQUAL(floats[0], 2);
     doubles[0] = 1; doubles[1] = 2;
-    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles+1, 1, doubles),
-	doubles);
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles+1, 1, doubles), doubles);
     CU_ASSERT_EQUAL(doubles[0], 2);
+
+    CU_ASSERT_EQUAL(cv_convert_double(converter, 0.1), 0.1);
+    floats[0] = 0.1; floats[1] = 0.2;
+    CU_ASSERT_EQUAL(cv_convert_floats(converter, floats, 2, floats), floats);
+    CU_ASSERT_EQUAL(floats[0], 0.1f);
+    CU_ASSERT_EQUAL(floats[1], 0.2f);
+    doubles[0] = 0.1; doubles[1] = 0.2;
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles, 2, doubles), doubles);
+    CU_ASSERT_EQUAL(doubles[0], 0.1);
+    CU_ASSERT_EQUAL(doubles[1], 0.2);
+    CU_ASSERT_EQUAL(cv_convert_floats(converter, floats, 1, floats+1), floats+1);
+    CU_ASSERT_EQUAL(floats[1], 0.1f);
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles, 1, doubles+1), doubles+1);
+    CU_ASSERT_EQUAL(doubles[1], 0.1);
+    floats[0] = 0.1; floats[1] = 0.2;
+    CU_ASSERT_EQUAL(cv_convert_floats(converter, floats+1, 1, floats), floats);
+    CU_ASSERT_EQUAL(floats[0], 0.2f);
+    doubles[0] = 0.1; doubles[1] = 0.2;
+    CU_ASSERT_EQUAL(cv_convert_doubles(converter, doubles+1, 1, doubles), doubles);
+    CU_ASSERT_EQUAL(doubles[0], 0.2);
+
     cv_free(converter);
 
     converter = ut_get_converter(radian, radian);
@@ -2080,6 +2100,20 @@ test_xml(void)
 
     ut_free(unit1);
 
+    ut_unit* inch = ut_parse(xmlSystem, "inch", UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(inch);
+    ut_unit* inches = ut_parse(xmlSystem, "inches", UT_ASCII);
+    CU_ASSERT_EQUAL(ut_compare(inch, inches), 0);
+    ut_free(inch);
+    ut_free(inches);
+
+    ut_unit* foot = ut_parse(xmlSystem, "foot", UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(foot);
+    ut_unit* feet = ut_parse(xmlSystem, "feet", UT_ASCII);
+    CU_ASSERT_EQUAL(ut_compare(foot, feet), 0);
+    ut_free(foot);
+    ut_free(feet);
+
     unit1 = ut_parse(xmlSystem, "\xc2\xb5K", UT_UTF8);  /* "mu" character */
     CU_ASSERT_PTR_NOT_NULL(unit1);
     converter = ut_get_converter(unit1, unit2);
@@ -2264,6 +2298,29 @@ test_xml(void)
 }
 
 static void
+test_formatting(void)
+{
+    ut_system*  xmlSystem;
+    ut_set_error_message_handler(ut_write_to_stderr);
+    xmlSystem = ut_read_xml(xmlPath);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(xmlSystem);
+
+    const char* spec;
+    ut_unit*    unit1;
+    char        actual[128];
+
+    spec = "m";
+    unit1 = ut_parse(xmlSystem, spec, UT_ASCII);
+    ut_format(unit1, actual, sizeof(actual), UT_ASCII);
+    CU_ASSERT_STRING_EQUAL(actual, spec);
+
+    spec = "m2";
+    unit1 = ut_parse(xmlSystem, spec, UT_ASCII);
+    ut_format(unit1, actual, sizeof(actual), UT_ASCII);
+    CU_ASSERT_STRING_EQUAL(actual, spec);
+}
+
+static void
 test_mm2_day2_divide(void)
 {
     ut_system*  xmlSystem;
@@ -2279,12 +2336,12 @@ test_mm2_day2_divide(void)
     CU_ASSERT_PTR_NOT_NULL(unit1);
     unit2 = ut_divide(unit1, unit1);
 
-    const char* expect = "1";
+    const char* expect = "";
     char        actual[128];
-    ut_format(unit2, actual, 128, UT_ASCII);
+    ut_format(unit2, actual, sizeof(actual), UT_ASCII);
     CU_ASSERT_STRING_EQUAL(actual, expect);
     if (strcmp(actual, expect))
-        fprintf(stderr, "(%s)/(%s) = \"%s\"\n", spec, spec, actual);
+        fprintf(stderr, "(%s)/(%s) != \"%s\"\n", spec, spec, actual);
 
     ut_free(unit1);
     ut_free(unit2);
@@ -2330,6 +2387,7 @@ main(
 	CU_Suite*	testSuite = CU_add_suite(__FILE__, setup, teardown);
 
 	if (testSuite != NULL) {
+	    CU_ADD_TEST(testSuite, test_formatting);
 	    CU_ADD_TEST(testSuite, test_mm2_day2_divide);
 	    CU_ADD_TEST(testSuite, test_unitSystem);
 	    CU_ADD_TEST(testSuite, test_utNewBaseUnit);

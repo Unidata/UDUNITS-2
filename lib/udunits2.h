@@ -22,6 +22,8 @@
 #ifndef UT_UNITS2_H_INCLUDED
 #define UT_UNITS2_H_INCLUDED
 
+#include "DimPow.h"
+
 #include <stdarg.h>
 #include <stddef.h>
 
@@ -162,7 +164,7 @@ typedef struct ut_visitor {
      *	else		Failure.
      */
     ut_status	(*visit_product)(const ut_unit* unit, int count,
-	const ut_unit* const* basicUnits, const int* powers, void* arg);
+	const ut_unit* const* basicUnits, const DimPow* powers, void* arg);
 
     /*
      * Visits a Galilean-unit.  A Galilean-unit has an underlying unit and a
