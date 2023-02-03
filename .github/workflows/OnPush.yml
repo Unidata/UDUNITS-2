@@ -60,13 +60,22 @@ jobs:
       - name: Provision Ubuntu
         if: contains(matrix.os, 'ubuntu')
         run: |
-          sudo apt-get install cunit texinfo cmake
+          sudo apt-get install libcunit1 libcunit1-dev
+          sudo apt-get update -y
+          sudo apt-get install -y texinfo
+          sudo apt purge --auto-remove cmake
+          sudo apt install -y software-properties-common lsb-release && sudo apt clean all
+          wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | \
+            gpg --dearmor - | sudo tee /etc/apt/trusted.gpg.d/kitware.gpg >/dev/null
+          sudo apt-add-repository "deb https://apt.kitware.com/ubuntu/ $(lsb_release -cs) main"
+          sudo apt update
+          sudo apt install cmake
 
       - name: Provision MacOS
         if: matrix.os == 'macos-latest'
         run: |
-          brew install cunit
           brew install texinfo
+          brew install cunit
           brew install cmake
 
 # Coverity Scan is better
