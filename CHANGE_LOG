@@ -36,6 +36,7 @@
         * push(1): Deleted because .git/hooks/pre-push now vets timestamp
         * dev-makefile: Improved dependencies
         * publish(1): Stop deleting older, bug-fix versions due to user requests
+        * Makefile.am: Added rule for setting version ID in CMakelist.txt from CHANGE_LOG
 
 2.2.28	2020-12-28T15:27:12-0700
     Documentation:

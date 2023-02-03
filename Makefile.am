@@ -71,3 +71,18 @@ udunits2.pdf:	version.texi LICENSE
 
 $(srcdir)/version.texi:  $(srcdir)/stamp-vti
 	@cp $(srcdir)/stamp-vti $@
+
+CMakeLists.txt:	CHANGE_LOG
+	versionId=`awk '{print $$1;exit}' CHANGE_LOG`; \
+	if ! `echo "$$versionId" | egrep '^[0-9.]+$$' >/dev/null`; then \
+	    echo "First word in file CHANGE_LOG isn't a version ID"; \
+	    exit 1; \
+	fi; \
+	if test `sed -nr '/^PROJECT/{s/.* ([0-9.]+).*$$/\1/p;q}' CMakeLists.txt` \!= \
+		$$versionId; then \
+	    sed -r '/^PROJECT/s/ [0-9][0-9.]*/ '$$versionId'/' CMakeLists.txt \
+		>CMakeLists.txt.tmp; \
+	    mv CMakeLists.txt.tmp CMakeLists.txt; \
+	else \
+	    touch $@; \
+	fi;
