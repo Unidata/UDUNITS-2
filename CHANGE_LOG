@@ -27,15 +27,13 @@
           incrementing the version ID from 2.2 to 2.3.
 
     DevOps:
-        * pre-commit(1): Replaced modifying version ID-s in files with verifying
-          them
-        * Procedure: Add timestamp to CHANGE_LOG on commit just before pushing
-          and publishing
-        * commit(1): Deleted because .git/hooks/pre-commit now vets version ID-s
-          and timestamp
-        * push(1): Deleted because .git/hooks/pre-push now vets timestamp
-        * dev-makefile: Improved dependencies
-        * publish(1): Stop deleting older, bug-fix versions due to user requests
+        * pre-commit(1): Now vets version ID in "CHANGE_LOG" and ensures that "configure.ac",
+          "CMakeLists.txt", and "version.texi" have the same
+        * Procedure: Add timestamp to CHANGE_LOG on commit to the main branch
+        * commit(1): Deleted because vetting of version ID is now handled by "pre-commit" hook
+        * push(1): Deleted because now using GitHub actions
+        * dev-makefile: No long needed?
+        * publish(1): No long needed?
         * Makefile.am: Added rule for setting version ID in CMakelist.txt from CHANGE_LOG
         * .github/workflows/OnPush.yml: Initial creation
 
