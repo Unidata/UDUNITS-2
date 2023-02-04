@@ -58,12 +58,12 @@ Its three main components are:
 @item
 A C library
 for units of physical quantities
-@ref{, , , udunits2lib};
+@ref{Library};
 @item
 A utility
 for obtaining the definition of a unit and for
 converting numeric values between compatible units
-@ref{, , , udunits2prog}; and
+@ref{Utility}; and
 @item
 An @ref{Database, , extensive database of units}.
 @end enumerate

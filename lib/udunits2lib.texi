@@ -27,6 +27,7 @@ A copy of the License is included in this package's top-level manual
 
 @contents
 
+@anchor{Library}
 @ifnottex
 @node Top, Synopsis, (dir), (dir)
 @top UDUNITS-2
