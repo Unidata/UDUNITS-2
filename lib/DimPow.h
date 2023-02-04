@@ -202,14 +202,14 @@ void dp_subtract(
 
 /**
  * Returns a string representation of a dimension power. Formats include
- *   - 0                      This dimension doesn't contribute to a unit's dimensionality
- *   - *n*                    This dimension has the given power
- *   - *n*\/*d*               This dimension has the given fractional power
- *   - *n*\/*n*               This dimension doesn't contribute to a unit's dimensionality
- *   - (*n*\/*d*)/(*n*\/*d*)  This dimension doesn't contribute to a unit's dimensionality
+ *   - 0            This dimension doesn't contribute to a unit's dimensionality
+ *   - n            This dimension has the given power
+ *   - n/d          This dimension has the given fractional power
+ *   - n/n          This dimension doesn't contribute to a unit's dimensionality
+ *   - (n/d)/(n/d)  This dimension doesn't contribute to a unit's dimensionality
  * where:
- *   - *n* is the numerator of the power
- *   - *d* is the denominator of the power and doesn't appear if it's 1
+ *   - n is the integer numerator of the power
+ *   - d is the integer denominator of the power and doesn't appear if it's 1
  *
  * @param[in]  dimPow  Dimensional power
  * @param[out] buf     Buffer for string representation
