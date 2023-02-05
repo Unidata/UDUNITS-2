@@ -90,8 +90,13 @@ jobs:
           mkdir -p _build/Debug; cd _build/Debug
           cmake -G 'Unix Makefiles' ../..
           make all test install
-          cpack -G 'DEB;RPM;TGZ'
           ls -l
+
+      - name: Generate Packages
+        if: matrix.os == env.MAIN_OS && github.ref_name == 'devel'
+        run: |
+          cd _build/Debug
+          cpack -G 'DEB;RPM;TGZ'
 
 #         ./configure --prefix=/tmp/ldm --with-noaaport --with-gribinsert \
 #           || { cat configure; exit 1; }
