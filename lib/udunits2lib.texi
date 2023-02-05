@@ -13,7 +13,7 @@
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this package except in compliance with the License.
 A copy of the License is included in this package's top-level manual
-@ref{, , , udunits2}.
+@ref{Top, UDUNITS-2, UDUNITS-2, udunits2}.
 @end copying
 
 @titlepage
@@ -27,9 +27,9 @@ A copy of the License is included in this package's top-level manual
 
 @contents
 
-@anchor{Library}
 @ifnottex
 @node Top, Synopsis, (dir), (dir)
+@anchor{Library}
 @top UDUNITS-2
 This manual describes how to use the C API of the UDUNITS-2 library.
 Among other things, the library allows C code to obtain a binary
