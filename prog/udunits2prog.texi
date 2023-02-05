@@ -11,7 +11,7 @@
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this package except in compliance with the License.
 A copy of the License is included in this package's top-level manual
-@ref{, , , udunits2}.
+@ref{Top, UDUNITS-2, UDUNITS-2, udunits2}.
 @end copying
 
 @titlepage
@@ -25,9 +25,9 @@ A copy of the License is included in this package's top-level manual
 
 @contents
 
-@anchor{Utility}
 @ifnottex
 @node Top, Synopsis, (dir), (dir)
+@anchor{Utility}
 @top udunits2
 This manual describes how to use the @code{udunits2} program.
 This program allows you to discover the definition of a unit
@@ -62,7 +62,7 @@ udunits2 [-A|-L|-U] [-r] [-H have] [-W want] [XML_file]
 
 The following options and arguments are supported:
 
-@table @code
+@table @option
 @item -A
 Use the ASCII character-set.
 @item -L
