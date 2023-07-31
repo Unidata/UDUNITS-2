@@ -29,13 +29,14 @@
 typedef int8_t DimPowType;
 #define DIMPOW_MAX_DIGITS 3
 
+///< Exponent of a unit dimension
 typedef struct DimPow {
     DimPowType numer;       ///< Numerator of the power. May be negative.
     DimPowType denom;       ///< Denominator of the power. Will always be positive.
     bool       contributes; ///< If this contributes to the unit's dimensionality. For example, "g/g"
                             ///< doesn't contribute to dimensionality but one might want that in a string
                             ///< representation.
-} DimPow; ///< Exponent of a unit dimension
+} DimPow;
 
 #ifdef __cplusplus
 extern "C" {

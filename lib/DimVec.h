@@ -24,14 +24,11 @@
 
 #include "DimPow.h"
 
+typedef struct DimVec DimVec;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-typedef struct DimVec {
-    int     numDim;
-    DimPow* dimPows;
-} DimVec;
 
 /**
  * Returns a new dimensional vector. The dimension powers will be default initialized.

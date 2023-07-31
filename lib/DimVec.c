@@ -27,6 +27,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+struct DimVec {
+    int     numDim;
+    DimPow* dimPows;
+};
+
 #define MIN(a,b) ((a) <= (b) ? (a) : (b))
 
 DimVec* dv_new(const int numDim)
