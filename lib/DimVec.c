@@ -21,6 +21,7 @@
 
 #include "config.h"
 
+#include "DimPow.h"
 #include "DimVec.h"
 
 #include <assert.h>

@@ -22,8 +22,10 @@
 #ifndef LIB_DIMVEC_H_
 #define LIB_DIMVEC_H_
 
-#include "DimPow.h"
+#include <stdbool.h>
+#include <stddef.h>
 
+typedef struct DimPow DimPow;
 typedef struct DimVec DimVec;
 
 #ifdef __cplusplus

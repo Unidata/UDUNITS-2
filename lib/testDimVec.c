@@ -25,6 +25,7 @@
 
 #include <CUnit/CUnit.h>
 #include <CUnit/Basic.h>
+#include <stdlib.h>
 
 /*
  * Only called once.
