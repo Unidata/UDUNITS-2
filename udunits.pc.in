@@ -1,0 +1,11 @@
+prefix=@prefix@
+exec_prefix=${prefix}
+libdir=@libdir@
+
+Name: udunits
+Description: Library for handling of units of physical quantities
+Version: @PACKAGE_VERSION@
+Libs:  -L${libdir} -ludunits2
+Libs.private: -L${libdir} -ludunits2 -lexpat
+CFlags: -I${prefix}/include
+

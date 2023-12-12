@@ -1,6 +1,6 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.19)
 
-PROJECT(udunits VERSION 2.3.0.0
+PROJECT(udunits VERSION 2.3.0.1
         DESCRIPTION "C library and utility for units of physical quantities")
 set(CMAKE_PROJECT_HOMEPAGE_URL https://www.unidata.ucar.edu/software/udunits)
 
