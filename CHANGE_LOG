@@ -1,3 +1,7 @@
+2.3.0.1
+    Build:
+        * Added udunits.pc to build and installation to support software that uses UDUNITS
+
 2.3.0.0	2023-08-21T08:33:24-0600
     Database:
         * Added "per mille" unit with appropriate symbol and "ppt"

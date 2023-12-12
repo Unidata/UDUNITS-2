@@ -20,6 +20,8 @@
 SUBDIRS	= xmlFailures xmlSuccesses
 lib_LTLIBRARIES = libudunits2.la
 libudunits2_la_SOURCES = unitcore.c \
+			 DimPow.c DimPow.h \
+			 DimVec.c DimVec.h \
 			 converter.c \
 			 formatter.c \
                          idToUnitMap.c idToUnitMap.h \

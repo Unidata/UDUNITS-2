@@ -99,7 +99,7 @@ install(TARGETS libudunits2 EXPORT udunits2-targets
     ARCHIVE DESTINATION lib
     LIBRARY DESTINATION lib
     RUNTIME DESTINATION bin)
-install(FILES udunits2.h converter.h DESTINATION include)
+install(FILES udunits2.h DimPow.h converter.h DESTINATION include)
 install(FILES
         udunits2.xml
         udunits2-accepted.xml

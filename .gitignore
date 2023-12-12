@@ -64,3 +64,4 @@ coverity-scan
 *.tgz
 /clang-scan
 /_build/
+udunits.pc

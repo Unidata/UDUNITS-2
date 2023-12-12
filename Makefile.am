@@ -21,6 +21,7 @@ ACLOCAL_AMFLAGS		= -I m4
 SUBDIRS			= lib prog
 DIST_SUBDIRS		= lib prog
 info_TEXINFOS		= udunits2.texi
+TEXINFO_TEX	        = ./texinfo.tex
 EXTRA_DIST = \
     CHANGE_LOG \
     CMakeLists.txt \
@@ -65,12 +66,11 @@ release: 	ftp web-update
 .PHONY:	hostchecks hostcheck remote-checks web-update ftp \
 	download-update available release
 
-udunits2.info:	version.texi LICENSE
-udunits2.html:	version.texi LICENSE
-udunits2.pdf:	version.texi LICENSE
-
 $(srcdir)/version.texi:  $(srcdir)/stamp-vti
 	@cp $(srcdir)/stamp-vti $@
+
+pkgconfigdir = $(libdir)/pkgconfig
+pkgconfig_DATA = @PACKAGE@.pc
 
 CMakeLists.txt:	CHANGE_LOG
 	versionId=`awk '{print $$1;exit}' CHANGE_LOG`; \
@@ -86,3 +86,4 @@ CMakeLists.txt:	CHANGE_LOG
 	else \
 	    touch $@; \
 	fi;
+
