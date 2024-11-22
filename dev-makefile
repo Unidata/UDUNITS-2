@@ -66,7 +66,7 @@ $(COVERITY_SCAN_FILE):   check
 
 # Scan code using Coverity Scan
 coverity-scan:  $(COVERITY_SCAN_FILE) 
-	curl --form token=82K450SW7qhKbtYSaXaSVA \
+	curl --form token=`cat $$HOME/$$tokens/udunits/coverity` \
 	--form email=emmerson@ucar.edu \
 	--form file=@$(COVERITY_SCAN_FILE)  \
 	--form version=`awk '{print $$1; exit}' CHANGE_LOG` \
