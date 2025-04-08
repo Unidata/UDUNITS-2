@@ -27,7 +27,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
 
 typedef const char*	(*IdGetter)(const ut_unit*, ut_encoding);
 typedef	int		(*ProductPrinter)(const ut_unit* const*, const int*,
