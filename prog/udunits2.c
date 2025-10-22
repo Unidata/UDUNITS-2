@@ -27,6 +27,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 #include <string.h>
 #ifndef _MSC_VER
 #include <strings.h>
@@ -423,11 +424,42 @@ decodeInput(
 
     ut_free(_haveUnit);
 
-    int nbytes;
-    if (sscanf(input, "%lg %n", &_haveUnitAmount, &nbytes) == 1) {
-        input += nbytes;
-    }
-    else {
+    int nbytes = 0;
+    double amt;
+    const char *p = input;
+    char *endp = NULL;
+
+    errno = 0;
+    amt = strtod(p, &endp);
+
+    if (endp != p) {
+        /* We did consume something that looks like a number? */
+        int next = (unsigned char)*endp;
+
+        /* If the numeric value is non-finite (NaN/Inf) ... */
+        if (!isfinite(amt)) {
+            /* ... but the next char continues an identifier, then that was not an amount.
+               Example: "nanosecond" -> "n" "a" "n" then "o" (identifier char).*/
+            if (isalpha(next) || next == '_') {
+                /* Treat as: no leading number; let ut_parse() see the whole string. */
+                _haveUnitAmount = 1;
+                /* DO NOT advance input. */
+            } else {
+                /* Truly a standalone non-finite amount (e.g. "nan m", "inf s") -> reject */
+                errMsg("NaN or Infinity is not allowed in unit expressions.");
+                return 0;
+            }
+        } else {
+            /* Finite amount is OK: Accept and advance to the remainder. */
+            _haveUnitAmount = amt;
+            input = endp;
+            /* Optional: skip a single ASCII space if present (traditional behavior). */
+            while (*input && isspace((unsigned char)*input)) {
+                ++input;
+            }
+        }
+    } else {
+        /* No leading number parsed at all. */
         _haveUnitAmount = 1;
     }
 
