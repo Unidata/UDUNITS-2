@@ -111,7 +111,7 @@ hour			[+-]?[0-1]?[0-9]|2[0-3]
 minute			[0-5]?[0-9]
 second			({minute}|60)(\.[0-9]*)?
 middot                  \xc2\xb7
-utf8_exp_digit	        \xc2(\xb9|\xb2|\xb3)|\xe2\x81(\xb0|[\xb4-\xb9])
+utf8_exp_digit	        \xc2\xb9|\xc2\xb2|\xc2\xb3|\xe2\x81\xb0|\xe2\x81\xb4|\xe2\x81\xb5|\xe2\x81\xb6|\xe2\x81\xb7|\xe2\x81\xb8|\xe2\x81\xb9
 utf8_exp_sign		\xe2\x81\xba|\xe2\x81\xbb
 utf8_exponent		{utf8_exp_sign}?{utf8_exp_digit}+
 nbsp                    \xc2\xa0
@@ -123,9 +123,9 @@ blk2                    \xc3([\x98-\xB6])
 blk3                    \xc3([\xB8-\xBF])
 latin1		        {nbsp}|{shy}|{degree}|{mu}|{blk1}|{blk2}|{blk3}
 utf8_cont               [\x80-\xbf]
-utf8_2bytes             [\xc8-\xdf]{utf8_cont}
-utf8_3bytes             [\xe0-\xef]{utf8_cont}{utf8_cont}
-letter  		[_a-zA-Z]|{latin1}|{utf8_2bytes}|{utf8_3bytes}
+utf8_2bytes_no_super    \xc2[\x80-\xb0\xb4-\xb5\xba-\xff]|[\xc8-\xdf]{utf8_cont}
+utf8_3bytes_no_super    [\xe0-\xe1]{utf8_cont}{utf8_cont}|\xe2[\x80\x82-\xff]{utf8_cont}|\xe2\x81[\x80-\xaf\xbc-\xff]|[\xe3-\xef]{utf8_cont}{utf8_cont}
+letter  		[_a-zA-Z]|{latin1}|{utf8_2bytes_no_super}|{utf8_3bytes_no_super}
 alphanum		{letter}|[0-9]
 id			%|'|\"|{letter}({alphanum}*{letter})?
 broken_date		{year}-{month}(-{day})?
