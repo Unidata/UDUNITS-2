@@ -90,19 +90,9 @@ ut_trim(
 /*
  *  YACC error routine:
  */
-void
-uterror(
-    char        	*s)
+void uterror(const char *s)
 {
-    static char*	nomem = "uterror(): out of memory";
-
-    if (_errorMessage != NULL && _errorMessage != nomem)
-	free(_errorMessage);
-
-    _errorMessage = strdup(s);
-
-    if (_errorMessage == NULL)
-	_errorMessage = nomem;
+    ut_handle_error_message("%s", s);
 }
 
 /**
@@ -130,62 +120,6 @@ static void to_clock(
 }
 
 /**
- * Converts an integer value into a timezone offset as used by this package.
- *
- * @param[in]  value  The integer value. Must correspond to [+|-]H[H[MM]].
- * @param[out] time   The corresponding time as used by this package.
- * @retval     0      Success. "*time" is set.
- * @retval     -1     The integer value is invalid.
- */
-static int timezone_to_time(
-    const long    value,
-    double* const time)
-{
-    unsigned hour, minute, second;
-
-    if (value < -2400 || value > 2400)
-        return -1;
-
-    to_clock(value < 0 ? -value : value, &hour, &minute, &second);
-
-    if (hour > 24 || minute >= 60)
-        return -1;
-
-    *time = (value >= 0)
-            ? ut_encode_clock(hour, minute, second)
-            : -ut_encode_clock(hour, minute, second);
-
-    return 0;
-}
-
-/**
- * Converts an integer value into a time as used by this package.
- *
- * @param[in]  value  The integer value. Must correspond to H[H[MM[SS]]].
- * @param[out] time   The corresponding time as used by this package.
- * @retval     0      Success. "*time" is set.
- * @retval     -1     The integer value is invalid.
- */
-static int clock_to_time(
-    const long    value,
-    double* const time)
-{
-    unsigned hour, minute, second;
-
-    if (value < 0)
-        return -1;
-
-    to_clock(value, &hour, &minute, &second);
-
-    if (hour > 24 || minute >= 60 || second > 60) /* allow leap second */
-        return -1;
-
-    *time = ut_encode_clock(hour, minute, second);
-
-    return 0;
-}
-
-/**
  * Indicates if a unit is a (non-offset) time unit.
  *
  * @param[in] unit      The unit to be checked.
@@ -210,9 +144,10 @@ static int isTime(
     ut_unit*	unit;			/* "unit" structure */
     double	rval;			/* floating-point numerical value */
     long	ival;			/* integer numerical value */
+    char	error_msg[256];		/* error message from lexer */
 }
 
-%token  	ERR
+%token  <error_msg>	ERR
 %token		SHIFT
 %token  	MULTIPLY
 %token  	DIVIDE
@@ -222,7 +157,10 @@ static int isTime(
 %token  <id>	ID
 %token	<rval>	DATE
 %token	<rval>	CLOCK
-%token	<rval>	TIMESTAMP
+%token  <rval>  TZ_CLOCK
+%token          Z_TOK
+%token          GMT_TOK
+%token          UTC_TOK
 %token	<rval>	LOGREF
 
 %type	<unit>	unit_spec
@@ -436,60 +374,49 @@ number:		INT {
 		}
 		;
 
-timestamp:	DATE {
-		    $$ = $1;
-		} |
-		DATE CLOCK {
-		    $$ = $1 + $2;
-		} |
-		DATE CLOCK CLOCK {
-		    $$ = $1 + ($2 - $3);
-		} |
-		DATE CLOCK ID {
-		    int	error = 0;
-
-		    if (strcasecmp($3, "UTC") != 0 &&
-			    strcasecmp($3, "GMT") != 0 &&
-			    strcasecmp($3, "Z") != 0) {
-			ut_set_status(UT_UNKNOWN);
-			error = 1;
-		    }
-
-		    free($3);
-
-		    if (!error) {
-			$$ = $1 + $2;
-		    }
-		    else {
-			YYERROR;
-		    }
-		} |
-		TIMESTAMP {
-		    $$ = $1;
-		} |
-		TIMESTAMP CLOCK {
-		    $$ = $1 - $2;
-		} |
-		TIMESTAMP ID {
-		    int	error = 0;
-
-		    if (strcasecmp($2, "UTC") != 0 &&
-			    strcasecmp($2, "GMT") != 0 &&
-			    strcasecmp($2, "Z") != 0) {
-			ut_set_status(UT_UNKNOWN);
-			error = 1;
-		    }
-
-		    free($2);
-
-		    if (!error) {
-			$$ = $1;
-		    }
-		    else {
-			YYERROR;
-		    }
-		}
-		;
+timestamp:      DATE {
+                    $$ = $1;
+                } |
+                DATE CLOCK {
+                    $$ = $1 + $2;
+                } |
+                DATE CLOCK TZ_CLOCK {
+                    $$ = $1 + ($2 - $3);
+                } |
+                DATE CLOCK Z_TOK {
+                    $$ = $1 + $2;
+                } |
+                DATE CLOCK GMT_TOK {
+                    $$ = $1 + $2;
+                } |
+                DATE CLOCK UTC_TOK {
+                    $$ = $1 + $2;
+                } |
+                DATE Z_TOK {
+                    $$ = $1;
+                } |
+                ERR {
+                    /* Date parsing error */
+                    ut_handle_error_message("%s", $1);
+                    YYERROR;
+                } |
+                DATE ERR {
+                    /* Clock parsing error */
+                    ut_handle_error_message("%s", $2);
+                    YYERROR;
+                } |
+                DATE CLOCK ERR {
+                    /* Timezone offset parsing error */
+                    ut_handle_error_message("%s", $3);
+                    YYERROR;
+                } |
+                DATE error {
+                    YYERROR;
+                } |
+                DATE CLOCK error {
+                    YYERROR;
+                }
+                ;
 
 %%
 
@@ -666,6 +593,24 @@ ut_parse(
                     /*
                      * Parsing terminated before the end of the string.
                      */
+					size_t consumed = (size_t)n;
+					const char* leftover = utf8String + consumed;
+
+					// Truncate leftover text for display (max 50 chars)
+					char leftover_snippet[64];
+					size_t leftover_len = strlen(leftover);
+					if (leftover_len > 50) {
+						snprintf(leftover_snippet, sizeof(leftover_snippet),
+								"%.47s...", leftover);
+					} else {
+						snprintf(leftover_snippet, sizeof(leftover_snippet),
+								"%s", leftover);
+					}
+
+					ut_handle_error_message(
+						"Unexpected text after unit specification: \"%s\"",
+						leftover_snippet);
+
                     ut_free(_finalUnit);
                     status = UT_SYNTAX;
                 }

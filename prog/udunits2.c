@@ -106,6 +106,53 @@ errMsg(
 }
 
 
+/**
+ * Error handler for parsing "have" (-H) units
+ */
+static int
+handle_have_parse_error(const char* fmt, va_list args)
+{
+    char buffer[512];
+    vsnprintf(buffer, sizeof(buffer), fmt, args);
+
+    /* Filter out generic/redundant messages */
+    if (strcmp(buffer, "syntax error") == 0) {
+        /* Generic parser error */
+        errMsg("Don't recognize input unit: \"%s\"", _haveUnitSpec);
+    } else if (strstr(buffer, "Don't recognize the unit specification") != NULL) {
+        /* Library's generic fallback - already printed our message, skip this */
+        return 0;
+    } else {
+        /* Detailed error from lexer */
+        errMsg("Error in input unit: %s", buffer);
+    }
+    return 0;
+}
+
+/**
+ * Error handler for parsing "want" (-W) units
+ */
+static int
+handle_want_parse_error(const char* fmt, va_list args)
+{
+    char buffer[512];
+    vsnprintf(buffer, sizeof(buffer), fmt, args);
+
+    /* Filter out generic/redundant messages */
+    if (strcmp(buffer, "syntax error") == 0) {
+        /* Generic parser error */
+        errMsg("Don't recognize output unit: \"%s\"", _wantSpec);
+    } else if (strstr(buffer, "Don't recognize the unit specification") != NULL) {
+        /* Library's generic fallback - already printed our message, skip this */
+        return 0;
+    } else {
+        /* Detailed error from lexer */
+        errMsg("Error in output unit: %s", buffer);
+    }
+    return 0;
+}
+
+
 static int
 decodeCommandLine(
     int         argc,
@@ -463,11 +510,16 @@ decodeInput(
 
     (void)strncpy(_haveUnitSpec, input, sizeof(_haveUnitSpec));
     _haveUnitSpec[sizeof(_haveUnitSpec)-1] = 0;
+
+    /* Register custom error handler for input unit parsing */
+    ut_set_error_message_handler(handle_have_parse_error);
+
     _haveUnit = ut_parse(_unitSystem, _haveUnitSpec, _encoding);
-    if (_haveUnit == NULL) {
-        errMsg("Don't recognize \"%s\"", _haveUnitSpec);
-    }
-    else {
+
+    /* Restore default error handler */
+    ut_set_error_message_handler(ut_write_to_stderr);
+
+    if (_haveUnit != NULL) {
         success = 1;
     }
 
@@ -539,16 +591,22 @@ decodeOutput(
         ut_free(_wantUnit);
 
         _wantDefinition = 0;
-        _wantUnit = ut_parse(_unitSystem, buf, _encoding);
 
-        if (_wantUnit == NULL) {
-            errMsg("Don't recognize \"%s\"", buf);
-        }
-        else {
+        (void)strncpy(_wantSpec, buf, sizeof(_wantSpec));
+        _wantSpec[sizeof(_wantSpec)-1] = 0;
+
+        /* Register custom error handler for output unit parsing */
+        ut_set_error_message_handler(handle_want_parse_error);
+
+        _wantUnit = ut_parse(_unitSystem, _wantSpec, _encoding);
+
+        /* Restore default error handler */
+        ut_set_error_message_handler(ut_write_to_stderr);
+
+        if (_wantUnit != NULL) {
             success = 1;
         }
     }
-
     return success;
 }
 
@@ -640,9 +698,9 @@ handleRequest(void)
 			cv_convert_double(conv, _haveUnitAmount),
                         _wantSpec);
 
-                    (void)sprintf(haveExp,
+                    (void)snprintf(haveExp, sizeof(haveExp),
                         strpbrk(_haveUnitSpec, whiteSpace) ||
-                                strpbrk(_haveUnitSpec, "/")
+                        strpbrk(_haveUnitSpec, "/")
                             ? "(x/(%s))"
                             : "(x/%s)",
                         _haveUnitSpec);

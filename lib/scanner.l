@@ -22,6 +22,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <ctype.h>
 
 /**
  * Decodes a date.
@@ -42,33 +43,389 @@ static int decodeDate(
     int		month = 1;
     int		day = 1;
 
-    (void)sscanf(text, format, &year, &month, &day);
+    int parsed = sscanf(text, format, &year, &month, &day);
+    if (parsed < 1) {
+        snprintf(yylval.error_msg, 256, "Invalid date format: %s (Expected YYYY-MM-DD)", text);
+        return ERR;
+    }
+    // Explicit validation BEFORE calling ut_encode_date
+    // if (year == 0) {
+    //    snprintf(yylval.error_msg, 256, "Invalid date: year 0 not allowed");
+    //    return ERR;
+    //}
+    if (month < 1 || month > 12) {
+        snprintf(yylval.error_msg, 256, "Invalid month %d (must be 1-12)", month);
+        return ERR;
+    }
+    if (day < 1 || day > 31) {
+        snprintf(yylval.error_msg, 256, "Invalid day %d (must be 1-31)", day);
+        return ERR;
+    }
+
+    ut_status prev = ut_get_status();
     *date = ut_encode_date(year, month, day);
+    if (ut_get_status() != UT_SUCCESS) {
+        ut_set_status(prev);
+        snprintf(yylval.error_msg, 256, "Invalid date: %s (not a valid calendar date)", text);
+        return ERR;
+    }
     return DATE;
 }
 
-/**
- * Decodes a clock-time.
- *
- * @param[in] text      The text specifying the clock-time to be decoded.
- * @param[in] format    The format to use for decoding. The order is hour (int),
- *                      minute (int), and second (double).
- * @return              The clock-time corresponding to the input.
- */
-static double decodeClock(
-    const char* const   text,
-    const char* const   format)
-{
-    int         hour = 0;
-    int         minute = 0;
-    double      second = 0;
+/* ===== Shared scan/validate helpers ===== */
 
-    (void)sscanf(text, format, &hour, &minute, &second);
-    if (hour < 0) {
-        minute = -minute;
-        second = -second;
+static int read_ndigits(const char** s, int n, int* out) {
+    int v = 0;
+    for (int i = 0; i < n; ++i) {
+        char c = (*s)[i];
+        if (c < '0' || c > '9') return 0;
+        v = v*10 + (c - '0');
     }
-    return ut_encode_clock(hour, minute, second);
+    *out = v;
+    *s += n;
+    return 1;
+}
+
+static int read_1to2digits(const char* s, int* out, const char** endptr) {
+    const char* p = s;
+    if (p[0] < '0' || p[0] > '9') return 0;
+    int v = p[0] - '0';
+    p++;
+    if (p[0] >= '0' && p[0] <= '9') {
+        v = v*10 + (p[0]-'0');
+        p++;
+    }
+
+    if (p[0] >= '0' && p[0] <= '9') {
+        return 0;  // Third digit = overflow
+    }
+
+    *out = v;
+    *endptr = p;
+    return 1;
+}
+
+static int parse_fraction(const char** s, double* frac) {
+    const char* p = *s;
+    if (*p != '.') return 1; /* ok, no fraction */
+    p++;
+    if (*p < '0' || *p > '9') return 1;
+    double scale = 1.0;
+    double f = 0.0;
+    while (*p >= '0' && *p <= '9') {
+        f = f*10.0 + (*p - '0');
+        scale *= 10.0;
+        p++;
+    }
+    *frac = f/scale;
+    *s = p;
+    return 1;
+}
+
+/* Leap-second allowed only at 23:59:60[.frac] */
+static int check_tod_range(int H, int M, double S, int had_seconds, char* error_msg) {
+    if (H < 0 || H > 23) {
+        snprintf(error_msg, 256, "Invalid hour: %d (must be 0-23)", H);
+        return 0;
+    }
+    if (M < 0 || M > 59) {
+        snprintf(error_msg, 256, "Invalid minute: %d (must be 0-59)", M);
+        return 0;
+    }
+    if (!had_seconds) return 1; /* HH:MM ok */
+    if (S < 0.0) {
+        snprintf(error_msg, 256, "Invalid second: %.2f (must be non-negative)", S);
+        return 0;
+    }
+    if (S < 60.0) return 1;
+    /* S == 60 only if 23:59:60[.x] */
+    if (S >= 61.0) {
+        snprintf(error_msg, 256, "Invalid second: %.2f (must be less than 61)", S);
+        return 0;
+    }
+    if (H != 23 || M != 59) {
+        snprintf(error_msg, 256, "Leap second (60) only allowed at 23:59:60, not %02d:%02d:%.2f", H, M, S);
+        return 0;
+    }
+    return 1;
+}
+
+/* TZ: sign*(HH[:MM] | HHMM); 0<=HH<=14, 0<=MM<=59; forbid negative zero */
+static int check_tz_range(int sign, int H, int M) {
+    // Defensive checks: H and M should be non-negative from parsing,
+    // but we verify to be safe and consistent with validation elsewhere
+    if (H < 0 || H > 14) return 0;
+    if (H == 14 && M > 0) return 0;
+    if (M < 0 || M > 59) return 0;
+    if (sign < 0 && H == 0 && M == 0) return -1; /* negative zero sentinel */
+    return 1;
+}
+
+/* ===== Parsers for subforms ===== */
+
+static int decodePackedDate(
+    const char* const   text,
+    double* const       date)
+{
+    const char* p = text;
+    int sign = 1;
+    int year = 0;
+    int month = 1;
+    int day = 1;
+
+    // Handle optional sign
+    if (*p == '+' || *p == '-') {
+        if (*p == '-') sign = -1;
+        p++;
+    }
+
+    // Count remaining digits
+    int digit_count = 0;
+    const char* q = p;
+    while (*q >= '0' && *q <= '9') {
+        digit_count++;
+        q++;
+    }
+
+    // Skip trailing T or spaces
+    while (*q == 'T' || *q == ' ' || *q == '\t') q++;
+
+    // Should have consumed entire input
+    if (*q != '\0') {
+        snprintf(yylval.error_msg, 256, "Invalid packed date format: %s", text);
+        return ERR;
+    }
+
+    // Parse based on digit count
+    if (digit_count >= 1 && digit_count <= 4) {
+        // Y, YY, YYY, YYYY
+        if (sscanf(p, "%d", &year) != 1) {
+            snprintf(yylval.error_msg, 256, "Invalid packed date: cannot parse year from %s", text);
+            return ERR;
+        }
+        year *= sign;
+    }
+    else if (digit_count >= 5 && digit_count <= 6) {
+        // YYYYM or YYYYMM
+        if (sscanf(p, "%4d%d", &year, &month) != 2) {
+            snprintf(yylval.error_msg, 256, "Invalid packed date: cannot parse year-month from %s", text);
+            return ERR;
+        }
+        year *= sign;
+    }
+    else if (digit_count >= 7 && digit_count <= 8) {
+        // YYYYMMD or YYYYMMDD
+        if (sscanf(p, "%4d%2d%d", &year, &month, &day) != 3) {
+            snprintf(yylval.error_msg, 256, "Invalid packed date: cannot parse full date from %s", text);
+            return ERR;
+        }
+        year *= sign;
+    }
+    else {
+        snprintf(yylval.error_msg, 256, "Invalid packed date: wrong number of digits (%d)", digit_count);
+        return ERR;
+    }
+
+    // Validate ranges
+    if (month < 1 || month > 12) {
+        snprintf(yylval.error_msg, 256, "Invalid month %d (must be 1-12)", month);
+        return ERR;
+    }
+    if (day < 1 || day > 31) {
+        snprintf(yylval.error_msg, 256, "Invalid day %d (must be 1-31)", day);
+        return ERR;
+    }
+
+    ut_status prev = ut_get_status();
+    *date = ut_encode_date(year, month, day);
+    if (ut_get_status() != UT_SUCCESS) {
+        ut_set_status(prev);
+        snprintf(yylval.error_msg, 256, "Invalid date: %s", text);
+        return ERR;
+    }
+    return DATE;
+}
+
+/* TOD broken: HH:MM[:SS[.frac]] */
+static int parse_tod_broken(const char* s, int* H,int* M,double* S,int* had_seconds,const char** endptr) {
+    const char* p = s;
+    int h,m; double sec = 0.0; *had_seconds = 0;
+    if (!read_1to2digits(p, &h, &p)) return 0;
+    if (*p++ != ':') return 0;
+    if (!read_1to2digits(p, &m, &p)) return 0;
+    if (*p == ':') {
+        p++;
+        int ss;
+        if (!read_ndigits(&p, 2, &ss)) return 0;
+        sec = (double)ss;
+        double frac = 0.0;
+        if (!parse_fraction(&p, &frac)) return 0;
+        sec += frac;
+        *had_seconds = 1;
+    }
+    *H = h; *M = m; *S = sec;
+    *endptr = p;
+    return 1;
+}
+
+/* TOD packed: HH[MM[SS]][.frac] — at least HH; optional MM, then optional SS; fraction applies to SS if present else to HHMMSS interpretation */
+static int parse_tod_packed(const char* s, int* H, int* M, double* S, int* had_seconds, const char** endptr) {
+    const char* p = s;
+    int len = 0; while (p[len] >= '0' && p[len] <= '9') len++;
+    if (len < 1 || len > 6) return 0;
+
+    int h=0, m=0, ss=0;
+    const char* q = p;
+    if (len <= 2) { /* H or HH */
+        if (!read_1to2digits(q, &h, &q)) return 0;
+        m = 0; ss = 0; *had_seconds = 0;
+    } else if (len <= 4) { /* HHM or HHMM: fixed HH, flexible M */
+        if (!read_ndigits(&q, 2, &h)) return 0;
+        if (!read_1to2digits(q, &m, &q)) return 0;
+        ss = 0; *had_seconds = 0;
+    } else { /* HHMMS or HHMMSS: fixed HH, fixed MM, flexible S */
+        if (!read_ndigits(&q, 2, &h)) return 0;
+        if (!read_ndigits(&q, 2, &m)) return 0;
+        if (!read_1to2digits(q, &ss, &q)) return 0;
+        *had_seconds = 1;
+    }
+    if (m >= 60) return 0;
+    if (*had_seconds && ss > 60) return 0;
+    double sec = (double)ss;
+    double frac = 0.0;
+    const char* r = q;
+    if (!parse_fraction(&r, &frac)) return 0;
+    if (*had_seconds) sec += frac;
+    else if (frac != 0.0) return 0;  /* reject fraction if len < 5 */
+
+    *H = h; *M = m; *S = sec;
+    *endptr = r;
+    return 1;
+}
+
+/* TZ broken: (+|-)HH:MM */
+static int parse_tz_broken(const char* text, int* sign, int* H, int* M, const char** endptr) {
+    const char* p = text;
+
+    // Parse sign
+    if (*p == '+') {
+        *sign = 1;
+        p++;
+    } else if (*p == '-') {
+        *sign = -1;
+        p++;
+    } else {
+        return 0;  // No sign
+    }
+
+    // Parse hour
+    if (!read_1to2digits(p, H, &p)) return 0;
+
+    // MUST have colon separator
+    if (*p != ':') return 0;
+    p++;
+
+    // Parse minute (must be digits only, no decimal)
+    if (!read_1to2digits(p, M, &p)) return 0;
+
+    if (*p == '.') return 0;
+
+    *endptr = p;
+    return 1;
+}
+
+static int parse_tz_packed(const char* s, int* sign, int* H, int* M, const char** endptr) {
+    const char* p = s;
+
+    /* Read required sign */
+    if (*p == '+') { *sign = +1; p++; }
+    else if (*p == '-') { *sign = -1; p++; }
+    else return 0;
+
+    /* Measure digit length after sign */
+    int len = 0;
+    while (p[len] >= '0' && p[len] <= '9') len++;
+    if (len < 1 || len > 4) return 0;
+
+    int h = 0, m = 0;
+    const char* q = p;
+
+    if (len <= 2) {
+        /* H or HH */
+        if (!read_1to2digits(q, &h, &q)) return 0;
+        m = 0;
+    } else {
+        /* HHM or HHMM: fixed HH, flexible M */
+        if (!read_ndigits(&q, 2, &h)) return 0;
+        if (!read_1to2digits(q, &m, &q)) return 0;
+    }
+
+    *H = h; *M = m;
+    *endptr = q;
+    return 1;
+}
+
+/* Time-of-day: broken or packed. Returns 1 on success, 0 on error; sets *seconds. */
+static int decodeClockFlexible(const char* text, double* seconds, char* error_msg) {
+    const char* p = text;
+    int H=0, M=0, had_sec=0; double S=0.0;
+    const char* end = NULL;
+    int ok = 0;
+
+    /* Heuristic: if we see a ':', try broken first; else try packed first. */
+    if (strchr(text, ':')) {
+        ok = parse_tod_broken(p, &H, &M, &S, &had_sec, &end);
+        if (!ok) ok = parse_tod_packed(p, &H, &M, &S, &had_sec, &end);
+    } else {
+        ok = parse_tod_packed(p, &H, &M, &S, &had_sec, &end);
+        if (!ok) ok = parse_tod_broken(p, &H, &M, &S, &had_sec, &end);
+    }
+    if (!ok) {
+        snprintf(error_msg, 256, "Invalid time-of-day format: %s (expected HH:MM:SS or HHMMSS)", text);
+        return 0;
+    }
+
+    /* Range + leap-second - check_tod_range now populates error_msg with specific error */
+    if (!check_tod_range(H, M, S, had_sec, error_msg)) {
+        return 0;
+    }
+
+    /* Convert to seconds since midnight */
+    *seconds = ((double)H)*3600.0 + ((double)M)*60.0 + S;
+    return 1;
+}
+
+/* Timezone offset: broken or packed. Returns 1 on success, 0 on error; sets *seconds (signed). */
+static int decodeTzOffsetFlexible(const char* text, double* seconds, char* error_msg) {
+    const char* p = text;
+    int sign=0, H=0, M=0; const char* end = NULL;
+    int ok = 0;
+
+    if (strchr(text, ':')) {
+        ok = parse_tz_broken(p, &sign, &H, &M, &end);
+        if (!ok) ok = parse_tz_packed(p, &sign, &H, &M, &end);
+    } else {
+        ok = parse_tz_packed(p, &sign, &H, &M, &end);
+        if (!ok) ok = parse_tz_broken(p, &sign, &H, &M, &end);
+    }
+    if (!ok) {
+        snprintf(error_msg, 256, "Invalid timezone offset: %s (expected ±HH:MM or ±HHMM)", text);
+        return 0;
+    }
+
+    int rng = check_tz_range(sign, H, M);
+    if (rng == -1) {
+        snprintf(error_msg, 256, "Invalid timezone offset: -00:00 not allowed");
+        return 0;
+    }
+    if (rng == 0) {
+        snprintf(error_msg, 256, "Invalid timezone offset: %+03d:%02d (must be ±14:00 or less)",
+                 sign * H, M);
+        return 0;
+    }
+
+    *seconds = (double)sign * (H*3600.0 + M*60.0);
+    return 1;
 }
 
 /**
@@ -89,7 +446,7 @@ static int decodeReal(
     if (errno == 0)
         return REAL;
 
-    ut_handle_error_message("Invalid real: \"%s\"", text);
+    snprintf(yylval.error_msg, 256, "Invalid real: \"%s\"", text);
     return ERR;
 }
 
@@ -105,11 +462,12 @@ mantissa		{int_period}|{period_int}|{int_period_int}
 real_exp		[eE][+-]?[0-9]+
 real			[+-]?({int}{real_exp}|{mantissa}{real_exp}?)
 year			[+-]?[0-9]{1,4}
-month			0?[1-9]|1[0-2]
-day			0?[1-9]|[1-2][0-9]|30|31
-hour			[+-]?[0-1]?[0-9]|2[0-3]
-minute			[0-5]?[0-9]
-second			({minute}|60)(\.[0-9]*)?
+month			[0-9]{1,2}
+day			    [0-9]{1,2}
+tod_hour		[0-9]{1,2}
+tz_hour			[+-][0-9]{1,2}
+minute			[0-9]{1,2}
+second			[0-9]{1,2}(\.[0-9]*)?
 middot                  \xc2\xb7
 utf8_exp_digit	        \xc2\xb9|\xc2\xb2|\xc2\xb3|\xe2\x81\xb0|\xe2\x81\xb4|\xe2\x81\xb5|\xe2\x81\xb6|\xe2\x81\xb7|\xe2\x81\xb8|\xe2\x81\xb9
 utf8_exp_sign		\xe2\x81\xba|\xe2\x81\xbb
@@ -130,10 +488,11 @@ alphanum		{letter}|[0-9]
 id			%|'|\"|{letter}({alphanum}*{letter})?
 broken_date		{year}-{month}(-{day})?
 packed_date		{year}({month}{day}?)?
-broken_clock		{hour}:{minute}(:{second})?
-packed_clock		{hour}({minute}{second}?)?
-broken_timestamp	{broken_date}({space}+{broken_clock})?
-packed_timestamp	{packed_date}T{packed_clock}?
+broken_clock		{tod_hour}:{minute}(:{second})?
+packed_clock		{tod_hour}({minute}{second}?)?
+broken_tz_clock		{tz_hour}:{minute}
+packed_tz_clock		{tz_hour}{minute}?
+tz_id	       		UTC|GMT|Z
 logref			\({space}*[Rr][Ee](:{space})?{space}*
 after                   [Aa][Ff][Tt][Ee][Rr]
 from                    [Ff][Rr][Oo][Mm]
@@ -176,12 +535,11 @@ idchar       [A-Za-z0-9_]
     int		status;
 
     if (sscanf(yytext, "%*[*^]%ld", &yylval.ival) != 1) {
-        ut_handle_error_message("Invalid integer\n", stderr);
-
-	status	= ERR;
-    }
+        snprintf(yylval.error_msg, sizeof(yylval.error_msg),
+                 "Invalid exponent integer in '%s'", yytext);
+        status = ERR;    }
     else {
-	status	= EXPONENT;
+	    status	= EXPONENT;
     }
 
     return status;
@@ -249,15 +607,26 @@ idchar       [A-Za-z0-9_]
     return status;
 }
 
-<SHIFT_SEEN>{broken_date}(T|{space}*) {
+<SHIFT_SEEN>{year}-{month}-{day}(T|{space}*) {
     BEGIN DATE_SEEN;
     return decodeDate((char*)yytext, "%d-%d-%d", &yylval.rval);
+}
+
+<SHIFT_SEEN>{year}-[0-9]{2}[0-9]+ {
+    snprintf(yylval.error_msg, 256,
+             "Invalid date: missing separator after month (expected '-' or space)");
+    return ERR;
+}
+
+<SHIFT_SEEN>{year}-{month}(T|{space}*) {
+    BEGIN DATE_SEEN;
+    return decodeDate((char*)yytext, "%d-%d", &yylval.rval);
 }
 
 <SHIFT_SEEN>{packed_date}(T|{space}*) {
     if (_isTime) {
         BEGIN DATE_SEEN;
-        return decodeDate((char*)yytext, "%4d%2d%2d", &yylval.rval);
+        return decodePackedDate((char*)yytext, &yylval.rval);
     }
     else {
         BEGIN INITIAL;
@@ -265,42 +634,101 @@ idchar       [A-Za-z0-9_]
     }
 }
 
-<DATE_SEEN>{broken_clock}{space}* {
-    yylval.rval = decodeClock((char*)yytext, "%d:%d:%lf");
-    BEGIN CLOCK_SEEN;
+<SHIFT_SEEN>{packed_date}(T|{space}*) {
+    if (_isTime) {
+        BEGIN DATE_SEEN;
+        return decodePackedDate((char*)yytext, &yylval.rval);
+    }
+    else {
+        BEGIN INITIAL;
+        return decodeReal((char*)yytext, &yylval.rval);
+    }
+}
+
+<SHIFT_SEEN>[+-]?[0-9]{5,}-[0-9] {
+    snprintf(yylval.error_msg, 256,
+             "Invalid date: year has too many digits (max 4 digits allowed)");
+    return ERR;
+}
+
+<SHIFT_SEEN>[0-9]{4}\.[0-9]{1,2}\.[0-9]{1,2} {
+    snprintf(yylval.error_msg, 256,
+             "Invalid date separator: use '-' not '.' (expected YYYY-MM-DD format)");
+    return ERR;
+}
+
+<DATE_SEEN>{broken_clock}{space}*    |
+<DATE_SEEN>{packed_clock}{space}*    {
+    double sec = 0.0;
+    if (!decodeClockFlexible((const char*)yytext, &sec, yylval.error_msg)) {
+        return ERR;
+    }
+    yylval.rval = sec;
+    BEGIN(CLOCK_SEEN);
     return CLOCK;
 }
 
-<DATE_SEEN>{packed_clock}{space}* {
-    yylval.rval = decodeClock((char*)yytext, "%2d%2d%lf");
-    BEGIN CLOCK_SEEN;
-    return CLOCK;
-}
-
-<CLOCK_SEEN>{sign}?{int}:{int} {
-    yylval.rval	= decodeClock((char*)yytext, "%d:%d");
+<CLOCK_SEEN>{broken_tz_clock}{space}*    |
+<CLOCK_SEEN>{packed_tz_clock}{space}*    {
+    double off = 0.0;
+    if (!decodeTzOffsetFlexible((const char*)yytext, &off, yylval.error_msg)) {
+        return ERR;
+    }
+    yylval.rval = off;
     BEGIN INITIAL;
-    return CLOCK;
+    return TZ_CLOCK;
 }
 
-<CLOCK_SEEN>{sign}{int} {
-    yylval.rval	= (yyleng <= 3)
-                        ? decodeClock((char*)yytext, "%d")
-                        : (yyleng == 4)
-                            ? decodeClock((char*)yytext, "%2d%d")
-                            : decodeClock((char*)yytext, "%3d%d");
+<CLOCK_SEEN>Z {
     BEGIN INITIAL;
-    return CLOCK;
+    return Z_TOK;
 }
 
-<CLOCK_SEEN>{int} {
-    yylval.rval	= (yyleng <= 2)
-                        ? decodeClock((char*)yytext, "%d")
-                        : (yyleng == 3)
-                            ? decodeClock((char*)yytext, "%1d%d")
-                            : decodeClock((char*)yytext, "%2d%d");
+<CLOCK_SEEN>GMT {
     BEGIN INITIAL;
-    return CLOCK;
+    return GMT_TOK;
+}
+
+<CLOCK_SEEN>UTC {
+    BEGIN INITIAL;
+    return UTC_TOK;
+}
+
+<CLOCK_SEEN>[+-][0-9]{1,2}\.[0-9]+ {
+    snprintf(yylval.error_msg, 256,
+             "Invalid timezone separator: use ':' not '.' (expected +HH:MM format)");
+    return ERR;
+}
+
+<CLOCK_SEEN>[+-][0-9]{1,2}: {
+    snprintf(yylval.error_msg, 256,
+             "Incomplete timezone offset (expected minutes after ':')");
+    return ERR;
+}
+
+<CLOCK_SEEN>[A-Za-z]+ {
+    snprintf(yylval.error_msg, 256, "Unknown timezone identifier '%s' (expected Z, GMT, UTC, or numeric offset like +05:30)", yytext);
+    return ERR;
+}
+
+<CLOCK_SEEN>[0-9]+ {
+    snprintf(yylval.error_msg, 256, "Timezone offset must include sign (use +%s or -%s)", yytext, yytext);
+    return ERR;
+}
+
+<DATE_SEEN>Z {
+    BEGIN INITIAL;
+    return Z_TOK;
+}
+
+<DATE_SEEN>GMT {
+    snprintf(yylval.error_msg, 256, "GMT timezone requires a time (e.g., '2024-01-01 00:00GMT')");
+    return ERR;
+}
+
+<DATE_SEEN>UTC {
+    snprintf(yylval.error_msg, 256, "UTC timezone requires a time (e.g., '2024-01-01 00:00UTC')");
+    return ERR;
 }
 
 <INITIAL,SHIFT_SEEN>{real} {
@@ -317,9 +745,9 @@ idchar       [A-Za-z0-9_]
     if (errno == 0) {
 	status	= INT;
     } else {
-        ut_handle_error_message("Invalid integer\n", stderr);
-
-	status	= ERR;
+        snprintf(yylval.error_msg, sizeof(yylval.error_msg),
+             "Integer overflow or invalid integer '%s'", yytext);
+        status = ERR;
     }
 
     BEGIN INITIAL;
