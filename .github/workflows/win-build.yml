@@ -1,0 +1,53 @@
+name: Build UDUNITS-2 using CMake on Windows
+
+on: [pull_request]
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+
+      matrix:
+        build_env: [
+          {os: windows-2022, c_compiler: cl},
+          {os: windows-11-arm, c_compiler: cl},
+        ]
+        build_type: [Release]
+
+    runs-on: ${{ matrix.build_env.os }}
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install cunit, expat, flex, and bison on windows
+        if: contains(matrix.build_env.os, 'windows')
+        run: |
+          vcpkg install cunit expat
+          vcpkg integrate install
+          choco install -y winflexbison3
+
+      - name: Set shared values
+        id: strings
+        shell: bash
+        run: |
+          echo "build-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+
+      - name: Generate scanner and parser code
+        if: contains(matrix.build_env.os, 'windows')
+        run: |
+          cd lib
+          win_flex.exe -d -Put -o scanner.c scanner.l
+          win_bison.exe -t -p ut -o parser.c parser.y
+
+      - name: Configure CMake
+        run: >
+          cmake -B ${{ steps.strings.outputs.build-dir }}
+          -DCMAKE_C_COMPILER=${{ matrix.build_env.c_compiler }}
+          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+          -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
+          -S ${{ github.workspace }}
+
+      - name: Build using ${{ matrix.build_env.c_compiler }}
+        run: |
+          cmake --build ${{ steps.strings.outputs.build-dir }} --config ${{ matrix.build_type }} --target libudunits2
+          cmake --build ${{ steps.strings.outputs.build-dir }} --config ${{ matrix.build_type }} --target udunits2

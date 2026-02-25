@@ -1,0 +1,55 @@
+name: Build and test UDUNITS-2 using CMake on Linux and MacOS
+
+on: [pull_request]
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+
+      matrix:
+        build_env: [
+          {os: ubuntu-24.04, c_compiler: gcc},
+          {os: ubuntu-24.04-arm, c_compiler: gcc},
+          {os: macos-14, c_compiler: clang},
+          {os: macos-15-intel, c_compiler: clang},
+        ]
+        build_type: [Release]
+
+    runs-on: ${{ matrix.build_env.os }}
+
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install cunit and texinfo on MacOS
+        if: contains(matrix.build_env.os, 'macos')
+        run: brew install cunit texinfo
+
+      - name: Install cunit on Ubuntu
+        if: contains(matrix.build_env.os, 'ubuntu')
+        run: sudo apt install libcunit1 libcunit1-dev
+
+      - name: Set shared values
+        id: strings
+        shell: bash
+        run: |
+          echo "build-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+
+      - name: Configure CMake
+        run: >
+          cmake -B ${{ steps.strings.outputs.build-dir }}
+          -DCMAKE_C_COMPILER=${{ matrix.build_env.c_compiler }}
+          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+          -S ${{ github.workspace }}
+
+      - name: Build using ${{ matrix.build_env.c_compiler }}
+        run: cmake --build ${{ steps.strings.outputs.build-dir }} --config ${{ matrix.build_type }}
+
+      - name: Run Tests
+        working-directory: ${{ steps.strings.outputs.build-dir }}
+        run: ctest --build-config ${{ matrix.build_type }}
+
+      - uses: actions/upload-artifact@v6
+        if: failure()
+        with:
+          name: udunits_test_results_${{ github.sha }}_${{ matrix.build_env.os }}-${{ matrix.build_env.c_compiler }}
+          path: ${{ steps.strings.outputs.build-dir }}/Testing
