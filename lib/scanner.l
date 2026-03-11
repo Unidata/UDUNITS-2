@@ -154,7 +154,7 @@ per                     [Pp][Ee][Rr]
     return SHIFT;
 }
 
-<INITIAL,ID_SEEN>{space}*({per}|"/"){space}* {
+<INITIAL,ID_SEEN>({space}+{per}{space}+|{space}*"/"{space}*) {
     BEGIN INITIAL;
     return DIVIDE;
 }
