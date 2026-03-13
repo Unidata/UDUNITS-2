@@ -2166,6 +2166,90 @@ test_xml(void)
 #endif
     ut_free(unit1);
 
+    /*
+     * UTF-8 superscript exponent parsing (issue #128).
+     * Verify that superscript characters are tokenized as exponents,
+     * not swallowed into unit identifiers by the {letter}/{id} rules.
+     */
+
+    /* m² == m2 : 2-byte superscript digit */
+    unit1 = ut_parse(xmlSystem, "m2", UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit1);
+    unit2 = ut_parse(xmlSystem, "m\xc2\xb2", UT_UTF8);  /* m² */
+    CU_ASSERT_PTR_NOT_NULL(unit2);
+    if (unit1 && unit2)
+        CU_ASSERT_EQUAL(ut_compare(unit1, unit2), 0);
+    ut_free(unit2);
+    ut_free(unit1);
+
+    /* m·s⁻² == m/s2 : middle dot, 3-byte superscript minus, 2-byte superscript digit */
+    unit1 = ut_parse(xmlSystem, "m/s2", UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit1);
+    unit2 = ut_parse(xmlSystem,
+        "m\xc2\xb7s\xe2\x81\xbb\xc2\xb2", UT_UTF8);  /* m·s⁻² */
+    CU_ASSERT_PTR_NOT_NULL(unit2);
+    if (unit1 && unit2)
+        CU_ASSERT_EQUAL(ut_compare(unit1, unit2), 0);
+    ut_free(unit2);
+    ut_free(unit1);
+
+    /* kg·m⁻³ == kg/m3 : 3-byte superscript minus, 2-byte superscript digit */
+    unit1 = ut_parse(xmlSystem, "kg/m3", UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit1);
+    unit2 = ut_parse(xmlSystem,
+        "kg\xc2\xb7m\xe2\x81\xbb\xc2\xb3", UT_UTF8);  /* kg·m⁻³ */
+    CU_ASSERT_PTR_NOT_NULL(unit2);
+    if (unit1 && unit2)
+        CU_ASSERT_EQUAL(ut_compare(unit1, unit2), 0);
+    ut_free(unit2);
+    ut_free(unit1);
+
+    /* kg·m²·s⁻³ == W (watt) : compound with mixed superscripts */
+    unit1 = ut_parse(xmlSystem, "W", UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit1);
+    unit2 = ut_parse(xmlSystem,
+        "kg\xc2\xb7m\xc2\xb2\xc2\xb7s\xe2\x81\xbb\xc2\xb3",
+        UT_UTF8);  /* kg·m²·s⁻³ */
+    CU_ASSERT_PTR_NOT_NULL(unit2);
+    if (unit1 && unit2)
+        CU_ASSERT_EQUAL(ut_compare(unit1, unit2), 0);
+    ut_free(unit2);
+    ut_free(unit1);
+
+    /* m⁴ == m4 : 3-byte superscript digit (⁴ = \xe2\x81\xb4) */
+    unit1 = ut_parse(xmlSystem, "m4", UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit1);
+    unit2 = ut_parse(xmlSystem, "m\xe2\x81\xb4", UT_UTF8);  /* m⁴ */
+    CU_ASSERT_PTR_NOT_NULL(unit2);
+    if (unit1 && unit2)
+        CU_ASSERT_EQUAL(ut_compare(unit1, unit2), 0);
+    ut_free(unit2);
+    ut_free(unit1);
+
+    /* Round-trip: format a unit as UTF-8, then parse the result back */
+    {
+        char fmtBuf[128];
+        int nfmt;
+        ut_unit* formatted_unit;
+        ut_unit* reparsed_unit;
+
+        formatted_unit = ut_parse(xmlSystem, "kg/m3", UT_ASCII);
+        CU_ASSERT_PTR_NOT_NULL_FATAL(formatted_unit);
+
+        nfmt = ut_format(formatted_unit, fmtBuf, sizeof(fmtBuf)-1,
+            UT_UTF8 | UT_DEFINITION);
+        CU_ASSERT_TRUE_FATAL(nfmt > 0);
+        fmtBuf[nfmt] = 0;
+
+        reparsed_unit = ut_parse(xmlSystem, fmtBuf, UT_UTF8);
+        CU_ASSERT_PTR_NOT_NULL(reparsed_unit);
+        if (reparsed_unit)
+            CU_ASSERT_EQUAL(ut_compare(formatted_unit, reparsed_unit), 0);
+
+        ut_free(reparsed_unit);
+        ut_free(formatted_unit);
+    }
+
     ut_free_system(xmlSystem);
 
     ut_set_error_message_handler(ut_ignore);
