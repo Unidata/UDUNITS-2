@@ -140,7 +140,9 @@ from                    [Ff][Rr][Oo][Mm]
 since                   [Ss][Ii][Nn][Cc][Ee]
 ref                     [Rr][Ee][Ff]
 per                     [Pp][Ee][Rr]
-
+nanspell     ([nN][aA][nN](\([^()]*\))?)
+infspell     ([iI][nN][fF]([iI][nN][iI][tT][yY])?)
+idchar       [A-Za-z0-9_]
 %Start		ID_SEEN SHIFT_SEEN DATE_SEEN CLOCK_SEEN
 
 %%
@@ -148,6 +150,12 @@ per                     [Pp][Ee][Rr]
 	BEGIN INITIAL;
 	_restartScanner = 0;
     }
+
+<INITIAL,SHIFT_SEEN>{sign}?{nanspell}{idchar} { yyless(0);}
+<INITIAL,SHIFT_SEEN>{sign}?{infspell}{idchar} { yyless(0);}
+
+<INITIAL,SHIFT_SEEN>{sign}?{nanspell} { ut_handle_error_message("NaN is not allowed in unit expressions"); return ERR; }
+<INITIAL,SHIFT_SEEN>{sign}?{infspell} { ut_handle_error_message("Infinity is not allowed in unit expressions"); return ERR; }
 
 <INITIAL,ID_SEEN>{space}*(@|{after}|{from}|{ref}|{since}){space}* {
     BEGIN SHIFT_SEEN;
