@@ -154,8 +154,8 @@ idchar       [A-Za-z0-9_]
 <INITIAL,SHIFT_SEEN>{sign}?{nanspell}{idchar} { yyless(0);}
 <INITIAL,SHIFT_SEEN>{sign}?{infspell}{idchar} { yyless(0);}
 
-<INITIAL,SHIFT_SEEN>{sign}?{nanspell} { yyerror("NaN is not allowed in unit expressions."); return 0; }
-<INITIAL,SHIFT_SEEN>{sign}?{infspell} { yyerror("Infinity is not allowed in unit expressions."); return 0; }
+<INITIAL,SHIFT_SEEN>{sign}?{nanspell} { ut_handle_error_message("NaN is not allowed in unit expressions"); return ERR; }
+<INITIAL,SHIFT_SEEN>{sign}?{infspell} { ut_handle_error_message("Infinity is not allowed in unit expressions"); return ERR; }
 
 <INITIAL,ID_SEEN>{space}*(@|{after}|{from}|{ref}|{since}){space}* {
     BEGIN SHIFT_SEEN;

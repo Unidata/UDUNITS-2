@@ -424,15 +424,13 @@ decodeInput(
 
     ut_free(_haveUnit);
 
-    int nbytes = 0;
     double amt;
-    const char *p = input;
     char *endp = NULL;
 
     errno = 0;
-    amt = strtod(p, &endp);
+    amt = strtod(input, &endp);
 
-    if (endp != p) {
+    if (endp != input) {
         /* We did consume something that looks like a number? */
         int next = (unsigned char)*endp;
 
@@ -453,7 +451,7 @@ decodeInput(
             /* Finite amount is OK: Accept and advance to the remainder. */
             _haveUnitAmount = amt;
             input = endp;
-            /* Optional: skip a single ASCII space if present (traditional behavior). */
+            /* Optional: skip any leading whitespace. */
             while (*input && isspace((unsigned char)*input)) {
                 ++input;
             }

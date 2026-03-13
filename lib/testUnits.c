@@ -2005,6 +2005,43 @@ test_parsing(void)
     unit = ut_parse(unitSystem, spec, UT_LATIN1);
     CU_ASSERT_PTR_NULL(unit);
     CU_ASSERT_EQUAL(ut_get_status(), UT_SYNTAX);
+
+    /*
+     * NaN and Inf must be rejected in unit strings (issue #132).
+     */
+
+    /* Standalone NaN/Inf — must fail */
+    unit = ut_parse(unitSystem, "nan", UT_ASCII);
+    CU_ASSERT_PTR_NULL(unit);
+
+    unit = ut_parse(unitSystem, "NaN", UT_ASCII);
+    CU_ASSERT_PTR_NULL(unit);
+
+    unit = ut_parse(unitSystem, "NAN", UT_ASCII);
+    CU_ASSERT_PTR_NULL(unit);
+
+    unit = ut_parse(unitSystem, "inf", UT_ASCII);
+    CU_ASSERT_PTR_NULL(unit);
+
+    unit = ut_parse(unitSystem, "INF", UT_ASCII);
+    CU_ASSERT_PTR_NULL(unit);
+
+    unit = ut_parse(unitSystem, "infinity", UT_ASCII);
+    CU_ASSERT_PTR_NULL(unit);
+
+    unit = ut_parse(unitSystem, "Infinity", UT_ASCII);
+    CU_ASSERT_PTR_NULL(unit);
+
+    /* NaN/Inf with sign — must fail */
+    unit = ut_parse(unitSystem, "+nan", UT_ASCII);
+    CU_ASSERT_PTR_NULL(unit);
+
+    unit = ut_parse(unitSystem, "-inf", UT_ASCII);
+    CU_ASSERT_PTR_NULL(unit);
+
+    /* NaN with payload — must fail */
+    unit = ut_parse(unitSystem, "NaN(0)", UT_ASCII);
+    CU_ASSERT_PTR_NULL(unit);
 }
 
 
@@ -2165,6 +2202,30 @@ test_xml(void)
     ut_free(unit2);
 #endif
     ut_free(unit1);
+
+    /*
+     * Units starting with "nan" or "inf" must still parse when followed
+     * by identifier characters (issue #132).  These require the full XML
+     * database for prefix resolution.
+     */
+    unit1 = ut_parse(xmlSystem, "nanoPa", UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit1);
+    ut_free(unit1);
+
+    unit1 = ut_parse(xmlSystem, "nanosecond", UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit1);
+    ut_free(unit1);
+
+    unit1 = ut_parse(xmlSystem, "nanometer", UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit1);
+    ut_free(unit1);
+
+    /* NaN/Inf as leading amount with a real unit — must fail even with XML system */
+    unit1 = ut_parse(xmlSystem, "nan m", UT_ASCII);
+    CU_ASSERT_PTR_NULL(unit1);
+
+    unit1 = ut_parse(xmlSystem, "inf kg", UT_ASCII);
+    CU_ASSERT_PTR_NULL(unit1);
 
     ut_free_system(xmlSystem);
 
