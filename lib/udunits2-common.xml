@@ -1850,7 +1850,7 @@ elements appear only within <aliases>.
 
     <!-- Illumination -->
         <unit>
-            <def>1.076391e-1 lx</def>
+            <def>1.076391e1 lx</def>
             <aliases>
                 <name> <singular>footcandle</singular> </name>
             </aliases>
