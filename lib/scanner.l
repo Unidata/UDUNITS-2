@@ -253,7 +253,8 @@ static int parse_tod_broken(const char* s, int* H,int* M,double* S,int* had_seco
     if (*p == ':') {
         p++;
         int ss;
-        if (!read_ndigits(&p, 2, &ss)) return 0;
+        /* <second>: [0-9]{1,2}, per GRAMMAR.md — accept 1 or 2 digits. */
+        if (!read_1to2digits(p, &ss, &p)) return 0;
         sec = (double)ss;
         double frac = 0.0;
         if (!parse_fraction(&p, &frac)) return 0;
@@ -369,20 +370,29 @@ static int decodeClockFlexible(const char* text, double* seconds, char* error_ms
     const char* end = NULL;
     int ok = 0;
 
-    /* Heuristic: if we see a ':', try broken first; else try packed first. */
+    /* The form is unambiguous: presence of ':' means broken, otherwise packed.
+       Do NOT fall back between the two — the packed parser will silently
+       match a prefix like "9" of "9:5:3" and discard the rest. */
     if (strchr(text, ':')) {
         ok = parse_tod_broken(p, &H, &M, &S, &had_sec, &end);
-        if (!ok) ok = parse_tod_packed(p, &H, &M, &S, &had_sec, &end);
     } else {
         ok = parse_tod_packed(p, &H, &M, &S, &had_sec, &end);
-        if (!ok) ok = parse_tod_broken(p, &H, &M, &S, &had_sec, &end);
     }
     if (!ok) {
         snprintf(error_msg, 256, "Invalid time-of-day format: %s (expected HH:MM:SS or HHMMSS)", text);
         return 0;
     }
 
-    /* Range + leap-second - check_tod_range now populates error_msg with specific error */
+    /* The lexer rule appends optional trailing whitespace to the token; the
+       sub-parsers don't consume it. Anything else past `end` is a leftover
+       that the lexer should never have produced — defensive check. */
+    while (*end == ' ' || *end == '\t' || *end == '\r' || *end == '\f' || *end == '\v') end++;
+    if (*end != '\0') {
+        snprintf(error_msg, 256, "Invalid time-of-day format: %s (trailing junk after parse)", text);
+        return 0;
+    }
+
+    /* Range + leap-second - check_tod_range populates error_msg with specific error */
     if (!check_tod_range(H, M, S, had_sec, error_msg)) {
         return 0;
     }
@@ -398,15 +408,20 @@ static int decodeTzOffsetFlexible(const char* text, double* seconds, char* error
     int sign=0, H=0, M=0; const char* end = NULL;
     int ok = 0;
 
+    /* Same reasoning as decodeClockFlexible: presence of ':' picks broken. */
     if (strchr(text, ':')) {
         ok = parse_tz_broken(p, &sign, &H, &M, &end);
-        if (!ok) ok = parse_tz_packed(p, &sign, &H, &M, &end);
     } else {
         ok = parse_tz_packed(p, &sign, &H, &M, &end);
-        if (!ok) ok = parse_tz_broken(p, &sign, &H, &M, &end);
     }
     if (!ok) {
         snprintf(error_msg, 256, "Invalid timezone offset: %s (expected ±HH:MM or ±HHMM)", text);
+        return 0;
+    }
+
+    /* Defensive trailing-junk check (lexer shouldn't produce one). */
+    if (*end != '\0') {
+        snprintf(error_msg, 256, "Invalid timezone offset: %s (trailing junk after parse)", text);
         return 0;
     }
 

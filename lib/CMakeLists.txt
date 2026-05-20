@@ -81,6 +81,13 @@ if (CUNIT_LIBRARY)
     add_test(
         NAME testUnits
         COMMAND testUnits ${CMAKE_CURRENT_SOURCE_DIR}/udunits2.xml)
+
+    add_executable(testDateTime testDateTime.c)
+    target_link_libraries (testDateTime libudunits2)
+    target_link_libraries (testDateTime ${CUNIT_LIBRARY})
+    add_test(
+        NAME testDateTime
+        COMMAND testDateTime ${CMAKE_CURRENT_SOURCE_DIR}/udunits2.xml)
 endif()
 
 # The documentation is in multiple texinfo(5) format files.
