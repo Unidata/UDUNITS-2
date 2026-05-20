@@ -171,6 +171,33 @@ static int isTime(
 %type   <rval>	timestamp
 %type   <rval>	number
 
+/*
+ * NOTE on parser conflicts.
+ *
+ * This grammar has 3 shift/reduce and 9 reduce/reduce conflicts. Both are
+ * pre-existing (they predate the issue #124 datetime work) and are
+ * intentionally accepted rather than refactored out:
+ *
+ *   - The 3 shift/reduce conflicts are all in error-recovery paths
+ *     (`product_exp . error`, `'(' product_exp . error`) plus the
+ *     juxtaposition ambiguity at `basic_exp . INT` — e.g. in "m 2" the
+ *     parser must decide whether the INT is an exponent on the preceding
+ *     basic_exp or a fresh number being multiplied in. Bison's default
+ *     (shift) gives "m^2", which is the desired behavior.
+ *
+ *   - The 9 reduce/reduce conflicts are all inside `LOGREF product_exp
+ *     error`, where the same error sequence can reduce via two different
+ *     productions. Both paths produce the same user-visible "syntax
+ *     error" — the conflict is harmless.
+ *
+ * We deliberately do not use %expect: bison treats it as also asserting
+ * %expect-rr 0, and %expect-rr itself is GLR-only. Switching to a GLR
+ * parser is a larger change than these warnings warrant. The build will
+ * therefore continue to emit two conflict warnings on every build; a
+ * future PR refactoring the error-recovery rules should bring both
+ * counts down together.
+ */
+
 %%
 
 unit_spec:      /* nothing */ {
@@ -409,13 +436,17 @@ timestamp:      DATE {
                     /* Timezone offset parsing error */
                     ut_handle_error_message("%s", $3);
                     YYERROR;
-                } |
-                DATE error {
-                    YYERROR;
-                } |
-                DATE CLOCK error {
-                    YYERROR;
                 }
+                /*
+                 * Note: no `DATE error` / `DATE CLOCK error` productions.
+                 * They added two undeclared shift/reduce conflicts (the
+                 * parser couldn't tell whether `DATE . error` should reduce
+                 * `DATE` into a complete timestamp first or shift the
+                 * error into an inline rule). Removing them changes nothing
+                 * user-visible: errors after DATE/DATE-CLOCK now fall
+                 * through to the outer `product_exp SHIFT error` catcher,
+                 * which produces the same "syntax error" message.
+                 */
                 ;
 
 %%
