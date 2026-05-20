@@ -48,11 +48,8 @@ static int decodeDate(
         snprintf(yylval.error_msg, 256, "Invalid date format: %s (Expected YYYY-MM-DD)", text);
         return ERR;
     }
-    // Explicit validation BEFORE calling ut_encode_date
-    // if (year == 0) {
-    //    snprintf(yylval.error_msg, 256, "Invalid date: year 0 not allowed");
-    //    return ERR;
-    //}
+    /* Note: year 0 is silently normalized to year 1 by ut_encode_date
+       (Julian calendar has no year zero); see GRAMMAR.md. */
     if (month < 1 || month > 12) {
         snprintf(yylval.error_msg, 256, "Invalid month %d (must be 1-12)", month);
         return ERR;
@@ -621,17 +618,6 @@ idchar       [A-Za-z0-9_]
 <SHIFT_SEEN>{year}-{month}(T|{space}*) {
     BEGIN DATE_SEEN;
     return decodeDate((char*)yytext, "%d-%d", &yylval.rval);
-}
-
-<SHIFT_SEEN>{packed_date}(T|{space}*) {
-    if (_isTime) {
-        BEGIN DATE_SEEN;
-        return decodePackedDate((char*)yytext, &yylval.rval);
-    }
-    else {
-        BEGIN INITIAL;
-        return decodeReal((char*)yytext, &yylval.rval);
-    }
 }
 
 <SHIFT_SEEN>{packed_date}(T|{space}*) {
