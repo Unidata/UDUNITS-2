@@ -630,6 +630,88 @@ static void test_reject_garbage(void)
 }
 
 /* ---------------------------------------------------------------------- */
+/*                10. public API: ut_check_date, ut_check_time             */
+/* ---------------------------------------------------------------------- */
+
+/*
+ * These exercise the validators as a public API, independent of the parser.
+ * They lock in the contract documented in udunits2.h: month 1-12, day 1-31,
+ * hour 0-23, minute 0-59, 0 <= second < 60. Year is unrestricted.
+ */
+
+static void test_ut_check_date_valid(void)
+{
+    CU_ASSERT_EQUAL(ut_check_date(2024,  1,  1), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_check_date(2024, 12, 31), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_check_date(1970,  1,  1), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_check_date(   0,  1,  1), UT_SUCCESS); /* year 0 ok */
+    CU_ASSERT_EQUAL(ut_check_date(  -1,  6, 15), UT_SUCCESS); /* negative ok */
+    CU_ASSERT_EQUAL(ut_check_date(2024,  2, 30), UT_SUCCESS); /* day rollover ok */
+}
+
+static void test_ut_check_date_bad_month(void)
+{
+    ut_set_status(UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_check_date(2024,  0,  1), UT_BAD_ARG);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
+    CU_ASSERT_EQUAL(ut_check_date(2024, 13,  1), UT_BAD_ARG);
+    CU_ASSERT_EQUAL(ut_check_date(2024, -1,  1), UT_BAD_ARG);
+    CU_ASSERT_EQUAL(ut_check_date(2024, 99,  1), UT_BAD_ARG);
+}
+
+static void test_ut_check_date_bad_day(void)
+{
+    CU_ASSERT_EQUAL(ut_check_date(2024,  1,  0), UT_BAD_ARG);
+    CU_ASSERT_EQUAL(ut_check_date(2024,  1, 32), UT_BAD_ARG);
+    CU_ASSERT_EQUAL(ut_check_date(2024,  1, -1), UT_BAD_ARG);
+}
+
+static void test_ut_check_date_does_not_clobber_status_on_success(void)
+{
+    /* Successful validation must not perturb a previously-set status. */
+    ut_set_status(UT_BAD_ARG);
+    CU_ASSERT_EQUAL(ut_check_date(2024, 1, 1), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG); /* unchanged */
+    ut_set_status(UT_SUCCESS);
+}
+
+static void test_ut_check_time_valid(void)
+{
+    CU_ASSERT_EQUAL(ut_check_time(2024,  1, 15,  0,  0,  0.0), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_check_time(2024,  1, 15, 23, 59, 59.999999), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_check_time(2024,  1, 15, 12, 30, 45.5), UT_SUCCESS);
+}
+
+static void test_ut_check_time_strict_no_leap_second(void)
+{
+    /* Contract: ut_check_time is strict (0 <= s < 60). The parser still
+       accepts "23:59:60" as a legacy back-compat carve-out, but that
+       form is discouraged (and disallowed by CF) as a `since` reference,
+       and the public validator deliberately does not bless it. */
+    CU_ASSERT_EQUAL(ut_check_time(2024, 1, 15, 23, 59, 60.0), UT_BAD_ARG);
+}
+
+static void test_ut_check_time_bad_components(void)
+{
+    CU_ASSERT_EQUAL(ut_check_time(2024,  1, 15, 24,  0,  0.0), UT_BAD_ARG); /* hour */
+    CU_ASSERT_EQUAL(ut_check_time(2024,  1, 15, -1,  0,  0.0), UT_BAD_ARG);
+    CU_ASSERT_EQUAL(ut_check_time(2024,  1, 15,  0, 60,  0.0), UT_BAD_ARG); /* minute */
+    CU_ASSERT_EQUAL(ut_check_time(2024,  1, 15,  0, -1,  0.0), UT_BAD_ARG);
+    CU_ASSERT_EQUAL(ut_check_time(2024,  1, 15,  0,  0, -0.1), UT_BAD_ARG); /* second */
+    CU_ASSERT_EQUAL(ut_check_time(2024,  1, 15,  0,  0, 60.0), UT_BAD_ARG);
+    /* date errors propagate */
+    CU_ASSERT_EQUAL(ut_check_time(2024, 13, 15, 12, 30,  0.0), UT_BAD_ARG);
+}
+
+static void test_ut_check_time_nan(void)
+{
+    /* Defensive: a NaN second must not slip through (the `!(s>=0 && s<60)`
+       form catches NaN, a plain `s < 0 || s >= 60` would not). */
+    double nan_val = 0.0/0.0;
+    CU_ASSERT_EQUAL(ut_check_time(2024, 1, 15, 12, 30, nan_val), UT_BAD_ARG);
+}
+
+/* ---------------------------------------------------------------------- */
 /*                          main / registration                            */
 /* ---------------------------------------------------------------------- */
 
@@ -712,6 +794,16 @@ int main(const int argc, const char* const* argv)
     /* 9. misc */
     CU_ADD_TEST(s, test_date_clock_combinations_consistent);
     CU_ADD_TEST(s, test_reject_garbage);
+
+    /* 10. public API: ut_check_date / ut_check_time */
+    CU_ADD_TEST(s, test_ut_check_date_valid);
+    CU_ADD_TEST(s, test_ut_check_date_bad_month);
+    CU_ADD_TEST(s, test_ut_check_date_bad_day);
+    CU_ADD_TEST(s, test_ut_check_date_does_not_clobber_status_on_success);
+    CU_ADD_TEST(s, test_ut_check_time_valid);
+    CU_ADD_TEST(s, test_ut_check_time_strict_no_leap_second);
+    CU_ADD_TEST(s, test_ut_check_time_bad_components);
+    CU_ADD_TEST(s, test_ut_check_time_nan);
 
     /* Silence the (noisy, expected) error messages from reject tests. */
     ut_set_error_message_handler(ut_ignore);

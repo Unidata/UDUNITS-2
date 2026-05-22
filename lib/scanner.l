@@ -48,24 +48,17 @@ static int decodeDate(
         snprintf(yylval.error_msg, 256, "Invalid date format: %s (Expected YYYY-MM-DD)", text);
         return ERR;
     }
-    /* Note: year 0 is silently normalized to year 1 by ut_encode_date
-       (Julian calendar has no year zero); see GRAMMAR.md. */
-    if (month < 1 || month > 12) {
-        snprintf(yylval.error_msg, 256, "Invalid month %d (must be 1-12)", month);
+    /* Range validation lives in ut_check_date() so the same rules apply
+       whether a date enters through the parser or via direct API calls.
+       Year 0 is unrestricted here; ut_encode_date silently normalizes it
+       to year 1 via the Julian-day arithmetic (see GRAMMAR.md). */
+    if (ut_check_date(year, month, day) != UT_SUCCESS) {
+        /* ut_check_date already emitted the message; leave error_msg
+           empty so the parser's ERR rule does not double-emit. */
+        yylval.error_msg[0] = '\0';
         return ERR;
     }
-    if (day < 1 || day > 31) {
-        snprintf(yylval.error_msg, 256, "Invalid day %d (must be 1-31)", day);
-        return ERR;
-    }
-
-    ut_status prev = ut_get_status();
     *date = ut_encode_date(year, month, day);
-    if (ut_get_status() != UT_SUCCESS) {
-        ut_set_status(prev);
-        snprintf(yylval.error_msg, 256, "Invalid date: %s (not a valid calendar date)", text);
-        return ERR;
-    }
     return DATE;
 }
 
@@ -223,23 +216,13 @@ static int decodePackedDate(
         return ERR;
     }
 
-    // Validate ranges
-    if (month < 1 || month > 12) {
-        snprintf(yylval.error_msg, 256, "Invalid month %d (must be 1-12)", month);
-        return ERR;
-    }
-    if (day < 1 || day > 31) {
-        snprintf(yylval.error_msg, 256, "Invalid day %d (must be 1-31)", day);
+    // Validate ranges via the public check function (single source of truth).
+    if (ut_check_date(year, month, day) != UT_SUCCESS) {
+        yylval.error_msg[0] = '\0';   /* ut_check_date already emitted */
         return ERR;
     }
 
-    ut_status prev = ut_get_status();
     *date = ut_encode_date(year, month, day);
-    if (ut_get_status() != UT_SUCCESS) {
-        ut_set_status(prev);
-        snprintf(yylval.error_msg, 256, "Invalid date: %s", text);
-        return ERR;
-    }
     return DATE;
 }
 
@@ -498,13 +481,11 @@ utf8_3bytes_no_super    [\xe0-\xe1]{utf8_cont}{utf8_cont}|\xe2[\x80\x82-\xbf]{ut
 letter  		[_a-zA-Z]|{latin1}|{utf8_2bytes_no_super}|{utf8_3bytes_no_super}
 alphanum		{letter}|[0-9]
 id			%|'|\"|{letter}({alphanum}*{letter})?
-broken_date		{year}-{month}(-{day})?
 packed_date		{year}({month}{day}?)?
 broken_clock		{tod_hour}:{minute}(:{second})?
 packed_clock		{tod_hour}({minute}{second}?)?
 broken_tz_clock		{tz_hour}:{minute}
 packed_tz_clock		{tz_hour}{minute}?
-tz_id	       		UTC|GMT|Z
 logref			\({space}*[Rr][Ee](:{space})?{space}*
 after                   [Aa][Ff][Tt][Ee][Rr]
 from                    [Ff][Rr][Oo][Mm]

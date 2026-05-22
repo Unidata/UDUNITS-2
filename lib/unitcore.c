@@ -458,6 +458,66 @@ ut_encode_date(
 
 
 /*
+ * Validates calendar date components. See udunits2.h for the contract.
+ */
+ut_status
+ut_check_date(
+    int		year,
+    int		month,
+    int		day)
+{
+    (void)year;    /* unrestricted; signature mirrors ut_encode_date */
+    if (month < 1 || month > 12) {
+	ut_handle_error_message("Invalid month %d (must be 1-12)", month);
+	ut_set_status(UT_BAD_ARG);
+	return UT_BAD_ARG;
+    }
+    if (day < 1 || day > 31) {
+	ut_handle_error_message("Invalid day %d (must be 1-31)", day);
+	ut_set_status(UT_BAD_ARG);
+	return UT_BAD_ARG;
+    }
+    return UT_SUCCESS;
+}
+
+
+/*
+ * Validates calendar timestamp components. See udunits2.h for the contract.
+ */
+ut_status
+ut_check_time(
+    int		year,
+    int		month,
+    int		day,
+    int		hour,
+    int		minute,
+    double	second)
+{
+    if (ut_check_date(year, month, day) != UT_SUCCESS) {
+	return UT_BAD_ARG;
+    }
+    if (hour < 0 || hour > 23) {
+	ut_handle_error_message("Invalid hour %d (must be 0-23)", hour);
+	ut_set_status(UT_BAD_ARG);
+	return UT_BAD_ARG;
+    }
+    if (minute < 0 || minute > 59) {
+	ut_handle_error_message("Invalid minute %d (must be 0-59)", minute);
+	ut_set_status(UT_BAD_ARG);
+	return UT_BAD_ARG;
+    }
+    if (!(second >= 0.0 && second < 60.0)) {
+	/* `!(...)` catches NaN as well as out-of-range. */
+	ut_handle_error_message(
+	    "Invalid second %g (must satisfy 0 <= s < 60)", second);
+	ut_set_status(UT_BAD_ARG);
+	return UT_BAD_ARG;
+    }
+    return UT_SUCCESS;
+}
+
+
+/*
  * Encodes a time as a double-precision value.  The convenience function is
  * equivalent to "ut_encode_date(year,month,day) +
  * ut_encode_clock(hour,minute,second)"

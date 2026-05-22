@@ -423,18 +423,20 @@ timestamp:      DATE {
                     $$ = $1;
                 } |
                 ERR {
-                    /* Date parsing error */
-                    ut_handle_error_message("%s", $1);
+                    /* Date parsing error. Some lexer paths emit the
+                       message themselves (e.g. via ut_check_date) and
+                       leave $1 empty to signal "do not re-emit". */
+                    if ($1[0] != '\0') ut_handle_error_message("%s", $1);
                     YYERROR;
                 } |
                 DATE ERR {
-                    /* Clock parsing error */
-                    ut_handle_error_message("%s", $2);
+                    /* Clock parsing error (see ERR rule above). */
+                    if ($2[0] != '\0') ut_handle_error_message("%s", $2);
                     YYERROR;
                 } |
                 DATE CLOCK ERR {
-                    /* Timezone offset parsing error */
-                    ut_handle_error_message("%s", $3);
+                    /* Timezone offset parsing error (see ERR rule above). */
+                    if ($3[0] != '\0') ut_handle_error_message("%s", $3);
                     YYERROR;
                 }
                 /*

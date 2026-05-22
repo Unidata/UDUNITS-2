@@ -1201,9 +1201,43 @@ ut_accept_visitor(
  *	day		The day (1 = the first of the month).
  * Returns:
  *	The date encoded as a scalar value.
+ *
+ * Note: this function performs no validation of its arguments. Out-of-range
+ * values are silently normalized via the underlying Julian-day arithmetic
+ * (year 0 becomes year 1; month 13 rolls into the next year; day 32 rolls
+ * into the next month). Callers that want strict input validation should
+ * call ut_check_date() first.
  */
 EXTERNL double
 ut_encode_date(
+    int		year,
+    int		month,
+    int		day);
+
+
+/*
+ * Validates that the arguments form a real-world calendar date.
+ *
+ * Arguments:
+ *	year	The year. Unrestricted (year 0 is accepted; ut_encode_date
+ *		normalizes it to year 1).
+ *	month	Must be in the inclusive range [1, 12].
+ *	day	Must be in the inclusive range [1, 31]. Day-of-month limits
+ *		that depend on the month (e.g. Feb 30) are NOT enforced;
+ *		ut_encode_date rolls such days into the following month.
+ *
+ * Returns:
+ *	UT_SUCCESS	The arguments form a valid date.
+ *	UT_BAD_ARG	An argument is out of range. ut_status is set and
+ *			an error message has been emitted via the handler
+ *			set by ut_set_error_message_handler().
+ *
+ * This is the validation routine used by the unit-string parser. Library
+ * users may call it before ut_encode_date() to obtain the same strict
+ * input check that "seconds since YYYY-MM-DD" would receive.
+ */
+EXTERNL ut_status
+ut_check_date(
     int		year,
     int		month,
     int		day);
@@ -1252,6 +1286,40 @@ ut_encode_time(
     const int		hour,
     const int		minute,
     const double	second);
+
+
+/*
+ * Validates that the arguments form a real-world calendar timestamp.
+ *
+ * Arguments:
+ *	year, month, day	As for ut_check_date().
+ *	hour		Must be in the inclusive range [0, 23].
+ *	minute		Must be in the inclusive range [0, 59].
+ *	second		Must satisfy 0.0 <= second < 60.0.
+ *
+ * Returns:
+ *	UT_SUCCESS	The arguments form a valid timestamp.
+ *	UT_BAD_ARG	An argument is out of range. ut_status is set and
+ *			an error message has been emitted via the handler
+ *			set by ut_set_error_message_handler().
+ *
+ * Note: this is the *strict* clock-range check (0..59 minutes, 0..<60
+ * seconds). The unit-string parser additionally accepts second == 60.0
+ * in the specific case "23:59:60", which encodes a leap-second
+ * insertion. That carve-out exists only for backward compatibility with
+ * legacy timestamp strings; using a leap-second value as the reference
+ * in a "<unit> since <timestamp>" specification is discouraged (and is
+ * not permitted by the CF metadata conventions). New code SHOULD NOT
+ * rely on it, and ut_check_time deliberately does not bless it.
+ */
+EXTERNL ut_status
+ut_check_time(
+    int		year,
+    int		month,
+    int		day,
+    int		hour,
+    int		minute,
+    double	second);
 
 
 /*
