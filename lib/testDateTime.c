@@ -229,6 +229,20 @@ static void test_broken_date_day_rollover(void)
     assert_timestamp_origin("2024-04-31",        2024,  5,  1, 0, 0, 0.0); /* rolls */
 }
 
+static void test_broken_date_gregorian_cutover_gap(void)
+{
+    /* GRAMMAR.md: Oct 5-14, 1582 don't exist in the unified Julian/Gregorian
+       calendar (those days were removed in the Gregorian reform). Inputs in
+       that gap are silently normalized to the equivalent Gregorian date.
+       This documents/locks in the encoder's behavior for inputs that have
+       no canonical representation. */
+    assert_timestamp_origin("1582-10-14",        1582, 10, 24, 0, 0, 0.0); /* gap */
+    assert_timestamp_origin("1582-10-05",        1582, 10, 15, 0, 0, 0.0); /* gap */
+    /* Boundary days outside the gap remain canonical. */
+    assert_timestamp_origin("1582-10-04",        1582, 10,  4, 0, 0, 0.0); /* last Julian */
+    assert_timestamp_origin("1582-10-15",        1582, 10, 15, 0, 0, 0.0); /* first Gregorian */
+}
+
 static void test_broken_date_reject_bad_month(void)
 {
     assert_timestamp_reject("2024-13-01");
@@ -905,6 +919,7 @@ int main(const int argc, const char* const* argv)
     CU_ADD_TEST(s, test_broken_date_year_zero);
     CU_ADD_TEST(s, test_broken_date_negative_year);
     CU_ADD_TEST(s, test_broken_date_day_rollover);
+    CU_ADD_TEST(s, test_broken_date_gregorian_cutover_gap);
     CU_ADD_TEST(s, test_broken_date_reject_bad_month);
     CU_ADD_TEST(s, test_broken_date_reject_bad_day);
     CU_ADD_TEST(s, test_broken_date_reject_year_too_long);
