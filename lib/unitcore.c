@@ -268,18 +268,31 @@ julianDayToGregorianDate(julday, year, month, day)
 	ja = julday;
     else
     {
-	int	ia = (int)(((julday - 1867216) - 0.25) / 36524.25);
+	/*
+	 * Use floor() rather than the (int) cast: K&R-era C often had
+	 * implementation-defined behavior for negative-to-int conversion that
+	 * happened to round toward -infinity, but C99 mandates truncation
+	 * toward zero. The (int) cast on a negative double therefore no longer
+	 * matches the algorithm's floor() intent. ia is non-negative here
+	 * (julday >= 2299161 → ia > 0), so this is defensive consistency.
+	 */
+	int	ia = (int)floor(((double)(julday - 1867216) - 0.25) / 36524.25);
 
-	ja = julday + 1 + ia - (int)(0.25 * ia);
+	ja = julday + 1 + ia - (int)floor(0.25 * ia);
     }
 
     jb = ja + 1524;
-    xc = ((jb - 2439870) - 122.1) / 365.25;
-    jc = (int)(6680.0 + xc);
-    jd = 365 * jc + (int)(0.25 * jc);
-    je = (int)((jb - jd) / 30.6001);
+    xc = ((double)(jb - 2439870) - 122.1) / 365.25;
+    /*
+     * jc and the 0.25*jc term can be negative for proleptic years before ~AD 1,
+     * so floor() is required for correctness here, not just defense. Without
+     * it, every negative year roundtrips off by one (see test_decode_roundtrip).
+     */
+    jc = (int)floor(6680.0 + xc);
+    jd = 365 * jc + (int)floor(0.25 * jc);
+    je = (int)floor((double)(jb - jd) / 30.6001);
 
-    iday = (int)(jb - jd - (int)(30.6001 * je));
+    iday = (int)floor((double)(jb - jd) - floor(30.6001 * je));
 
     imonth = je - 1;
     if (imonth > 12)

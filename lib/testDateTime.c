@@ -712,6 +712,122 @@ static void test_ut_check_time_nan(void)
 }
 
 /* ---------------------------------------------------------------------- */
+/*           11. encode → decode roundtrip (issue: neg-year bug)           */
+/* ---------------------------------------------------------------------- */
+
+/*
+ * Before the (int)-cast → floor() fix in julianDayToGregorianDate,
+ * any negative year roundtripped off by one (and the day shifted by one,
+ * sometimes corrupting the month as well). These tests lock that in.
+ *
+ * Pre-fix observed behavior:
+ *   ut_encode_date(-9000, 1, 1) → JD
+ *   ut_decode_time(JD)          → (-8999, 1, 2)    <-- wrong
+ *
+ * The root cause was (int)(negative_double), which truncates toward zero
+ * in C99+ where the algorithm needed floor() (round toward -infinity).
+ * The encoder already had the corresponding fix at unitcore.c:351-355;
+ * the decoder did not.
+ */
+
+static void assert_date_roundtrip(int Y, int M, int D)
+{
+    double encoded = ut_encode_date(Y, M, D);
+    int    y, m, d, h, mi;
+    double s, res;
+    ut_decode_time(encoded, &y, &m, &d, &h, &mi, &s, &res);
+    if (y != Y || m != M || d != D || h != 0 || mi != 0 || s != 0.0) {
+        fprintf(stderr,
+            "assert_date_roundtrip: input=(%d-%02d-%02d) "
+            "decoded=(%d-%02d-%02d %02d:%02d:%g)\n",
+            Y, M, D, y, m, d, h, mi, s);
+    }
+    CU_ASSERT_EQUAL(y, Y);
+    CU_ASSERT_EQUAL(m, M);
+    CU_ASSERT_EQUAL(d, D);
+    CU_ASSERT_EQUAL(h, 0);
+    CU_ASSERT_EQUAL(mi, 0);
+    CU_ASSERT_DOUBLE_EQUAL(s, 0.0, 1e-9);
+}
+
+/* Specific regression for the historically-broken cases. */
+static void test_decode_roundtrip_negative_year_bug(void)
+{
+    /* The exact case the bug was demonstrated on. */
+    assert_date_roundtrip(-9000,  1,  1);
+    /* Same year, other months — pre-fix these had month corruption too,
+       producing nonsense like (-8998, -8, -29) for March. */
+    assert_date_roundtrip(-9000,  3,  1);
+    assert_date_roundtrip(-9000,  7, 15);
+    assert_date_roundtrip(-9000, 12, 31);
+    /* Boundary at the smallest negative year currently representable as ID. */
+    assert_date_roundtrip(   -1,  1,  1);
+    assert_date_roundtrip(   -1, 12, 31);
+    /* Mid-range negatives. */
+    assert_date_roundtrip( -100,  6, 15);
+    assert_date_roundtrip(-1000,  1,  1);
+}
+
+static void test_decode_roundtrip_positive_years(void)
+{
+    /* Modern era — must not regress. */
+    assert_date_roundtrip(2024,  1, 15);
+    assert_date_roundtrip(2024,  2, 29);  /* leap day */
+    assert_date_roundtrip(2024, 12, 31);
+    assert_date_roundtrip(2001,  1,  1);  /* origin */
+    assert_date_roundtrip(1970,  1,  1);  /* Unix epoch */
+    /* Gregorian cutover boundary (Oct 15, 1582). Note that Oct 5-14 1582
+       don't exist in the unified Julian/Gregorian calendar — those inputs
+       silently normalize to Gregorian dates (similar to how Feb 30 rolls
+       to Mar 1), so we don't test them here. */
+    assert_date_roundtrip(1582, 10, 15);  /* first Gregorian day */
+    assert_date_roundtrip(1582, 10,  4);  /* last Julian day */
+    assert_date_roundtrip(1583,  1,  1);
+    /* Pre-Gregorian. */
+    assert_date_roundtrip(1000,  6, 15);
+    assert_date_roundtrip(   1,  1,  1);
+    /* 4-digit-year boundary. */
+    assert_date_roundtrip(9999, 12, 31);
+}
+
+static void test_decode_roundtrip_year_zero(void)
+{
+    /* Per the documented behavior (udunits2.h, GRAMMAR.md): year 0 is
+       silently normalized to year 1. After encode→decode the value
+       therefore comes back as year 1, NOT year 0. This is a quirk of
+       the historical "no year zero" convention, not a roundtrip bug.
+
+       This test pins the contract so the normalization is not silently
+       lost by a future refactor. */
+    double encoded = ut_encode_date(0, 1, 1);
+    int    y, m, d, h, mi;
+    double s, res;
+    ut_decode_time(encoded, &y, &m, &d, &h, &mi, &s, &res);
+    CU_ASSERT_EQUAL(y, 1);  /* normalized */
+    CU_ASSERT_EQUAL(m, 1);
+    CU_ASSERT_EQUAL(d, 1);
+}
+
+static void test_decode_roundtrip_dense_sweep(void)
+{
+    /* Coarse but wide sweep across negative and positive ranges, exercising
+       every month. This caught all 252 dense-sweep failures in the pre-fix
+       extracted-function test. */
+    static const int years[] = {
+        -9999, -5000, -1000, -100, -10, -2, -1,
+            1,    2,   10,   100,  1000, 5000, 9999,
+    };
+    for (size_t i = 0; i < sizeof(years)/sizeof(years[0]); i++) {
+        for (int m = 1; m <= 12; m++) {
+            assert_date_roundtrip(years[i], m, 1);
+            assert_date_roundtrip(years[i], m, 15);
+            /* Day 28 — last day common to all months, avoids leap-day noise. */
+            assert_date_roundtrip(years[i], m, 28);
+        }
+    }
+}
+
+/* ---------------------------------------------------------------------- */
 /*                          main / registration                            */
 /* ---------------------------------------------------------------------- */
 
@@ -804,6 +920,12 @@ int main(const int argc, const char* const* argv)
     CU_ADD_TEST(s, test_ut_check_time_strict_no_leap_second);
     CU_ADD_TEST(s, test_ut_check_time_bad_components);
     CU_ADD_TEST(s, test_ut_check_time_nan);
+
+    /* 11. encode→decode roundtrip (negative-year regression + sweep) */
+    CU_ADD_TEST(s, test_decode_roundtrip_negative_year_bug);
+    CU_ADD_TEST(s, test_decode_roundtrip_positive_years);
+    CU_ADD_TEST(s, test_decode_roundtrip_year_zero);
+    CU_ADD_TEST(s, test_decode_roundtrip_dense_sweep);
 
     /* Silence the (noisy, expected) error messages from reject tests. */
     ut_set_error_message_handler(ut_ignore);
