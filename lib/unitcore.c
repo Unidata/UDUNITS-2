@@ -488,7 +488,7 @@ ut_check_date(
      * Quaternary scales (last 2.6 Ma).
      */
     if (year < -5000000 || year > 5000000) {
-	ut_handle_error_message("Invalid year %d (must be within \xc2\xb15,000,000)", year);
+	ut_handle_error_message("Invalid year %d (must be within +/-5,000,000)", year);
 	ut_set_status(UT_BAD_ARG);
 	return UT_BAD_ARG;
     }
