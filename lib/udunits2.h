@@ -1219,8 +1219,10 @@ ut_encode_date(
  * Validates that the arguments form a real-world calendar date.
  *
  * Arguments:
- *	year	The year. Unrestricted (year 0 is accepted; ut_encode_date
- *		normalizes it to year 1).
+ *	year	The year. Must be in the inclusive range [-5000000, 5000000].
+ *		Year 0 is accepted; ut_encode_date normalizes it to year 1.
+ *		The cap is a practical limit set by the int32 arithmetic in
+ *		gregorianDateToJulianDay; see lib/unitcore.c for details.
  *	month	Must be in the inclusive range [1, 12].
  *	day	Must be in the inclusive range [1, 31]. Day-of-month limits
  *		that depend on the month (e.g. Feb 30) are NOT enforced;

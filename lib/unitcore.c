@@ -479,7 +479,19 @@ ut_check_date(
     int		month,
     int		day)
 {
-    (void)year;    /* unrestricted; signature mirrors ut_encode_date */
+    /*
+     * The cap is a practical limit, not an algorithmic one. The Julian-day
+     * arithmetic in gregorianDateToJulianDay() overflows int32 around
+     * |year| ≈ 5.77M (via 31 * (month + 12 * iy)); ±5,000,000 leaves a
+     * comfortable safety margin and yields a round number. This range
+     * comfortably covers all of geological time relevant at human or
+     * Quaternary scales (last 2.6 Ma).
+     */
+    if (year < -5000000 || year > 5000000) {
+	ut_handle_error_message("Invalid year %d (must be within \xc2\xb15,000,000)", year);
+	ut_set_status(UT_BAD_ARG);
+	return UT_BAD_ARG;
+    }
     if (month < 1 || month > 12) {
 	ut_handle_error_message("Invalid month %d (must be 1-12)", month);
 	ut_set_status(UT_BAD_ARG);

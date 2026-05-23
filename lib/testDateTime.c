@@ -245,9 +245,43 @@ static void test_broken_date_reject_bad_day(void)
 
 static void test_broken_date_reject_year_too_long(void)
 {
-    /* <year> is 1-4 digits (per grammar). */
-    assert_timestamp_reject("99999-01-01");
-    assert_timestamp_reject("-99999-01-01");
+    /* Broken-date <year> is 1-7 digits lexically (per grammar);
+       additionally constrained semantically to the inclusive range
+       [-5000000, 5000000] by ut_check_date. */
+    /* Lexically too long: 8+ digit year. */
+    assert_timestamp_reject("12345678-01-01");
+    assert_timestamp_reject("-12345678-01-01");
+    /* Lexically OK but semantically out of range. */
+    assert_timestamp_reject("5000001-01-01");
+    assert_timestamp_reject("-5000001-01-01");
+    assert_timestamp_reject("9999999-01-01");
+}
+
+static void test_broken_date_accept_long_year(void)
+{
+    /* New range admits years up to ±5,000,000 in broken format only. */
+    assert_timestamp_origin("99999-01-01",      99999,  1,  1, 0, 0, 0.0);
+    assert_timestamp_origin("-99999-12-31",    -99999, 12, 31, 0, 0, 0.0);
+    assert_timestamp_origin("1000000-06-15",  1000000,  6, 15, 0, 0, 0.0);
+    assert_timestamp_origin("-1000000-06-15",-1000000,  6, 15, 0, 0, 0.0);
+    /* Exact boundary. */
+    assert_timestamp_origin("5000000-01-01",  5000000,  1,  1, 0, 0, 0.0);
+    assert_timestamp_origin("-5000000-12-31",-5000000, 12, 31, 0, 0, 0.0);
+}
+
+static void test_packed_date_year_still_4_digit(void)
+{
+    /* The 4-digit packed-date year cap is intentional: extending it would
+       make truncation ambiguous. Long years are only supported in broken
+       format. This test pins the cap by verifying that a 5-digit numeric
+       prefix is parsed as (year=4digit, month=5th-digit), NOT as a 5-digit
+       year. */
+    /* "12345" → year=1234, month=05, day=01 — not year=12345. */
+    assert_timestamp_origin("12345",         1234,  5,  1, 0, 0, 0.0);
+    /* "100001" → year=1000, month=01 — not year=10000, month=1. */
+    assert_timestamp_origin("100001",        1000,  1,  1, 0, 0, 0.0);
+    /* Conventional 4-digit packed still works. */
+    assert_timestamp_origin("20240101",      2024,  1,  1, 0, 0, 0.0);
 }
 
 static void test_broken_date_reject_bad_separator(void)
@@ -635,8 +669,8 @@ static void test_reject_garbage(void)
 
 /*
  * These exercise the validators as a public API, independent of the parser.
- * They lock in the contract documented in udunits2.h: month 1-12, day 1-31,
- * hour 0-23, minute 0-59, 0 <= second < 60. Year is unrestricted.
+ * They lock in the contract documented in udunits2.h: year in [-5000000,
+ * 5000000], month 1-12, day 1-31, hour 0-23, minute 0-59, 0 <= second < 60.
  */
 
 static void test_ut_check_date_valid(void)
@@ -647,6 +681,19 @@ static void test_ut_check_date_valid(void)
     CU_ASSERT_EQUAL(ut_check_date(   0,  1,  1), UT_SUCCESS); /* year 0 ok */
     CU_ASSERT_EQUAL(ut_check_date(  -1,  6, 15), UT_SUCCESS); /* negative ok */
     CU_ASSERT_EQUAL(ut_check_date(2024,  2, 30), UT_SUCCESS); /* day rollover ok */
+    /* Extended-range years. */
+    CU_ASSERT_EQUAL(ut_check_date( 5000000,  1,  1), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_check_date(-5000000, 12, 31), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_check_date( 1000000,  6, 15), UT_SUCCESS);
+}
+
+static void test_ut_check_date_bad_year(void)
+{
+    ut_set_status(UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_check_date( 5000001, 1, 1), UT_BAD_ARG);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
+    CU_ASSERT_EQUAL(ut_check_date(-5000001, 1, 1), UT_BAD_ARG);
+    CU_ASSERT_EQUAL(ut_check_date(99999999, 1, 1), UT_BAD_ARG);
 }
 
 static void test_ut_check_date_bad_month(void)
@@ -812,10 +859,12 @@ static void test_decode_roundtrip_dense_sweep(void)
 {
     /* Coarse but wide sweep across negative and positive ranges, exercising
        every month. This caught all 252 dense-sweep failures in the pre-fix
-       extracted-function test. */
+       extracted-function test. Extended in commit 2 to cover the new
+       \xc2\xb15M year range. */
     static const int years[] = {
-        -9999, -5000, -1000, -100, -10, -2, -1,
-            1,    2,   10,   100,  1000, 5000, 9999,
+        -5000000, -1000000, -99999, -9999, -5000, -1000, -100, -10, -2, -1,
+               1,        2,     10,   100,  1000,  5000, 9999, 99999,
+         1000000,  5000000,
     };
     for (size_t i = 0; i < sizeof(years)/sizeof(years[0]); i++) {
         for (int m = 1; m <= 12; m++) {
@@ -859,12 +908,14 @@ int main(const int argc, const char* const* argv)
     CU_ADD_TEST(s, test_broken_date_reject_bad_month);
     CU_ADD_TEST(s, test_broken_date_reject_bad_day);
     CU_ADD_TEST(s, test_broken_date_reject_year_too_long);
+    CU_ADD_TEST(s, test_broken_date_accept_long_year);
     CU_ADD_TEST(s, test_broken_date_reject_bad_separator);
 
     /* 2. packed DATE */
     CU_ADD_TEST(s, test_packed_date_full);
     CU_ADD_TEST(s, test_packed_date_truncated);
     CU_ADD_TEST(s, test_packed_date_reject_bad_length);
+    CU_ADD_TEST(s, test_packed_date_year_still_4_digit);
 
     /* 3. broken CLOCK */
     CU_ADD_TEST(s, test_broken_clock_full);
@@ -913,6 +964,7 @@ int main(const int argc, const char* const* argv)
 
     /* 10. public API: ut_check_date / ut_check_time */
     CU_ADD_TEST(s, test_ut_check_date_valid);
+    CU_ADD_TEST(s, test_ut_check_date_bad_year);
     CU_ADD_TEST(s, test_ut_check_date_bad_month);
     CU_ADD_TEST(s, test_ut_check_date_bad_day);
     CU_ADD_TEST(s, test_ut_check_date_does_not_clobber_status_on_success);

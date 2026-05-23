@@ -457,6 +457,7 @@ mantissa		{int_period}|{period_int}|{int_period_int}
 real_exp		[eE][+-]?[0-9]+
 real			[+-]?({int}{real_exp}|{mantissa}{real_exp}?)
 year			[+-]?[0-9]{1,4}
+year_broken		[+-]?[0-9]{1,7}
 month			[0-9]{1,2}
 day			    [0-9]{1,2}
 tod_hour		[0-9]{1,2}
@@ -600,18 +601,18 @@ idchar       [A-Za-z0-9_]
     return status;
 }
 
-<SHIFT_SEEN>{year}-{month}-{day}(T|{space}*) {
+<SHIFT_SEEN>{year_broken}-{month}-{day}(T|{space}*) {
     BEGIN DATE_SEEN;
     return decodeDate((char*)yytext, "%d-%d-%d", &yylval.rval);
 }
 
-<SHIFT_SEEN>{year}-[0-9]{2}[0-9]+ {
+<SHIFT_SEEN>{year_broken}-[0-9]{2}[0-9]+ {
     snprintf(yylval.error_msg, 256,
              "Invalid date: missing separator after month (expected '-' or space)");
     return ERR;
 }
 
-<SHIFT_SEEN>{year}-{month}(T|{space}*) {
+<SHIFT_SEEN>{year_broken}-{month}(T|{space}*) {
     BEGIN DATE_SEEN;
     return decodeDate((char*)yytext, "%d-%d", &yylval.rval);
 }
@@ -627,9 +628,9 @@ idchar       [A-Za-z0-9_]
     }
 }
 
-<SHIFT_SEEN>[+-]?[0-9]{5,}-[0-9] {
+<SHIFT_SEEN>[+-]?[0-9]{8,}-[0-9] {
     snprintf(yylval.error_msg, 256,
-             "Invalid date: year has too many digits (max 4 digits allowed)");
+             "Invalid date: year has too many digits (max 7 digits allowed in broken format)");
     return ERR;
 }
 
