@@ -480,6 +480,31 @@ ut_check_date(
     int		day)
 {
     /*
+     * Per-month maximum day. The table admits any date legal in either
+     * the Gregorian calendar (with the leap-year rule deliberately
+     * ignored) or the CF "360_day" calendar (every month exactly 30
+     * days). Concretely:
+     *
+     *   Jan, Mar, May, Jul, Aug, Oct, Dec  ->  31 (Gregorian 31-day months)
+     *   Apr, Jun,      Sep, Nov            ->  30 (Gregorian + 360_day agree)
+     *   Feb                                ->  30 (Gregorian 29 leap-day +
+     *                                              360_day permitting 30;
+     *                                              the leap-year rule is
+     *                                              NOT applied here)
+     *
+     * Rationale: udunits is calendar-agnostic at the parse layer, but a
+     * day value like "Feb 31" or "Apr 31" is invalid in every calendar
+     * in widespread use and is almost certainly a typo. Admitting
+     * Feb 29/30 (no leap-year restriction) keeps existing CF data
+     * working across `gregorian`, `proleptic_gregorian`, `noleap` /
+     * `365_day`, `all_leap` / `366_day`, and `360_day` calendars
+     * without the parser needing to know which one the consumer uses.
+     */
+    static const int max_day_per_month[12] = {
+        31, 30, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
+    };
+
+    /*
      * The cap is a practical limit, not an algorithmic one. The Julian-day
      * arithmetic in gregorianDateToJulianDay() overflows int32 around
      * |year| ≈ 5.77M (via 31 * (month + 12 * iy)); ±5,000,000 leaves a
@@ -497,10 +522,15 @@ ut_check_date(
 	ut_set_status(UT_BAD_ARG);
 	return UT_BAD_ARG;
     }
-    if (day < 1 || day > 31) {
-	ut_handle_error_message("Invalid day %d (must be 1-31)", day);
-	ut_set_status(UT_BAD_ARG);
-	return UT_BAD_ARG;
+    {
+	const int max_day = max_day_per_month[month - 1];
+	if (day < 1 || day > max_day) {
+	    ut_handle_error_message(
+		"Invalid day %d for month %d (must be 1-%d)",
+		day, month, max_day);
+	    ut_set_status(UT_BAD_ARG);
+	    return UT_BAD_ARG;
+	}
     }
     return UT_SUCCESS;
 }

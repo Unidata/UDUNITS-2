@@ -221,12 +221,34 @@ static void test_broken_date_negative_year(void)
 
 static void test_broken_date_day_rollover(void)
 {
-    /* GRAMMAR.md: out-of-calendar dates roll silently to the next month. */
+    /*
+     * GRAMMAR.md / ut_check_date: dates legal in either the Gregorian
+     * calendar (leap rule not enforced) or the 360_day calendar are
+     * accepted. The encoder always uses Gregorian arithmetic, so Feb 29
+     * stays put in a leap year, Feb 29 of a non-leap year rolls to
+     * Mar 1, and Feb 30 (valid in 360_day, invalid in Gregorian) rolls
+     * to Mar 1 or Mar 2 depending on the year. Apr 31, Jun 31, etc.
+     * are now rejected outright by the validator — see the dedicated
+     * reject test below.
+     */
     /* 2024 is a leap year, 1999 is not. */
     assert_timestamp_origin("2024-02-29",        2024,  2, 29, 0, 0, 0.0); /* valid */
     assert_timestamp_origin("1999-02-29",        1999,  3,  1, 0, 0, 0.0); /* rolls */
-    assert_timestamp_origin("2024-02-30",        2024,  3,  1, 0, 0, 0.0); /* rolls */
-    assert_timestamp_origin("2024-04-31",        2024,  5,  1, 0, 0, 0.0); /* rolls */
+    assert_timestamp_origin("2024-02-30",        2024,  3,  1, 0, 0, 0.0); /* rolls; valid in 360_day */
+}
+
+static void test_broken_date_reject_impossible_day(void)
+{
+    /*
+     * Day values legal in neither Gregorian-no-leap nor 360_day are
+     * rejected by ut_check_date and surface as parse failures here.
+     * These would silently roll under the previous lenient validator.
+     */
+    CU_ASSERT_PTR_NULL(parse_seconds_since("2024-02-31"));
+    CU_ASSERT_PTR_NULL(parse_seconds_since("2024-04-31"));
+    CU_ASSERT_PTR_NULL(parse_seconds_since("2024-06-31"));
+    CU_ASSERT_PTR_NULL(parse_seconds_since("2024-09-31"));
+    CU_ASSERT_PTR_NULL(parse_seconds_since("2024-11-31"));
 }
 
 static void test_broken_date_gregorian_cutover_gap(void)
@@ -424,33 +446,40 @@ static void test_packed_clock_full(void)
 
 static void test_packed_clock_truncated(void)
 {
-    /* GRAMMAR.md packed-clock length interpretation:
-         len 1  -> H      (-> 0H:00:00)
-         len 2  -> HH     (-> HH:00:00)
-         len 3  -> HHM    (-> HH:0M:00)
-         len 4  -> HHMM   (-> HH:MM:00)
-         len 5  -> HHMMS  (-> HH:MM:0S)
-         len 6  -> HHMMSS
+    /* GRAMMAR.md packed-clock length interpretation (right-align):
+         len 1  -> H        (-> 0H:00:00)
+         len 2  -> HH       (-> HH:00:00)
+         len 3  -> H MM     (-> 0H:MM:00)
+         len 4  -> HH MM    (-> HH:MM:00)
+         len 5  -> H MM SS  (-> 0H:MM:SS)
+         len 6  -> HH MM SS
+
+       Right-align means minutes are always positions -3,-4 from the
+       end of the digit sequence; seconds (when present) are -1,-2;
+       the hour takes whatever remains. So "123" reads as 1:23, not
+       12:3; "12345" reads as 1:23:45, not 12:34:5.
     */
     assert_timestamp_origin("2024-01-15 1",
-                            2024,  1, 15,  1,  0,  0.0); /* len 1 */
+                            2024,  1, 15,  1,  0,  0.0); /* len 1: H */
     assert_timestamp_origin("2024-01-15 12",
-                            2024,  1, 15, 12,  0,  0.0); /* len 2 */
+                            2024,  1, 15, 12,  0,  0.0); /* len 2: HH */
     assert_timestamp_origin("2024-01-15 123",
-                            2024,  1, 15, 12,  3,  0.0); /* len 3 */
+                            2024,  1, 15,  1, 23,  0.0); /* len 3: H MM */
     assert_timestamp_origin("2024-01-15 1234",
-                            2024,  1, 15, 12, 34,  0.0); /* len 4 */
+                            2024,  1, 15, 12, 34,  0.0); /* len 4: HH MM */
     assert_timestamp_origin("2024-01-15 12345",
-                            2024,  1, 15, 12, 34,  5.0); /* len 5 */
+                            2024,  1, 15,  1, 23, 45.0); /* len 5: H MM SS */
 }
 
 static void test_packed_clock_fractional_seconds(void)
 {
-    /* Per GRAMMAR.md: decimals only accepted for len 5+. */
+    /* Per GRAMMAR.md: decimals only accepted for len 5+. Right-align
+       puts SS at the end, so the fraction attaches to the second
+       field as usual. */
     assert_timestamp_origin("2024-01-15 123045.5",
                             2024,  1, 15, 12, 30, 45.5);
     assert_timestamp_origin("2024-01-15 12345.5",
-                            2024,  1, 15, 12, 34,  5.5);
+                            2024,  1, 15,  1, 23, 45.5);
 }
 
 static void test_packed_clock_reject_fraction_too_short(void)
@@ -517,6 +546,51 @@ static void test_tz_packed(void)
     /* +HH */
     assert_timestamps_equivalent("2024-01-15 12:00:00+05",
                                  "2024-01-15 07:00:00 UTC");
+}
+
+static void test_tz_packed_three_digit(void)
+{
+    /*
+     * 3-digit packed TZ uses right-align: last 2 digits are minutes,
+     * the leading non-zero digit is the hour. Sign is preserved.
+     */
+    assert_timestamps_equivalent("2024-01-15 12:00:00+530",
+                                 "2024-01-15 06:30:00 UTC");  /* H=5, M=30 */
+    assert_timestamps_equivalent("2024-01-15 12:00:00-530",
+                                 "2024-01-15 17:30:00 UTC");  /* H=-5, M=30 */
+    assert_timestamps_equivalent("2024-01-15 12:00:00+545",
+                                 "2024-01-15 06:15:00 UTC");  /* Nepal */
+    /* +123 -> +1:23 (right-align, not 12:03) */
+    assert_timestamps_equivalent("2024-01-15 12:00:00+123",
+                                 "2024-01-15 10:37:00 UTC");
+}
+
+static void test_tz_packed_leading_zero_rejected(void)
+{
+    /*
+     * 3-digit packed form with leading-zero hour digit is rejected
+     * lexically. Upstream's scanf-based parser silently drops the
+     * sign on these inputs (-053 produces the same result as +053);
+     * the rejection sidesteps the bug.
+     *
+     * Users wanting sub-hour offsets should write +0:53 / -0:53
+     * (broken form) or +0053 / -0053 (4-digit packed form).
+     */
+    assert_timestamp_reject("2024-01-15 12:00:00+053");
+    assert_timestamp_reject("2024-01-15 12:00:00-053");
+    assert_timestamp_reject("2024-01-15 12:00:00+019");
+    assert_timestamp_reject("2024-01-15 12:00:00-001");
+
+    /* But the canonical 4-digit alternatives accept normally. */
+    assert_timestamps_equivalent("2024-01-15 12:00:00+0053",
+                                 "2024-01-15 11:07:00 UTC");
+    assert_timestamps_equivalent("2024-01-15 12:00:00-0053",
+                                 "2024-01-15 12:53:00 UTC");
+    /* And the broken form too. */
+    assert_timestamps_equivalent("2024-01-15 12:00:00+0:53",
+                                 "2024-01-15 11:07:00 UTC");
+    assert_timestamps_equivalent("2024-01-15 12:00:00-0:53",
+                                 "2024-01-15 12:53:00 UTC");
 }
 
 static void test_tz_extremes_accepted(void)
@@ -694,7 +768,23 @@ static void test_ut_check_date_valid(void)
     CU_ASSERT_EQUAL(ut_check_date(1970,  1,  1), UT_SUCCESS);
     CU_ASSERT_EQUAL(ut_check_date(   0,  1,  1), UT_SUCCESS); /* year 0 ok */
     CU_ASSERT_EQUAL(ut_check_date(  -1,  6, 15), UT_SUCCESS); /* negative ok */
-    CU_ASSERT_EQUAL(ut_check_date(2024,  2, 30), UT_SUCCESS); /* day rollover ok */
+    /* Feb 29 always valid (leap-year rule not enforced). */
+    CU_ASSERT_EQUAL(ut_check_date(2023,  2, 29), UT_SUCCESS);
+    /* Feb 30 valid under the 360_day calendar admittance. */
+    CU_ASSERT_EQUAL(ut_check_date(2024,  2, 30), UT_SUCCESS);
+    /* 30-day months: day 30 accepted, day 31 rejected (see bad-day test). */
+    CU_ASSERT_EQUAL(ut_check_date(2024,  4, 30), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_check_date(2024,  6, 30), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_check_date(2024,  9, 30), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_check_date(2024, 11, 30), UT_SUCCESS);
+    /* 31-day months: day 31 accepted. */
+    CU_ASSERT_EQUAL(ut_check_date(2024,  1, 31), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_check_date(2024,  3, 31), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_check_date(2024,  5, 31), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_check_date(2024,  7, 31), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_check_date(2024,  8, 31), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_check_date(2024, 10, 31), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_check_date(2024, 12, 31), UT_SUCCESS);
     /* Extended-range years. */
     CU_ASSERT_EQUAL(ut_check_date( 5000000,  1,  1), UT_SUCCESS);
     CU_ASSERT_EQUAL(ut_check_date(-5000000, 12, 31), UT_SUCCESS);
@@ -722,9 +812,21 @@ static void test_ut_check_date_bad_month(void)
 
 static void test_ut_check_date_bad_day(void)
 {
+    /* Range floor / ceiling and negative day. */
     CU_ASSERT_EQUAL(ut_check_date(2024,  1,  0), UT_BAD_ARG);
     CU_ASSERT_EQUAL(ut_check_date(2024,  1, 32), UT_BAD_ARG);
     CU_ASSERT_EQUAL(ut_check_date(2024,  1, -1), UT_BAD_ARG);
+
+    /*
+     * Per-month rejections: day 31 in a 30-day month and day > 30 in
+     * February. These would have been accepted (and silently rolled
+     * by ut_encode_date) under the previous 1-31 universal cap.
+     */
+    CU_ASSERT_EQUAL(ut_check_date(2024,  2, 31), UT_BAD_ARG); /* Feb 31 */
+    CU_ASSERT_EQUAL(ut_check_date(2024,  4, 31), UT_BAD_ARG); /* Apr */
+    CU_ASSERT_EQUAL(ut_check_date(2024,  6, 31), UT_BAD_ARG); /* Jun */
+    CU_ASSERT_EQUAL(ut_check_date(2024,  9, 31), UT_BAD_ARG); /* Sep */
+    CU_ASSERT_EQUAL(ut_check_date(2024, 11, 31), UT_BAD_ARG); /* Nov */
 }
 
 static void test_ut_check_date_does_not_clobber_status_on_success(void)
@@ -919,6 +1021,7 @@ int main(const int argc, const char* const* argv)
     CU_ADD_TEST(s, test_broken_date_year_zero);
     CU_ADD_TEST(s, test_broken_date_negative_year);
     CU_ADD_TEST(s, test_broken_date_day_rollover);
+    CU_ADD_TEST(s, test_broken_date_reject_impossible_day);
     CU_ADD_TEST(s, test_broken_date_gregorian_cutover_gap);
     CU_ADD_TEST(s, test_broken_date_reject_bad_month);
     CU_ADD_TEST(s, test_broken_date_reject_bad_day);
@@ -956,6 +1059,8 @@ int main(const int argc, const char* const* argv)
     CU_ADD_TEST(s, test_tz_broken_positive);
     CU_ADD_TEST(s, test_tz_broken_negative);
     CU_ADD_TEST(s, test_tz_packed);
+    CU_ADD_TEST(s, test_tz_packed_three_digit);
+    CU_ADD_TEST(s, test_tz_packed_leading_zero_rejected);
     CU_ADD_TEST(s, test_tz_extremes_accepted);
     CU_ADD_TEST(s, test_tz_reject_out_of_range);
     CU_ADD_TEST(s, test_tz_reject_negative_zero);

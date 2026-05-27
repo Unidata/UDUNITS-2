@@ -255,21 +255,38 @@ static int parse_tod_packed(const char* s, int* H, int* M, double* S, int* had_s
     int len = 0; while (p[len] >= '0' && p[len] <= '9') len++;
     if (len < 1 || len > 6) return 0;
 
-    int h=0, m=0, ss=0;
-    const char* q = p;
-    if (len <= 2) { /* H or HH */
-        if (!read_1to2digits(q, &h, &q)) return 0;
-        m = 0; ss = 0; *had_seconds = 0;
-    } else if (len <= 4) { /* HHM or HHMM: fixed HH, flexible M */
-        if (!read_ndigits(&q, 2, &h)) return 0;
-        if (!read_1to2digits(q, &m, &q)) return 0;
-        ss = 0; *had_seconds = 0;
-    } else { /* HHMMS or HHMMSS: fixed HH, fixed MM, flexible S */
-        if (!read_ndigits(&q, 2, &h)) return 0;
-        if (!read_ndigits(&q, 2, &m)) return 0;
-        if (!read_1to2digits(q, &ss, &q)) return 0;
+    /*
+     * Right-align minute and second fields. Seconds occupy the last 2
+     * digits when present (len >= 5), minutes occupy the next 2 (len
+     * >= 3), and the hour takes whatever digits remain (1 or 2).
+     * Rationale: the minute and second fields are written 2-digit-wide
+     * by every standard (ISO 8601 basic form, POSIX, etc.); right-
+     * aligning to those fixed positions yields the only sensible
+     * reading of odd-length inputs (e.g., "123" -> 1:23, "12345" ->
+     * 1:23:45). Canonical 4-digit (HHMM) and 6-digit (HHMMSS) inputs
+     * are unaffected.
+     *
+     * Decimal fractions are accepted only when a seconds field exists
+     * (len >= 5); they attach to the seconds.
+     */
+    int h_digits;
+    if (len <= 2) {
+        h_digits = len;
+        *had_seconds = 0;
+    } else if (len <= 4) {
+        h_digits = len - 2;   /* 1 or 2 */
+        *had_seconds = 0;
+    } else {
+        h_digits = len - 4;   /* 1 or 2 */
         *had_seconds = 1;
     }
+
+    int h = 0, m = 0, ss = 0;
+    const char* q = p;
+    if (!read_ndigits(&q, h_digits, &h)) return 0;
+    if (len >= 3 && !read_ndigits(&q, 2, &m)) return 0;
+    if (*had_seconds && !read_ndigits(&q, 2, &ss)) return 0;
+
     if (m >= 60) return 0;
     if (*had_seconds && ss > 60) return 0;
     double sec = (double)ss;
@@ -277,7 +294,7 @@ static int parse_tod_packed(const char* s, int* H, int* M, double* S, int* had_s
     const char* r = q;
     if (!parse_fraction(&r, &frac)) return 0;
     if (*had_seconds) sec += frac;
-    else if (frac != 0.0) return 0;  /* reject fraction if len < 5 */
+    else if (frac != 0.0) return 0;  /* reject fraction if no seconds field */
 
     *H = h; *M = m; *S = sec;
     *endptr = r;
@@ -328,18 +345,38 @@ static int parse_tz_packed(const char* s, int* sign, int* H, int* M, const char*
     while (p[len] >= '0' && p[len] <= '9') len++;
     if (len < 1 || len > 4) return 0;
 
+    /*
+     * Reject the 3-digit packed form with leading-zero hour digit
+     * (e.g. "+053", "-053"). Upstream's scanf-based decoder silently
+     * drops the sign on such inputs because parsing "-0" as an
+     * integer yields zero, erasing the sign; "-053" and "+053"
+     * therefore produce the same encoded offset. Lexically rejecting
+     * the ambiguous form sidesteps the bug entirely. Users wanting
+     * a sub-hour offset should write the broken form ("+0:53") or
+     * the canonical 4-digit packed form ("+0053").
+     */
+    if (len == 3 && p[0] == '0') return 0;
+
+    /*
+     * Right-align minute field. Minutes occupy the last 2 digits when
+     * present (len >= 3); the hour takes the remaining 1 or 2 digits.
+     * Matches the structural convention "minutes are always 2-digit",
+     * yielding sensible readings for non-canonical lengths:
+     *   "+5"   -> 5:00
+     *   "+530" -> 5:30  (the canonical South Asian half-hour offset)
+     *   "+143" -> 1:43
+     */
+    int h_digits;
+    if (len <= 2) {
+        h_digits = len;
+    } else {
+        h_digits = len - 2;   /* 1 or 2 */
+    }
+
     int h = 0, m = 0;
     const char* q = p;
-
-    if (len <= 2) {
-        /* H or HH */
-        if (!read_1to2digits(q, &h, &q)) return 0;
-        m = 0;
-    } else {
-        /* HHM or HHMM: fixed HH, flexible M */
-        if (!read_ndigits(&q, 2, &h)) return 0;
-        if (!read_1to2digits(q, &m, &q)) return 0;
-    }
+    if (!read_ndigits(&q, h_digits, &h)) return 0;
+    if (len >= 3 && !read_ndigits(&q, 2, &m)) return 0;
 
     *H = h; *M = m;
     *endptr = q;
@@ -414,8 +451,9 @@ static int decodeTzOffsetFlexible(const char* text, double* seconds, char* error
         return 0;
     }
     if (rng == 0) {
-        snprintf(error_msg, UT_ERR_MSG_LEN, "Invalid timezone offset: %+03d:%02d (must be ±14:00 or less)",
-                 sign * H, M);
+        snprintf(error_msg, UT_ERR_MSG_LEN,
+            "Invalid timezone offset: %+03d:%02d (must be ±14:00 or less)",
+            sign * H, M);
         return 0;
     }
 

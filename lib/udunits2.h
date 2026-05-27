@@ -1216,7 +1216,8 @@ ut_encode_date(
 
 
 /*
- * Validates that the arguments form a real-world calendar date.
+ * Validates that the arguments form a calendar date acceptable to one of
+ * the calendars in widespread use.
  *
  * Arguments:
  *	year	The year. Must be in the inclusive range [-5000000, 5000000].
@@ -1224,9 +1225,24 @@ ut_encode_date(
  *		The cap is a practical limit set by the int32 arithmetic in
  *		gregorianDateToJulianDay; see lib/unitcore.c for details.
  *	month	Must be in the inclusive range [1, 12].
- *	day	Must be in the inclusive range [1, 31]. Day-of-month limits
- *		that depend on the month (e.g. Feb 30) are NOT enforced;
- *		ut_encode_date rolls such days into the following month.
+ *	day	The per-month maximum admits any value legal in either the
+ *		Gregorian calendar (leap-year rule NOT enforced) or the CF
+ *		"360_day" calendar (every month exactly 30 days):
+ *
+ *		    Jan, Mar, May, Jul, Aug, Oct, Dec  ->  1..31
+ *		    Apr, Jun,      Sep, Nov            ->  1..30
+ *		    Feb                                ->  1..30
+ *
+ *		Note: Feb 29 is accepted in every year (the leap-year rule
+ *		is deliberately not applied); Feb 30 is accepted because
+ *		the 360_day calendar permits it.  Apr 31, Feb 31, etc. are
+ *		rejected.
+ *
+ *		ut_encode_date does not change behavior under this check:
+ *		it still uses Gregorian arithmetic and will roll Feb 29 of
+ *		a non-leap year to Mar 1, Feb 30 to Mar 1/2, and so on. The
+ *		validator's role is to keep obvious typos out of the
+ *		parser, not to pin a specific calendar.
  *
  * Returns:
  *	UT_SUCCESS	The arguments form a valid date.
@@ -1234,9 +1250,12 @@ ut_encode_date(
  *			an error message has been emitted via the handler
  *			set by ut_set_error_message_handler().
  *
- * This is the validation routine used by the unit-string parser. Library
- * users may call it before ut_encode_date() to obtain the same strict
- * input check that "seconds since YYYY-MM-DD" would receive.
+ * Rationale: udunits is calendar-agnostic at the parse layer. CF data in
+ * the wild uses several calendars (gregorian, proleptic_gregorian,
+ * noleap / 365_day, all_leap / 366_day, 360_day). Admitting any day
+ * legal in the union of Gregorian-no-leap and 360_day lets that data
+ * pass validation without the parser needing to know which calendar
+ * the consumer will apply downstream.
  */
 EXTERNL ut_status
 ut_check_date(
