@@ -34,9 +34,25 @@
 
 extern int utlex (void);
 
+/*
+ *  YACC error routine. Defined in the post-%% section so it can inspect
+ *  yychar/yylval (declared by bison's generated yyparse). When the lookahead
+ *  is an ERR token carrying a scanner-supplied message, emit that message
+ *  instead of the generic "syntax error".
+ */
+void uterror(const char *s);
+
+/*
+ * Size of the error-message buffer carried on the ERR token. Used by
+ * scanner.l and by the parser's uterror() routine. Bumping this value
+ * automatically resizes the union member below and every snprintf that
+ * writes into it, provided callers use sizeof(yylval.error_msg) or
+ * UT_ERR_MSG_LEN.
+ */
+#define UT_ERR_MSG_LEN 256
+
 static ut_unit*		_finalUnit;	/* fully-parsed specification */
 static ut_system*	_unitSystem;	/* The unit-system to use */
-static char*		_errorMessage;	/* last error-message */
 static ut_encoding	_encoding;	/* encoding of string to be parsed */
 static int		_restartScanner;/* restart scanner? */
 static int		_isTime;        /* product_exp is time? */
@@ -87,14 +103,6 @@ ut_trim(
 }
 
 
-/*
- *  YACC error routine:
- */
-void uterror(const char *s)
-{
-    ut_handle_error_message("%s", s);
-}
-
 /**
  * Parses an integer value into broken-down clock-time. The value is assumed to
  * have the form H[H[MM[SS]]].
@@ -144,7 +152,7 @@ static int isTime(
     ut_unit*	unit;			/* "unit" structure */
     double	rval;			/* floating-point numerical value */
     long	ival;			/* integer numerical value */
-    char	error_msg[256];		/* error message from lexer */
+    char	error_msg[UT_ERR_MSG_LEN];	/* error message from lexer */
 }
 
 %token  <error_msg>	ERR
@@ -493,6 +501,32 @@ timestamp:      DATE {
 
 
 /*
+ *  YACC error routine.
+ *
+ *  Bison calls this with "syntax error" when the current lookahead (yychar)
+ *  has no valid action in the current parser state. The scanner attaches a
+ *  detailed message to yylval.error_msg for ERR tokens that diagnose
+ *  specific lexical problems (integer overflow, invalid date components,
+ *  disallowed NaN/Inf, etc.). When such an ERR is unconsumed by any
+ *  grammar production — i.e. it falls through to default error recovery —
+ *  this routine emits the scanner's detailed message instead of the
+ *  bison-supplied generic string.
+ *
+ *  Productions that consume ERR explicitly (see timestamp:) emit the
+ *  message inline and then invoke YYERROR, which does not call yyerror.
+ *  Those paths are unaffected.
+ */
+void uterror(const char *s)
+{
+    if (yychar == ERR && yylval.error_msg[0] != '\0') {
+        ut_handle_error_message("%s", yylval.error_msg);
+    } else {
+        ut_handle_error_message("%s", s);
+    }
+}
+
+
+/*
  * Converts a string in the Latin-1 character set (ISO 8859-1) to the UTF-8
  * character set.
  *
@@ -629,15 +663,26 @@ ut_parse(
 					size_t consumed = (size_t)n;
 					const char* leftover = utf8String + consumed;
 
-					// Truncate leftover text for display (max 50 chars)
+					/*
+					 * Truncate leftover text for display (~50 chars).
+					 * %.47s is a byte-count cap, so we must not stop in
+					 * the middle of a UTF-8 multi-byte sequence; walk
+					 * back to the nearest lead byte (a non-continuation
+					 * byte, i.e. (c & 0xC0) != 0x80).
+					 */
 					char leftover_snippet[64];
 					size_t leftover_len = strlen(leftover);
 					if (leftover_len > 50) {
-						snprintf(leftover_snippet, sizeof(leftover_snippet),
-								"%.47s...", leftover);
+					    size_t cut = 47;
+					    while (cut > 0 &&
+					           ((unsigned char)leftover[cut] & 0xC0) == 0x80) {
+					        --cut;
+					    }
+					    snprintf(leftover_snippet, sizeof(leftover_snippet),
+					             "%.*s...", (int)cut, leftover);
 					} else {
-						snprintf(leftover_snippet, sizeof(leftover_snippet),
-								"%s", leftover);
+					    snprintf(leftover_snippet, sizeof(leftover_snippet),
+					             "%s", leftover);
 					}
 
 					ut_handle_error_message(
