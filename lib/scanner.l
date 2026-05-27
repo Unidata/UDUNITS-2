@@ -533,24 +533,53 @@ idchar       [A-Za-z0-9_]
     return MULTIPLY;
 }
 
-<INITIAL,ID_SEEN>("^"|"**")[+-]?{int} {
-    int		status;
+    /*
+     * Exponent rules. The grammar caps integer exponents at two digits
+     * with no leading zeros: the magnitude must satisfy |n| <= 99 and
+     * the digit sequence must be either "0" or [1-9][0-9]?.
+     *
+     * Two rules are needed: an accept rule for the canonical form, and
+     * a reject rule that matches any other ^N / **N sequence and emits
+     * a detailed error. Flex picks the longer match (then the first
+     * listed on ties), so:
+     *   "^99"  -> both match 3 chars -> accept rule wins (listed first)
+     *   "^100" -> accept matches "^10", reject matches "^100" -> reject
+     *   "^012" -> accept matches "^0",  reject matches "^012" -> reject
+     */
+<INITIAL,ID_SEEN>("^"|"**")[+-]?(0|[1-9][0-9]?) {
+    int     status;
 
     if (sscanf(yytext, "%*[*^]%ld", &yylval.ival) != 1) {
+        /*
+         * Defensive: the regex already constrains the input to a
+         * valid signed integer, so this branch should be unreachable.
+         */
         snprintf(yylval.error_msg, sizeof(yylval.error_msg),
                  "Invalid exponent integer in '%s'", yytext);
-        status = ERR;    }
-    else {
-	    status	= EXPONENT;
+        status = ERR;
+    } else {
+        status = EXPONENT;
     }
 
     return status;
+}
+
+<INITIAL,ID_SEEN>("^"|"**")[+-]?[0-9]+ {
+    /*
+     * Anything that isn't the canonical [+-]?(0|[1-9][0-9]?) form:
+     * too many digits (|n| >= 100) or leading zeros.
+     */
+    snprintf(yylval.error_msg, sizeof(yylval.error_msg),
+             "Invalid exponent in \"%s\": magnitude must be <= 99, "
+             "no leading zeros", yytext);
+    return ERR;
 }
 
 <INITIAL,ID_SEEN>{utf8_exponent} {
     int		status = EXPONENT;
     int		exponent = 0;
     int		sign = 1;
+    int		digit_count = 0;
     char*	cp = yytext;
 
     if (strncmp(cp, "\xe2\x81\xba", 3) == 0) {
@@ -579,13 +608,6 @@ idchar       [A-Za-z0-9_]
 	    {"\xe2\x81\xb9", 3},        /* 9 */
 	};
 
-        if (exponent > INT_MAX/10) {
-            snprintf(yylval.error_msg, sizeof(yylval.error_msg),
-                     "UTF-8 exponent overflows int: \"%s\"", yytext);
-            status = ERR;
-            break;
-        }
-
 	exponent *= 10;
 
 	for (j = 0; j < 10; j++) {
@@ -604,6 +626,22 @@ idchar       [A-Za-z0-9_]
 	    status = ERR;
 	    break;
 	}
+
+	++digit_count;
+    }
+
+    /*
+     * Cap at |exp| <= 99 with no leading zeros — same rule as the
+     * "^N" / "**N" exponent above. digit_count > 2 catches the
+     * magnitude cap; digit_count == 2 with exponent < 10 catches
+     * a leading-zero two-digit exponent (e.g. "⁰⁹" → exponent=9).
+     */
+    if (status == EXPONENT &&
+        (digit_count > 2 || (digit_count == 2 && exponent < 10))) {
+        snprintf(yylval.error_msg, sizeof(yylval.error_msg),
+                 "Invalid UTF-8 exponent in \"%s\": magnitude must be "
+                 "<= 99, no leading zeros", yytext);
+        status = ERR;
     }
 
     if (status == EXPONENT)
