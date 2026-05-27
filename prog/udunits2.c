@@ -107,7 +107,13 @@ errMsg(
 
 
 /**
- * Error handler for parsing "have" (-H) units
+ * Error handler for parsing "have" (-H) units.
+ *
+ * After commit 1, "syntax error" arrives here only for genuine grammar
+ * errors (the lexer routes its detailed messages through yylval.error_msg
+ * and uterror surfaces them verbatim). The "Don't recognize the unit
+ * specification" branch that used to follow this check was always dead —
+ * that string is emitted nowhere in lib/ — so it has been removed.
  */
 static int
 handle_have_parse_error(const char* fmt, va_list args)
@@ -115,22 +121,19 @@ handle_have_parse_error(const char* fmt, va_list args)
     char buffer[512];
     vsnprintf(buffer, sizeof(buffer), fmt, args);
 
-    /* Filter out generic/redundant messages */
     if (strcmp(buffer, "syntax error") == 0) {
-        /* Generic parser error */
+        /* Generic parser error: no lexer-supplied detail to surface. */
         errMsg("Don't recognize input unit: \"%s\"", _haveUnitSpec);
-    } else if (strstr(buffer, "Don't recognize the unit specification") != NULL) {
-        /* Library's generic fallback - already printed our message, skip this */
-        return 0;
     } else {
-        /* Detailed error from lexer */
+        /* Detailed error from the lexer (via uterror). */
         errMsg("Error in input unit: %s", buffer);
     }
     return 0;
 }
 
 /**
- * Error handler for parsing "want" (-W) units
+ * Error handler for parsing "want" (-W) units. See handle_have_parse_error
+ * for the rationale on the message classification.
  */
 static int
 handle_want_parse_error(const char* fmt, va_list args)
@@ -138,15 +141,9 @@ handle_want_parse_error(const char* fmt, va_list args)
     char buffer[512];
     vsnprintf(buffer, sizeof(buffer), fmt, args);
 
-    /* Filter out generic/redundant messages */
     if (strcmp(buffer, "syntax error") == 0) {
-        /* Generic parser error */
         errMsg("Don't recognize output unit: \"%s\"", _wantSpec);
-    } else if (strstr(buffer, "Don't recognize the unit specification") != NULL) {
-        /* Library's generic fallback - already printed our message, skip this */
-        return 0;
     } else {
-        /* Detailed error from lexer */
         errMsg("Error in output unit: %s", buffer);
     }
     return 0;
@@ -407,13 +404,15 @@ static int
 readXmlDatabase(void)
 {
     int		success = 0;
+    ut_error_message_handler	prev_handler = NULL;
 
     if (!_reveal)
-        ut_set_error_message_handler(ut_ignore);
+        prev_handler = ut_set_error_message_handler(ut_ignore);
 
     _unitSystem = ut_read_xml(_xmlPath);
 
-    ut_set_error_message_handler(ut_write_to_stderr);
+    if (!_reveal)
+        ut_set_error_message_handler(prev_handler);
 
     if (_unitSystem != NULL) {
         success = 1;
@@ -511,13 +510,14 @@ decodeInput(
     (void)strncpy(_haveUnitSpec, input, sizeof(_haveUnitSpec));
     _haveUnitSpec[sizeof(_haveUnitSpec)-1] = 0;
 
-    /* Register custom error handler for input unit parsing */
-    ut_set_error_message_handler(handle_have_parse_error);
+    /* Install custom error handler; capture the previous one so we don't
+       silently overwrite a non-default installed by an embedder. */
+    ut_error_message_handler prev_handler =
+            ut_set_error_message_handler(handle_have_parse_error);
 
     _haveUnit = ut_parse(_unitSystem, _haveUnitSpec, _encoding);
 
-    /* Restore default error handler */
-    ut_set_error_message_handler(ut_write_to_stderr);
+    ut_set_error_message_handler(prev_handler);
 
     if (_haveUnit != NULL) {
         success = 1;
@@ -592,16 +592,24 @@ decodeOutput(
 
         _wantDefinition = 0;
 
-        (void)strncpy(_wantSpec, buf, sizeof(_wantSpec));
-        _wantSpec[sizeof(_wantSpec)-1] = 0;
+        /*
+         * Both callers (getOutputRequest's _cmdWant branch at the
+         * strncpy below, and the interactive getSpec path) populate
+         * _wantSpec from `buf` *before* invoking this function with
+         * `buf == _wantSpec`. A further strncpy(_wantSpec, buf, ...)
+         * here would be overlapping (formally UB per C17 §7.24.2.4),
+         * so we trust the caller's copy and parse _wantSpec directly.
+         */
 
-        /* Register custom error handler for output unit parsing */
-        ut_set_error_message_handler(handle_want_parse_error);
+        /* Install custom error handler; capture the previous one so we
+           don't silently overwrite a non-default installed by an
+           embedder. */
+        ut_error_message_handler prev_handler =
+                ut_set_error_message_handler(handle_want_parse_error);
 
         _wantUnit = ut_parse(_unitSystem, _wantSpec, _encoding);
 
-        /* Restore default error handler */
-        ut_set_error_message_handler(ut_write_to_stderr);
+        ut_set_error_message_handler(prev_handler);
 
         if (_wantUnit != NULL) {
             success = 1;
