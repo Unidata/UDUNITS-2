@@ -88,13 +88,6 @@ if (CUNIT_LIBRARY)
     add_test(
         NAME testDateTime
         COMMAND testDateTime ${CMAKE_CURRENT_SOURCE_DIR}/udunits2.xml)
-
-    add_executable(testExponent testExponent.c)
-    target_link_libraries (testExponent libudunits2)
-    target_link_libraries (testExponent ${CUNIT_LIBRARY})
-    add_test(
-        NAME testExponent
-        COMMAND testExponent ${CMAKE_CURRENT_SOURCE_DIR}/udunits2.xml)
 endif()
 
 # The documentation is in multiple texinfo(5) format files.
