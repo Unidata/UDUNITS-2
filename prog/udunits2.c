@@ -107,13 +107,12 @@ errMsg(
 
 
 /**
- * Error handler for parsing "have" (-H) units.
+ * Error handler used while parsing the "have" (-H) unit specification.
  *
- * After commit 1, "syntax error" arrives here only for genuine grammar
- * errors (the lexer routes its detailed messages through yylval.error_msg
- * and uterror surfaces them verbatim). The "Don't recognize the unit
- * specification" branch that used to follow this check was always dead —
- * that string is emitted nowhere in lib/ — so it has been removed.
+ * A bare "syntax error" reaches this handler only for genuine grammar
+ * errors; the lexer routes its specific date/time diagnostics through
+ * yylval.error_msg and uterror() surfaces them verbatim, so anything other
+ * than "syntax error" is a detailed message worth showing to the user.
  */
 static int
 handle_have_parse_error(const char* fmt, va_list args)
@@ -122,18 +121,16 @@ handle_have_parse_error(const char* fmt, va_list args)
     vsnprintf(buffer, sizeof(buffer), fmt, args);
 
     if (strcmp(buffer, "syntax error") == 0) {
-        /* Generic parser error: no lexer-supplied detail to surface. */
         errMsg("Don't recognize input unit: \"%s\"", _haveUnitSpec);
     } else {
-        /* Detailed error from the lexer (via uterror). */
         errMsg("Error in input unit: %s", buffer);
     }
     return 0;
 }
 
 /**
- * Error handler for parsing "want" (-W) units. See handle_have_parse_error
- * for the rationale on the message classification.
+ * Error handler used while parsing the "want" (-W) unit specification.
+ * See handle_have_parse_error for the message-classification rationale.
  */
 static int
 handle_want_parse_error(const char* fmt, va_list args)
@@ -404,15 +401,13 @@ static int
 readXmlDatabase(void)
 {
     int		success = 0;
-    ut_error_message_handler	prev_handler = NULL;
 
     if (!_reveal)
-        prev_handler = ut_set_error_message_handler(ut_ignore);
+        ut_set_error_message_handler(ut_ignore);
 
     _unitSystem = ut_read_xml(_xmlPath);
 
-    if (!_reveal)
-        ut_set_error_message_handler(prev_handler);
+    ut_set_error_message_handler(ut_write_to_stderr);
 
     if (_unitSystem != NULL) {
         success = 1;
@@ -509,9 +504,6 @@ decodeInput(
 
     (void)strncpy(_haveUnitSpec, input, sizeof(_haveUnitSpec));
     _haveUnitSpec[sizeof(_haveUnitSpec)-1] = 0;
-
-    /* Install custom error handler; capture the previous one so we don't
-       silently overwrite a non-default installed by an embedder. */
     ut_error_message_handler prev_handler =
             ut_set_error_message_handler(handle_have_parse_error);
 
@@ -592,22 +584,10 @@ decodeOutput(
 
         _wantDefinition = 0;
 
-        /*
-         * Both callers (getOutputRequest's _cmdWant branch at the
-         * strncpy below, and the interactive getSpec path) populate
-         * _wantSpec from `buf` *before* invoking this function with
-         * `buf == _wantSpec`. A further strncpy(_wantSpec, buf, ...)
-         * here would be overlapping (formally UB per C17 §7.24.2.4),
-         * so we trust the caller's copy and parse _wantSpec directly.
-         */
-
-        /* Install custom error handler; capture the previous one so we
-           don't silently overwrite a non-default installed by an
-           embedder. */
         ut_error_message_handler prev_handler =
                 ut_set_error_message_handler(handle_want_parse_error);
 
-        _wantUnit = ut_parse(_unitSystem, _wantSpec, _encoding);
+        _wantUnit = ut_parse(_unitSystem, buf, _encoding);
 
         ut_set_error_message_handler(prev_handler);
 
@@ -615,6 +595,7 @@ decodeOutput(
             success = 1;
         }
     }
+
     return success;
 }
 
@@ -706,9 +687,9 @@ handleRequest(void)
 			cv_convert_double(conv, _haveUnitAmount),
                         _wantSpec);
 
-                    (void)snprintf(haveExp, sizeof(haveExp),
+                    (void)sprintf(haveExp,
                         strpbrk(_haveUnitSpec, whiteSpace) ||
-                        strpbrk(_haveUnitSpec, "/")
+                                strpbrk(_haveUnitSpec, "/")
                             ? "(x/(%s))"
                             : "(x/%s)",
                         _haveUnitSpec);
