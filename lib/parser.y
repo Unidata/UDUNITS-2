@@ -180,6 +180,17 @@ static int isTime(
 %type   <rval>	number
 
 /*
+ * Free the identifier string carried by any <id> token that the parser
+ * discards without reducing it through basic_exp:ID. This happens when a
+ * complete specification is followed by trailing text that the scanner
+ * tokenizes as an ID (e.g. "s since 2024-01-01 12:00 garbage"): the
+ * timestamp reduces to a full shift_exp and the trailing ID becomes an
+ * unreduced lookahead. Without this destructor the strdup() in the
+ * scanner's <INITIAL,CLOCK_SEEN>{id} rule leaks.
+ */
+%destructor { free($$); } <id>
+
+/*
  * NOTE on parser conflicts.
  *
  * This grammar has 3 shift/reduce and 9 reduce/reduce conflicts. Both are

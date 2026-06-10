@@ -357,9 +357,20 @@ static void test_broken_date_long_year_per_month_validation(void)
      */
     assert_timestamp_origin("1234567-02-30",  1234567, 3, 2, 0, 0, 0.0); /* rolls */
     /* Truncated long year accepted. */
-    CU_ASSERT_PTR_NOT_NULL(parse_seconds_since("12345-1"));
-    CU_ASSERT_PTR_NOT_NULL(parse_seconds_since("1234567-12"));
-    CU_ASSERT_PTR_NULL    (parse_seconds_since("1234567-13"));
+    {
+        ut_unit* u;
+
+        u = parse_seconds_since("12345-1");
+        CU_ASSERT_PTR_NOT_NULL(u);
+        if (u != NULL) ut_free(u);
+
+        u = parse_seconds_since("1234567-12");
+        CU_ASSERT_PTR_NOT_NULL(u);
+        if (u != NULL) ut_free(u);
+
+        /* A NULL return has nothing to free. */
+        CU_ASSERT_PTR_NULL(parse_seconds_since("1234567-13"));
+    }
 }
 
 static void test_packed_date_year_still_4_digit(void)
@@ -483,8 +494,17 @@ static void test_packed_date_negative_year(void)
     assert_timestamp_origin("-1234051",   -1234,  5,  1, 0, 0, 0.0); /* len 7: D=1 */
     assert_timestamp_origin("-12340515",  -1234,  5, 15, 0, 0, 0.0); /* len 8 */
     /* Year-0 with negative sign normalizes via ut_encode_date. */
-    CU_ASSERT_PTR_NOT_NULL(parse_seconds_since("-00000101"));
-    CU_ASSERT_PTR_NOT_NULL(parse_seconds_since("-0000"));
+    {
+        ut_unit* u;
+
+        u = parse_seconds_since("-00000101");
+        CU_ASSERT_PTR_NOT_NULL(u);
+        if (u != NULL) ut_free(u);
+
+        u = parse_seconds_since("-0000");
+        CU_ASSERT_PTR_NOT_NULL(u);
+        if (u != NULL) ut_free(u);
+    }
 }
 
 /* ---------------------------------------------------------------------- */
