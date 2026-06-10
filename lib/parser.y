@@ -188,7 +188,7 @@ static int isTime(
  * unreduced lookahead. Without this destructor the strdup() in the
  * scanner's <INITIAL,CLOCK_SEEN>{id} rule leaks.
  */
-%destructor { free($$); } <id>
+%destructor { free($$); } ID
 
 /*
  * NOTE on parser conflicts.
