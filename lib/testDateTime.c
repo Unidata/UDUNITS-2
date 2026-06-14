@@ -1075,7 +1075,7 @@ static void test_leap_second_with_bad_tz(void)
 }
 
 /* ---------------------------------------------------------------------- */
-/*                10. public API: ut_check_date, ut_check_time             */
+/*           10. public API: ut_check_date, ut_check_clock, ut_check_time   */
 /* ---------------------------------------------------------------------- */
 
 /*
@@ -1157,6 +1157,46 @@ static void test_ut_check_date_does_not_clobber_status_on_success(void)
     /* Successful validation must not perturb a previously-set status. */
     ut_set_status(UT_BAD_ARG);
     CU_ASSERT_EQUAL(ut_check_date(2024, 1, 1), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG); /* unchanged */
+    ut_set_status(UT_SUCCESS);
+}
+
+static void test_ut_check_clock_valid(void)
+{
+    CU_ASSERT_EQUAL(ut_check_clock( 0,  0,  0.0),       UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_check_clock(23, 59, 59.999999),  UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_check_clock(12, 30, 45.5),       UT_SUCCESS);
+}
+
+static void test_ut_check_clock_bad_components(void)
+{
+    CU_ASSERT_EQUAL(ut_check_clock(24,  0,  0.0), UT_BAD_ARG); /* hour */
+    CU_ASSERT_EQUAL(ut_check_clock(-1,  0,  0.0), UT_BAD_ARG);
+    CU_ASSERT_EQUAL(ut_check_clock( 0, 60,  0.0), UT_BAD_ARG); /* minute */
+    CU_ASSERT_EQUAL(ut_check_clock( 0, -1,  0.0), UT_BAD_ARG);
+    CU_ASSERT_EQUAL(ut_check_clock( 0,  0, -0.1), UT_BAD_ARG); /* second */
+    CU_ASSERT_EQUAL(ut_check_clock( 0,  0, 60.0), UT_BAD_ARG);
+}
+
+static void test_ut_check_clock_strict_no_leap_second(void)
+{
+    /* Same contract as ut_check_time: the strict validator rejects the
+       "23:59:60" leap-second form that the parser tolerates for legacy
+       back-compat. */
+    CU_ASSERT_EQUAL(ut_check_clock(23, 59, 60.0), UT_BAD_ARG);
+}
+
+static void test_ut_check_clock_nan(void)
+{
+    /* A NaN second must not slip through (the `!(s>=0 && s<60)` form). */
+    double nan_val = 0.0/0.0;
+    CU_ASSERT_EQUAL(ut_check_clock(12, 30, nan_val), UT_BAD_ARG);
+}
+
+static void test_ut_check_clock_does_not_clobber_status_on_success(void)
+{
+    ut_set_status(UT_BAD_ARG);
+    CU_ASSERT_EQUAL(ut_check_clock(12, 0, 0.0), UT_SUCCESS);
     CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG); /* unchanged */
     ut_set_status(UT_SUCCESS);
 }
@@ -1432,6 +1472,11 @@ int main(const int argc, const char* const* argv)
     CU_ADD_TEST(s, test_ut_check_date_bad_month);
     CU_ADD_TEST(s, test_ut_check_date_bad_day);
     CU_ADD_TEST(s, test_ut_check_date_does_not_clobber_status_on_success);
+    CU_ADD_TEST(s, test_ut_check_clock_valid);
+    CU_ADD_TEST(s, test_ut_check_clock_bad_components);
+    CU_ADD_TEST(s, test_ut_check_clock_strict_no_leap_second);
+    CU_ADD_TEST(s, test_ut_check_clock_nan);
+    CU_ADD_TEST(s, test_ut_check_clock_does_not_clobber_status_on_success);
     CU_ADD_TEST(s, test_ut_check_time_valid);
     CU_ADD_TEST(s, test_ut_check_time_strict_no_leap_second);
     CU_ADD_TEST(s, test_ut_check_time_bad_components);

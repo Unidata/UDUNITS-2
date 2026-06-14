@@ -400,14 +400,21 @@ getJuldayOrigin()
 
 
 /*
- * Encodes a time as a double-precision value.
+ * Encodes a clock-time (time of day) as a double-precision value.
+ *
+ * This is a pure encoder: it performs no range-checking and always
+ * succeeds. Negative or out-of-range components are encoded arithmetically
+ * and propagate into the returned scalar unchanged. Callers that need the
+ * components validated as a wall-clock time of day should call
+ * ut_check_clock() first.
  *
  * Arguments:
  *	hours		The number of hours (0 = midnight).
  *	minutes		The number of minutes.
  *	seconds		The number of seconds.
  * Returns:
- *	The clock-time encoded as a scalar value.
+ *	The clock-time encoded as a scalar value
+ *	(i.e. hours*3600 + minutes*60 + seconds).
  */
 double
 ut_encode_clock(
@@ -532,20 +539,15 @@ ut_check_date(
 
 
 /*
- * Validates calendar timestamp components. See udunits2.h for the contract.
+ * Validates clock-time (time-of-day) components. See udunits2.h for the
+ * contract.
  */
 ut_status
-ut_check_time(
-    int		year,
-    int		month,
-    int		day,
+ut_check_clock(
     int		hour,
     int		minute,
     double	second)
 {
-    if (ut_check_date(year, month, day) != UT_SUCCESS) {
-	return UT_BAD_ARG;
-    }
     if (hour < 0 || hour > 23) {
 	ut_handle_error_message("Invalid hour %d (must be 0-23)", hour);
 	ut_set_status(UT_BAD_ARG);
@@ -563,6 +565,26 @@ ut_check_time(
 	ut_set_status(UT_BAD_ARG);
 	return UT_BAD_ARG;
     }
+    return UT_SUCCESS;
+}
+
+
+/*
+ * Validates calendar timestamp components. See udunits2.h for the contract.
+ */
+ut_status
+ut_check_time(
+    int		year,
+    int		month,
+    int		day,
+    int		hour,
+    int		minute,
+    double	second)
+{
+    if (ut_check_date(year, month, day) != UT_SUCCESS)
+	return UT_BAD_ARG;
+    if (ut_check_clock(hour, minute, second) != UT_SUCCESS)
+	return UT_BAD_ARG;
     return UT_SUCCESS;
 }
 

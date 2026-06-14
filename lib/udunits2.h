@@ -1265,17 +1265,19 @@ ut_check_date(
 
 
 /*
- * Encodes a time as a double-precision value. If an input value isn't within
- * its allowed range, then zero is returned and `ut_get_status()` will return
- * `UT_BAD_ARG`.
+ * Encodes a clock-time (time of day) as a double-precision value.
  *
- * @param[in] hours    The number of hours (0 = midnight). `abs(hours)` must be
- *                     less than 24.
- * @param[in] minutes  The number of minutes. `abs(minutes)` must be less than
- *                     60.
- * @param[in] seconds  The number of seconds. `fabs(seconds)` must be less than
- *                     or equal to 62.
- * @return             The clock-time encoded as a scalar value.
+ * This is a pure encoder: it performs no range-checking and always succeeds.
+ * Negative or out-of-range components are encoded arithmetically and
+ * propagate into the returned value unchanged. Callers that need the
+ * components validated as a wall-clock time of day should call
+ * ut_check_clock() first.
+ *
+ * @param[in] hours    The number of hours (0 = midnight).
+ * @param[in] minutes  The number of minutes.
+ * @param[in] seconds  The number of seconds.
+ * @return             The clock-time encoded as a scalar value, i.e.
+ *                     hours*3600 + minutes*60 + seconds.
  */
 EXTERNL double
 ut_encode_clock(
@@ -1310,28 +1312,55 @@ ut_encode_time(
 
 
 /*
+ * Validates clock-time (time-of-day) components.
+ *
+ * This is the strict companion to ut_encode_clock(): the encoder itself does
+ * no checking, so a caller that wants the components validated as a real
+ * wall-clock time of day calls this first.
+ *
+ * Arguments:
+ *	hour	Must be in the inclusive range [0, 23].
+ *	minute	Must be in the inclusive range [0, 59].
+ *	second	Must satisfy 0.0 <= second < 60.0 (NaN is rejected).
+ *
+ * Returns:
+ *	UT_SUCCESS	The arguments form a valid time of day.
+ *	UT_BAD_ARG	An argument is out of range. ut_status is set and
+ *			an error message has been emitted via the handler
+ *			set by ut_set_error_message_handler().
+ *
+ * Note: this is the *strict* clock-range check (0..59 minutes, 0..<60
+ * seconds). The unit-string parser additionally accepts second == 60.0 in
+ * the specific case "23:59:60", which encodes a leap-second insertion. That
+ * carve-out exists only for backward compatibility with legacy timestamp
+ * strings; using a leap-second value as the reference in a "<unit> since
+ * <timestamp>" specification is discouraged (and is not permitted by the CF
+ * metadata conventions). New code SHOULD NOT rely on it, and ut_check_clock
+ * (hence ut_check_time) deliberately does not bless it.
+ */
+EXTERNL ut_status
+ut_check_clock(
+    int		hour,
+    int		minute,
+    double	second);
+
+
+/*
  * Validates that the arguments form a real-world calendar timestamp.
+ *
+ * Equivalent to ut_check_date(year, month, day) followed by
+ * ut_check_clock(hour, minute, second); it succeeds only if both do.
  *
  * Arguments:
  *	year, month, day	As for ut_check_date().
- *	hour		Must be in the inclusive range [0, 23].
- *	minute		Must be in the inclusive range [0, 59].
- *	second		Must satisfy 0.0 <= second < 60.0.
+ *	hour, minute, second	As for ut_check_clock() (including the
+ *				leap-second note there).
  *
  * Returns:
  *	UT_SUCCESS	The arguments form a valid timestamp.
  *	UT_BAD_ARG	An argument is out of range. ut_status is set and
  *			an error message has been emitted via the handler
  *			set by ut_set_error_message_handler().
- *
- * Note: this is the *strict* clock-range check (0..59 minutes, 0..<60
- * seconds). The unit-string parser additionally accepts second == 60.0
- * in the specific case "23:59:60", which encodes a leap-second
- * insertion. That carve-out exists only for backward compatibility with
- * legacy timestamp strings; using a leap-second value as the reference
- * in a "<unit> since <timestamp>" specification is discouraged (and is
- * not permitted by the CF metadata conventions). New code SHOULD NOT
- * rely on it, and ut_check_time deliberately does not bless it.
  */
 EXTERNL ut_status
 ut_check_time(
