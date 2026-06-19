@@ -111,8 +111,11 @@ Coding:
 @item int           @tab @ref{ut_format(),ut_format}(const ut_unit* @var{unit}, char* @var{buf}, size_t @var{size}, unsigned @var{opts});
 @item ut_status     @tab @ref{ut_accept_visitor(),ut_accept_visitor}(const ut_unit* @var{unit}, const ut_visitor* @var{visitor}, void* @var{arg});
 @item double        @tab @ref{ut_encode_date(),ut_encode_date}(int @var{year}, int @var{month}, int @var{day});
+@item ut_status     @tab @ref{ut_check_date(),ut_check_date}(int @var{year}, int @var{month}, int @var{day});
 @item double        @tab @ref{ut_encode_clock(),ut_encode_clock}(int @var{hours}, int @var{minutes}, double @var{seconds});
+@item ut_status     @tab @ref{ut_check_clock(),ut_check_clock}(int @var{hour}, int @var{minute}, double @var{second});
 @item double        @tab @ref{ut_encode_time(),ut_encode_time}(int @var{year}, int @var{month}, int @var{day}, int @var{hour}, int @var{minute}, double @var{second});
+@item ut_status     @tab @ref{ut_check_time(),ut_check_time}(int @var{year}, int @var{month}, int @var{day}, int @var{hour}, int @var{minute}, double @var{second});
 @item void          @tab @ref{ut_decode_time(),ut_decode_time}(double @var{value}, int* @var{year}, int* @var{month}, int* @var{day}, int* @var{hour}, int* @var{minute}, double* @var{second}, double* @var{resolution});
 @item ut_status     @tab @ref{ut_get_status(),ut_get_status}(void);
 @item void          @tab @ref{ut_set_status(),ut_set_status}(ut_status @var{status});
@@ -1437,14 +1440,118 @@ You probably won't use this function.
 Dates on or after 1582-10-15 are assumed to be Gregorian dates;
 dates before that are assumed to be Julian dates.  In particular,
 the year 1 BCE is immediately followed by the year 1 CE.
+
+This function performs @emph{no} validation of its arguments.  Out-of-range
+values are silently normalized via the underlying Julian-day arithmetic:
+year @code{0} becomes year @code{1}; month @code{13} rolls into the next year;
+day @code{32} rolls into the next month.  Callers that want strict input
+validation should call @code{@ref{ut_check_date(),ut_check_date}} first.
+@end deftypefun
+
+@anchor{ut_check_date()}
+@deftypefun @code{@ref{ut_status}} ut_check_date @code{(int @var{year}, int @var{month}, int @var{day})}
+Validates that the arguments form a calendar date acceptable to one of the
+calendars in widespread use (CF @code{gregorian}, @code{proleptic_gregorian},
+@code{noleap} / @code{365_day}, @code{all_leap} / @code{366_day}, or
+@code{360_day}).  Returns @code{UT_SUCCESS} if so, otherwise @code{UT_BAD_ARG}
+(in which case @code{@ref{ut_get_status()}} is set and an error message has
+been emitted via the handler installed by
+@code{@ref{ut_set_error_message_handler(),ut_set_error_message_handler}}).
+
+The argument ranges are:
+@table @var
+@item year
+Must lie in the inclusive range @code{[-5000000, 5000000]}.  Year @code{0}
+is accepted; @code{@ref{ut_encode_date()}} normalizes it to year @code{1}.
+The @math{\pm}5,000,000 cap is a practical limit imposed by the @code{int32}
+arithmetic in the underlying Julian-day algorithm.
+@item month
+Must lie in the inclusive range @code{[1, 12]}.
+@item day
+The per-month maximum admits any value legal in either the Gregorian
+calendar (the leap-year rule is @emph{not} enforced) or the CF
+@code{360_day} calendar (every month exactly 30 days):
+
+@multitable @columnfractions .55 .45
+@item Months 1, 3, 5, 7, 8, 10, 12 @tab 1--31
+@item Months 4, 6, 9, 11           @tab 1--30
+@item Month 2 (February)           @tab 1--30
+@end multitable
+
+In particular, February 29 is accepted in every year (the leap-year rule
+is deliberately not applied), February 30 is accepted because the
+@code{360_day} calendar permits it, and dates such as April 31 or
+February 31 are rejected.  @code{@ref{ut_encode_date()}} always uses
+Gregorian arithmetic and will roll inputs such as February 29 of a
+non-leap year or February 30 into the following month; the validator's
+role is to keep obvious typos out of the parser, not to pin a specific
+calendar.
+@end table
+
+@noindent
+This is the validation routine used by the unit-string parser.  Library
+users may call it before @code{@ref{ut_encode_date()}} to obtain the same
+input check that a @code{seconds since YYYY-MM-DD} unit specification
+would receive.
 @end deftypefun
 
 @anchor{ut_encode_clock()}
-@deftypefun @code{double} ut_encode_clock @code{(int @var{hour}, int @var{minute}, double @var{second})}
-Encodes a clock-time as a double-precision value. @code{abs(hour)} must be less
-than 24; @code{abs(minute)} must be less than 60; and @code{fabs(second)} must
-be less than or equal to 62.
+@deftypefun @code{double} ut_encode_clock @code{(int @var{hours}, int @var{minutes}, double @var{seconds})}
+Encodes a clock-time (time of day) as a double-precision value.  This is a
+pure encoder: it performs no range-checking and always succeeds.  Negative or
+out-of-range components are encoded arithmetically and propagate into the
+returned value unchanged.  Callers that need the components validated as a
+wall-clock time of day should call @code{@ref{ut_check_clock(),ut_check_clock}}
+first.
 You probably won't use this function.
+@end deftypefun
+
+@anchor{ut_check_clock()}
+@deftypefun @code{@ref{ut_status}} ut_check_clock @code{(int @var{hour}, int @var{minute}, double @var{second})}
+Validates clock-time (time-of-day) components.  This is the strict companion
+to @code{@ref{ut_encode_clock(),ut_encode_clock}}: the encoder itself does no
+checking, so a caller that wants the components validated as a real wall-clock
+time of day calls this first.  Returns @code{UT_SUCCESS} if the arguments form
+a valid time of day, otherwise @code{UT_BAD_ARG} (in which case
+@code{@ref{ut_get_status()}} is set and an error message has been emitted via
+the handler installed by
+@code{@ref{ut_set_error_message_handler(),ut_set_error_message_handler}}).
+@table @var
+@item hour
+Must lie in the inclusive range @code{[0, 23]}.
+@item minute
+Must lie in the inclusive range @code{[0, 59]}.
+@item second
+Must satisfy @code{0.0 <= second < 60.0}.  NaN and infinities are rejected.
+@end table
+
+Note that this is the @emph{strict} clock-range check.  The unit-string parser
+additionally accepts @code{second == 60.0} in the specific case
+@code{23:59:60}, which encodes a leap-second insertion.  That carve-out exists
+only for backward compatibility with legacy timestamp strings; using a
+leap-second value as the reference in a
+@code{@var{unit} since @var{timestamp}} specification is discouraged (and is
+not permitted by the CF metadata conventions).  New code should not rely on
+it, and @code{ut_check_clock} (hence @code{ut_check_time}) deliberately does
+not bless it.
+@end deftypefun
+
+@anchor{ut_check_time()}
+@deftypefun @code{@ref{ut_status}} ut_check_time @code{(int @var{year}, int @var{month}, int @var{day}, int @var{hour}, int @var{minute}, double @var{second})}
+Validates that the arguments form a real-world calendar timestamp.  It is
+equivalent to @code{@ref{ut_check_date(),ut_check_date}}@code{(@var{year},
+@var{month}, @var{day})} followed by
+@code{@ref{ut_check_clock(),ut_check_clock}}@code{(@var{hour}, @var{minute},
+@var{second})}, and succeeds only if both do.  Returns @code{UT_SUCCESS} if the
+arguments form a valid timestamp, otherwise @code{UT_BAD_ARG} (in which case
+@code{@ref{ut_get_status()}} is set and an error message has been emitted via
+the handler installed by
+@code{@ref{ut_set_error_message_handler(),ut_set_error_message_handler}}).
+
+The @var{year}, @var{month}, and @var{day} arguments are checked as in
+@code{@ref{ut_check_date(),ut_check_date}}; the @var{hour}, @var{minute}, and
+@var{second} arguments as in @code{@ref{ut_check_clock(),ut_check_clock}}
+(including the leap-second note there).
 @end deftypefun
 
 @anchor{ut_decode_time()}
