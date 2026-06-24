@@ -1431,6 +1431,10 @@ This convenience function is equivalent to
 @example
 @ref{ut_encode_date(),ut_encode_date}(@var{year},@var{month},@var{day}) + @ref{ut_encode_clock(),ut_encode_clock}(@var{hour},@var{minute},@var{second})
 @end example
+The result is @code{NaN} (and @code{@ref{ut_get_status()}} is set to
+@code{UT_BAD_ARG}) if the date part is out of range
+(@math{|@var{year}|} exceeds @code{5000000}; see
+@code{@ref{ut_encode_date(),ut_encode_date}}) or @var{second} is @code{NaN}.
 @end deftypefun
 
 @anchor{ut_encode_date()}
@@ -1441,11 +1445,14 @@ Dates on or after 1582-10-15 are assumed to be Gregorian dates;
 dates before that are assumed to be Julian dates.  In particular,
 the year 1 BCE is immediately followed by the year 1 CE.
 
-This function performs @emph{no} validation of its arguments.  Out-of-range
-values are silently normalized via the underlying Julian-day arithmetic:
-year @code{0} becomes year @code{1}; month @code{13} rolls into the next year;
-day @code{32} rolls into the next month.  Callers that want strict input
-validation should call @code{@ref{ut_check_date(),ut_check_date}} first.
+The year is range-checked: if @math{|@var{year}|} exceeds @code{5000000} the
+function returns @code{NaN} and sets @code{@ref{ut_get_status()}} to
+@code{UT_BAD_ARG} (the cap keeps the underlying @code{int32} Julian-day
+arithmetic from overflowing).  The month and day are @emph{not} checked:
+out-of-range values are silently normalized via the underlying Julian-day
+arithmetic: year @code{0} becomes year @code{1}; month @code{13} rolls into the
+next year; day @code{32} rolls into the next month.  Callers that want full
+input validation should call @code{@ref{ut_check_date(),ut_check_date}} first.
 @end deftypefun
 
 @anchor{ut_check_date()}

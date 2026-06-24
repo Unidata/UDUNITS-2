@@ -1200,13 +1200,15 @@ ut_accept_visitor(
  *	month		The month.
  *	day		The day (1 = the first of the month).
  * Returns:
- *	The date encoded as a scalar value.
+ *	The date encoded as a scalar value, or NaN if |year| > 5,000,000.
  *
- * Note: this function performs no validation of its arguments. Out-of-range
- * values are silently normalized via the underlying Julian-day arithmetic
- * (year 0 becomes year 1; month 13 rolls into the next year; day 32 rolls
- * into the next month). Callers that want strict input validation should
- * call ut_check_date() first.
+ * Validation: the year is range-checked. If |year| > 5,000,000 the function
+ * returns NaN and sets ut_get_status() to UT_BAD_ARG; the cap keeps the
+ * internal Julian-day arithmetic within int32. The month and day are NOT
+ * checked: out-of-range values are silently normalized via the underlying
+ * Julian-day arithmetic (year 0 becomes year 1; month 13 rolls into the next
+ * year; day 32 rolls into the next month). Callers that want full input
+ * validation should call ut_check_date() first.
  */
 EXTERNL double
 ut_encode_date(
@@ -1299,7 +1301,9 @@ ut_encode_clock(
  *	minute	The minute.
  *	second	The second.
  * Returns:
- *	The time encoded as a scalar value.
+ *	The time encoded as a scalar value, or NaN if the date part is out of
+ *	range (|year| > 5,000,000; see ut_encode_date) or `second` is NaN. When
+ *	the result is NaN, ut_get_status() is set to UT_BAD_ARG.
  */
 EXTERNL double
 ut_encode_time(

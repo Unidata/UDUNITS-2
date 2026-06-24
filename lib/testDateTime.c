@@ -1205,13 +1205,40 @@ static void test_ut_check_clock_sets_status_on_success(void)
 
 static void test_ut_encode_date_sets_status(void)
 {
-    /* Encoder convention: finite result => UT_SUCCESS. The NaN/UT_BAD_ARG
-       path arrives with the year-bound gate (review item 1); ut_encode_date
-       cannot yet produce NaN, so only the success direction is testable. */
+    /* Encoder convention: finite result => UT_SUCCESS; NaN => UT_BAD_ARG.
+       The NaN path is the year gate (review item 1): |year| > 5,000,000. */
     ut_set_status(UT_BAD_ARG);
-    (void)ut_encode_date(2024, 1, 1);
+    CU_ASSERT_FALSE(isnan(ut_encode_date(2024, 1, 1)));
     CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
+
+    /* Boundary: +/-5,000,000 is the inclusive cap -- still finite/SUCCESS. */
+    ut_set_status(UT_BAD_ARG);
+    CU_ASSERT_FALSE(isnan(ut_encode_date( 5000000, 1, 1)));
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
+    CU_ASSERT_FALSE(isnan(ut_encode_date(-5000000, 1, 1)));
+
+    /* Just past the cap: NaN + UT_BAD_ARG (overflow unreachable by construction). */
     ut_set_status(UT_SUCCESS);
+    CU_ASSERT_TRUE(isnan(ut_encode_date( 5000001, 1, 1)));
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
+    CU_ASSERT_TRUE(isnan(ut_encode_date(-5000001, 1, 1)));
+    ut_set_status(UT_SUCCESS);
+}
+
+static void test_ut_encode_date_below_cap_bit_identical(void)
+{
+    /* The gate must not perturb in-range results: encode_time at 00:00:00
+       must equal encode_date for the same in-range date, across a spread
+       that includes the negative-year regime and both cap boundaries. */
+    static const int years[] = { -5000000, -4716, -1, 0, 1, 1582, 1970, 2024,
+                                 5000000 };
+    size_t i;
+    for (i = 0; i < sizeof(years)/sizeof(years[0]); ++i) {
+        double v = ut_encode_date(years[i], 6, 15);
+        CU_ASSERT_FALSE(isnan(v));
+        CU_ASSERT_DOUBLE_EQUAL(ut_encode_time(years[i], 6, 15, 0, 0, 0.0),
+                               v, 0.0);
+    }
 }
 
 static void test_ut_encode_time_sets_status(void)
@@ -1227,6 +1254,12 @@ static void test_ut_encode_time_sets_status(void)
 
     ut_set_status(UT_SUCCESS);
     r = ut_encode_time(2024, 1, 1, 0, 0, nan_val);
+    CU_ASSERT_TRUE(isnan(r));
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
+
+    /* Date-side NaN (year past the gate) propagates through the `+` too. */
+    ut_set_status(UT_SUCCESS);
+    r = ut_encode_time(5000001, 1, 1, 0, 0, 0.0);
     CU_ASSERT_TRUE(isnan(r));
     CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
     ut_set_status(UT_SUCCESS);
@@ -1519,6 +1552,7 @@ int main(const int argc, const char* const* argv)
     CU_ADD_TEST(s, test_ut_check_clock_nan);
     CU_ADD_TEST(s, test_ut_check_clock_sets_status_on_success);
     CU_ADD_TEST(s, test_ut_encode_date_sets_status);
+    CU_ADD_TEST(s, test_ut_encode_date_below_cap_bit_identical);
     CU_ADD_TEST(s, test_ut_encode_time_sets_status);
     CU_ADD_TEST(s, test_ut_encode_clock_leaves_status_untouched);
     CU_ADD_TEST(s, test_ut_check_time_valid);

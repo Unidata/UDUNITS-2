@@ -452,14 +452,14 @@ decomp( double        value,
 
 
 /*
- * Encodes a date as a double-precision value.
+ * Encodes a date as a double-precision value. See udunits2.h for the contract.
  *
  * Arguments:
  *	year		The year.
  *	month		The month.
  *	day		The day (1 = the first of the month).
  * Returns:
- *	The date encoded as a scalar value.
+ *	The date encoded as a scalar value, or NaN if |year| > 5,000,000.
  */
 double
 ut_encode_date(
@@ -467,16 +467,28 @@ ut_encode_date(
     int		month,
     int		day)
 {
-    const double result = 86400.0 *
-	(gregorianDateToJulianDay(year, month, day) - getJuldayOrigin());
+    double result;
+
     /*
-     * Status convention (see udunits2.h): the encoder leaves ut_get_status()
-     * reflecting its own outcome, with NaN as the authoritative failure
-     * signal and the global status a secondary, in-sync copy.
-     *
-     * NOTE: the UT_BAD_ARG branch is currently unreachable -- ut_encode_date
-     * does not yet return NaN. The year-bound gate that will make it do so
-     * (review item 1) is a separate change; this only wires the convention.
+     * Year gate (review item 1): reject |year| > 5,000,000 by returning NaN,
+     * BEFORE any Julian-day arithmetic is performed. gregorianDateToJulianDay()
+     * overflows int32 (signed-overflow UB) around |year| ~ 5.77M via the term
+     * 31*(month + 12*iy); the +/-5,000,000 cap sits safely below that, so the
+     * overflow is unreachable by construction. Only the year is gated here:
+     * month and day are not validated, and year 0 is still normalized to year 1
+     * by gregorianDateToJulianDay(). Use ut_check_date() for full input checks.
+     */
+    if (year < -5000000 || year > 5000000) {
+	result = NAN;
+    }
+    else {
+	result = 86400.0 *
+	    (gregorianDateToJulianDay(year, month, day) - getJuldayOrigin());
+    }
+
+    /*
+     * Status convention (see udunits2.h): NaN is the authoritative, thread-safe
+     * failure signal; the global status is a secondary, in-sync copy.
      */
     ut_set_status(isnan(result) ? UT_BAD_ARG : UT_SUCCESS);
     return result;
@@ -634,9 +646,9 @@ ut_encode_time(
 			 + ut_encode_clock(hour, minute, second);
     /*
      * Derive status from the composite result, not by polling the callees: a
-     * NaN from either side (e.g. a NaN `second`, or -- once item 1 lands -- a
-     * year past the date gate) propagates through the `+`, and isnan recovers
-     * it. See the status convention in udunits2.h.
+     * NaN from either side -- a year past the date gate (|year| > 5,000,000),
+     * or a NaN `second` on the clock side -- propagates through the `+`, and
+     * isnan recovers it. See the status convention in udunits2.h.
      */
     ut_set_status(isnan(result) ? UT_BAD_ARG : UT_SUCCESS);
     return result;
