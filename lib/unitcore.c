@@ -467,8 +467,19 @@ ut_encode_date(
     int		month,
     int		day)
 {
-    return 86400.0 *
+    const double result = 86400.0 *
 	(gregorianDateToJulianDay(year, month, day) - getJuldayOrigin());
+    /*
+     * Status convention (see udunits2.h): the encoder leaves ut_get_status()
+     * reflecting its own outcome, with NaN as the authoritative failure
+     * signal and the global status a secondary, in-sync copy.
+     *
+     * NOTE: the UT_BAD_ARG branch is currently unreachable -- ut_encode_date
+     * does not yet return NaN. The year-bound gate that will make it do so
+     * (review item 1) is a separate change; this only wires the convention.
+     */
+    ut_set_status(isnan(result) ? UT_BAD_ARG : UT_SUCCESS);
+    return result;
 }
 
 
@@ -534,6 +545,8 @@ ut_check_date(
 	    return UT_BAD_ARG;
 	}
     }
+    /* Convention A (see udunits2.h): reflect this call's own outcome. */
+    ut_set_status(UT_SUCCESS);
     return UT_SUCCESS;
 }
 
@@ -565,6 +578,8 @@ ut_check_clock(
 	ut_set_status(UT_BAD_ARG);
 	return UT_BAD_ARG;
     }
+    /* Convention A (see udunits2.h): reflect this call's own outcome. */
+    ut_set_status(UT_SUCCESS);
     return UT_SUCCESS;
 }
 
@@ -585,6 +600,8 @@ ut_check_time(
 	return UT_BAD_ARG;
     if (ut_check_clock(hour, minute, second) != UT_SUCCESS)
 	return UT_BAD_ARG;
+    /* Convention A (see udunits2.h): reflect this call's own outcome. */
+    ut_set_status(UT_SUCCESS);
     return UT_SUCCESS;
 }
 
@@ -613,7 +630,16 @@ ut_encode_time(
     const int		minute,
     const double	second)
 {
-    return ut_encode_date(year, month, day) + ut_encode_clock(hour, minute, second);
+    const double result = ut_encode_date(year, month, day)
+			 + ut_encode_clock(hour, minute, second);
+    /*
+     * Derive status from the composite result, not by polling the callees: a
+     * NaN from either side (e.g. a NaN `second`, or -- once item 1 lands -- a
+     * year past the date gate) propagates through the `+`, and isnan recovers
+     * it. See the status convention in udunits2.h.
+     */
+    ut_set_status(isnan(result) ? UT_BAD_ARG : UT_SUCCESS);
+    return result;
 }
 
 

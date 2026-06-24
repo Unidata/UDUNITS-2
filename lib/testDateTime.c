@@ -1152,12 +1152,13 @@ static void test_ut_check_date_bad_day(void)
     CU_ASSERT_EQUAL(ut_check_date(2024, 11, 31), UT_BAD_ARG); /* Nov */
 }
 
-static void test_ut_check_date_does_not_clobber_status_on_success(void)
+static void test_ut_check_date_sets_status_on_success(void)
 {
-    /* Successful validation must not perturb a previously-set status. */
+    /* Convention A: a successful check sets status to UT_SUCCESS, mirroring
+       the UT_BAD_ARG it sets on failure. (Was errno-style "do not clobber".) */
     ut_set_status(UT_BAD_ARG);
     CU_ASSERT_EQUAL(ut_check_date(2024, 1, 1), UT_SUCCESS);
-    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG); /* unchanged */
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS); /* cleared */
     ut_set_status(UT_SUCCESS);
 }
 
@@ -1193,11 +1194,51 @@ static void test_ut_check_clock_nan(void)
     CU_ASSERT_EQUAL(ut_check_clock(12, 30, nan_val), UT_BAD_ARG);
 }
 
-static void test_ut_check_clock_does_not_clobber_status_on_success(void)
+static void test_ut_check_clock_sets_status_on_success(void)
 {
+    /* Convention A: success sets status to UT_SUCCESS. */
     ut_set_status(UT_BAD_ARG);
     CU_ASSERT_EQUAL(ut_check_clock(12, 0, 0.0), UT_SUCCESS);
-    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG); /* unchanged */
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS); /* cleared */
+    ut_set_status(UT_SUCCESS);
+}
+
+static void test_ut_encode_date_sets_status(void)
+{
+    /* Encoder convention: finite result => UT_SUCCESS. The NaN/UT_BAD_ARG
+       path arrives with the year-bound gate (review item 1); ut_encode_date
+       cannot yet produce NaN, so only the success direction is testable. */
+    ut_set_status(UT_BAD_ARG);
+    (void)ut_encode_date(2024, 1, 1);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
+    ut_set_status(UT_SUCCESS);
+}
+
+static void test_ut_encode_time_sets_status(void)
+{
+    /* Finite => UT_SUCCESS; a NaN `second` propagates to a NaN composite
+       => UT_BAD_ARG. The NaN path needs no year gate. */
+    double nan_val = 0.0/0.0;
+    double r;
+
+    ut_set_status(UT_BAD_ARG);
+    (void)ut_encode_time(2024, 1, 1, 0, 0, 0.0);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
+
+    ut_set_status(UT_SUCCESS);
+    r = ut_encode_time(2024, 1, 1, 0, 0, nan_val);
+    CU_ASSERT_TRUE(isnan(r));
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
+    ut_set_status(UT_SUCCESS);
+}
+
+static void test_ut_encode_clock_leaves_status_untouched(void)
+{
+    /* Documented exception to convention A: ut_encode_clock is strictly
+       side-effect-free and must not touch the status channel. */
+    ut_set_status(UT_BAD_ARG);
+    (void)ut_encode_clock(12, 0, 0.0);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG); /* untouched */
     ut_set_status(UT_SUCCESS);
 }
 
@@ -1471,12 +1512,15 @@ int main(const int argc, const char* const* argv)
     CU_ADD_TEST(s, test_ut_check_date_bad_year);
     CU_ADD_TEST(s, test_ut_check_date_bad_month);
     CU_ADD_TEST(s, test_ut_check_date_bad_day);
-    CU_ADD_TEST(s, test_ut_check_date_does_not_clobber_status_on_success);
+    CU_ADD_TEST(s, test_ut_check_date_sets_status_on_success);
     CU_ADD_TEST(s, test_ut_check_clock_valid);
     CU_ADD_TEST(s, test_ut_check_clock_bad_components);
     CU_ADD_TEST(s, test_ut_check_clock_strict_no_leap_second);
     CU_ADD_TEST(s, test_ut_check_clock_nan);
-    CU_ADD_TEST(s, test_ut_check_clock_does_not_clobber_status_on_success);
+    CU_ADD_TEST(s, test_ut_check_clock_sets_status_on_success);
+    CU_ADD_TEST(s, test_ut_encode_date_sets_status);
+    CU_ADD_TEST(s, test_ut_encode_time_sets_status);
+    CU_ADD_TEST(s, test_ut_encode_clock_leaves_status_untouched);
     CU_ADD_TEST(s, test_ut_check_time_valid);
     CU_ADD_TEST(s, test_ut_check_time_strict_no_leap_second);
     CU_ADD_TEST(s, test_ut_check_time_bad_components);
