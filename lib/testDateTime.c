@@ -1179,12 +1179,15 @@ static void test_ut_check_clock_bad_components(void)
     CU_ASSERT_EQUAL(ut_check_clock( 0,  0, 60.0), UT_BAD_ARG);
 }
 
-static void test_ut_check_clock_strict_no_leap_second(void)
+static void test_ut_check_clock_leap_second(void)
 {
-    /* Same contract as ut_check_time: the strict validator rejects the
-       "23:59:60" leap-second form that the parser tolerates for legacy
-       back-compat. */
-    CU_ASSERT_EQUAL(ut_check_clock(23, 59, 60.0), UT_BAD_ARG);
+    /* The unified validator accepts the inserted-second form 23:59:60[.x]
+       (a valid time of day in the calendar union) and enforces it
+       positionally: 60 <= s < 61 only at 23:59, s >= 61 never. */
+    CU_ASSERT_EQUAL(ut_check_clock(23, 59, 60.0), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_check_clock(23, 59, 60.5), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_check_clock(12,  0, 60.0), UT_BAD_ARG); /* wrong tod */
+    CU_ASSERT_EQUAL(ut_check_clock(23, 59, 61.0), UT_BAD_ARG); /* upper bound */
 }
 
 static void test_ut_check_clock_nan(void)
@@ -1297,13 +1300,14 @@ static void test_ut_check_time_valid(void)
     CU_ASSERT_EQUAL(ut_check_time(2024,  1, 15, 12, 30, 45.5), UT_SUCCESS);
 }
 
-static void test_ut_check_time_strict_no_leap_second(void)
+static void test_ut_check_time_leap_second(void)
 {
-    /* Contract: ut_check_time is strict (0 <= s < 60). The parser still
-       accepts "23:59:60" as a legacy back-compat carve-out, but that
-       form is discouraged (and disallowed by CF) as a `since` reference,
-       and the public validator deliberately does not bless it. */
-    CU_ASSERT_EQUAL(ut_check_time(2024, 1, 15, 23, 59, 60.0), UT_BAD_ARG);
+    /* ut_check_time recomposes ut_check_date + ut_check_clock, so it inherits
+       the inserted-second acceptance: 23:59:60 is a valid time of day in the
+       calendar union and is accepted; the same value at any other time of day
+       is rejected (positional constraint). */
+    CU_ASSERT_EQUAL(ut_check_time(2024, 1, 15, 23, 59, 60.0), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_check_time(2024, 1, 15, 12,  0, 60.0), UT_BAD_ARG);
 }
 
 static void test_ut_check_time_bad_components(void)
@@ -1563,7 +1567,7 @@ int main(const int argc, const char* const* argv)
     CU_ADD_TEST(s, test_ut_check_date_sets_status_on_success);
     CU_ADD_TEST(s, test_ut_check_clock_valid);
     CU_ADD_TEST(s, test_ut_check_clock_bad_components);
-    CU_ADD_TEST(s, test_ut_check_clock_strict_no_leap_second);
+    CU_ADD_TEST(s, test_ut_check_clock_leap_second);
     CU_ADD_TEST(s, test_ut_check_clock_nan);
     CU_ADD_TEST(s, test_ut_check_clock_sets_status_on_success);
     CU_ADD_TEST(s, test_ut_encode_date_sets_status);
@@ -1572,7 +1576,7 @@ int main(const int argc, const char* const* argv)
     CU_ADD_TEST(s, test_ut_encode_clock_leaves_status_untouched);
     CU_ADD_TEST(s, test_ut_encode_clock_total_no_overflow);
     CU_ADD_TEST(s, test_ut_check_time_valid);
-    CU_ADD_TEST(s, test_ut_check_time_strict_no_leap_second);
+    CU_ADD_TEST(s, test_ut_check_time_leap_second);
     CU_ADD_TEST(s, test_ut_check_time_bad_components);
     CU_ADD_TEST(s, test_ut_check_time_nan);
 

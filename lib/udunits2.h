@@ -1318,29 +1318,26 @@ ut_encode_time(
 /*
  * Validates clock-time (time-of-day) components.
  *
- * This is the strict companion to ut_encode_clock(): the encoder itself does
+ * This is the companion check to ut_encode_clock(): the encoder itself does
  * no checking, so a caller that wants the components validated as a real
- * wall-clock time of day calls this first.
+ * wall-clock time of day calls this first. The unit-string parser applies the
+ * same check, so a clock accepted here is accepted by the parser and a clock
+ * rejected here is rejected by the parser.
  *
  * Arguments:
  *	hour	Must be in the inclusive range [0, 23].
  *	minute	Must be in the inclusive range [0, 59].
- *	second	Must satisfy 0.0 <= second < 60.0 (NaN is rejected).
+ *	second	Must satisfy 0.0 <= second < 60.0, except that
+ *		60.0 <= second < 61.0 is accepted only when hour == 23 and
+ *		minute == 59 (the inserted-second form, normalized to the
+ *		following 00:00:00 at encode time). Any second >= 60.0 at any
+ *		other time of day, any second >= 61.0, and NaN are rejected.
  *
  * Returns:
  *	UT_SUCCESS	The arguments form a valid time of day.
  *	UT_BAD_ARG	An argument is out of range. ut_status is set and
  *			an error message has been emitted via the handler
  *			set by ut_set_error_message_handler().
- *
- * Note: this is the *strict* clock-range check (0..59 minutes, 0..<60
- * seconds). The unit-string parser additionally accepts second == 60.0 in
- * the specific case "23:59:60", which encodes a leap-second insertion. That
- * carve-out exists only for backward compatibility with legacy timestamp
- * strings; using a leap-second value as the reference in a "<unit> since
- * <timestamp>" specification is discouraged (and is not permitted by the CF
- * metadata conventions). New code SHOULD NOT rely on it, and ut_check_clock
- * (hence ut_check_time) deliberately does not bless it.
  */
 EXTERNL ut_status
 ut_check_clock(

@@ -113,33 +113,6 @@ static int parse_fraction(const char** s, double* frac) {
 }
 
 /* Leap-second allowed only at 23:59:60[.frac] */
-static int check_tod_range(int H, int M, double S, int had_seconds, char* error_msg) {
-    if (H < 0 || H > 23) {
-        snprintf(error_msg, UT_ERR_MSG_LEN, "Invalid hour: %d (must be 0-23)", H);
-        return 0;
-    }
-    if (M < 0 || M > 59) {
-        snprintf(error_msg, UT_ERR_MSG_LEN, "Invalid minute: %d (must be 0-59)", M);
-        return 0;
-    }
-    if (!had_seconds) return 1; /* HH:MM ok */
-    if (S < 0.0) {
-        snprintf(error_msg, UT_ERR_MSG_LEN, "Invalid second: %.2f (must be non-negative)", S);
-        return 0;
-    }
-    if (S < 60.0) return 1;
-    /* S == 60 only if 23:59:60[.x] */
-    if (S >= 61.0) {
-        snprintf(error_msg, UT_ERR_MSG_LEN, "Invalid second: %.2f (must be less than 61)", S);
-        return 0;
-    }
-    if (H != 23 || M != 59) {
-        snprintf(error_msg, UT_ERR_MSG_LEN, "Leap second (60) only allowed at 23:59:60, not %02d:%02d:%.2f", H, M, S);
-        return 0;
-    }
-    return 1;
-}
-
 /* TZ: sign*(HH[:MM] | HHMM); 0<=HH<=14, 0<=MM<=59; forbid negative zero */
 static int check_tz_range(int sign, int H, int M) {
     // Defensive checks: H and M should be non-negative from parsing,
@@ -227,9 +200,9 @@ static int decodePackedDate(
 }
 
 /* TOD broken: HH:MM[:SS[.frac]] */
-static int parse_tod_broken(const char* s, int* H,int* M,double* S,int* had_seconds,const char** endptr) {
+static int parse_tod_broken(const char* s, int* H,int* M,double* S,const char** endptr) {
     const char* p = s;
-    int h,m; double sec = 0.0; *had_seconds = 0;
+    int h,m; double sec = 0.0;
     if (!read_1to2digits(p, &h, &p)) return 0;
     if (*p++ != ':') return 0;
     if (!read_1to2digits(p, &m, &p)) return 0;
@@ -242,7 +215,6 @@ static int parse_tod_broken(const char* s, int* H,int* M,double* S,int* had_seco
         double frac = 0.0;
         if (!parse_fraction(&p, &frac)) return 0;
         sec += frac;
-        *had_seconds = 1;
     }
     *H = h; *M = m; *S = sec;
     *endptr = p;
@@ -250,7 +222,7 @@ static int parse_tod_broken(const char* s, int* H,int* M,double* S,int* had_seco
 }
 
 /* TOD packed: HH[MM[SS]][.frac] — at least HH; optional MM, then optional SS; fraction applies to SS if present else to HHMMSS interpretation */
-static int parse_tod_packed(const char* s, int* H, int* M, double* S, int* had_seconds, const char** endptr) {
+static int parse_tod_packed(const char* s, int* H, int* M, double* S, const char** endptr) {
     const char* p = s;
     int len = 0; while (p[len] >= '0' && p[len] <= '9') len++;
     if (len < 1 || len > 6) return 0;
@@ -267,33 +239,36 @@ static int parse_tod_packed(const char* s, int* H, int* M, double* S, int* had_s
      * are unaffected.
      *
      * Decimal fractions are accepted only when a seconds field exists
-     * (len >= 5); they attach to the seconds.
+     * (len >= 5); they attach to the seconds. `had_seconds` is internal
+     * to this parser: the public ut_check_clock validates the assembled
+     * H:M:S, so the seconds field's presence need not be reported out.
      */
     int h_digits;
+    int had_seconds;
     if (len <= 2) {
         h_digits = len;
-        *had_seconds = 0;
+        had_seconds = 0;
     } else if (len <= 4) {
         h_digits = len - 2;   /* 1 or 2 */
-        *had_seconds = 0;
+        had_seconds = 0;
     } else {
         h_digits = len - 4;   /* 1 or 2 */
-        *had_seconds = 1;
+        had_seconds = 1;
     }
 
     int h = 0, m = 0, ss = 0;
     const char* q = p;
     if (!read_ndigits(&q, h_digits, &h)) return 0;
     if (len >= 3 && !read_ndigits(&q, 2, &m)) return 0;
-    if (*had_seconds && !read_ndigits(&q, 2, &ss)) return 0;
+    if (had_seconds && !read_ndigits(&q, 2, &ss)) return 0;
 
     if (m >= 60) return 0;
-    if (*had_seconds && ss > 60) return 0;
+    if (had_seconds && ss > 60) return 0;
     double sec = (double)ss;
     double frac = 0.0;
     const char* r = q;
     if (!parse_fraction(&r, &frac)) return 0;
-    if (*had_seconds) sec += frac;
+    if (had_seconds) sec += frac;
     else if (frac != 0.0) return 0;  /* reject fraction if no seconds field */
 
     *H = h; *M = m; *S = sec;
@@ -386,7 +361,7 @@ static int parse_tz_packed(const char* s, int* sign, int* H, int* M, const char*
 /* Time-of-day: broken or packed. Returns 1 on success, 0 on error; sets *seconds. */
 static int decodeClockFlexible(const char* text, double* seconds, char* error_msg) {
     const char* p = text;
-    int H=0, M=0, had_sec=0; double S=0.0;
+    int H=0, M=0; double S=0.0;
     const char* end = NULL;
     int ok = 0;
 
@@ -394,9 +369,9 @@ static int decodeClockFlexible(const char* text, double* seconds, char* error_ms
        Do NOT fall back between the two — the packed parser will silently
        match a prefix like "9" of "9:5:3" and discard the rest. */
     if (strchr(text, ':')) {
-        ok = parse_tod_broken(p, &H, &M, &S, &had_sec, &end);
+        ok = parse_tod_broken(p, &H, &M, &S, &end);
     } else {
-        ok = parse_tod_packed(p, &H, &M, &S, &had_sec, &end);
+        ok = parse_tod_packed(p, &H, &M, &S, &end);
     }
     if (!ok) {
         snprintf(error_msg, UT_ERR_MSG_LEN, "Invalid time-of-day format: %s (expected HH:MM:SS or HHMMSS)", text);
@@ -412,8 +387,14 @@ static int decodeClockFlexible(const char* text, double* seconds, char* error_ms
         return 0;
     }
 
-    /* Range + leap-second - check_tod_range populates error_msg with specific error */
-    if (!check_tod_range(H, M, S, had_sec, error_msg)) {
+    /* Range + leap-second validation lives in ut_check_clock() so the same
+       rules apply whether a clock enters through the parser or via direct API
+       calls (mirrors the date path's use of ut_check_date). The HH:MM form
+       leaves S at 0.0, which ut_check_clock accepts. On failure ut_check_clock
+       has already emitted the message via the error handler, so leave
+       error_msg empty to stop the parser's ERR rule re-emitting it. */
+    if (ut_check_clock(H, M, S) != UT_SUCCESS) {
+        error_msg[0] = '\0';
         return 0;
     }
 

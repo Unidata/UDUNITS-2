@@ -593,10 +593,35 @@ ut_check_clock(
 	ut_set_status(UT_BAD_ARG);
 	return UT_BAD_ARG;
     }
-    if (!(second >= 0.0 && second < 60.0)) {
-	/* `!(...)` catches NaN as well as out-of-range. */
+    /*
+     * Reject NaN and negative seconds before the range tests: any comparison
+     * with NaN is false, so !(second >= 0.0) is true for NaN. (The scanner only
+     * feeds digit-parsed, non-negative values, but a direct caller can pass
+     * either.)
+     */
+    if (!(second >= 0.0)) {
 	ut_handle_error_message(
-	    "Invalid second %g (must satisfy 0 <= s < 60)", second);
+	    "Invalid second %g (must be non-negative)", second);
+	ut_set_status(UT_BAD_ARG);
+	return UT_BAD_ARG;
+    }
+    /*
+     * second in [0,60) is always a valid time of day. The positional carve-out
+     * admits the inserted-second form: 60 <= second < 61 is accepted only at
+     * 23:59; any second >= 61, and any second >= 60 at any other time of day,
+     * is rejected. This is the single public clock check: the unit-string
+     * scanner calls it too, so parser and direct-API acceptance are identical.
+     */
+    if (second >= 61.0) {
+	ut_handle_error_message(
+	    "Invalid second %g (must be less than 61)", second);
+	ut_set_status(UT_BAD_ARG);
+	return UT_BAD_ARG;
+    }
+    if (second >= 60.0 && (hour != 23 || minute != 59)) {
+	ut_handle_error_message(
+	    "Invalid second %g at %02d:%02d (60 <= s < 61 only at 23:59)",
+	    second, hour, minute);
 	ut_set_status(UT_BAD_ARG);
 	return UT_BAD_ARG;
     }
