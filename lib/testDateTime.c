@@ -1275,6 +1275,21 @@ static void test_ut_encode_clock_leaves_status_untouched(void)
     ut_set_status(UT_SUCCESS);
 }
 
+static void test_ut_encode_clock_total_no_overflow(void)
+{
+    /* A1: computing in double makes the encoder total over its int input
+       domain -- no signed-overflow UB. Bit-identical to h*3600+m*60+s for
+       realistic inputs, and correct/finite well past the old int limit
+       (hours ~ 596,523, where the outer *60 overflowed). */
+    CU_ASSERT_DOUBLE_EQUAL(ut_encode_clock(23, 59, 60.0), 86400.0, 0.0);
+    CU_ASSERT_DOUBLE_EQUAL(ut_encode_clock(0, 0, 0.0),    0.0,     0.0);
+    CU_ASSERT_DOUBLE_EQUAL(ut_encode_clock(600000, 0, 0.0),
+                           600000.0 * 3600.0, 0.0);
+    CU_ASSERT_FALSE(isnan(ut_encode_clock(1000000, 0, 0.0)));
+    /* A NaN second still propagates (relied on by ut_encode_time). */
+    CU_ASSERT_TRUE(isnan(ut_encode_clock(0, 0, 0.0/0.0)));
+}
+
 static void test_ut_check_time_valid(void)
 {
     CU_ASSERT_EQUAL(ut_check_time(2024,  1, 15,  0,  0,  0.0), UT_SUCCESS);
@@ -1555,6 +1570,7 @@ int main(const int argc, const char* const* argv)
     CU_ADD_TEST(s, test_ut_encode_date_below_cap_bit_identical);
     CU_ADD_TEST(s, test_ut_encode_time_sets_status);
     CU_ADD_TEST(s, test_ut_encode_clock_leaves_status_untouched);
+    CU_ADD_TEST(s, test_ut_encode_clock_total_no_overflow);
     CU_ADD_TEST(s, test_ut_check_time_valid);
     CU_ADD_TEST(s, test_ut_check_time_strict_no_leap_second);
     CU_ADD_TEST(s, test_ut_check_time_bad_components);

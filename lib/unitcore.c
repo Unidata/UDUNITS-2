@@ -422,7 +422,17 @@ ut_encode_clock(
     int		minutes,
     double	seconds)
 {
-    return (hours*60 + minutes)*60 + seconds;
+    /*
+     * Compute in double (the return type) rather than int. The int form
+     * (hours*60 + minutes)*60 overflows int32 (signed-overflow UB) for
+     * nonsensical inputs -- the binding term is the outer *60, so the limit is
+     * hours ~ 596,523. Computing in double removes the overflow entirely with
+     * no int64_t/long (and so no LLP64 long-is-32-bit wrinkle). Every integer
+     * up to 2^53 is exact in double, so the result is bit-identical for all
+     * realistic inputs. This stays a side-effect-free encoder: no status is
+     * set (see the status convention in udunits2.h).
+     */
+    return ((double)hours*60 + minutes)*60 + seconds;
 }
 
 inline static int
