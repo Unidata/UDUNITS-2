@@ -113,6 +113,13 @@ errMsg(
  * errors; the lexer routes its specific date/time diagnostics through
  * yylval.error_msg and uterror() surfaces them verbatim, so anything other
  * than "syntax error" is a detailed message worth showing to the user.
+ *
+ * The classification compares against bison's untranslated "syntax error".
+ * This is safe only because the build enables no bison NLS message catalogue
+ * (no --enable-nls / gettext wiring), so the string is never localized. If
+ * bison NLS is ever enabled, this is the spot to revisit -- replace the text
+ * comparison with a flag set by the scanner/parser when a specific message
+ * was emitted.
  */
 static int
 handle_have_parse_error(const char* fmt, va_list args)
