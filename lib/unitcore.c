@@ -515,25 +515,17 @@ ut_check_date(
     int		day)
 {
     /*
-     * Per-month maximum day. The table admits any date legal in either
-     * the Gregorian calendar (with the leap-year rule deliberately
-     * ignored) or the CF "360_day" calendar (every month exactly 30
-     * days). Concretely:
+     * Per-month maximum day. These maxima are deliberately lenient: the
+     * leap-year rule is not enforced (Feb 29 is accepted in every year) and
+     * February admits up to 30. This is a precondition check on the encoder's
+     * input -- it keeps obvious typos (Feb 31, Apr 31) out without pinning any
+     * particular calendar; an accepted day that the encoder cannot represent
+     * directly is normalized by ut_encode_date (Gregorian arithmetic). See
+     * ut_check_date in udunits2.h.
      *
-     *   Jan, Mar, May, Jul, Aug, Oct, Dec  ->  31 (Gregorian 31-day months)
-     *   Apr, Jun,      Sep, Nov            ->  30 (Gregorian + 360_day agree)
-     *   Feb                                ->  30 (Gregorian 29 leap-day +
-     *                                              360_day permitting 30;
-     *                                              the leap-year rule is
-     *                                              NOT applied here)
-     *
-     * Rationale: udunits is calendar-agnostic at the parse layer, but a
-     * day value like "Feb 31" or "Apr 31" is invalid in every calendar
-     * in widespread use and is almost certainly a typo. Admitting
-     * Feb 29/30 (no leap-year restriction) keeps existing CF data
-     * working across `gregorian`, `proleptic_gregorian`, `noleap` /
-     * `365_day`, `all_leap` / `366_day`, and `360_day` calendars
-     * without the parser needing to know which one the consumer uses.
+     *   Jan, Mar, May, Jul, Aug, Oct, Dec  ->  1..31
+     *   Apr, Jun,      Sep, Nov            ->  1..30
+     *   Feb                                ->  1..30
      */
     static const int max_day_per_month[12] = {
         31, 30, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31

@@ -1218,46 +1218,36 @@ ut_encode_date(
 
 
 /*
- * Validates that the arguments form a calendar date acceptable to one of
- * the calendars in widespread use.
+ * Reports whether (year, month, day) is acceptable input to ut_encode_date()
+ * -- i.e. in range and free of obvious typos. This is a precondition check for
+ * the encoder: it does not describe any calendar, and it does not describe the
+ * value the encoder produces. Inputs that pass may still be normalized at
+ * encode time (see ut_encode_date).
  *
  * Arguments:
- *	year	The year. Must be in the inclusive range [-5000000, 5000000].
- *		Year 0 is accepted; ut_encode_date normalizes it to year 1.
- *		The cap is a practical limit set by the int32 arithmetic in
- *		gregorianDateToJulianDay; see lib/unitcore.c for details.
+ *	year	Must be in the inclusive range [-5000000, 5000000]. Year 0 is
+ *		valid input; ut_encode_date interprets it as year 1. The cap is
+ *		a practical limit set by the int32 arithmetic in
+ *		gregorianDateToJulianDay; see lib/unitcore.c.
  *	month	Must be in the inclusive range [1, 12].
- *	day	The per-month maximum admits any value legal in either the
- *		Gregorian calendar (leap-year rule NOT enforced) or the CF
- *		"360_day" calendar (every month exactly 30 days):
+ *	day	Must not exceed the per-month maximum:
  *
  *		    Jan, Mar, May, Jul, Aug, Oct, Dec  ->  1..31
  *		    Apr, Jun,      Sep, Nov            ->  1..30
  *		    Feb                                ->  1..30
  *
- *		Note: Feb 29 is accepted in every year (the leap-year rule
- *		is deliberately not applied); Feb 30 is accepted because
- *		the 360_day calendar permits it.  Apr 31, Feb 31, etc. are
- *		rejected.
- *
- *		ut_encode_date does not change behavior under this check:
- *		it still uses Gregorian arithmetic and will roll Feb 29 of
- *		a non-leap year to Mar 1, Feb 30 to Mar 1/2, and so on. The
- *		validator's role is to keep obvious typos out of the
- *		parser, not to pin a specific calendar.
+ *		These maxima are deliberately lenient: the leap-year rule is
+ *		not enforced (Feb 29 is accepted in every year) and February
+ *		admits up to 30. Apr 31, Feb 31, etc. are rejected. Accepted
+ *		day values that the encoder cannot represent directly (e.g.
+ *		Feb 29 of a non-leap year, or Feb 30) are normalized by
+ *		ut_encode_date, which uses Gregorian arithmetic.
  *
  * Returns:
- *	UT_SUCCESS	The arguments form a valid date.
- *	UT_BAD_ARG	An argument is out of range. ut_status is set and
- *			an error message has been emitted via the handler
- *			set by ut_set_error_message_handler().
- *
- * Rationale: udunits is calendar-agnostic at the parse layer. CF data in
- * the wild uses several calendars (gregorian, proleptic_gregorian,
- * noleap / 365_day, all_leap / 366_day, 360_day). Admitting any day
- * legal in the union of Gregorian-no-leap and 360_day lets that data
- * pass validation without the parser needing to know which calendar
- * the consumer will apply downstream.
+ *	UT_SUCCESS	The arguments are acceptable input to ut_encode_date.
+ *	UT_BAD_ARG	An argument is out of range. ut_status is set and an
+ *			error message has been emitted via the handler set by
+ *			ut_set_error_message_handler().
  */
 EXTERNL ut_status
 ut_check_date(
@@ -1355,7 +1345,7 @@ ut_check_clock(
  * Arguments:
  *	year, month, day	As for ut_check_date().
  *	hour, minute, second	As for ut_check_clock() (including the
- *				leap-second note there).
+ *				inserted-second acceptance described there).
  *
  * Returns:
  *	UT_SUCCESS	The arguments form a valid timestamp.
