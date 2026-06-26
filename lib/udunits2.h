@@ -766,18 +766,33 @@ ut_same_system(
 
 
 /*
- * Compares two units.  Returns a value less than, equal to, or greater than
- * zero as the first unit is considered less than, equal to, or greater than
- * the second unit, respectively.  Units from different unit-systems never
- * compare equal.
+ * Compares two units and imposes a consistent total ordering on them.  Returns
+ * a value less than, equal to, or greater than zero as the first unit is
+ * considered less than, equal to, or greater than the second unit,
+ * respectively.
+ *
+ * The ordering is consistent but otherwise arbitrary.  It is intended only for
+ * imposing a definite order on units (for example, as the comparison function
+ * of a sorted collection) and does NOT reflect their relative magnitude,
+ * dimensionality, or convertibility.  In particular, one unit does not compare
+ * greater than another merely because it represents a larger quantity (e.g.,
+ * "km" does not necessarily compare greater than "m").
+ *
+ * A return value of zero indicates that the two units have the same dimensions,
+ * the same scale factor, and the same offset, and hence convert to one another
+ * by the identity transformation.  Two units can be convertible yet not compare
+ * equal (e.g., "degC" and "K"); use "ut_are_convertible()" to test for
+ * convertibility and "ut_get_converter()" to obtain the numeric relationship
+ * between two units.  Units from different unit-systems never compare equal.
  *
  * Arguments:
  *	unit1		Pointer to a unit or NULL.
  *	unit2		Pointer to another unit or NULL.
  * Returns:
- *	<0	The first unit is less than the second unit.
- *	 0	The first and second units are equal or both units are NULL.
- *	>0	The first unit is greater than the second unit.
+ *	<0	The first unit compares less than the second unit.
+ *	 0	The two units compare equal (same dimensions, scale factor,
+ *		    and offset), or both units are NULL.
+ *	>0	The first unit compares greater than the second unit.
  */
 EXTERNL int
 ut_compare(
