@@ -1292,7 +1292,8 @@ ut_encode_clock(
  *	second	The second.
  * Returns:
  *	The time encoded as a scalar value, or NaN if the date part is out of
- *	range (|year| > 5,000,000; see ut_encode_date) or `second` is NaN. When
+ *	range (|year| > 5,000,000; see ut_encode_date) or `second` is not finite
+ *	(NaN or +/-infinity). Any non-finite result is reported as NaN, and when
  *	the result is NaN, ut_get_status() is set to UT_BAD_ARG.
  */
 EXTERNL double

@@ -669,14 +669,20 @@ ut_encode_time(
     const int		minute,
     const double	second)
 {
-    const double result = ut_encode_date(year, month, day)
-			 + ut_encode_clock(hour, minute, second);
+    double result = ut_encode_date(year, month, day)
+		  + ut_encode_clock(hour, minute, second);
     /*
-     * Derive status from the composite result, not by polling the callees: a
-     * NaN from either side -- a year past the date gate (|year| > 5,000,000),
-     * or a NaN `second` on the clock side -- propagates through the `+`, and
-     * isnan recovers it. See the status convention in udunits2.h.
+     * Derive status from the composite result, not by polling the callees.
+     * Failure reaches `result` as a non-finite value: a NaN from the date gate
+     * (|year| > 5,000,000) or a NaN `second`, OR an infinity from a +/-Inf
+     * `second` (ut_encode_clock does no validation and passes it through). A
+     * lone Inf is NOT a NaN, so collapse any non-finite result to the canonical
+     * NaN sentinel here. This keeps the documented "NaN return <=> UT_BAD_ARG"
+     * invariant intact so callers testing isnan() are not fooled by an Inf.
+     * See the status convention in udunits2.h.
      */
+    if (!isfinite(result))
+	result = NAN;
     ut_set_status(isnan(result) ? UT_BAD_ARG : UT_SUCCESS);
     return result;
 }
