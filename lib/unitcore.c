@@ -462,6 +462,18 @@ decomp( double        value,
 
 
 /*
+ * Absolute cap on |year| accepted by the date encoders/validators. The cap is
+ * a practical limit, not an algorithmic one: gregorianDateToJulianDay()
+ * overflows int32 (signed-overflow UB) around |year| ~ 5.77M via the term
+ * 31*(month + 12*year); 5,000,000 sits safely below that and is a round
+ * number. Kept as a single constant so the gate in ut_encode_date() and the
+ * validator in ut_check_date() cannot drift apart. (The matching prose in the
+ * error message and the docstrings is intentionally left literal.)
+ */
+#define UT_YEAR_ABS_MAX 5000000
+
+
+/*
  * Encodes a date as a double-precision value. See udunits2.h for the contract.
  *
  * Arguments:
@@ -491,7 +503,7 @@ ut_encode_date(
      * still normalized to year 1 by gregorianDateToJulianDay(). Use
      * ut_check_date() for full input checks.
      */
-    if (year < -5000000 || year > 5000000) {
+    if (year < -UT_YEAR_ABS_MAX || year > UT_YEAR_ABS_MAX) {
 	result = NAN;
     }
     else {
@@ -542,7 +554,7 @@ ut_check_date(
      * comfortably covers all of geological time relevant at human or
      * Quaternary scales (last 2.6 Ma).
      */
-    if (year < -5000000 || year > 5000000) {
+    if (year < -UT_YEAR_ABS_MAX || year > UT_YEAR_ABS_MAX) {
 	ut_handle_error_message("Invalid year %d (must be within +/-5,000,000)", year);
 	ut_set_status(UT_BAD_ARG);
 	return UT_BAD_ARG;
