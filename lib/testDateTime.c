@@ -40,6 +40,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <float.h>
 #include <CUnit/CUnit.h>
 #include <CUnit/Basic.h>
 
@@ -47,10 +48,41 @@ static const char*      xmlPath;
 static ut_system*       unitSystem;
 static ut_unit*         second_unit;
 
-/* Tolerance (in seconds) when comparing parsed timestamps. ut_encode_time
-   uses double-precision Julian-day arithmetic, so sub-millisecond drift is
-   expected at large dates. 1e-3 is comfortable. */
-#define TS_EPS  1e-3
+/*
+ * Tolerance (in seconds) when comparing parsed timestamps against a
+ * ut_encode_time() reference.
+ *
+ * ut_encode_time() returns seconds relative to the UDUNITS epoch
+ * (2001-01-01 00:00:00 UTC), so |encoded| grows as a date moves away from
+ * 2001 in either direction: ~3e7 for year 2000, ~6e10 for year 1, ~2.5e11
+ * for year 9999, ~1.6e14 for year 5,000,000. The absolute resolution of a
+ * double at magnitude m is about DBL_EPSILON*m, i.e. ~7e-9 s near the epoch
+ * but ~0.035 s out at year 5,000,000. A single flat tolerance is therefore
+ * wrong in both directions: too loose near the epoch (it would hide a
+ * fractional-second parse defect) and, if set tight, too strict for the
+ * deliberate large-|year| sweeps.
+ *
+ * ts_eps() scales the tolerance with magnitude: K ulps of headroom, with an
+ * absolute floor for near-epoch dates. K=16 is generous -- the parser and
+ * ut_encode_time() share the same Julian-day arithmetic, so the empirically
+ * observed drift across this suite is 0 ulp; 16 ulps only guards against
+ * cross-platform/libm rounding differences. The floor dominates only within
+ * ~3 days of the epoch, which is exactly where the dedicated fractional-second
+ * precision test sits, giving it a tight ~1e-9 s bound.
+ */
+#define TS_EPS_K      16
+#define TS_EPS_FLOOR  1e-9
+
+/* Tolerance on the seconds field of a ut_decode_time() round-trip, where the
+   expected value is exactly 0.0. Distinct from the origin tolerance above
+   (which scales with magnitude); kept separate so the two can diverge. */
+#define DECODE_SEC_EPS  1e-9
+
+static double ts_eps(double encoded)
+{
+    double scaled = TS_EPS_K * DBL_EPSILON * fabs(encoded);
+    return scaled > TS_EPS_FLOOR ? scaled : TS_EPS_FLOOR;
+}
 
 /* ---------------------------------------------------------------------- */
 /*                              setup / teardown                          */
@@ -97,15 +129,17 @@ static ut_unit* parse_seconds_since(const char* suffix)
 
 /*
  * Assert that "seconds since <suffix>" parses, and that its origin
- * equals ut_encode_time(Y, M, D, h, m, s) within TS_EPS seconds.
+ * equals ut_encode_time(Y, M, D, h, m, s) within a tolerance of `eps`
+ * seconds.
  *
  * Implementation: build a reference unit "seconds @ <encoded>", get the
  * converter from parsed to reference, apply to 0.0. The result is the
  * difference (parsed_origin - reference_origin) in seconds; we want ~0.
  */
-static void assert_timestamp_origin(
+static void assert_timestamp_origin_eps(
         const char* suffix,
-        int Y, int M, int D, int h, int min, double s)
+        int Y, int M, int D, int h, int min, double s,
+        double eps)
 {
     ut_unit* parsed = parse_seconds_since(suffix);
     CU_ASSERT_PTR_NOT_NULL_FATAL(parsed);
@@ -118,16 +152,28 @@ static void assert_timestamp_origin(
     CU_ASSERT_PTR_NOT_NULL_FATAL(cv);
 
     double delta = cv_convert_double(cv, 0.0);
-    if (fabs(delta) > TS_EPS) {
+    if (fabs(delta) > eps) {
         fprintf(stderr,
             "assert_timestamp_origin: suffix=%s expected=(%d-%d-%d %d:%d:%g) "
-            "delta=%g s\n", suffix, Y, M, D, h, min, s, delta);
+            "delta=%g s eps=%g s\n", suffix, Y, M, D, h, min, s, delta, eps);
     }
-    CU_ASSERT_DOUBLE_EQUAL(delta, 0.0, TS_EPS);
+    CU_ASSERT_DOUBLE_EQUAL(delta, 0.0, eps);
 
     cv_free(cv);
     ut_free(ref);
     ut_free(parsed);
+}
+
+/*
+ * As above, with a magnitude-aware tolerance derived from the encoded origin
+ * (see ts_eps). This is the default for general acceptance tests.
+ */
+static void assert_timestamp_origin(
+        const char* suffix,
+        int Y, int M, int D, int h, int min, double s)
+{
+    double encoded = ut_encode_time(Y, M, D, h, min, s);
+    assert_timestamp_origin_eps(suffix, Y, M, D, h, min, s, ts_eps(encoded));
 }
 
 /*
@@ -158,12 +204,21 @@ static void assert_timestamps_equivalent(const char* a, const char* b)
     cv_converter* cv = ut_get_converter(ua, ub);
     CU_ASSERT_PTR_NOT_NULL_FATAL(cv);
     double delta = cv_convert_double(cv, 0.0);
-    if (fabs(delta) > TS_EPS) {
+
+    /* Derive the tolerance from the magnitude of one side's origin (its value
+       on the ut_encode_time scale), obtained by converting to the base second
+       unit. Both origins are equal to within rounding, so either side works. */
+    cv_converter* cvm = ut_get_converter(ua, second_unit);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(cvm);
+    double eps = ts_eps(cv_convert_double(cvm, 0.0));
+    cv_free(cvm);
+
+    if (fabs(delta) > eps) {
         fprintf(stderr,
-            "assert_timestamps_equivalent: a=%s b=%s delta=%g s\n",
-            a, b, delta);
+            "assert_timestamps_equivalent: a=%s b=%s delta=%g s eps=%g s\n",
+            a, b, delta, eps);
     }
-    CU_ASSERT_DOUBLE_EQUAL(delta, 0.0, TS_EPS);
+    CU_ASSERT_DOUBLE_EQUAL(delta, 0.0, eps);
 
     cv_free(cv);
     ut_free(ua);
@@ -537,6 +592,36 @@ static void test_broken_clock_fractional_seconds(void)
                             2024,  1, 15, 12, 30, 45.125);
     assert_timestamp_origin("2024-01-15 12:30:45.000001",
                             2024,  1, 15, 12, 30, 45.000001);
+}
+
+static void test_fractional_second_precision(void)
+{
+    /*
+     * Dedicated precision test for parse_fraction. Placed at the UDUNITS
+     * epoch (2001-01-01 00:00:00), where |encoded| equals just the fraction
+     * itself, so double resolution is ~1e-17 s and a tight 1e-9 tolerance is
+     * both achievable and meaningful: a defect that truncated or mis-parsed
+     * digits past the 3rd decimal (which the old flat 1e-3 tolerance would
+     * have hidden) fails here. Each string is compared against the double the
+     * same decimal literal compiles to, so a faithful parse gives delta 0.
+     * The bound is TS_EPS_FLOOR: at the epoch it is the tolerance ts_eps()
+     * itself would return, so this test tracks the near-epoch floor.
+     */
+    const double eps = TS_EPS_FLOOR;
+    assert_timestamp_origin_eps("2001-01-01 00:00:00.1",
+                                2001, 1, 1, 0, 0, 0.1, eps);
+    assert_timestamp_origin_eps("2001-01-01 00:00:00.12",
+                                2001, 1, 1, 0, 0, 0.12, eps);
+    assert_timestamp_origin_eps("2001-01-01 00:00:00.123",
+                                2001, 1, 1, 0, 0, 0.123, eps);
+    assert_timestamp_origin_eps("2001-01-01 00:00:00.1234",
+                                2001, 1, 1, 0, 0, 0.1234, eps);
+    assert_timestamp_origin_eps("2001-01-01 00:00:00.123456",
+                                2001, 1, 1, 0, 0, 0.123456, eps);
+    assert_timestamp_origin_eps("2001-01-01 00:00:00.999999",
+                                2001, 1, 1, 0, 0, 0.999999, eps);
+    assert_timestamp_origin_eps("2001-01-01 00:00:00.1234567890",
+                                2001, 1, 1, 0, 0, 0.1234567890, eps);
 }
 
 static void test_broken_clock_single_digit_components(void)
@@ -1393,7 +1478,7 @@ static void assert_date_roundtrip(int Y, int M, int D)
     CU_ASSERT_EQUAL(d, D);
     CU_ASSERT_EQUAL(h, 0);
     CU_ASSERT_EQUAL(mi, 0);
-    CU_ASSERT_DOUBLE_EQUAL(s, 0.0, 1e-9);
+    CU_ASSERT_DOUBLE_EQUAL(s, 0.0, DECODE_SEC_EPS);
 }
 
 /* Specific regression for the historically-broken cases. */
@@ -1528,6 +1613,7 @@ int main(const int argc, const char* const* argv)
     CU_ADD_TEST(s, test_broken_clock_full);
     CU_ADD_TEST(s, test_broken_clock_no_seconds);
     CU_ADD_TEST(s, test_broken_clock_fractional_seconds);
+    CU_ADD_TEST(s, test_fractional_second_precision);
     CU_ADD_TEST(s, test_broken_clock_single_digit_components);
     CU_ADD_TEST(s, test_broken_clock_reject_bad_hour);
     CU_ADD_TEST(s, test_broken_clock_reject_bad_minute);
