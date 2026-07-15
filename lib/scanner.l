@@ -703,17 +703,17 @@ idchar       [A-Za-z0-9_]
     return TZ_CLOCK;
 }
 
-<CLOCK_SEEN>Z {
+<CLOCK_SEEN>[zZ] {
     BEGIN INITIAL;
     return Z_TOK;
 }
 
-<CLOCK_SEEN>GMT {
+<CLOCK_SEEN>[gG][mM][tT] {
     BEGIN INITIAL;
     return GMT_TOK;
 }
 
-<CLOCK_SEEN>UTC {
+<CLOCK_SEEN>[uU][tT][cC] {
     BEGIN INITIAL;
     return UTC_TOK;
 }
@@ -740,17 +740,17 @@ idchar       [A-Za-z0-9_]
     return ERR;
 }
 
-<DATE_SEEN>Z {
+<DATE_SEEN>[zZ] {
     BEGIN INITIAL;
     return Z_TOK;
 }
 
-<DATE_SEEN>GMT {
+<DATE_SEEN>[gG][mM][tT] {
     snprintf(yylval.error_msg, sizeof(yylval.error_msg), "GMT timezone requires a time (e.g., '2024-01-01 00:00GMT')");
     return ERR;
 }
 
-<DATE_SEEN>UTC {
+<DATE_SEEN>[uU][tT][cC] {
     snprintf(yylval.error_msg, sizeof(yylval.error_msg), "UTC timezone requires a time (e.g., '2024-01-01 00:00UTC')");
     return ERR;
 }

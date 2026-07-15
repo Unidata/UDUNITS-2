@@ -963,16 +963,35 @@ static void test_gmt_utc_reject_without_clock(void)
     assert_timestamp_reject("2024-01-15UTC");
 }
 
-static void test_zulu_gmt_utc_reject_lowercase(void)
+static void test_zulu_gmt_utc_accept_any_case(void)
 {
-    /* GRAMMAR.md spells the tokens with capitals: Z, GMT, UTC. The lexer
-       rules are case-sensitive. Lowercase forms must be rejected. */
-    assert_timestamp_reject("2024-01-15 12:00:00 z");
-    assert_timestamp_reject("2024-01-15 12:00:00 gmt");
-    assert_timestamp_reject("2024-01-15 12:00:00 utc");
-    /* Mixed-case is also out. */
-    assert_timestamp_reject("2024-01-15 12:00:00 Gmt");
-    assert_timestamp_reject("2024-01-15 12:00:00 Utc");
+    /* GRAMMAR.md spells the tokens with capitals (Z, GMT, UTC) by
+       convention, but the tokens are accepted in any case. This matches
+       pre-rewrite behaviour (main matched them with strcasecmp) and the
+       relevant standards: RFC 3339 5.6 makes uppercase a producer SHOULD
+       and a parser MAY; ISO 8601 has no GMT/UTC suffix; GMT/UTC are a
+       UDUNITS extension; CF is permissive. Assert the origin, not just
+       non-NULL, so a mis-decoded token still fails. */
+    assert_timestamp_origin("2024-01-15 12:00:00 z",
+                            2024,  1, 15, 12,  0,  0.0);
+    assert_timestamp_origin("2024-01-15 12:00:00 gmt",
+                            2024,  1, 15, 12,  0,  0.0);
+    assert_timestamp_origin("2024-01-15 12:00:00 utc",
+                            2024,  1, 15, 12,  0,  0.0);
+    /* Mixed case too. */
+    assert_timestamp_origin("2024-01-15 12:00:00 Gmt",
+                            2024,  1, 15, 12,  0,  0.0);
+    assert_timestamp_origin("2024-01-15 12:00:00 Utc",
+                            2024,  1, 15, 12,  0,  0.0);
+    /* Lowercase means exactly the same as uppercase. */
+    assert_timestamps_equivalent("2024-01-15 12:00:00 utc",
+                                 "2024-01-15 12:00:00 UTC");
+    assert_timestamps_equivalent("2024-01-15 12:00:00z",
+                                 "2024-01-15 12:00:00Z");
+    /* Lowercase z is also valid directly after a bare date (the Z
+       asymmetry is preserved regardless of case). */
+    assert_timestamp_origin("2024-01-15z",
+                            2024,  1, 15,  0,  0,  0.0);
 }
 
 static void test_reject_unknown_timezone_identifier(void)
@@ -985,6 +1004,14 @@ static void test_reject_unknown_timezone_identifier(void)
     assert_timestamp_reject("2024-01-15 12:00:00 EST");
     assert_timestamp_reject("2024-01-15 12:00:00 CET");
     assert_timestamp_reject("2024-01-15 12:00:00 JST");
+    /* Now that Z/GMT/UTC are case-insensitive, confirm the catch-all
+       still fires for lowercase junk and for near-misses that must not
+       partially match the (whole-word) GMT/UTC rules. */
+    assert_timestamp_reject("2024-01-15 12:00:00 pst");
+    assert_timestamp_reject("2024-01-15 12:00:00 est");
+    assert_timestamp_reject("2024-01-15 12:00:00 gmtx");
+    assert_timestamp_reject("2024-01-15 12:00:00 utcx");
+    assert_timestamp_reject("2024-01-15 12:00:00 ut");
 }
 
 /* ---------------------------------------------------------------------- */
@@ -1546,7 +1573,7 @@ int main(const int argc, const char* const* argv)
     CU_ADD_TEST(s, test_zulu_after_date_alone);
     CU_ADD_TEST(s, test_gmt_utc_after_clock);
     CU_ADD_TEST(s, test_gmt_utc_reject_without_clock);
-    CU_ADD_TEST(s, test_zulu_gmt_utc_reject_lowercase);
+    CU_ADD_TEST(s, test_zulu_gmt_utc_accept_any_case);
     CU_ADD_TEST(s, test_reject_unknown_timezone_identifier);
 
     /* 8. SHIFT with REAL/INT */

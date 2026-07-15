@@ -278,14 +278,18 @@ Here is the unit-syntax understood by the UDUNITS-2 package. Words printed \_Thu
             // Semantic validation: must be ±0 to ±14
             // NOTE: -00:00 (negative zero) is not allowed
 
+    // The Z / GMT / UTC tokens are conventionally written in uppercase
+    // (as shown below), but are accepted in any case: "z", "gmt", "Utc",
+    // etc. all mean the same as their uppercase forms.
+
     Z_TOK:
-            "Z"
+            "Z"     // case-insensitive
 
     GMT_TOK:
-            "GMT"
+            "GMT"   // case-insensitive
 
     UTC_TOK:
-            "UTC"
+            "UTC"   // case-insensitive
 
 // Logarithmic Elements
 
