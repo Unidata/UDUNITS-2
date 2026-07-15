@@ -483,10 +483,13 @@ ut_encode_date(
      * Year gate (review item 1): reject |year| > 5,000,000 by returning NaN,
      * BEFORE any Julian-day arithmetic is performed. gregorianDateToJulianDay()
      * overflows int32 (signed-overflow UB) around |year| ~ 5.77M via the term
-     * 31*(month + 12*iy); the +/-5,000,000 cap sits safely below that, so the
-     * overflow is unreachable by construction. Only the year is gated here:
-     * month and day are not validated, and year 0 is still normalized to year 1
-     * by gregorianDateToJulianDay(). Use ut_check_date() for full input checks.
+     * 31*(month + 12*iy); the +/-5,000,000 cap sits safely below that, so
+     * overflow driven by the year term is unreachable. The gate covers only
+     * the year: month and day are not validated, so an out-of-range month or
+     * day passed directly (bypassing ut_check_date) can still overflow that
+     * expression -- a pre-existing exposure, out of scope here. Year 0 is
+     * still normalized to year 1 by gregorianDateToJulianDay(). Use
+     * ut_check_date() for full input checks.
      */
     if (year < -5000000 || year > 5000000) {
 	result = NAN;

@@ -1279,9 +1279,10 @@ ut_encode_clock(
 
 
 /*
- * Encodes a time as a double-precision value.  The convenience function is
- * equivalent to "ut_encode_date(year,month,day) +
- * ut_encode_clock(hour,minute,second)"
+ * Encodes a time as a double-precision value.  For finite arguments the
+ * convenience function is equivalent to "ut_encode_date(year,month,day) +
+ * ut_encode_clock(hour,minute,second)"; a non-finite `second` is rejected
+ * rather than propagated (see Returns).
  *
  * Arguments:
  *	year	The year.
@@ -1338,7 +1339,11 @@ ut_check_clock(
 
 
 /*
- * Validates that the arguments form a real-world calendar timestamp.
+ * Reports whether the components are acceptable input to ut_encode_time()
+ * -- i.e. in range and free of obvious typos. Like its companions, this is a
+ * precondition check for the encoder: it does not describe any calendar (Feb
+ * 30, or Feb 29 of a non-leap year, are accepted), and it does not describe
+ * the value the encoder produces.
  *
  * Equivalent to ut_check_date(year, month, day) followed by
  * ut_check_clock(hour, minute, second); it succeeds only if both do.
@@ -1349,7 +1354,7 @@ ut_check_clock(
  *				inserted-second acceptance described there).
  *
  * Returns:
- *	UT_SUCCESS	The arguments form a valid timestamp.
+ *	UT_SUCCESS	The arguments are acceptable input to ut_encode_time.
  *	UT_BAD_ARG	An argument is out of range. ut_status is set and
  *			an error message has been emitted via the handler
  *			set by ut_set_error_message_handler().
