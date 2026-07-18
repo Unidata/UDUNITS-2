@@ -635,7 +635,7 @@ idchar       [A-Za-z0-9_]
     if (status == EXPONENT)
 	yylval.ival = sign * exponent;
     else
-	yylval.error_msg[0] = '\0';	/* see note in the ^/** rule above */
+	yylval.error_msg[0] = '\0';	/* see the ASCII exponent-operator rule above */
 
     BEGIN INITIAL;
     return status;
