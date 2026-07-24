@@ -1358,8 +1358,10 @@ static void test_ut_encode_date_below_cap_bit_identical(void)
 
 static void test_ut_encode_time_sets_status(void)
 {
-    /* Finite => UT_SUCCESS; a NaN `second` propagates to a NaN composite
-       => UT_BAD_ARG. The NaN path needs no year gate. */
+    /* Finite => UT_SUCCESS; a non-finite `second` => NaN composite =>
+       UT_BAD_ARG. The rejection happens inside ut_encode_clock, which
+       collapses NaN and +/-Inf alike to NaN; ut_encode_time then derives the
+       status from the composite. The NaN path needs no year gate. */
     double nan_val = 0.0/0.0;
     double r;
 
@@ -1369,6 +1371,18 @@ static void test_ut_encode_time_sets_status(void)
 
     ut_set_status(UT_SUCCESS);
     r = ut_encode_time(2024, 1, 1, 0, 0, nan_val);
+    CU_ASSERT_TRUE(isnan(r));
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
+
+    /* An infinite `second` must not reach the caller as an infinity: a lone
+       Inf is not a NaN and would break the "NaN <=> UT_BAD_ARG" contract. */
+    ut_set_status(UT_SUCCESS);
+    r = ut_encode_time(2024, 1, 1, 0, 0, HUGE_VAL);
+    CU_ASSERT_TRUE(isnan(r));
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
+
+    ut_set_status(UT_SUCCESS);
+    r = ut_encode_time(2024, 1, 1, 0, 0, -HUGE_VAL);
     CU_ASSERT_TRUE(isnan(r));
     CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
 
@@ -1412,6 +1426,7 @@ static void test_ut_encode_clock_rejects_out_of_range(void)
     CU_ASSERT_DOUBLE_EQUAL(ut_encode_clock( 23, 59, 60.0),  86400.0, 0.0);
     CU_ASSERT_DOUBLE_EQUAL(ut_encode_clock( -5,  0,  0.0), -18000.0, 0.0);
     CU_ASSERT_DOUBLE_EQUAL(ut_encode_clock(  0,  0, 62.0),     62.0, 0.0);
+    CU_ASSERT_DOUBLE_EQUAL(ut_encode_clock(  0,  0,-62.0),    -62.0, 0.0);
     CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
     ut_set_status(UT_SUCCESS);
 }
@@ -1458,6 +1473,157 @@ static void test_ut_encode_clock_no_overflow_in_range(void)
     CU_ASSERT_DOUBLE_EQUAL(ut_encode_clock(0, 0, 0.0),    0.0,     0.0);
     CU_ASSERT_DOUBLE_EQUAL(ut_encode_clock(-23, -59, -60.0), -86400.0, 0.0);
 }
+
+/* ---------------------------------------------------------------------- */
+/*   Channel-agreement sweeps: NaN return <=> UT_BAD_ARG, for all inputs   */
+/* ---------------------------------------------------------------------- */
+
+/*
+ * The tests above check outcomes pointwise: for a named input, the return
+ * value and the status are each compared against a known-correct answer. The
+ * sweeps below check something different and complementary -- that the two
+ * reporting channels always AGREE WITH EACH OTHER -- and so need no expected
+ * value per input. That catches the failure mode pointwise tests miss: a
+ * rejection path added later that returns NaN without setting the status, or
+ * sets UT_BAD_ARG while returning a finite value.
+ *
+ * The pre-call status is alternated so a function that never writes the
+ * channel at all is caught too, rather than passing by inheriting whatever
+ * the previous call left behind.
+ *
+ * Mismatches are counted rather than asserted per iteration: one assertion
+ * per sweep keeps the suite summary meaningful, and the first offending input
+ * is reported so a failure is diagnosable.
+ */
+
+#define AGREES(v) ((isnan(v) != 0) == (ut_get_status() == UT_BAD_ARG))
+
+static void test_encode_clock_channels_agree(void)
+{
+    static const double secs[] = {
+	-62.5, -62.0, -1.0, 0.0, 60.0, 62.0, 62.5, 0.0/0.0, HUGE_VAL, -HUGE_VAL
+    };
+    long   checked = 0, mismatches = 0;
+    int    bad_h = 0, bad_m = 0, bad_status = -1;
+    double bad_s = 0.0, bad_v = 0.0;
+    int    h, m;
+    size_t i;
+
+    for (h = -30; h <= 30; ++h) {
+	for (m = -70; m <= 70; ++m) {
+	    for (i = 0; i < sizeof(secs)/sizeof(secs[0]); ++i) {
+		double v;
+
+		ut_set_status((checked & 1) ? UT_BAD_ARG : UT_SUCCESS);
+		v = ut_encode_clock(h, m, secs[i]);
+		++checked;
+		if (!AGREES(v)) {
+		    if (mismatches++ == 0) {
+			bad_h = h; bad_m = m; bad_s = secs[i];
+			bad_v = v; bad_status = (int)ut_get_status();
+		    }
+		}
+	    }
+	}
+    }
+    if (mismatches != 0)
+	fprintf(stderr, "\nut_encode_clock(%d,%d,%g) -> %g, status %d"
+			" (%ld mismatches of %ld)\n",
+		bad_h, bad_m, bad_s, bad_v, bad_status, mismatches, checked);
+    CU_ASSERT_EQUAL(mismatches, 0);
+    ut_set_status(UT_SUCCESS);
+}
+
+static void test_encode_date_channels_agree(void)
+{
+    /*
+     * Month and day are held to valid values on purpose. ut_encode_date gates
+     * only the year; an out-of-range month or day passed directly can still
+     * overflow 31*(month + 12*year) in gregorianDateToJulianDay -- a
+     * pre-existing exposure this sweep must not provoke.
+     */
+    static const int bases[] = {
+	-5000000, -1000000, -4713, -1, 0, 1, 2024, 1000000, 5000000
+    };
+    long   checked = 0, mismatches = 0;
+    int    bad_y = 0, bad_mo = 0, bad_d = 0, bad_status = -1;
+    double bad_v = 0.0;
+    size_t b;
+    int    delta, mo, d;
+
+    for (b = 0; b < sizeof(bases)/sizeof(bases[0]); ++b) {
+	for (delta = -2; delta <= 2; ++delta) {
+	    const int y = bases[b] + delta;
+
+	    for (mo = 1; mo <= 12; ++mo) {
+		for (d = 1; d <= 28; ++d) {
+		    double v;
+
+		    ut_set_status((checked & 1) ? UT_BAD_ARG : UT_SUCCESS);
+		    v = ut_encode_date(y, mo, d);
+		    ++checked;
+		    if (!AGREES(v)) {
+			if (mismatches++ == 0) {
+			    bad_y = y; bad_mo = mo; bad_d = d;
+			    bad_v = v; bad_status = (int)ut_get_status();
+			}
+		    }
+		}
+	    }
+	}
+    }
+    if (mismatches != 0)
+	fprintf(stderr, "\nut_encode_date(%d,%d,%d) -> %g, status %d"
+			" (%ld mismatches of %ld)\n",
+		bad_y, bad_mo, bad_d, bad_v, bad_status, mismatches, checked);
+    CU_ASSERT_EQUAL(mismatches, 0);
+    ut_set_status(UT_SUCCESS);
+}
+
+static void test_encode_time_channels_agree(void)
+{
+    /* Composite: sweep the clock over a fixed valid date, then the year over
+       a fixed valid clock, so both failure sources are exercised. */
+    static const double secs[] = {
+	-62.5, 0.0, 60.0, 62.0, 62.5, 0.0/0.0, HUGE_VAL, -HUGE_VAL
+    };
+    static const int years[] = {
+	-5000001, -5000000, -4713, 0, 1, 2024, 5000000, 5000001
+    };
+    long   checked = 0, mismatches = 0;
+    int    h, m;
+    size_t i;
+
+    for (h = -30; h <= 30; ++h) {
+	for (m = -70; m <= 70; ++m) {
+	    for (i = 0; i < sizeof(secs)/sizeof(secs[0]); ++i) {
+		double v;
+
+		ut_set_status((checked & 1) ? UT_BAD_ARG : UT_SUCCESS);
+		v = ut_encode_time(2024, 1, 1, h, m, secs[i]);
+		++checked;
+		if (!AGREES(v))
+		    ++mismatches;
+	    }
+	}
+    }
+    for (i = 0; i < sizeof(years)/sizeof(years[0]); ++i) {
+	double v;
+
+	ut_set_status((checked & 1) ? UT_BAD_ARG : UT_SUCCESS);
+	v = ut_encode_time(years[i], 6, 15, 12, 30, 0.0);
+	++checked;
+	if (!AGREES(v))
+	    ++mismatches;
+    }
+    if (mismatches != 0)
+	fprintf(stderr, "\nut_encode_time: %ld mismatches of %ld\n",
+		mismatches, checked);
+    CU_ASSERT_EQUAL(mismatches, 0);
+    ut_set_status(UT_SUCCESS);
+}
+
+#undef AGREES
 
 static void test_ut_check_time_valid(void)
 {
@@ -1745,6 +1911,9 @@ int main(const int argc, const char* const* argv)
     CU_ADD_TEST(s, test_ut_encode_clock_rejects_non_finite_second);
     CU_ADD_TEST(s, test_ut_encode_time_reports_bad_clock);
     CU_ADD_TEST(s, test_ut_encode_clock_no_overflow_in_range);
+    CU_ADD_TEST(s, test_encode_clock_channels_agree);
+    CU_ADD_TEST(s, test_encode_date_channels_agree);
+    CU_ADD_TEST(s, test_encode_time_channels_agree);
     CU_ADD_TEST(s, test_ut_check_time_valid);
     CU_ADD_TEST(s, test_ut_check_time_leap_second);
     CU_ADD_TEST(s, test_ut_check_time_bad_components);
