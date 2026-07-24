@@ -1288,17 +1288,25 @@ ut_check_date(
 /*
  * Encodes a clock-time (time of day) as a double-precision value.
  *
- * This is a pure encoder: it performs no range-checking and always succeeds.
- * Negative or out-of-range components are encoded arithmetically and
- * propagate into the returned value unchanged. Callers that need the
- * components validated as a wall-clock time of day should call
- * ut_check_clock() first.
+ * The components are range-checked. The bounds are symmetric about zero, so
+ * that negative components encode as negative offsets, and are looser than
+ * ut_check_clock()'s: they are sanity bounds on an arithmetic encoder, not a
+ * wall-clock validation. Callers that need the components validated as a time
+ * of day -- including the leap-second rule -- should call ut_check_clock().
  *
- * @param[in] hours    The number of hours (0 = midnight).
- * @param[in] minutes  The number of minutes.
- * @param[in] seconds  The number of seconds.
+ * Follows the status convention documented above: UT_SUCCESS on success,
+ * UT_BAD_ARG on failure, with NaN as the authoritative failure signal.
+ *
+ * @param[in] hours    The number of hours (0 = midnight). `abs(hours)` must be
+ *                     less than 24.
+ * @param[in] minutes  The number of minutes. `abs(minutes)` must be less than
+ *                     60.
+ * @param[in] seconds  The number of seconds. `fabs(seconds)` must be less than
+ *                     or equal to 62. A NaN or infinite value is rejected.
  * @return             The clock-time encoded as a scalar value, i.e.
- *                     hours*3600 + minutes*60 + seconds.
+ *                     hours*3600 + minutes*60 + seconds; or NaN if any
+ *                     argument is out of range, in which case ut_get_status()
+ *                     returns UT_BAD_ARG.
  */
 EXTERNL double
 ut_encode_clock(
@@ -1308,10 +1316,11 @@ ut_encode_clock(
 
 
 /*
- * Encodes a time as a double-precision value.  For finite arguments the
- * convenience function is equivalent to "ut_encode_date(year,month,day) +
- * ut_encode_clock(hour,minute,second)"; a non-finite `second` is rejected
- * rather than propagated (see Returns).
+ * Encodes a time as a double-precision value.  This convenience function is
+ * equivalent to "ut_encode_date(year,month,day) +
+ * ut_encode_clock(hour,minute,second)": both callees collapse their own
+ * failures to NaN, so an out-of-range or non-finite component reaches the
+ * caller as NaN rather than as a plausible-looking number (see Returns).
  *
  * Arguments:
  *	year	The year.
@@ -1321,10 +1330,11 @@ ut_encode_clock(
  *	minute	The minute.
  *	second	The second.
  * Returns:
- *	The time encoded as a scalar value, or NaN if the date part is out of
- *	range (|year| > 5,000,000; see ut_encode_date) or `second` is not finite
- *	(NaN or +/-infinity). Any non-finite result is reported as NaN, and when
- *	the result is NaN, ut_get_status() is set to UT_BAD_ARG.
+ *	The time encoded as a scalar value, or NaN if any component is out of
+ *	range: |year| > 5,000,000 (see ut_encode_date), or an hour, minute or
+ *	second outside the bounds of ut_encode_clock, including a non-finite
+ *	`second`. Any non-finite result is reported as NaN, and when the result
+ *	is NaN, ut_get_status() is set to UT_BAD_ARG.
  */
 EXTERNL double
 ut_encode_time(

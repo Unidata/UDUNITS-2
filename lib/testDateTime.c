@@ -1380,29 +1380,83 @@ static void test_ut_encode_time_sets_status(void)
     ut_set_status(UT_SUCCESS);
 }
 
-static void test_ut_encode_clock_leaves_status_untouched(void)
+static void test_ut_encode_clock_sets_status_on_success(void)
 {
-    /* Documented exception to convention A: ut_encode_clock is strictly
-       side-effect-free and must not touch the status channel. */
+    /* Convention A: success sets status to UT_SUCCESS. */
     ut_set_status(UT_BAD_ARG);
-    (void)ut_encode_clock(12, 0, 0.0);
-    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG); /* untouched */
+    CU_ASSERT_DOUBLE_EQUAL(ut_encode_clock(12, 0, 0.0), 43200.0, 0.0);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS); /* cleared */
     ut_set_status(UT_SUCCESS);
 }
 
-static void test_ut_encode_clock_total_no_overflow(void)
+static void test_ut_encode_clock_rejects_out_of_range(void)
 {
-    /* A1: computing in double makes the encoder total over its int input
-       domain -- no signed-overflow UB. Bit-identical to h*3600+m*60+s for
-       realistic inputs, and correct/finite well past the old int limit
-       (hours ~ 596,523, where the outer *60 overflowed). */
+    /* Bounds are symmetric about zero and looser than ut_check_clock's:
+       |hours| < 24, |minutes| < 60, |seconds| <= 62. Failure is signalled by
+       NaN, with UT_BAD_ARG as the in-sync copy. */
+    static const struct { int h; int m; double s; } bad[] = {
+	{  24,  0,  0.0 }, { -24,  0,  0.0 },
+	{   0, 60,  0.0 }, {   0, -60, 0.0 },
+	{   0,  0, 62.5 }, {   0,  0, -62.5 }
+    };
+    size_t i;
+
+    for (i = 0; i < sizeof(bad)/sizeof(bad[0]); ++i) {
+	ut_set_status(UT_SUCCESS);
+	CU_ASSERT_TRUE(isnan(ut_encode_clock(bad[i].h, bad[i].m, bad[i].s)));
+	CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
+    }
+
+    /* Just inside the bounds, including a negative offset and a leap second. */
+    ut_set_status(UT_BAD_ARG);
+    CU_ASSERT_DOUBLE_EQUAL(ut_encode_clock( 23, 59, 60.0),  86400.0, 0.0);
+    CU_ASSERT_DOUBLE_EQUAL(ut_encode_clock( -5,  0,  0.0), -18000.0, 0.0);
+    CU_ASSERT_DOUBLE_EQUAL(ut_encode_clock(  0,  0, 62.0),     62.0, 0.0);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
+    ut_set_status(UT_SUCCESS);
+}
+
+static void test_ut_encode_clock_rejects_non_finite_second(void)
+{
+    /* !(fabs(s) <= 62) rejects NaN and +/-Inf, so the "NaN return <=>
+       UT_BAD_ARG" invariant holds for ut_encode_clock as well. */
+    ut_set_status(UT_SUCCESS);
+    CU_ASSERT_TRUE(isnan(ut_encode_clock(0, 0, 0.0/0.0)));
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
+
+    ut_set_status(UT_SUCCESS);
+    CU_ASSERT_TRUE(isnan(ut_encode_clock(0, 0, HUGE_VAL)));
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
+
+    ut_set_status(UT_SUCCESS);
+    CU_ASSERT_TRUE(isnan(ut_encode_clock(0, 0, -HUGE_VAL)));
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
+    ut_set_status(UT_SUCCESS);
+}
+
+static void test_ut_encode_time_reports_bad_clock(void)
+{
+    /* Regression: an out-of-range clock component must reach the caller of
+       ut_encode_time as a failure, not as a plausible-looking number. */
+    ut_set_status(UT_SUCCESS);
+    CU_ASSERT_TRUE(isnan(ut_encode_time(2024, 1, 1, 25, 0, 0.0)));
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
+
+    ut_set_status(UT_SUCCESS);
+    CU_ASSERT_TRUE(isnan(ut_encode_time(2024, 1, 1, 12, 99, 0.0)));
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
+    ut_set_status(UT_SUCCESS);
+}
+
+static void test_ut_encode_clock_no_overflow_in_range(void)
+{
+    /* Computing in double rather than int keeps the encoder free of
+       signed-overflow UB. The int form (hours*60 + minutes)*60 overflows at
+       hours ~ 596,523; the range check puts that far out of reach, so this
+       now checks only that the accepted domain encodes exactly. */
     CU_ASSERT_DOUBLE_EQUAL(ut_encode_clock(23, 59, 60.0), 86400.0, 0.0);
     CU_ASSERT_DOUBLE_EQUAL(ut_encode_clock(0, 0, 0.0),    0.0,     0.0);
-    CU_ASSERT_DOUBLE_EQUAL(ut_encode_clock(600000, 0, 0.0),
-                           600000.0 * 3600.0, 0.0);
-    CU_ASSERT_FALSE(isnan(ut_encode_clock(1000000, 0, 0.0)));
-    /* A NaN second still propagates (relied on by ut_encode_time). */
-    CU_ASSERT_TRUE(isnan(ut_encode_clock(0, 0, 0.0/0.0)));
+    CU_ASSERT_DOUBLE_EQUAL(ut_encode_clock(-23, -59, -60.0), -86400.0, 0.0);
 }
 
 static void test_ut_check_time_valid(void)
@@ -1686,8 +1740,11 @@ int main(const int argc, const char* const* argv)
     CU_ADD_TEST(s, test_ut_encode_date_sets_status);
     CU_ADD_TEST(s, test_ut_encode_date_below_cap_bit_identical);
     CU_ADD_TEST(s, test_ut_encode_time_sets_status);
-    CU_ADD_TEST(s, test_ut_encode_clock_leaves_status_untouched);
-    CU_ADD_TEST(s, test_ut_encode_clock_total_no_overflow);
+    CU_ADD_TEST(s, test_ut_encode_clock_sets_status_on_success);
+    CU_ADD_TEST(s, test_ut_encode_clock_rejects_out_of_range);
+    CU_ADD_TEST(s, test_ut_encode_clock_rejects_non_finite_second);
+    CU_ADD_TEST(s, test_ut_encode_time_reports_bad_clock);
+    CU_ADD_TEST(s, test_ut_encode_clock_no_overflow_in_range);
     CU_ADD_TEST(s, test_ut_check_time_valid);
     CU_ADD_TEST(s, test_ut_check_time_leap_second);
     CU_ADD_TEST(s, test_ut_check_time_bad_components);

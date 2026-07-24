@@ -423,15 +423,38 @@ ut_encode_clock(
     double	seconds)
 {
     /*
+     * Range check. These are the bounds this function has published since
+     * before the checks were enforced in 2018: symmetric about zero, so that
+     * negative components still encode, and looser than ut_check_clock()'s
+     * wall-clock rules. They are sanity bounds on an arithmetic encoder, not
+     * a calendar validation -- use ut_check_clock() for the latter. The
+     * "<= 62" on seconds is inherited and has no rationale recorded anywhere
+     * in the project's history; it is retained unchanged rather than
+     * narrowed, since nothing depends on the difference.
+     *
+     * Written as !(fabs(seconds) <= 62) rather than fabs(seconds) > 62 so
+     * that a NaN or infinite `seconds` is rejected too: every comparison
+     * against NaN is false, so the negated form is true. This keeps the
+     * "NaN return <=> UT_BAD_ARG" invariant intact (same idiom as
+     * ut_check_clock).
+     */
+    if (abs(hours) >= 24 || abs(minutes) >= 60 || !(fabs(seconds) <= 62)) {
+	ut_set_status(UT_BAD_ARG);
+	return NAN;
+    }
+
+    /*
      * Compute in double (the return type) rather than int. The int form
      * (hours*60 + minutes)*60 overflows int32 (signed-overflow UB) for
-     * nonsensical inputs -- the binding term is the outer *60, so the limit is
-     * hours ~ 596,523. Computing in double removes the overflow entirely with
-     * no int64_t/long (and so no LLP64 long-is-32-bit wrinkle). Every integer
-     * up to 2^53 is exact in double, so the result is bit-identical for all
-     * realistic inputs. This stays a side-effect-free encoder: no status is
-     * set (see the status convention in udunits2.h).
+     * nonsensical inputs -- the binding term is the outer *60, so the limit
+     * is hours ~ 596,523. The range check above puts that far out of reach,
+     * but computing in double costs nothing and keeps the expression free of
+     * any int64_t/long dependence (and so of the LLP64 long-is-32-bit
+     * wrinkle). Every integer up to 2^53 is exact in double, so the result is
+     * bit-identical to the int form over the accepted domain.
      */
+    /* Convention A (see udunits2.h): reflect this call's own outcome. */
+    ut_set_status(UT_SUCCESS);
     return ((double)hours*60 + minutes)*60 + seconds;
 }
 
@@ -688,12 +711,13 @@ ut_encode_time(
 		  + ut_encode_clock(hour, minute, second);
     /*
      * Derive status from the composite result, not by polling the callees.
-     * Failure reaches `result` as a non-finite value: a NaN from the date gate
-     * (|year| > 5,000,000) or a NaN `second`, OR an infinity from a +/-Inf
-     * `second` (ut_encode_clock does no validation and passes it through). A
-     * lone Inf is NOT a NaN, so collapse any non-finite result to the canonical
-     * NaN sentinel here. This keeps the documented "NaN return <=> UT_BAD_ARG"
-     * invariant intact so callers testing isnan() are not fooled by an Inf.
+     * Failure reaches `result` as a NaN: from the date gate (|year| >
+     * 5,000,000), or from ut_encode_clock rejecting an out-of-range,
+     * infinite, or NaN component. Both callees already collapse their own
+     * failures to NaN, so no infinity should reach this point; the isfinite()
+     * test is kept as a belt-and-braces guard, since a lone Inf is NOT a NaN
+     * and would otherwise slip past the isnan() test below and break the
+     * documented "NaN return <=> UT_BAD_ARG" invariant.
      * See the status convention in udunits2.h.
      */
     if (!isfinite(result))
