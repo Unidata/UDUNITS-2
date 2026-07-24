@@ -222,9 +222,13 @@ static int parse_tod_broken(const char* s, int* H,int* M,double* S,const char** 
 }
 
 /* TOD packed: HH[MM[SS]][.frac] — at least HH; optional MM, then optional SS; fraction applies to SS if present else to HHMMSS interpretation */
+/* Returns 1 on success, 0 if malformed, or -1 for a fraction with no seconds
+   field -- a distinct reason the caller turns into a specific message. The
+   -1 sentinel mirrors check_tz_range's negative-zero signal. */
 static int parse_tod_packed(const char* s, int* H, int* M, double* S, const char** endptr) {
     const char* p = s;
     int len = 0; while (p[len] >= '0' && p[len] <= '9') len++;
+    /* Defensive: {packed_clock} admits 1-6 digits, so this cannot fail. */
     if (len < 1 || len > 6) return 0;
 
     /*
@@ -258,18 +262,27 @@ static int parse_tod_packed(const char* s, int* H, int* M, double* S, const char
 
     int h = 0, m = 0, ss = 0;
     const char* q = p;
+    /* Defensive: the digits were counted above, so these cannot fail. */
     if (!read_ndigits(&q, h_digits, &h)) return 0;
     if (len >= 3 && !read_ndigits(&q, 2, &m)) return 0;
     if (had_seconds && !read_ndigits(&q, 2, &ss)) return 0;
 
-    if (m >= 60) return 0;
-    if (had_seconds && ss > 60) return 0;
+    /*
+     * No range checking here. The field split is already fixed by the
+     * right-alignment above, so an out-of-range hour, minute or second is a
+     * pure rejection -- and ut_check_clock(), which decodeClockFlexible()
+     * calls on the assembled H:M:S, rejects exactly the same values while
+     * naming the offending field ("Invalid minute 75 (must be 0-59)").
+     * Duplicating the bounds here would only replace those messages with a
+     * generic one. Same delegation as decodePackedDate -> ut_check_date.
+     */
     double sec = (double)ss;
     double frac = 0.0;
     const char* r = q;
+    /* Defensive: parse_fraction succeeds on every path. */
     if (!parse_fraction(&r, &frac)) return 0;
     if (had_seconds) sec += frac;
-    else if (frac != 0.0) return 0;  /* reject fraction if no seconds field */
+    else if (frac != 0.0) return -1;  /* fraction but no seconds field */
 
     *H = h; *M = m; *S = sec;
     *endptr = r;
@@ -307,6 +320,8 @@ static int parse_tz_broken(const char* text, int* sign, int* H, int* M, const ch
     return 1;
 }
 
+/* Returns 1 on success, 0 if malformed, or -1 for the ambiguous 3-digit
+   leading-zero form (see below), which the caller reports specifically. */
 static int parse_tz_packed(const char* s, int* sign, int* H, int* M, const char** endptr) {
     const char* p = s;
 
@@ -330,7 +345,7 @@ static int parse_tz_packed(const char* s, int* sign, int* H, int* M, const char*
      * a sub-hour offset should write the broken form ("+0:53") or
      * the canonical 4-digit packed form ("+0053").
      */
-    if (len == 3 && p[0] == '0') return 0;
+    if (len == 3 && p[0] == '0') return -1;
 
     /*
      * Right-align minute field. Minutes occupy the last 2 digits when
@@ -373,6 +388,14 @@ static int decodeClockFlexible(const char* text, double* seconds, char* error_ms
     } else {
         ok = parse_tod_packed(p, &H, &M, &S, &end);
     }
+    if (ok == -1) {
+        const char* dot = strchr(text, '.');
+        snprintf(error_msg, UT_ERR_MSG_LEN,
+            "Invalid time-of-day: %s has a decimal fraction but no seconds"
+            " field (a fraction attaches to the seconds, so write the full"
+            " HHMMSS form, e.g. 123045%s)", text, dot ? dot : "");
+        return 0;
+    }
     if (!ok) {
         snprintf(error_msg, UT_ERR_MSG_LEN, "Invalid time-of-day format: %s (expected HH:MM:SS or HHMMSS)", text);
         return 0;
@@ -414,6 +437,14 @@ static int decodeTzOffsetFlexible(const char* text, double* seconds, char* error
         ok = parse_tz_broken(p, &sign, &H, &M, &end);
     } else {
         ok = parse_tz_packed(p, &sign, &H, &M, &end);
+    }
+    if (ok == -1) {
+        /* text is sign + exactly 3 digits, the first of them '0'. */
+        snprintf(error_msg, UT_ERR_MSG_LEN,
+            "Ambiguous timezone offset: %s (a 3-digit offset with a leading"
+            " zero would lose its sign; write %c0:%s or %c0%s instead)",
+            text, text[0], text + 2, text[0], text + 1);
+        return 0;
     }
     if (!ok) {
         snprintf(error_msg, UT_ERR_MSG_LEN, "Invalid timezone offset: %s (expected ±HH:MM or ±HHMM)", text);
@@ -737,6 +768,57 @@ idchar       [A-Za-z0-9_]
 
 <CLOCK_SEEN>[0-9]+ {
     snprintf(yylval.error_msg, sizeof(yylval.error_msg), "Timezone offset must include sign (use +%s or -%s)", yytext, yytext);
+    return ERR;
+}
+
+<DATE_SEEN>{tod_hour}:{minute}:[0-9]{3,} {
+    /*
+     * This rule and the six that follow catch over-long digit runs in a clock
+     * or timezone field. Without them the lexer matches a valid prefix and
+     * leaves the surplus digits behind, where they reach the
+     * <CLOCK_SEEN>[0-9]+ rule and produce an actively misleading diagnostic:
+     * "2024-01-01 12:345" reported "Timezone offset must include sign (use +5
+     * or -5)", pointing at timezones for a mistyped minute. Each rule matches
+     * further than the valid-prefix alternative, so flex prefers it.
+     */
+    snprintf(yylval.error_msg, sizeof(yylval.error_msg),
+             "Invalid time-of-day '%s': too many digits in the second field (max 2 before the decimal point)", yytext);
+    return ERR;
+}
+
+<DATE_SEEN>{tod_hour}:[0-9]{3,} {
+    snprintf(yylval.error_msg, sizeof(yylval.error_msg),
+             "Invalid time-of-day '%s': too many digits in the minute field (max 2)", yytext);
+    return ERR;
+}
+
+<DATE_SEEN>[0-9]{3,}:[0-9]* {
+    snprintf(yylval.error_msg, sizeof(yylval.error_msg),
+             "Invalid time-of-day '%s': too many digits in the hour field (max 2)", yytext);
+    return ERR;
+}
+
+<DATE_SEEN>[0-9]{7,} {
+    snprintf(yylval.error_msg, sizeof(yylval.error_msg),
+             "Invalid time-of-day '%s': too many digits (the packed form takes at most 6: HHMMSS)", yytext);
+    return ERR;
+}
+
+<CLOCK_SEEN>[+-][0-9]{1,2}:[0-9]{3,} {
+    snprintf(yylval.error_msg, sizeof(yylval.error_msg),
+             "Invalid timezone offset '%s': too many digits in the minute field (max 2)", yytext);
+    return ERR;
+}
+
+<CLOCK_SEEN>[+-][0-9]{3,}:[0-9]* {
+    snprintf(yylval.error_msg, sizeof(yylval.error_msg),
+             "Invalid timezone offset '%s': too many digits in the hour field (max 2)", yytext);
+    return ERR;
+}
+
+<CLOCK_SEEN>[+-][0-9]{5,} {
+    snprintf(yylval.error_msg, sizeof(yylval.error_msg),
+             "Invalid timezone offset '%s': too many digits (the packed form takes at most 4: +HHMM)", yytext);
     return ERR;
 }
 

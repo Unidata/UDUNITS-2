@@ -37,6 +37,7 @@
 #include "converter.h"
 
 #include <math.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -179,6 +180,44 @@ static void assert_timestamp_origin(
 /*
  * Assert that "seconds since <suffix>" fails to parse.
  */
+static char last_error_msg[512];
+
+static int capture_error_message(const char* fmt, va_list args)
+{
+    vsnprintf(last_error_msg, sizeof(last_error_msg), fmt, args);
+    return 0;
+}
+
+/*
+ * Asserts that `suffix` is rejected AND that the emitted diagnostic contains
+ * `needle`. Substring rather than exact match on purpose: this pins down which
+ * field the message names and which limit it quotes, without turning every
+ * wording change into a test failure.
+ */
+static void assert_timestamp_reject_msg(const char* suffix, const char* needle)
+{
+    ut_error_message_handler prev;
+    ut_unit* parsed;
+
+    last_error_msg[0] = '\0';
+    prev = ut_set_error_message_handler(capture_error_message);
+    parsed = parse_seconds_since(suffix);
+    (void)ut_set_error_message_handler(prev);
+
+    if (parsed != NULL) {
+	fprintf(stderr, "assert_timestamp_reject_msg: suffix=%s unexpectedly"
+		" parsed\n", suffix);
+	ut_free(parsed);
+    }
+    CU_ASSERT_PTR_NULL(parsed);
+
+    if (strstr(last_error_msg, needle) == NULL)
+	fprintf(stderr, "assert_timestamp_reject_msg: suffix=%s\n"
+		"  expected substring: %s\n  actual message:     %s\n",
+		suffix, needle, last_error_msg);
+    CU_ASSERT_PTR_NOT_NULL(strstr(last_error_msg, needle));
+}
+
 static void assert_timestamp_reject(const char* suffix)
 {
     ut_unit* parsed = parse_seconds_since(suffix);
@@ -1625,6 +1664,32 @@ static void test_encode_time_channels_agree(void)
 
 #undef AGREES
 
+static void test_clock_diagnostics_are_specific(void)
+{
+    /* Range failures are delegated to ut_check_clock, which names the
+       offending field instead of the generic "Invalid time-of-day format". */
+    assert_timestamp_reject_msg("2024-01-01 1275",      "Invalid minute 75");
+    assert_timestamp_reject_msg("2024-01-01 125961",    "Invalid second 61");
+
+    /* A format rule the checker cannot see, so the scanner reports it. */
+    assert_timestamp_reject_msg("2024-01-01 123.4",     "no seconds field");
+
+    /* Over-long fields. Each of these previously produced "Timezone offset
+       must include sign", or a bare leftover-text message. */
+    assert_timestamp_reject_msg("2024-01-01 123:45",    "hour field");
+    assert_timestamp_reject_msg("2024-01-01 12:345",    "minute field");
+    assert_timestamp_reject_msg("2024-01-01 12:34:567", "second field");
+    assert_timestamp_reject_msg("2024-01-01 1234567",   "at most 6");
+}
+
+static void test_timezone_diagnostics_are_specific(void)
+{
+    assert_timestamp_reject_msg("2024-01-01 00:00 +053",    "lose its sign");
+    assert_timestamp_reject_msg("2024-01-01 00:00 +12345",  "at most 4");
+    assert_timestamp_reject_msg("2024-01-01 00:00 +12:345", "minute field");
+    assert_timestamp_reject_msg("2024-01-01 00:00 +123:45", "hour field");
+}
+
 static void test_ut_check_time_valid(void)
 {
     CU_ASSERT_EQUAL(ut_check_time(2024,  1, 15,  0,  0,  0.0), UT_SUCCESS);
@@ -1914,6 +1979,8 @@ int main(const int argc, const char* const* argv)
     CU_ADD_TEST(s, test_encode_clock_channels_agree);
     CU_ADD_TEST(s, test_encode_date_channels_agree);
     CU_ADD_TEST(s, test_encode_time_channels_agree);
+    CU_ADD_TEST(s, test_clock_diagnostics_are_specific);
+    CU_ADD_TEST(s, test_timezone_diagnostics_are_specific);
     CU_ADD_TEST(s, test_ut_check_time_valid);
     CU_ADD_TEST(s, test_ut_check_time_leap_second);
     CU_ADD_TEST(s, test_ut_check_time_bad_components);
