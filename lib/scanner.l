@@ -475,7 +475,7 @@ int_period_int		{int}\.{int}
 mantissa		{int_period}|{period_int}|{int_period_int}
 real_exp		[eE][+-]?[0-9]+
 real			[+-]?({int}{real_exp}|{mantissa}{real_exp}?)
-year			[+-]?[0-9]{1,4}
+year_packed		[+-]?[0-9]{1,4}
 year_broken		[+-]?[0-9]{1,7}
 month			[0-9]{1,2}
 day			    [0-9]{1,2}
@@ -501,7 +501,7 @@ utf8_3bytes_no_super    [\xe0-\xe1]{utf8_cont}{utf8_cont}|\xe2[\x80\x82-\xbf]{ut
 letter  		[_a-zA-Z]|{latin1}|{utf8_2bytes_no_super}|{utf8_3bytes_no_super}
 alphanum		{letter}|[0-9]
 id			%|'|\"|{letter}({alphanum}*{letter})?
-packed_date		{year}({month}{day}?)?
+packed_date		{year_packed}({month}{day}?)?
 broken_clock		{tod_hour}:{minute}(:{second})?
 packed_clock		{tod_hour}({minute}{second}?)?
 broken_tz_clock		{tz_hour}:{minute}
