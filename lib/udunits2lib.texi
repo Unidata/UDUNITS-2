@@ -1432,9 +1432,12 @@ This convenience function is equivalent to
 @ref{ut_encode_date(),ut_encode_date}(@var{year},@var{month},@var{day}) + @ref{ut_encode_clock(),ut_encode_clock}(@var{hour},@var{minute},@var{second})
 @end example
 The result is @code{NaN} (and @code{@ref{ut_get_status()}} is set to
-@code{UT_BAD_ARG}) if the date part is out of range
-(@math{|@var{year}|} exceeds @code{5000000}; see
-@code{@ref{ut_encode_date(),ut_encode_date}}) or @var{second} is @code{NaN}.
+@code{UT_BAD_ARG}) if any component is out of range: @math{|@var{year}|}
+exceeds @code{5000000} (see
+@code{@ref{ut_encode_date(),ut_encode_date}}), or @var{hour}, @var{minute} or
+@var{second} lies outside the bounds of
+@code{@ref{ut_encode_clock(),ut_encode_clock}}, including a non-finite
+@var{second}.
 @end deftypefun
 
 @anchor{ut_encode_date()}
@@ -1503,21 +1506,28 @@ would receive.
 
 @anchor{ut_encode_clock()}
 @deftypefun @code{double} ut_encode_clock @code{(int @var{hours}, int @var{minutes}, double @var{seconds})}
-Encodes a clock-time (time of day) as a double-precision value.  This is a
-pure encoder: it performs no range-checking and always succeeds.  Negative or
-out-of-range components are encoded arithmetically and propagate into the
-returned value unchanged.  Callers that need the components validated as a
-wall-clock time of day should call @code{@ref{ut_check_clock(),ut_check_clock}}
-first.
+Encodes a clock-time (time of day) as a double-precision value.  The
+components are range-checked: @math{|@var{hours}|} must be less than
+@code{24}, @math{|@var{minutes}|} less than @code{60}, and
+@math{|@var{seconds}|} no greater than @code{62}; a @code{NaN} or infinite
+@var{seconds} is rejected.  The bounds are symmetric about zero, so negative
+components encode as negative offsets, and they are looser than
+@code{@ref{ut_check_clock(),ut_check_clock}}'s: they are sanity bounds on an
+arithmetic encoder, not a wall-clock validation.  Callers that need the
+components validated as a time of day, including the leap-second rule, should
+call @code{@ref{ut_check_clock(),ut_check_clock}} first.
+The result is @code{NaN} (and @code{@ref{ut_get_status()}} is set to
+@code{UT_BAD_ARG}) if any argument is out of range; otherwise the status is
+set to @code{UT_SUCCESS}.
 You probably won't use this function.
 @end deftypefun
 
 @anchor{ut_check_clock()}
 @deftypefun @code{@ref{ut_status}} ut_check_clock @code{(int @var{hour}, int @var{minute}, double @var{second})}
 Validates clock-time (time-of-day) components.  This is the companion check to
-@code{@ref{ut_encode_clock(),ut_encode_clock}}: the encoder itself does no
-checking, so a caller that wants the components validated as a real wall-clock
-time of day calls this first.  The unit-string parser applies the same check,
+@code{@ref{ut_encode_clock(),ut_encode_clock}}: the encoder applies only loose
+sanity bounds, so a caller that wants the components validated as a real
+wall-clock time of day calls this first.  The unit-string parser applies the same check,
 so a clock accepted here is accepted by the parser and a clock rejected here is
 rejected by the parser.  Returns @code{UT_SUCCESS} if the arguments form a
 valid time of day, otherwise @code{UT_BAD_ARG} (in which case
