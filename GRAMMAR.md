@@ -166,17 +166,24 @@ Here is the unit-syntax understood by the UDUNITS-2 package. Words printed \_Thu
             DATE CLOCK UTC_TOK
 
     // VALIDATION PHILOSOPHY FOR DATE/TIME ELEMENTS:
-    // The lexical patterns for date/time components (<month>, <day>, <tod-hour>, <minute>,
-    // <second>, <tz-hour>) are intentionally PERMISSIVE - they accept any appropriate-length
-    // digit sequences. Range validation (e.g., month must be 1-12, hour must be 0-23) is
-    // performed during semantic analysis, not during lexical analysis. This approach:
+    // The lexical patterns for date/time components (<year-broken>, <year-packed>,
+    // <month>, <day>, <tod-hour>, <minute>, <second>, <tz-hour>) are intentionally
+    // PERMISSIVE - they accept any appropriate-length digit sequences. Range validation
+    // (e.g., month must be 1-12, hour must be 0-23) is performed during semantic
+    // analysis, not during lexical analysis. This approach:
     //   - Provides better error messages showing the actual invalid values
     //   - Maintains clean separation between lexical tokenization and validation
     //   - Allows consistent error reporting through the parser
-    // Note that a DATE having a <day> within the accepted range 1-31, but outside what is
-    // allowed in the Julian/Gregorian calendar is silently interpreted as the corresponding
-    // day of the next month, e.g., 1999-02-29 (non-leap year) → 1999-03-01, 2004-02-29 (leap
-    // year) stays the same.
+    //
+    // NORMALIZATION AFTER VALIDATION: values that pass validation may still be adjusted
+    // when the date/time is encoded:
+    //   - A <day> that is within the per-month maximum, but outside what is allowed in
+    //     the Julian/Gregorian calendar, is silently interpreted as the corresponding
+    //     day of the next month, e.g., 1999-02-29 (non-leap year) → 1999-03-01,
+    //     2004-02-29 (leap year) stays the same.
+    //   - Year 0 is silently normalized to year 1 because in the Julian calendar there
+    //     is no year zero, which is used in the combined Julian/Gregorian (standard)
+    //     calendar that UDUNITS follows.
 
     DATE: one of
             <date-broken> ("T" | <space>*)
@@ -189,10 +196,15 @@ Here is the unit-syntax understood by the UDUNITS-2 package. Words printed \_Thu
     //       otherwise parsed as REAL
 
     <date-broken>:
-            <year> "-" <month> ("-" <day>)?  // allow truncation from the right
+            <year-broken> "-" <month> ("-" <day>)?  // allow truncation from the right
+            // NOTE: truncation stops at <month>: a broken date requires the month,
+            //       otherwise the input is interpreted as a <date-packed>. A bare year
+            //       is therefore limited to the 1-4 digits of <year-packed>; years
+            //       outside -9999 to 9999 must be written with at least a month, e.g.
+            //       "1000000-06".
 
     <date-packed>:
-            <year> (<month> <day>)?
+            <year-packed> (<month> <day>?)?
             // Allow truncation from the right:
             // Length-based interpretation for <date-packed> (not counting a sign):
             //   len = 1-4  → Y, YY, YYY, YYYY  → YYYY0101
@@ -222,11 +234,16 @@ Here is the unit-syntax understood by the UDUNITS-2 package. Words printed \_Thu
             //   len = 5  → HHMMS   → HHMM0S   decimals accepted: HHMM0S.dddd...
             //   len = 6  → HHMMSS  → HHMMSS   decimals accepted: HHMMSS.dddd...
 
-    <year>:
+    <year-broken>:
+            [+-]? [0-9]{1,7}
+            // Lexically accepts a sign and 1-7 digits
+            // Semantic validation: must be in the inclusive range -5,000,000 to 5,000,000
+            // NOTE: 8 or more digits is reported as a lexical error
+
+    <year-packed>:
             [+-]? [0-9]{1,4}
-            // Note: year 0 is silently normalized to year 1 because in the Julian
-            // calendar there is no year zero, which is used in the combined
-            // Julian/Gregorian (standard) calendar that UDUNITS follows
+            // Lexically accepts a sign and 1-4 digits, so the semantic year range
+            // (-5,000,000 to 5,000,000) cannot be exceeded in this form
 
     <month>:
             [0-9]{1,2}
@@ -236,7 +253,13 @@ Here is the unit-syntax understood by the UDUNITS-2 package. Words printed \_Thu
     <day>:
             [0-9]{1,2}
             // Lexically accepts any 1-2 digit number
-            // Semantic validation: must be 1-31
+            // Semantic validation: must not exceed the per-month maximum:
+            //     Jan, Mar, May, Jul, Aug, Oct, Dec  →  1-31
+            //     Apr, Jun,      Sep, Nov            →  1-30
+            //     Feb                                →  1-30
+            // These maxima are deliberately lenient: the leap-year rule is not enforced
+            // (Feb 29 is accepted in every year) and February admits up to 30, which
+            // supports 360-day calendar input. Apr 31, Feb 31, etc. are rejected.
 
     <tod-hour>:
             [0-9]{1,2}
@@ -251,9 +274,10 @@ Here is the unit-syntax understood by the UDUNITS-2 package. Words printed \_Thu
     <second>:
             [0-9]{1,2} (\. <digit>*)?
             // Lexically accepts any 1-2 digit number with optional decimal
-            // Semantic validation: must be 0-60
-            // NOTE: leap second (= 60) only allowed at 23:59:60
-            // NOTE: leap second is silently interpreted as 00 of the immediately succeeding minute
+            // Semantic validation: 0 <= <second> < 60, except that
+            //     60 <= <second> < 61 is accepted at 23:59 (leap second)
+            // NOTE: a leap second is silently interpreted as 00 of the immediately
+            //       succeeding minute, e.g., 23:59:60.5 → 00:00:00.5 of the next day
 
 // Timezone Elements
 
@@ -269,13 +293,15 @@ Here is the unit-syntax understood by the UDUNITS-2 package. Words printed \_Thu
             // Length-based interpretation after the sign:
             //   total_len(sign excluded) = 1 → H
             //   total_len(sign excluded) = 2 → HH
-            //   total_len(sign excluded) = 3 → HHM
+            //   total_len(sign excluded) = 3 → HHM, except that a leading zero is
+            //       rejected (e.g., "+053", "-053"); write "+0:53" or "+0053" instead
             //   total_len(sign excluded) = 4 → HHMM
 
     <tz-hour>:
             [+-][0-9]{1,2}
             // Lexically accepts sign followed by any 1-2 digit number
-            // Semantic validation: must be ±0 to ±14
+            // Semantic validation: must be ±0 to ±14, and ±14 only with <minute> = 00,
+            //     i.e., ±14:00 is the largest offset accepted
             // NOTE: -00:00 (negative zero) is not allowed
 
     // The Z / GMT / UTC tokens are conventionally written in uppercase
