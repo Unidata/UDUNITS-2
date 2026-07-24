@@ -103,6 +103,35 @@ enum utStatus {
 };
 typedef enum utStatus          ut_status;
 
+
+/*
+ * STATUS CONVENTION
+ *
+ * (Referred to as "Convention A" where the sources need a short name for it.)
+ *
+ * This library maintains a single, global status value, readable with
+ * ut_get_status(). Functions that participate in the convention report the
+ * outcome of *their own* call: UT_SUCCESS when they succeed, and a specific
+ * failure code -- usually UT_BAD_ARG -- when they do not. Success is reported
+ * explicitly; a successful call does not leave the status untouched.
+ *
+ * This is deliberately unlike errno, which a successful call is free to leave
+ * alone. The status therefore describes the most recent participating call and
+ * nothing before it. Read it immediately after the call whose outcome matters:
+ * a status inspected once at the end of a sequence of calls reflects only the
+ * last of them, so failures cannot be accumulated and checked in bulk.
+ *
+ * Functions returning double -- the ut_encode_* family -- additionally use NaN
+ * as the authoritative failure signal, with the status as a secondary, in-sync
+ * copy: a NaN return and UT_BAD_ARG always accompany one another. Of the two,
+ * NaN is the one to prefer, since it is carried in the return value rather
+ * than in global state.
+ *
+ * The ut_check_* and ut_encode_* families documented below follow this
+ * convention, as do most other functions in this header that report a
+ * ut_status.
+ */
+
 enum utEncoding {
     UT_ASCII = 0,
     UT_ISO_8859_1 = 1,
