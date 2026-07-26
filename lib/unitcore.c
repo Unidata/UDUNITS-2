@@ -398,17 +398,20 @@ getJuldayOrigin()
     return juldayOrigin;
 }
 
-
 /*
  * Encodes a clock-time (time of day) as a double-precision value.
  *
- * This is a pure encoder: it performs no range-checking and always
- * succeeds. Negative or out-of-range components are encoded arithmetically
- * and propagate into the returned scalar unchanged. Callers that need the
- * components validated as a wall-clock time of day should call
- * ut_check_clock() first.
+ * This is an arithmetic encoder guarded by loose sanity bounds, not a
+ * wall-clock validator. Components are checked only against the historical
+ * bounds |hours| < 24, |minutes| < 60, and |seconds| <= 62; within that
+ * range they are encoded as-is, so negative or otherwise out-of-range
+ * combinations still encode. On any argument outside those bounds -- or a
+ * non-finite seconds value -- the function returns NAN and sets the status
+ * to UT_BAD_ARG (NAN is the authoritative failure signal). These bounds are
+ * looser than, and not equivalent to, validation as a civil time of day;
+ * callers that need that should call ut_check_clock() first.
  *
- * Arguments:
+ *  * Arguments:
  *	hours		The number of hours (0 = midnight).
  *	minutes		The number of minutes.
  *	seconds		The number of seconds.
