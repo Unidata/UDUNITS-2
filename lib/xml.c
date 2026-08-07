@@ -207,7 +207,7 @@ substitute(
 
     while (*in) {
         size_t      nbytes;
-        char*       cp = strstr(in, str);
+        const char*       cp = strstr(in, str);
 
         if (cp == NULL) {
             nbytes = strlen(in);
