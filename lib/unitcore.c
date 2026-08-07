@@ -253,11 +253,13 @@ static ut_unit*		productRoot(
  * Convert a Julian day number to a Gregorian/Julian date.
  */
 void
-julianDayToGregorianDate(julday, year, month, day)
+julianDayToGregorianDate(long julday, int *year, int *month, int *day)
+#if 0
     long	julday;		/* Julian day number to convert */
     int		*year;		/* Gregorian year (out) */
     int		*month;		/* Gregorian month (1-12) (out) */
     int		*day;		/* Gregorian day (1-31) (out) */
+#endif
 {
     long	ja, jb, jd;
     int		jc;
@@ -303,10 +305,12 @@ julianDayToGregorianDate(julday, year, month, day)
  * The Gregorian calendar was adopted midday, October 15, 1582.
  */
 long
-gregorianDateToJulianDay(year, month, day)
+gregorianDateToJulianDay(int year, int month, int day)
+#if 0
     int		year;	/* Gregorian year */
     int		month;	/* Gregorian month (1-12) */
     int		day;	/* Gregorian day (1-31) */
+#endif
 {
     int32_t	igreg = 15 + 31 * (10 + (12 * 1582));
     int32_t	iy;	/* signed, origin 0 year */
