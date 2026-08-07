@@ -1,0 +1,67 @@
+name: Build and test UDUNITS-2 under AddressSanitizer and UndefinedBehaviorSanitizer
+
+on: [pull_request, workflow_dispatch]
+
+jobs:
+  sanitize:
+    # Linux/gcc only.  LeakSanitizer is not supported by Apple clang on macOS,
+    # so a macOS entry would silently drop the leak half of the coverage.
+    runs-on: ubuntu-24.04
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install cunit
+        run: sudo apt install libcunit1 libcunit1-dev
+
+      - name: Set shared values
+        id: strings
+        shell: bash
+        run: |
+          echo "build-dir=${{ github.workspace }}/build-asan" >> "$GITHUB_OUTPUT"
+
+      # The sanitizers are enabled through CMAKE_C_FLAGS rather than through
+      # the UDUNITS_ASAN option, for two reasons:
+      #
+      #   1. UDUNITS_ASAN wires up AddressSanitizer only; it has no UBSan path.
+      #   2. Passing the flags directly keeps this workflow independent of the
+      #      branch it runs on.  lib/CMakeLists.txt already treats
+      #      "-fsanitize=address in CMAKE_C_FLAGS" as equivalent to
+      #      UDUNITS_ASAN=ON, so any sanitizer-only test registered under that
+      #      condition is picked up automatically, with no change here.
+      #
+      # -fno-sanitize-recover=all is what makes the job meaningful: UBSan's
+      # default is to print a diagnostic and continue, which would let a test
+      # pass despite undefined behaviour.  With it, the first finding aborts
+      # the process and CTest reports a failure.
+      #
+      # Debug/-O1 keeps stack traces attributable; -fno-omit-frame-pointer
+      # is needed because the sanitizers unwind through frame pointers.
+      - name: Configure CMake with ASan/UBSan
+        run: >
+          cmake -B ${{ steps.strings.outputs.build-dir }}
+          -DCMAKE_C_COMPILER=gcc
+          -DCMAKE_BUILD_TYPE=Debug
+          -DCMAKE_C_FLAGS="-fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer -g -O1"
+          -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address,undefined"
+          -DCMAKE_SHARED_LINKER_FLAGS="-fsanitize=address,undefined"
+          -S ${{ github.workspace }}
+
+      - name: Build
+        run: cmake --build ${{ steps.strings.outputs.build-dir }}
+
+      - name: Run tests under the sanitizers
+        working-directory: ${{ steps.strings.outputs.build-dir }}
+        env:
+          # detect_leaks is on by default on Linux; state it so the intent
+          # survives a move to another platform.  Tests that need stricter
+          # settings override this via the CTest ENVIRONMENT property.
+          ASAN_OPTIONS: detect_leaks=1
+          UBSAN_OPTIONS: print_stacktrace=1
+        run: ctest --output-on-failure
+
+      - uses: actions/upload-artifact@v6
+        if: failure()
+        with:
+          name: udunits_sanitizer_results_${{ github.sha }}
+          path: ${{ steps.strings.outputs.build-dir }}/Testing
