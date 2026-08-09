@@ -440,8 +440,15 @@ ut_encode_clock(
      * against NaN is false, so the negated form is true. This keeps the
      * "NaN return <=> UT_BAD_ARG" invariant intact (same idiom as
      * ut_check_clock).
+     *
+     * The integer bounds are written as explicit two-sided comparisons rather
+     * than with abs(): abs(INT_MIN) has no representable result and is
+     * undefined behaviour (C99 7.20.6.1p2), so abs(hours) would invoke UB on
+     * the very input the check exists to reject.
      */
-    if (abs(hours) >= 24 || abs(minutes) >= 60 || !(fabs(seconds) <= 62)) {
+    if (hours <= -24 || hours >= 24 ||
+	minutes <= -60 || minutes >= 60 ||
+	!(fabs(seconds) <= 62)) {
 	ut_set_status(UT_BAD_ARG);
 	return NAN;
     }

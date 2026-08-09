@@ -36,6 +36,7 @@
 #include "udunits2.h"
 #include "converter.h"
 
+#include <limits.h>
 #include <math.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -1451,7 +1452,11 @@ static void test_ut_encode_clock_rejects_out_of_range(void)
     static const struct { int h; int m; double s; } bad[] = {
 	{  24,  0,  0.0 }, { -24,  0,  0.0 },
 	{   0, 60,  0.0 }, {   0, -60, 0.0 },
-	{   0,  0, 62.5 }, {   0,  0, -62.5 }
+	{   0,  0, 62.5 }, {   0,  0, -62.5 },
+	/* Extremes of int: INT_MIN in particular must be rejected by the
+	   comparison, not handed to abs(), whose result is undefined there. */
+	{ INT_MIN, 0, 0.0 }, { INT_MAX, 0, 0.0 },
+	{ 0, INT_MIN, 0.0 }, { 0, INT_MAX, 0.0 }
     };
     size_t i;
 

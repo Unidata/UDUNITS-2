@@ -1295,10 +1295,10 @@ ut_check_date(
  * Follows the status convention documented above: UT_SUCCESS on success,
  * UT_BAD_ARG on failure, with NaN as the authoritative failure signal.
  *
- * @param[in] hours    The number of hours (0 = midnight). `abs(hours)` must be
- *                     less than 24.
- * @param[in] minutes  The number of minutes. `abs(minutes)` must be less than
- *                     60.
+ * @param[in] hours    The number of hours (0 = midnight). Must satisfy
+ *                     -24 < hours < 24.
+ * @param[in] minutes  The number of minutes. Must satisfy
+ *                     -60 < minutes < 60.
  * @param[in] seconds  The number of seconds. `fabs(seconds)` must be less than
  *                     or equal to 62. A NaN or infinite value is rejected.
  * @return             The clock-time encoded as a scalar value, i.e.
