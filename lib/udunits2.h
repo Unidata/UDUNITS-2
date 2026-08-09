@@ -107,8 +107,6 @@ typedef enum utStatus          ut_status;
 /*
  * STATUS CONVENTION
  *
- * (Referred to as "Convention A" where the sources need a short name for it.)
- *
  * This library maintains a single, global status value, readable with
  * ut_get_status(). Functions that participate in the convention report the
  * outcome of *their own* call: UT_SUCCESS when they succeed, and a specific

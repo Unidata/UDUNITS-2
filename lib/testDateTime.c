@@ -1305,8 +1305,9 @@ static void test_ut_check_date_bad_day(void)
 
 static void test_ut_check_date_sets_status_on_success(void)
 {
-    /* Convention A: a successful check sets status to UT_SUCCESS, mirroring
-       the UT_BAD_ARG it sets on failure. (Was errno-style "do not clobber".) */
+    /* Status convention: a successful check sets status to UT_SUCCESS,
+       mirroring the UT_BAD_ARG it sets on failure. (Was errno-style
+       "do not clobber".) */
     ut_set_status(UT_BAD_ARG);
     CU_ASSERT_EQUAL(ut_check_date(2024, 1, 1), UT_SUCCESS);
     CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS); /* cleared */
@@ -1350,7 +1351,7 @@ static void test_ut_check_clock_nan(void)
 
 static void test_ut_check_clock_sets_status_on_success(void)
 {
-    /* Convention A: success sets status to UT_SUCCESS. */
+    /* Status convention: success sets status to UT_SUCCESS. */
     ut_set_status(UT_BAD_ARG);
     CU_ASSERT_EQUAL(ut_check_clock(12, 0, 0.0), UT_SUCCESS);
     CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS); /* cleared */
@@ -1435,7 +1436,7 @@ static void test_ut_encode_time_sets_status(void)
 
 static void test_ut_encode_clock_sets_status_on_success(void)
 {
-    /* Convention A: success sets status to UT_SUCCESS. */
+    /* Status convention: success sets status to UT_SUCCESS. */
     ut_set_status(UT_BAD_ARG);
     CU_ASSERT_DOUBLE_EQUAL(ut_encode_clock(12, 0, 0.0), 43200.0, 0.0);
     CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS); /* cleared */

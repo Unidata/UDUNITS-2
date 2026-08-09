@@ -456,7 +456,7 @@ ut_encode_clock(
      * wrinkle). Every integer up to 2^53 is exact in double, so the result is
      * bit-identical to the int form over the accepted domain.
      */
-    /* Convention A (see udunits2.h): reflect this call's own outcome. */
+    /* Status convention (see udunits2.h): report this call's own outcome. */
     ut_set_status(UT_SUCCESS);
     return ((double)hours*60 + minutes)*60 + seconds;
 }
@@ -600,7 +600,7 @@ ut_check_date(
 	    return UT_BAD_ARG;
 	}
     }
-    /* Convention A (see udunits2.h): reflect this call's own outcome. */
+    /* Status convention (see udunits2.h): report this call's own outcome. */
     ut_set_status(UT_SUCCESS);
     return UT_SUCCESS;
 }
@@ -658,7 +658,7 @@ ut_check_clock(
 	ut_set_status(UT_BAD_ARG);
 	return UT_BAD_ARG;
     }
-    /* Convention A (see udunits2.h): reflect this call's own outcome. */
+    /* Status convention (see udunits2.h): report this call's own outcome. */
     ut_set_status(UT_SUCCESS);
     return UT_SUCCESS;
 }
@@ -680,7 +680,7 @@ ut_check_time(
 	return UT_BAD_ARG;
     if (ut_check_clock(hour, minute, second) != UT_SUCCESS)
 	return UT_BAD_ARG;
-    /* Convention A (see udunits2.h): reflect this call's own outcome. */
+    /* Status convention (see udunits2.h): report this call's own outcome. */
     ut_set_status(UT_SUCCESS);
     return UT_SUCCESS;
 }
