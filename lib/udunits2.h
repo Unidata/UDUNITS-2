@@ -1347,9 +1347,9 @@ ut_encode_time(
 /*
  * Validates clock-time (time-of-day) components.
  *
- * This is the companion check to ut_encode_clock(): the encoder itself does
- * no checking, so a caller that wants the components validated as a real
- * wall-clock time of day calls this first. The unit-string parser applies the
+ * This is the companion check to ut_encode_clock(): the encoder applies only
+ * loose sanity bounds, so a caller that wants the components validated as a
+ * real wall-clock time of day calls this first. The unit-string parser applies the
  * same check, so a clock accepted here is accepted by the parser and a clock
  * rejected here is rejected by the parser.
  *
