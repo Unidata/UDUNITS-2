@@ -268,18 +268,31 @@ julianDayToGregorianDate(julday, year, month, day)
 	ja = julday;
     else
     {
-	int	ia = (int)(((julday - 1867216) - 0.25) / 36524.25);
+	/*
+	 * Use floor() rather than the (int) cast: K&R-era C often had
+	 * implementation-defined behavior for negative-to-int conversion that
+	 * happened to round toward -infinity, but C99 mandates truncation
+	 * toward zero. The (int) cast on a negative double therefore no longer
+	 * matches the algorithm's floor() intent. ia is non-negative here
+	 * (julday >= 2299161 → ia > 0), so this is defensive consistency.
+	 */
+	int	ia = (int)floor(((double)(julday - 1867216) - 0.25) / 36524.25);
 
-	ja = julday + 1 + ia - (int)(0.25 * ia);
+	ja = julday + 1 + ia - (int)floor(0.25 * ia);
     }
 
     jb = ja + 1524;
-    xc = ((jb - 2439870) - 122.1) / 365.25;
-    jc = (int)(6680.0 + xc);
-    jd = 365 * jc + (int)(0.25 * jc);
-    je = (int)((jb - jd) / 30.6001);
+    xc = ((double)(jb - 2439870) - 122.1) / 365.25;
+    /*
+     * jc and the 0.25*jc term can be negative for proleptic years before ~AD 1,
+     * so floor() is required for correctness here, not just defense. Without
+     * it, every negative year roundtrips off by one (see test_decode_roundtrip).
+     */
+    jc = (int)floor(6680.0 + xc);
+    jd = 365 * jc + (int)floor(0.25 * jc);
+    je = (int)floor((double)(jb - jd) / 30.6001);
 
-    iday = (int)(jb - jd - (int)(30.6001 * je));
+    iday = (int)floor((double)(jb - jd) - floor(30.6001 * je));
 
     imonth = je - 1;
     if (imonth > 12)
@@ -385,16 +398,26 @@ getJuldayOrigin()
     return juldayOrigin;
 }
 
-
 /*
- * Encodes a time as a double-precision value.
+ * Encodes a clock-time (time of day) as a double-precision value.
  *
- * Arguments:
+ * This is an arithmetic encoder guarded by loose sanity bounds, not a
+ * wall-clock validator. Components are checked only against the historical
+ * bounds |hours| < 24, |minutes| < 60, and |seconds| <= 62; within that
+ * range they are encoded as-is, so negative or otherwise out-of-range
+ * combinations still encode. On any argument outside those bounds -- or a
+ * non-finite seconds value -- the function returns NAN and sets the status
+ * to UT_BAD_ARG (NAN is the authoritative failure signal). These bounds are
+ * looser than, and not equivalent to, validation as a civil time of day;
+ * callers that need that should call ut_check_clock() first.
+ *
+ *  * Arguments:
  *	hours		The number of hours (0 = midnight).
  *	minutes		The number of minutes.
  *	seconds		The number of seconds.
  * Returns:
- *	The clock-time encoded as a scalar value.
+ *	The clock-time encoded as a scalar value
+ *	(i.e. hours*3600 + minutes*60 + seconds).
  */
 double
 ut_encode_clock(
@@ -402,12 +425,47 @@ ut_encode_clock(
     int		minutes,
     double	seconds)
 {
-    if (abs(hours) >= 24 || abs(minutes) >= 60 || fabs(seconds) > 62) {
-        ut_set_status(UT_BAD_ARG);
-        return 0;
+    /*
+     * Range check. These are the bounds this function has published since
+     * before the checks were enforced in 2018: symmetric about zero, so that
+     * negative components still encode, and looser than ut_check_clock()'s
+     * wall-clock rules. They are sanity bounds on an arithmetic encoder, not
+     * a calendar validation -- use ut_check_clock() for the latter. The
+     * "<= 62" on seconds is inherited and has no rationale recorded anywhere
+     * in the project's history; it is retained unchanged rather than
+     * narrowed, since nothing depends on the difference.
+     *
+     * Written as !(fabs(seconds) <= 62) rather than fabs(seconds) > 62 so
+     * that a NaN or infinite `seconds` is rejected too: every comparison
+     * against NaN is false, so the negated form is true. This keeps the
+     * "NaN return <=> UT_BAD_ARG" invariant intact (same idiom as
+     * ut_check_clock).
+     *
+     * The integer bounds are written as explicit two-sided comparisons rather
+     * than with abs(): abs(INT_MIN) has no representable result and is
+     * undefined behaviour (C99 7.20.6.1p2), so abs(hours) would invoke UB on
+     * the very input the check exists to reject.
+     */
+    if (hours <= -24 || hours >= 24 ||
+	minutes <= -60 || minutes >= 60 ||
+	!(fabs(seconds) <= 62)) {
+	ut_set_status(UT_BAD_ARG);
+	return NAN;
     }
 
-    return (hours*60 + minutes)*60 + seconds;
+    /*
+     * Compute in double (the return type) rather than int. The int form
+     * (hours*60 + minutes)*60 overflows int32 (signed-overflow UB) for
+     * nonsensical inputs -- the binding term is the outer *60, so the limit
+     * is hours ~ 596,523. The range check above puts that far out of reach,
+     * but computing in double costs nothing and keeps the expression free of
+     * any int64_t/long dependence (and so of the LLP64 long-is-32-bit
+     * wrinkle). Every integer up to 2^53 is exact in double, so the result is
+     * bit-identical to the int form over the accepted domain.
+     */
+    /* Status convention (see udunits2.h): report this call's own outcome. */
+    ut_set_status(UT_SUCCESS);
+    return ((double)hours*60 + minutes)*60 + seconds;
 }
 
 inline static int
@@ -437,14 +495,26 @@ decomp( double        value,
 
 
 /*
- * Encodes a date as a double-precision value.
+ * Absolute cap on |year| accepted by the date encoders/validators. The cap is
+ * a practical limit, not an algorithmic one: gregorianDateToJulianDay()
+ * overflows int32 (signed-overflow UB) around |year| ~ 5.77M via the term
+ * 31*(month + 12*year); 5,000,000 sits safely below that and is a round
+ * number. Kept as a single constant so the gate in ut_encode_date() and the
+ * validator in ut_check_date() cannot drift apart. (The matching prose in the
+ * error message and the docstrings is intentionally left literal.)
+ */
+#define UT_YEAR_ABS_MAX 5000000
+
+
+/*
+ * Encodes a date as a double-precision value. See udunits2.h for the contract.
  *
  * Arguments:
  *	year		The year.
  *	month		The month.
  *	day		The day (1 = the first of the month).
  * Returns:
- *	The date encoded as a scalar value.
+ *	The date encoded as a scalar value, or NaN if |year| > 5,000,000.
  */
 double
 ut_encode_date(
@@ -452,8 +522,174 @@ ut_encode_date(
     int		month,
     int		day)
 {
-    return 86400.0 *
-	(gregorianDateToJulianDay(year, month, day) - getJuldayOrigin());
+    double result;
+
+    /*
+     * Year gate (review item 1): reject |year| > 5,000,000 by returning NaN,
+     * BEFORE any Julian-day arithmetic is performed. gregorianDateToJulianDay()
+     * overflows int32 (signed-overflow UB) around |year| ~ 5.77M via the term
+     * 31*(month + 12*iy); the +/-5,000,000 cap sits safely below that, so
+     * overflow driven by the year term is unreachable. The gate covers only
+     * the year: month and day are not validated, so an out-of-range month or
+     * day passed directly (bypassing ut_check_date) can still overflow that
+     * expression -- a pre-existing exposure, out of scope here. Year 0 is
+     * still normalized to year 1 by gregorianDateToJulianDay(). Use
+     * ut_check_date() for full input checks.
+     */
+    if (year < -UT_YEAR_ABS_MAX || year > UT_YEAR_ABS_MAX) {
+	result = NAN;
+    }
+    else {
+	result = 86400.0 *
+	    (gregorianDateToJulianDay(year, month, day) - getJuldayOrigin());
+    }
+
+    /*
+     * Status convention (see udunits2.h): NaN is the authoritative, thread-safe
+     * failure signal; the global status is a secondary, in-sync copy.
+     */
+    ut_set_status(isnan(result) ? UT_BAD_ARG : UT_SUCCESS);
+    return result;
+}
+
+
+/*
+ * Validates calendar date components. See udunits2.h for the contract.
+ */
+ut_status
+ut_check_date(
+    int		year,
+    int		month,
+    int		day)
+{
+    /*
+     * Per-month maximum day. These maxima are deliberately lenient: the
+     * leap-year rule is not enforced (Feb 29 is accepted in every year) and
+     * February admits up to 30. This is a precondition check on the encoder's
+     * input -- it keeps obvious typos (Feb 31, Apr 31) out without pinning any
+     * particular calendar; an accepted day that the encoder cannot represent
+     * directly is normalized by ut_encode_date (Gregorian arithmetic). See
+     * ut_check_date in udunits2.h.
+     *
+     *   Jan, Mar, May, Jul, Aug, Oct, Dec  ->  1..31
+     *   Apr, Jun,      Sep, Nov            ->  1..30
+     *   Feb                                ->  1..30
+     */
+    static const int max_day_per_month[12] = {
+        31, 30, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
+    };
+
+    /*
+     * The cap is a practical limit, not an algorithmic one. The Julian-day
+     * arithmetic in gregorianDateToJulianDay() overflows int32 around
+     * |year| ≈ 5.77M (via 31 * (month + 12 * iy)); ±5,000,000 leaves a
+     * comfortable safety margin and yields a round number. This range
+     * comfortably covers all of geological time relevant at human or
+     * Quaternary scales (last 2.6 Ma).
+     */
+    if (year < -UT_YEAR_ABS_MAX || year > UT_YEAR_ABS_MAX) {
+	ut_handle_error_message("Invalid year %d (must be within +/-5,000,000)", year);
+	ut_set_status(UT_BAD_ARG);
+	return UT_BAD_ARG;
+    }
+    if (month < 1 || month > 12) {
+	ut_handle_error_message("Invalid month %d (must be 1-12)", month);
+	ut_set_status(UT_BAD_ARG);
+	return UT_BAD_ARG;
+    }
+    {
+	const int max_day = max_day_per_month[month - 1];
+	if (day < 1 || day > max_day) {
+	    ut_handle_error_message(
+		"Invalid day %d for month %d (must be 1-%d)",
+		day, month, max_day);
+	    ut_set_status(UT_BAD_ARG);
+	    return UT_BAD_ARG;
+	}
+    }
+    /* Status convention (see udunits2.h): report this call's own outcome. */
+    ut_set_status(UT_SUCCESS);
+    return UT_SUCCESS;
+}
+
+
+/*
+ * Validates clock-time (time-of-day) components. See udunits2.h for the
+ * contract.
+ */
+ut_status
+ut_check_clock(
+    int		hour,
+    int		minute,
+    double	second)
+{
+    if (hour < 0 || hour > 23) {
+	ut_handle_error_message("Invalid hour %d (must be 0-23)", hour);
+	ut_set_status(UT_BAD_ARG);
+	return UT_BAD_ARG;
+    }
+    if (minute < 0 || minute > 59) {
+	ut_handle_error_message("Invalid minute %d (must be 0-59)", minute);
+	ut_set_status(UT_BAD_ARG);
+	return UT_BAD_ARG;
+    }
+    /*
+     * Reject NaN and negative seconds before the range tests: any comparison
+     * with NaN is false, so !(second >= 0.0) is true for NaN. (The scanner only
+     * feeds digit-parsed, non-negative values, but a direct caller can pass
+     * either.)
+     */
+    if (!(second >= 0.0)) {
+	ut_handle_error_message(
+	    "Invalid second %g (must be non-negative)", second);
+	ut_set_status(UT_BAD_ARG);
+	return UT_BAD_ARG;
+    }
+    /*
+     * second in [0,60) is always a valid time of day. The positional carve-out
+     * admits the inserted-second form: 60 <= second < 61 is accepted only at
+     * 23:59; any second >= 61, and any second >= 60 at any other time of day,
+     * is rejected. This is the single public clock check: the unit-string
+     * scanner calls it too, so parser and direct-API acceptance are identical.
+     */
+    if (second >= 61.0) {
+	ut_handle_error_message(
+	    "Invalid second %g (must be less than 61)", second);
+	ut_set_status(UT_BAD_ARG);
+	return UT_BAD_ARG;
+    }
+    if (second >= 60.0 && (hour != 23 || minute != 59)) {
+	ut_handle_error_message(
+	    "Invalid second %g at %02d:%02d (60 <= s < 61 only at 23:59)",
+	    second, hour, minute);
+	ut_set_status(UT_BAD_ARG);
+	return UT_BAD_ARG;
+    }
+    /* Status convention (see udunits2.h): report this call's own outcome. */
+    ut_set_status(UT_SUCCESS);
+    return UT_SUCCESS;
+}
+
+
+/*
+ * Validates calendar timestamp components. See udunits2.h for the contract.
+ */
+ut_status
+ut_check_time(
+    int		year,
+    int		month,
+    int		day,
+    int		hour,
+    int		minute,
+    double	second)
+{
+    if (ut_check_date(year, month, day) != UT_SUCCESS)
+	return UT_BAD_ARG;
+    if (ut_check_clock(hour, minute, second) != UT_SUCCESS)
+	return UT_BAD_ARG;
+    /* Status convention (see udunits2.h): report this call's own outcome. */
+    ut_set_status(UT_SUCCESS);
+    return UT_SUCCESS;
 }
 
 
@@ -481,7 +717,23 @@ ut_encode_time(
     const int		minute,
     const double	second)
 {
-    return ut_encode_date(year, month, day) + ut_encode_clock(hour, minute, second);
+    double result = ut_encode_date(year, month, day)
+		  + ut_encode_clock(hour, minute, second);
+    /*
+     * Derive status from the composite result, not by polling the callees.
+     * Failure reaches `result` as a NaN: from the date gate (|year| >
+     * 5,000,000), or from ut_encode_clock rejecting an out-of-range,
+     * infinite, or NaN component. Both callees already collapse their own
+     * failures to NaN, so no infinity should reach this point; the isfinite()
+     * test is kept as a belt-and-braces guard, since a lone Inf is NOT a NaN
+     * and would otherwise slip past the isnan() test below and break the
+     * documented "NaN return <=> UT_BAD_ARG" invariant.
+     * See the status convention in udunits2.h.
+     */
+    if (!isfinite(result))
+	result = NAN;
+    ut_set_status(isnan(result) ? UT_BAD_ARG : UT_SUCCESS);
+    return result;
 }
 
 
@@ -3059,6 +3311,13 @@ ut_set_second(
  * the second unit, respectively.  Units from different unit-systems never
  * compare equal.
  *
+ * This is a total ordering used to store units as keys in lookup
+ * structures (e.g. binary search trees).  The ordering is stable but
+ * arbitrary: it does not reflect physical magnitude, and a nonzero
+ * result does not mean the units are incompatible.  To compare numeric
+ * values, convert them to a common unit (see ut_are_convertible() and
+ * ut_get_converter()) and compare the resulting numbers.
+ *
  * Arguments:
  *	unit1		Pointer to a unit or NULL.
  *	unit2		Pointer to another unit or NULL.
@@ -3134,7 +3393,7 @@ ut_scale(
     else {
 	if (factor == 0) {
 	    ut_set_status(UT_BAD_ARG);
-	    ut_handle_error_message("ut_scale(): NULL factor argument");
+	    ut_handle_error_message("ut_scale(): Unit cannot have zero scale factor");
 	}
 	else {
 	    result = factor == 1

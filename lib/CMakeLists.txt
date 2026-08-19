@@ -74,6 +74,29 @@ IF(MSVC)
 )
 ENDIF()
 
+##
+# Optional AddressSanitizer/LeakSanitizer support.
+#
+# UDUNITS_ASAN is the explicit, documented switch.  It instruments BOTH the
+# library and the sanitizer-only tests at compile AND link time, so a leak
+# originating inside libudunits2 (e.g. a strdup in the parser) is actually
+# seen by LeakSanitizer.  As a convenience, the same wiring also turns on if
+# the user has already put -fsanitize=address into CMAKE_C_FLAGS by hand.
+##
+option(UDUNITS_ASAN "Build with AddressSanitizer and enable sanitizer-only tests" OFF)
+if(UDUNITS_ASAN OR CMAKE_C_FLAGS MATCHES "fsanitize=address")
+    set(UD_ASAN_ENABLED TRUE)
+else()
+    set(UD_ASAN_ENABLED FALSE)
+endif()
+
+if(UD_ASAN_ENABLED AND UDUNITS_ASAN)
+    # Only add the flags ourselves when the user asked via UDUNITS_ASAN; if the
+    # flag is already in CMAKE_C_FLAGS, the compiler/linker pick it up globally.
+    target_compile_options(libudunits2 PRIVATE -fsanitize=address -g)
+    target_link_options(libudunits2 PUBLIC -fsanitize=address)
+endif()
+
 if (CUNIT_LIBRARY)
     add_executable(testUnits testUnits.c)
     target_link_libraries (testUnits libudunits2)
@@ -81,6 +104,33 @@ if (CUNIT_LIBRARY)
     add_test(
         NAME testUnits
         COMMAND testUnits ${CMAKE_CURRENT_SOURCE_DIR}/udunits2.xml)
+
+    add_executable(testDateTime testDateTime.c)
+    target_link_libraries (testDateTime libudunits2)
+    target_link_libraries (testDateTime ${CUNIT_LIBRARY})
+    add_test(
+        NAME testDateTime
+        COMMAND testDateTime ${CMAKE_CURRENT_SOURCE_DIR}/udunits2.xml)
+endif()
+
+##
+# Memory-leak regression harness.  It uses a plain main() (no CUnit) and is
+# meaningful only under a leak detector, so it is built only when ASan is on.
+# detect_leaks=1 turns LeakSanitizer on (default off on some platforms);
+# exitcode=1 makes a detected leak fail the test.
+##
+if(UD_ASAN_ENABLED)
+    add_executable(testParseLeak testParseLeak.c)
+    target_link_libraries(testParseLeak libudunits2 ${MATH_LIBRARY})
+    if(UDUNITS_ASAN)
+        target_compile_options(testParseLeak PRIVATE -fsanitize=address -g)
+        target_link_options(testParseLeak PRIVATE -fsanitize=address)
+    endif()
+    add_test(
+        NAME testParseLeak
+        COMMAND testParseLeak ${CMAKE_CURRENT_SOURCE_DIR}/udunits2.xml)
+    set_tests_properties(testParseLeak PROPERTIES
+        ENVIRONMENT "ASAN_OPTIONS=detect_leaks=1:exitcode=1")
 endif()
 
 # The documentation is in multiple texinfo(5) format files.

@@ -1,0 +1,2010 @@
+/*
+ * Copyright 2026 University Corporation for Atmospheric Research
+ *
+ * This file is part of the UDUNITS-2 package.  See the file COPYRIGHT
+ * in the top-level source-directory of the package for copying and
+ * redistribution conditions.
+ *
+ * Tests for the datetime parsing overhaul (issue #124, GRAMMAR.md).
+ *
+ * Coverage targets:
+ *   - Broken DATE (YYYY-MM-DD) and right-truncations
+ *   - Packed DATE (YYYYMMDD) and right-truncations
+ *   - Broken CLOCK (HH:MM:SS) and right-truncations + fractional seconds
+ *   - Packed CLOCK (HHMMSS) and right-truncations
+ *   - Broken / packed TZ (+HH:MM, +HHMM)
+ *   - Z / GMT / UTC tokens
+ *   - ISO 8601 'T' separator semantics
+ *   - Range validation (month, day, hour, minute, second, TZ hour)
+ *   - Leap-second rule (60 only at 23:59:60)
+ *   - Day overflow rollover (Feb 30 -> Mar 1/2)
+ *   - Year 0 normalization
+ *   - Negative-zero TZ rejection
+ *   - SHIFT-with-REAL / SHIFT-with-INT (non-timestamp) still works
+ *
+ * Assertion strategy:
+ *   Accept tests are value-checked: each parsed "seconds since <input>"
+ *   is converted against a hand-built reference unit derived from
+ *   ut_encode_time(Y, M, D, h, m, s). A successful parse with the wrong
+ *   numeric origin therefore still fails the test.
+ *
+ *   Reject tests check that ut_parse() returns NULL.
+ */
+
+#include "config.h"
+
+#include "udunits2.h"
+#include "converter.h"
+
+#include <limits.h>
+#include <math.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <float.h>
+#include <CUnit/CUnit.h>
+#include <CUnit/Basic.h>
+
+static const char*      xmlPath;
+static ut_system*       unitSystem;
+static ut_unit*         second_unit;
+
+/*
+ * Tolerance (in seconds) when comparing parsed timestamps against a
+ * ut_encode_time() reference.
+ *
+ * ut_encode_time() returns seconds relative to the UDUNITS epoch
+ * (2001-01-01 00:00:00 UTC), so |encoded| grows as a date moves away from
+ * 2001 in either direction: ~3e7 for year 2000, ~6e10 for year 1, ~2.5e11
+ * for year 9999, ~1.6e14 for year 5,000,000. The absolute resolution of a
+ * double at magnitude m is about DBL_EPSILON*m, i.e. ~7e-9 s near the epoch
+ * but ~0.035 s out at year 5,000,000. A single flat tolerance is therefore
+ * wrong in both directions: too loose near the epoch (it would hide a
+ * fractional-second parse defect) and, if set tight, too strict for the
+ * deliberate large-|year| sweeps.
+ *
+ * ts_eps() scales the tolerance with magnitude: K ulps of headroom, with an
+ * absolute floor for near-epoch dates. K=16 is generous -- the parser and
+ * ut_encode_time() share the same Julian-day arithmetic, so the empirically
+ * observed drift across this suite is 0 ulp; 16 ulps only guards against
+ * cross-platform/libm rounding differences. The floor dominates only within
+ * ~3 days of the epoch, which is exactly where the dedicated fractional-second
+ * precision test sits, giving it a tight ~1e-9 s bound.
+ */
+#define TS_EPS_K      16
+#define TS_EPS_FLOOR  1e-9
+
+/* Tolerance on the seconds field of a ut_decode_time() round-trip, where the
+   expected value is exactly 0.0. Distinct from the origin tolerance above
+   (which scales with magnitude); kept separate so the two can diverge. */
+#define DECODE_SEC_EPS  1e-9
+
+static double ts_eps(double encoded)
+{
+    double scaled = TS_EPS_K * DBL_EPSILON * fabs(encoded);
+    return scaled > TS_EPS_FLOOR ? scaled : TS_EPS_FLOOR;
+}
+
+/* ---------------------------------------------------------------------- */
+/*                              setup / teardown                          */
+/* ---------------------------------------------------------------------- */
+
+static int setup(void)
+{
+    unitSystem = ut_read_xml(xmlPath);
+    if (unitSystem == NULL) {
+        fprintf(stderr, "setup: ut_read_xml(%s) failed, status=%d\n",
+                xmlPath ? xmlPath : "(default)", (int)ut_get_status());
+        return -1;
+    }
+    second_unit = ut_get_unit_by_name(unitSystem, "second");
+    if (second_unit == NULL) {
+        fprintf(stderr, "setup: lookup of \"second\" failed\n");
+        return -1;
+    }
+    return 0;
+}
+
+static int teardown(void)
+{
+    ut_free(second_unit);
+    ut_free_system(unitSystem);
+    return 0;
+}
+
+/* ---------------------------------------------------------------------- */
+/*                              test helpers                              */
+/* ---------------------------------------------------------------------- */
+
+/*
+ * Build "seconds since <suffix>" and parse it.
+ * Returns the parsed unit (caller frees) or NULL on parse failure.
+ */
+static ut_unit* parse_seconds_since(const char* suffix)
+{
+    char buf[256];
+    snprintf(buf, sizeof(buf), "seconds since %s", suffix);
+    ut_set_status(UT_SUCCESS);
+    return ut_parse(unitSystem, buf, UT_UTF8);
+}
+
+/*
+ * Assert that "seconds since <suffix>" parses, and that its origin
+ * equals ut_encode_time(Y, M, D, h, m, s) within a tolerance of `eps`
+ * seconds.
+ *
+ * Implementation: build a reference unit "seconds @ <encoded>", get the
+ * converter from parsed to reference, apply to 0.0. The result is the
+ * difference (parsed_origin - reference_origin) in seconds; we want ~0.
+ */
+static void assert_timestamp_origin_eps(
+        const char* suffix,
+        int Y, int M, int D, int h, int min, double s,
+        double eps)
+{
+    ut_unit* parsed = parse_seconds_since(suffix);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(parsed);
+
+    double encoded = ut_encode_time(Y, M, D, h, min, s);
+    ut_unit* ref = ut_offset_by_time(second_unit, encoded);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(ref);
+
+    cv_converter* cv = ut_get_converter(parsed, ref);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(cv);
+
+    double delta = cv_convert_double(cv, 0.0);
+    if (fabs(delta) > eps) {
+        fprintf(stderr,
+            "assert_timestamp_origin: suffix=%s expected=(%d-%d-%d %d:%d:%g) "
+            "delta=%g s eps=%g s\n", suffix, Y, M, D, h, min, s, delta, eps);
+    }
+    CU_ASSERT_DOUBLE_EQUAL(delta, 0.0, eps);
+
+    cv_free(cv);
+    ut_free(ref);
+    ut_free(parsed);
+}
+
+/*
+ * As above, with a magnitude-aware tolerance derived from the encoded origin
+ * (see ts_eps). This is the default for general acceptance tests.
+ */
+static void assert_timestamp_origin(
+        const char* suffix,
+        int Y, int M, int D, int h, int min, double s)
+{
+    double encoded = ut_encode_time(Y, M, D, h, min, s);
+    assert_timestamp_origin_eps(suffix, Y, M, D, h, min, s, ts_eps(encoded));
+}
+
+/*
+ * Assert that "seconds since <suffix>" fails to parse.
+ */
+static char last_error_msg[512];
+
+static int capture_error_message(const char* fmt, va_list args)
+{
+    vsnprintf(last_error_msg, sizeof(last_error_msg), fmt, args);
+    return 0;
+}
+
+/*
+ * Asserts that `suffix` is rejected AND that the emitted diagnostic contains
+ * `needle`. Substring rather than exact match on purpose: this pins down which
+ * field the message names and which limit it quotes, without turning every
+ * wording change into a test failure.
+ */
+static void assert_timestamp_reject_msg(const char* suffix, const char* needle)
+{
+    ut_error_message_handler prev;
+    ut_unit* parsed;
+
+    last_error_msg[0] = '\0';
+    prev = ut_set_error_message_handler(capture_error_message);
+    parsed = parse_seconds_since(suffix);
+    (void)ut_set_error_message_handler(prev);
+
+    if (parsed != NULL) {
+	fprintf(stderr, "assert_timestamp_reject_msg: suffix=%s unexpectedly"
+		" parsed\n", suffix);
+	ut_free(parsed);
+    }
+    CU_ASSERT_PTR_NULL(parsed);
+
+    if (strstr(last_error_msg, needle) == NULL)
+	fprintf(stderr, "assert_timestamp_reject_msg: suffix=%s\n"
+		"  expected substring: %s\n  actual message:     %s\n",
+		suffix, needle, last_error_msg);
+    CU_ASSERT_PTR_NOT_NULL(strstr(last_error_msg, needle));
+}
+
+static void assert_timestamp_reject(const char* suffix)
+{
+    ut_unit* parsed = parse_seconds_since(suffix);
+    if (parsed != NULL) {
+        fprintf(stderr, "assert_timestamp_reject: suffix=%s unexpectedly parsed\n",
+                suffix);
+        ut_free(parsed);
+    }
+    CU_ASSERT_PTR_NULL(parsed);
+}
+
+/*
+ * Assert that two suffix strings produce equivalent timestamps.
+ * Useful for TZ application: "12:00+05:30" must equal "06:30 UTC".
+ */
+static void assert_timestamps_equivalent(const char* a, const char* b)
+{
+    ut_unit* ua = parse_seconds_since(a);
+    ut_unit* ub = parse_seconds_since(b);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(ua);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(ub);
+
+    cv_converter* cv = ut_get_converter(ua, ub);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(cv);
+    double delta = cv_convert_double(cv, 0.0);
+
+    /* Derive the tolerance from the magnitude of one side's origin (its value
+       on the ut_encode_time scale), obtained by converting to the base second
+       unit. Both origins are equal to within rounding, so either side works. */
+    cv_converter* cvm = ut_get_converter(ua, second_unit);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(cvm);
+    double eps = ts_eps(cv_convert_double(cvm, 0.0));
+    cv_free(cvm);
+
+    if (fabs(delta) > eps) {
+        fprintf(stderr,
+            "assert_timestamps_equivalent: a=%s b=%s delta=%g s eps=%g s\n",
+            a, b, delta, eps);
+    }
+    CU_ASSERT_DOUBLE_EQUAL(delta, 0.0, eps);
+
+    cv_free(cv);
+    ut_free(ua);
+    ut_free(ub);
+}
+
+/* ---------------------------------------------------------------------- */
+/*                          1. broken DATE                                */
+/* ---------------------------------------------------------------------- */
+
+static void test_broken_date_full(void)
+{
+    assert_timestamp_origin("2024-01-15",        2024,  1, 15, 0, 0, 0.0);
+    assert_timestamp_origin("2024-12-31",        2024, 12, 31, 0, 0, 0.0);
+    assert_timestamp_origin("1970-01-01",        1970,  1,  1, 0, 0, 0.0);
+    assert_timestamp_origin("2000-02-29",        2000,  2, 29, 0, 0, 0.0);
+}
+
+static void test_broken_date_single_digit(void)
+{
+    /* GRAMMAR.md: <month> and <day> are 1-2 digits each. */
+    assert_timestamp_origin("2024-1-5",          2024,  1,  5, 0, 0, 0.0);
+    assert_timestamp_origin("2024-1-15",         2024,  1, 15, 0, 0, 0.0);
+    assert_timestamp_origin("2024-11-5",         2024, 11,  5, 0, 0, 0.0);
+}
+
+static void test_broken_date_truncated(void)
+{
+    /* YYYY-MM with no day defaults to day=1 */
+    assert_timestamp_origin("2024-01",           2024,  1,  1, 0, 0, 0.0);
+    assert_timestamp_origin("2024-1",            2024,  1,  1, 0, 0, 0.0);
+    assert_timestamp_origin("1999-12",           1999, 12,  1, 0, 0, 0.0);
+}
+
+static void test_broken_date_year_only(void)
+{
+    /* YYYY alone defaults to Jan 1 */
+    assert_timestamp_origin("2024",              2024,  1,  1, 0, 0, 0.0);
+    assert_timestamp_origin("1",                    1,  1,  1, 0, 0, 0.0);
+    assert_timestamp_origin("9999",              9999,  1,  1, 0, 0, 0.0);
+}
+
+static void test_broken_date_year_zero(void)
+{
+    /* GRAMMAR.md: year 0 is silently normalized to year 1. */
+    assert_timestamp_origin("0-01-01",              1,  1,  1, 0, 0, 0.0);
+    assert_timestamp_origin("0",                    1,  1,  1, 0, 0, 0.0);
+}
+
+static void test_broken_date_negative_year(void)
+{
+    assert_timestamp_origin("-1-01-01",            -1,  1,  1, 0, 0, 0.0);
+    assert_timestamp_origin("-100-06-15",        -100,  6, 15, 0, 0, 0.0);
+}
+
+static void test_broken_date_day_rollover(void)
+{
+    /*
+     * GRAMMAR.md / ut_check_date: dates legal in either the Gregorian
+     * calendar (leap rule not enforced) or the 360_day calendar are
+     * accepted. The encoder always uses Gregorian arithmetic, so Feb 29
+     * stays put in a leap year, Feb 29 of a non-leap year rolls to
+     * Mar 1, and Feb 30 (valid in 360_day, invalid in Gregorian) rolls
+     * to Mar 1 or Mar 2 depending on the year. Apr 31, Jun 31, etc.
+     * are now rejected outright by the validator — see the dedicated
+     * reject test below.
+     */
+    /* 2024 is a leap year, 1999 is not. */
+    assert_timestamp_origin("2024-02-29",        2024,  2, 29, 0, 0, 0.0); /* valid */
+    assert_timestamp_origin("1999-02-29",        1999,  3,  1, 0, 0, 0.0); /* rolls */
+    assert_timestamp_origin("2024-02-30",        2024,  3,  1, 0, 0, 0.0); /* rolls; valid in 360_day */
+}
+
+static void test_broken_date_reject_impossible_day(void)
+{
+    /*
+     * Day values legal in neither Gregorian-no-leap nor 360_day are
+     * rejected by ut_check_date and surface as parse failures here.
+     * These would silently roll under the previous lenient validator.
+     */
+    CU_ASSERT_PTR_NULL(parse_seconds_since("2024-02-31"));
+    CU_ASSERT_PTR_NULL(parse_seconds_since("2024-04-31"));
+    CU_ASSERT_PTR_NULL(parse_seconds_since("2024-06-31"));
+    CU_ASSERT_PTR_NULL(parse_seconds_since("2024-09-31"));
+    CU_ASSERT_PTR_NULL(parse_seconds_since("2024-11-31"));
+}
+
+static void test_broken_date_per_month_max_accept(void)
+{
+    /*
+     * Companion to test_broken_date_reject_impossible_day: assert that
+     * each month's maximum legal day IS accepted. Locks down the
+     * per-month table in ut_check_date so any future refactor that
+     * widens or narrows a row will fail this test immediately.
+     *
+     * 31-day months: Jan, Mar, May, Jul, Aug, Oct, Dec.
+     * 30-day months: Apr, Jun, Sep, Nov.
+     * Feb: max 30 (CF 360_day calendar admission; leap rule NOT
+     * applied at validation, so Feb 29 also accepted in every year).
+     */
+    /* 31-day months. */
+    assert_timestamp_origin("2024-01-31", 2024,  1, 31, 0, 0, 0.0);
+    assert_timestamp_origin("2024-03-31", 2024,  3, 31, 0, 0, 0.0);
+    assert_timestamp_origin("2024-05-31", 2024,  5, 31, 0, 0, 0.0);
+    assert_timestamp_origin("2024-07-31", 2024,  7, 31, 0, 0, 0.0);
+    assert_timestamp_origin("2024-08-31", 2024,  8, 31, 0, 0, 0.0);
+    assert_timestamp_origin("2024-10-31", 2024, 10, 31, 0, 0, 0.0);
+    assert_timestamp_origin("2024-12-31", 2024, 12, 31, 0, 0, 0.0);
+    /* 30-day months. */
+    assert_timestamp_origin("2024-04-30", 2024,  4, 30, 0, 0, 0.0);
+    assert_timestamp_origin("2024-06-30", 2024,  6, 30, 0, 0, 0.0);
+    assert_timestamp_origin("2024-09-30", 2024,  9, 30, 0, 0, 0.0);
+    assert_timestamp_origin("2024-11-30", 2024, 11, 30, 0, 0, 0.0);
+    /* February: 29 in any year; 30 for 360_day. */
+    assert_timestamp_origin("2024-02-29", 2024,  2, 29, 0, 0, 0.0);
+    assert_timestamp_origin("2023-02-29", 2023,  3,  1, 0, 0, 0.0); /* rolls */
+    assert_timestamp_origin("2024-02-30", 2024,  3,  1, 0, 0, 0.0); /* rolls */
+}
+
+static void test_broken_date_gregorian_cutover_gap(void)
+{
+    /* GRAMMAR.md: Oct 5-14, 1582 don't exist in the unified Julian/Gregorian
+       calendar (those days were removed in the Gregorian reform). Inputs in
+       that gap are silently normalized to the equivalent Gregorian date.
+       This documents/locks in the encoder's behavior for inputs that have
+       no canonical representation. */
+    assert_timestamp_origin("1582-10-14",        1582, 10, 24, 0, 0, 0.0); /* gap */
+    assert_timestamp_origin("1582-10-05",        1582, 10, 15, 0, 0, 0.0); /* gap */
+    /* Boundary days outside the gap remain canonical. */
+    assert_timestamp_origin("1582-10-04",        1582, 10,  4, 0, 0, 0.0); /* last Julian */
+    assert_timestamp_origin("1582-10-15",        1582, 10, 15, 0, 0, 0.0); /* first Gregorian */
+}
+
+static void test_broken_date_reject_bad_month(void)
+{
+    assert_timestamp_reject("2024-13-01");
+    assert_timestamp_reject("2024-00-01");
+    assert_timestamp_reject("2024-99-01");
+}
+
+static void test_broken_date_reject_bad_day(void)
+{
+    assert_timestamp_reject("2024-01-00");
+    assert_timestamp_reject("2024-01-32");
+    assert_timestamp_reject("2024-01-99");
+}
+
+static void test_broken_date_reject_year_too_long(void)
+{
+    /* Broken-date <year> is 1-7 digits lexically (per grammar);
+       additionally constrained semantically to the inclusive range
+       [-5000000, 5000000] by ut_check_date. */
+    /* Lexically too long: 8+ digit year. */
+    assert_timestamp_reject("12345678-01-01");
+    assert_timestamp_reject("-12345678-01-01");
+    /* Lexically OK but semantically out of range. */
+    assert_timestamp_reject("5000001-01-01");
+    assert_timestamp_reject("-5000001-01-01");
+    assert_timestamp_reject("9999999-01-01");
+}
+
+static void test_broken_date_accept_long_year(void)
+{
+    /* New range admits years up to ±5,000,000 in broken format only. */
+    assert_timestamp_origin("99999-01-01",      99999,  1,  1, 0, 0, 0.0);
+    assert_timestamp_origin("-99999-12-31",    -99999, 12, 31, 0, 0, 0.0);
+    assert_timestamp_origin("1000000-06-15",  1000000,  6, 15, 0, 0, 0.0);
+    assert_timestamp_origin("-1000000-06-15",-1000000,  6, 15, 0, 0, 0.0);
+    /* Exact boundary. */
+    assert_timestamp_origin("5000000-01-01",  5000000,  1,  1, 0, 0, 0.0);
+    assert_timestamp_origin("-5000000-12-31",-5000000, 12, 31, 0, 0, 0.0);
+}
+
+static void test_broken_date_long_year_per_month_validation(void)
+{
+    /*
+     * Per-month day validation must still fire when the year is in the
+     * extended range (broken format allows up to 7-digit year). Pins
+     * that ut_check_date's per-month table is consulted independently
+     * of the year — i.e. that year-range and per-month checks compose
+     * correctly rather than one short-circuiting the other.
+     */
+    assert_timestamp_reject("1234567-04-31");   /* Apr 31, 7-digit year */
+    assert_timestamp_reject("1234567-02-31");   /* Feb 31 */
+    assert_timestamp_reject("-1234567-09-31");  /* Sep 31, negative */
+    /*
+     * Feb 30 (valid for 360_day) accepted at any year. Year 1234567 is
+     * not divisible by 4, so its February has 28 days; Feb 30 therefore
+     * rolls to Mar 2, not Mar 1. The rollover destination is documented
+     * in test_broken_date_day_rollover.
+     */
+    assert_timestamp_origin("1234567-02-30",  1234567, 3, 2, 0, 0, 0.0); /* rolls */
+    /* Truncated long year accepted. */
+    {
+        ut_unit* u;
+
+        u = parse_seconds_since("12345-1");
+        CU_ASSERT_PTR_NOT_NULL(u);
+        if (u != NULL) ut_free(u);
+
+        u = parse_seconds_since("1234567-12");
+        CU_ASSERT_PTR_NOT_NULL(u);
+        if (u != NULL) ut_free(u);
+
+        /* A NULL return has nothing to free. */
+        CU_ASSERT_PTR_NULL(parse_seconds_since("1234567-13"));
+    }
+}
+
+static void test_packed_date_year_still_4_digit(void)
+{
+    /* The 4-digit packed-date year cap is intentional: extending it would
+       make truncation ambiguous. Long years are only supported in broken
+       format. This test pins the cap by verifying that a 5-digit numeric
+       prefix is parsed as (year=4digit, month=5th-digit), NOT as a 5-digit
+       year. */
+    /* "12345" → year=1234, month=05, day=01 — not year=12345. */
+    assert_timestamp_origin("12345",         1234,  5,  1, 0, 0, 0.0);
+    /* "100001" → year=1000, month=01 — not year=10000, month=1. */
+    assert_timestamp_origin("100001",        1000,  1,  1, 0, 0, 0.0);
+    /* Conventional 4-digit packed still works. */
+    assert_timestamp_origin("20240101",      2024,  1,  1, 0, 0, 0.0);
+}
+
+static void test_broken_date_reject_bad_separator(void)
+{
+    assert_timestamp_reject("2024.01.01");
+    assert_timestamp_reject("2024/01/01");
+}
+
+/* ---------------------------------------------------------------------- */
+/*                          2. packed DATE                                */
+/* ---------------------------------------------------------------------- */
+
+static void test_packed_date_full(void)
+{
+    /* YYYYMMDD */
+    assert_timestamp_origin("20240115",          2024,  1, 15, 0, 0, 0.0);
+    assert_timestamp_origin("20241231",          2024, 12, 31, 0, 0, 0.0);
+    assert_timestamp_origin("19700101",          1970,  1,  1, 0, 0, 0.0);
+}
+
+static void test_packed_date_truncated(void)
+{
+    /* GRAMMAR.md length-based interpretation:
+         len 1-4  -> YYYY            (-> YYYY-01-01)
+         len 5    -> YYYYM           (-> YYYY-0M-01)
+         len 6    -> YYYYMM          (-> YYYY-MM-01)
+         len 7    -> YYYYMMD         (-> YYYY-MM-0D)
+         len 8    -> YYYYMMDD
+    */
+    assert_timestamp_origin("2024",              2024,  1,  1, 0, 0, 0.0); /* 4 */
+    assert_timestamp_origin("202401",            2024,  1,  1, 0, 0, 0.0); /* 6 */
+    assert_timestamp_origin("2024011",           2024,  1,  1, 0, 0, 0.0); /* 7 */
+    assert_timestamp_origin("2024012",           2024,  1,  2, 0, 0, 0.0); /* 7 */
+    assert_timestamp_origin("20240107",          2024,  1,  7, 0, 0, 0.0); /* 8 */
+}
+
+static void test_packed_date_reject_bad_length(void)
+{
+    /* len 5: YYYYM -> month digit; if month=0 -> reject */
+    assert_timestamp_reject("20240");   /* YYYY-00-01 -> bad month */
+}
+
+static void test_packed_date_reject_impossible_day(void)
+{
+    /*
+     * Per-month day validation also fires through the packed-date entry
+     * point (decodePackedDate -> ut_check_date). Companion to
+     * test_broken_date_reject_impossible_day. Without this, a future
+     * refactor that bypasses ut_check_date in the packed path would
+     * pass the broken-format reject test but silently regress packed.
+     */
+    assert_timestamp_reject("20240231"); /* Feb 31 */
+    assert_timestamp_reject("20240431"); /* Apr 31 */
+    assert_timestamp_reject("20240631"); /* Jun 31 */
+    assert_timestamp_reject("20240931"); /* Sep 31 */
+    assert_timestamp_reject("20241131"); /* Nov 31 */
+    /* Also test len-7 form (YYYYMM + 1-digit D). The day digit cannot
+       reach an impossible value alone (max 9), so the only reachable
+       reject via len 7 is day = 0. */
+    assert_timestamp_reject("2024010");  /* len 7: YYYYMM=202401, D=0 */
+    assert_timestamp_reject("2024020");  /* len 7: YYYYMM=202402, D=0 */
+    /* Bad month via len 6 (YYYYMM). */
+    assert_timestamp_reject("202413");   /* month 13 */
+    assert_timestamp_reject("202400");   /* month 0 */
+}
+
+static void test_packed_date_day_rollover(void)
+{
+    /*
+     * The day-rollover semantics (Feb 29 in non-leap years rolls to
+     * Mar 1; Feb 30 valid in 360_day calendar rolls to Mar 1 in
+     * Gregorian arithmetic) must also work via the packed format,
+     * which routes through a different decode path than the broken
+     * form. Companion to test_broken_date_day_rollover.
+     */
+    assert_timestamp_origin("20240229", 2024,  2, 29, 0, 0, 0.0); /* leap, stays */
+    assert_timestamp_origin("19990229", 1999,  3,  1, 0, 0, 0.0); /* rolls */
+    assert_timestamp_origin("20240230", 2024,  3,  1, 0, 0, 0.0); /* rolls */
+}
+
+static void test_packed_date_reject_day_zero(void)
+{
+    /*
+     * Both length-8 (YYYYMMDD with D=00) and length-7 (YYYYMM + 1-digit
+     * day = 0) must reject. Day = 0 is filtered by ut_check_date's
+     * "day < 1" check.
+     */
+    assert_timestamp_reject("20240100");  /* len 8: D=00 */
+    assert_timestamp_reject("20241200");  /* len 8: Dec 0 */
+    assert_timestamp_reject("2024010");   /* len 7: D=0 */
+    assert_timestamp_reject("2024120");   /* len 7: Dec 0 */
+}
+
+static void test_packed_date_negative_year(void)
+{
+    /*
+     * The packed-date sign is applied after digit-count interpretation
+     * (see decodePackedDate). Verify each truncation length works with
+     * a negative sign and that the resulting (year, month, day) matches
+     * the hand-decoded interpretation. The 4-digit cap on packed-year
+     * means the sign-prefixed input still has at most 8 digits.
+     */
+    assert_timestamp_origin("-2024",      -2024,  1,  1, 0, 0, 0.0); /* len 4 */
+    assert_timestamp_origin("-12345",     -1234,  5,  1, 0, 0, 0.0); /* len 5: Y=1234 M=5 */
+    assert_timestamp_origin("-123405",    -1234,  5,  1, 0, 0, 0.0); /* len 6 */
+    assert_timestamp_origin("-1234051",   -1234,  5,  1, 0, 0, 0.0); /* len 7: D=1 */
+    assert_timestamp_origin("-12340515",  -1234,  5, 15, 0, 0, 0.0); /* len 8 */
+    /* Year-0 with negative sign normalizes via ut_encode_date. */
+    {
+        ut_unit* u;
+
+        u = parse_seconds_since("-00000101");
+        CU_ASSERT_PTR_NOT_NULL(u);
+        if (u != NULL) ut_free(u);
+
+        u = parse_seconds_since("-0000");
+        CU_ASSERT_PTR_NOT_NULL(u);
+        if (u != NULL) ut_free(u);
+    }
+}
+
+/* ---------------------------------------------------------------------- */
+/*                       3. broken CLOCK                                  */
+/* ---------------------------------------------------------------------- */
+
+static void test_broken_clock_full(void)
+{
+    assert_timestamp_origin("2024-01-15 12:30:45",
+                            2024,  1, 15, 12, 30, 45.0);
+    assert_timestamp_origin("2024-01-15 00:00:00",
+                            2024,  1, 15,  0,  0,  0.0);
+    assert_timestamp_origin("2024-01-15 23:59:59",
+                            2024,  1, 15, 23, 59, 59.0);
+}
+
+static void test_broken_clock_no_seconds(void)
+{
+    assert_timestamp_origin("2024-01-15 12:30",
+                            2024,  1, 15, 12, 30,  0.0);
+    assert_timestamp_origin("2024-01-15 00:00",
+                            2024,  1, 15,  0,  0,  0.0);
+}
+
+static void test_broken_clock_fractional_seconds(void)
+{
+    assert_timestamp_origin("2024-01-15 12:30:45.5",
+                            2024,  1, 15, 12, 30, 45.5);
+    assert_timestamp_origin("2024-01-15 12:30:45.125",
+                            2024,  1, 15, 12, 30, 45.125);
+    assert_timestamp_origin("2024-01-15 12:30:45.000001",
+                            2024,  1, 15, 12, 30, 45.000001);
+}
+
+static void test_fractional_second_precision(void)
+{
+    /*
+     * Dedicated precision test for parse_fraction. Placed at the UDUNITS
+     * epoch (2001-01-01 00:00:00), where |encoded| equals just the fraction
+     * itself, so double resolution is ~1e-17 s and a tight 1e-9 tolerance is
+     * both achievable and meaningful: a defect that truncated or mis-parsed
+     * digits past the 3rd decimal (which the old flat 1e-3 tolerance would
+     * have hidden) fails here. Each string is compared against the double the
+     * same decimal literal compiles to, so a faithful parse gives delta 0.
+     * The bound is TS_EPS_FLOOR: at the epoch it is the tolerance ts_eps()
+     * itself would return, so this test tracks the near-epoch floor.
+     */
+    const double eps = TS_EPS_FLOOR;
+    assert_timestamp_origin_eps("2001-01-01 00:00:00.1",
+                                2001, 1, 1, 0, 0, 0.1, eps);
+    assert_timestamp_origin_eps("2001-01-01 00:00:00.12",
+                                2001, 1, 1, 0, 0, 0.12, eps);
+    assert_timestamp_origin_eps("2001-01-01 00:00:00.123",
+                                2001, 1, 1, 0, 0, 0.123, eps);
+    assert_timestamp_origin_eps("2001-01-01 00:00:00.1234",
+                                2001, 1, 1, 0, 0, 0.1234, eps);
+    assert_timestamp_origin_eps("2001-01-01 00:00:00.123456",
+                                2001, 1, 1, 0, 0, 0.123456, eps);
+    assert_timestamp_origin_eps("2001-01-01 00:00:00.999999",
+                                2001, 1, 1, 0, 0, 0.999999, eps);
+    assert_timestamp_origin_eps("2001-01-01 00:00:00.1234567890",
+                                2001, 1, 1, 0, 0, 0.1234567890, eps);
+}
+
+static void test_broken_clock_single_digit_components(void)
+{
+    /* <tod-hour>, <minute>, <second> are each 1-2 digits per grammar. */
+    assert_timestamp_origin("2024-01-15 9:5",
+                            2024,  1, 15,  9,  5,  0.0);
+    assert_timestamp_origin("2024-01-15 9:5:3",
+                            2024,  1, 15,  9,  5,  3.0);
+}
+
+static void test_broken_clock_reject_bad_hour(void)
+{
+    assert_timestamp_reject("2024-01-15 24:00:00");
+    assert_timestamp_reject("2024-01-15 25:00");
+    assert_timestamp_reject("2024-01-15 99:00");
+}
+
+static void test_broken_clock_reject_bad_minute(void)
+{
+    assert_timestamp_reject("2024-01-15 12:60:00");
+    assert_timestamp_reject("2024-01-15 12:99");
+}
+
+static void test_broken_clock_leap_second(void)
+{
+    /* Leap second 60 only allowed at 23:59:60. */
+    assert_timestamp_origin("2024-01-15 23:59:60",
+                            2024,  1, 16,  0,  0,  0.0);   /* rolls to next day */
+    assert_timestamp_origin("2024-01-15 23:59:60.5",
+                            2024,  1, 16,  0,  0,  0.5);
+}
+
+static void test_broken_clock_reject_leap_second_elsewhere(void)
+{
+    assert_timestamp_reject("2024-01-15 22:59:60");
+    assert_timestamp_reject("2024-01-15 23:58:60");
+    assert_timestamp_reject("2024-01-15 12:30:60");
+    assert_timestamp_reject("2024-01-15 23:59:61");
+}
+
+static void test_broken_clock_reject_sign_on_hour(void)
+{
+    /* GRAMMAR.md: <tod-hour> is [0-9]{1,2} — no sign allowed (signs are
+       reserved for <tz-hour>). A "+" or "-" preceding the hour must be
+       rejected, otherwise it would be ambiguous with TZ offsets. */
+    assert_timestamp_reject("2024-01-15 +12:00:00");
+    assert_timestamp_reject("2024-01-15 -12:00:00");
+    assert_timestamp_reject("2024-01-15 +12:00");
+    assert_timestamp_reject("2024-01-15 -12:00");
+}
+
+/* ---------------------------------------------------------------------- */
+/*                       4. packed CLOCK                                  */
+/* ---------------------------------------------------------------------- */
+
+static void test_packed_clock_full(void)
+{
+    /* HHMMSS */
+    assert_timestamp_origin("2024-01-15 123045",
+                            2024,  1, 15, 12, 30, 45.0);
+    assert_timestamp_origin("2024-01-15 000000",
+                            2024,  1, 15,  0,  0,  0.0);
+}
+
+static void test_packed_clock_truncated(void)
+{
+    /* GRAMMAR.md packed-clock length interpretation (right-align):
+         len 1  -> H        (-> 0H:00:00)
+         len 2  -> HH       (-> HH:00:00)
+         len 3  -> H MM     (-> 0H:MM:00)
+         len 4  -> HH MM    (-> HH:MM:00)
+         len 5  -> H MM SS  (-> 0H:MM:SS)
+         len 6  -> HH MM SS
+
+       Right-align means minutes are always positions -3,-4 from the
+       end of the digit sequence; seconds (when present) are -1,-2;
+       the hour takes whatever remains. So "123" reads as 1:23, not
+       12:3; "12345" reads as 1:23:45, not 12:34:5.
+    */
+    assert_timestamp_origin("2024-01-15 1",
+                            2024,  1, 15,  1,  0,  0.0); /* len 1: H */
+    assert_timestamp_origin("2024-01-15 12",
+                            2024,  1, 15, 12,  0,  0.0); /* len 2: HH */
+    assert_timestamp_origin("2024-01-15 123",
+                            2024,  1, 15,  1, 23,  0.0); /* len 3: H MM */
+    assert_timestamp_origin("2024-01-15 1234",
+                            2024,  1, 15, 12, 34,  0.0); /* len 4: HH MM */
+    assert_timestamp_origin("2024-01-15 12345",
+                            2024,  1, 15,  1, 23, 45.0); /* len 5: H MM SS */
+}
+
+static void test_packed_clock_fractional_seconds(void)
+{
+    /* Per GRAMMAR.md: decimals only accepted for len 5+. Right-align
+       puts SS at the end, so the fraction attaches to the second
+       field as usual. */
+    assert_timestamp_origin("2024-01-15 123045.5",
+                            2024,  1, 15, 12, 30, 45.5);
+    assert_timestamp_origin("2024-01-15 12345.5",
+                            2024,  1, 15,  1, 23, 45.5);
+}
+
+static void test_packed_clock_reject_fraction_too_short(void)
+{
+    /* len 1-4 with a fraction should be rejected (grammar comment). */
+    assert_timestamp_reject("2024-01-15 1.5");
+    assert_timestamp_reject("2024-01-15 12.5");
+    assert_timestamp_reject("2024-01-15 123.5");
+    assert_timestamp_reject("2024-01-15 1234.5");
+}
+
+static void test_packed_clock_reject_bad_range(void)
+{
+    /* The packed-clock parser has its own range checks
+       (parse_tod_packed in scanner.l) that must reject components
+       outside the same ranges enforced for the broken form: hour 0-23,
+       minute 0-59, second 0-60.
+
+       Test cases use lengths whose right-align interpretation puts the
+       bad field at HH or MM unambiguously, so the failure cannot be
+       misattributed. */
+    assert_timestamp_reject("2024-01-15 24");      /* len 2: HH=24 */
+    assert_timestamp_reject("2024-01-15 2460");    /* len 4: HH=24, MM=60 */
+    assert_timestamp_reject("2024-01-15 245959");  /* len 6: HH=24 */
+    assert_timestamp_reject("2024-01-15 236000");  /* len 6: MM=60 */
+    assert_timestamp_reject("2024-01-15 235961");  /* len 6: SS=61 */
+    assert_timestamp_reject("2024-01-15 990000");  /* len 6: HH=99 */
+}
+
+static void test_packed_clock_reject_sign_on_hour(void)
+{
+    /* GRAMMAR.md: <tod-hour> has no sign in the packed form either. */
+    assert_timestamp_reject("2024-01-15 +12");
+    assert_timestamp_reject("2024-01-15 -12");
+    assert_timestamp_reject("2024-01-15 +1234");
+    assert_timestamp_reject("2024-01-15 -123456");
+}
+
+/* ---------------------------------------------------------------------- */
+/*                  5. ISO 'T' separator semantics                        */
+/* ---------------------------------------------------------------------- */
+
+static void test_iso_t_separator(void)
+{
+    assert_timestamp_origin("2024-01-15T12:30:45",
+                            2024,  1, 15, 12, 30, 45.0);
+    assert_timestamp_origin("2024-01-15T00:00:00",
+                            2024,  1, 15,  0,  0,  0.0);
+    /* T equivalent to space */
+    assert_timestamps_equivalent("2024-01-15T12:30:45",
+                                 "2024-01-15 12:30:45");
+}
+
+static void test_iso_t_no_trailing_space(void)
+{
+    /* GRAMMAR.md: "T" separator prohibits spaces before CLOCK. */
+    assert_timestamp_reject("2024-01-15T 12:30");
+    assert_timestamp_reject("2024-01-15T  12:30:45");
+}
+
+/* ---------------------------------------------------------------------- */
+/*                          6. timezone offset                            */
+/* ---------------------------------------------------------------------- */
+
+static void test_tz_broken_positive(void)
+{
+    /* +05:30 (IST) means local clock is 5h30m ahead of UTC, so
+       local 12:00+05:30 == 06:30 UTC. */
+    assert_timestamps_equivalent("2024-01-15 12:00:00+05:30",
+                                 "2024-01-15 06:30:00 UTC");
+    assert_timestamps_equivalent("2024-01-15 12:00:00+09:00",
+                                 "2024-01-15 03:00:00 UTC");
+}
+
+static void test_tz_broken_negative(void)
+{
+    /* -08:00 (PST): local 12:00-08:00 == 20:00 UTC same day. */
+    assert_timestamps_equivalent("2024-01-15 12:00:00-08:00",
+                                 "2024-01-15 20:00:00 UTC");
+    assert_timestamps_equivalent("2024-01-15 12:00:00-05:00",
+                                 "2024-01-15 17:00:00 UTC");
+}
+
+static void test_tz_packed(void)
+{
+    /* +HHMM */
+    assert_timestamps_equivalent("2024-01-15 12:00:00+0530",
+                                 "2024-01-15 06:30:00 UTC");
+    assert_timestamps_equivalent("2024-01-15 12:00:00-0800",
+                                 "2024-01-15 20:00:00 UTC");
+    /* +HH */
+    assert_timestamps_equivalent("2024-01-15 12:00:00+05",
+                                 "2024-01-15 07:00:00 UTC");
+}
+
+static void test_tz_packed_three_digit(void)
+{
+    /*
+     * 3-digit packed TZ uses right-align: last 2 digits are minutes,
+     * the leading non-zero digit is the hour. Sign is preserved.
+     */
+    assert_timestamps_equivalent("2024-01-15 12:00:00+530",
+                                 "2024-01-15 06:30:00 UTC");  /* H=5, M=30 */
+    assert_timestamps_equivalent("2024-01-15 12:00:00-530",
+                                 "2024-01-15 17:30:00 UTC");  /* H=-5, M=30 */
+    assert_timestamps_equivalent("2024-01-15 12:00:00+545",
+                                 "2024-01-15 06:15:00 UTC");  /* Nepal */
+    /* +123 -> +1:23 (right-align, not 12:03) */
+    assert_timestamps_equivalent("2024-01-15 12:00:00+123",
+                                 "2024-01-15 10:37:00 UTC");
+}
+
+static void test_tz_packed_leading_zero_rejected(void)
+{
+    /*
+     * 3-digit packed form with leading-zero hour digit is rejected
+     * lexically. Upstream's scanf-based parser silently drops the
+     * sign on these inputs (-053 produces the same result as +053);
+     * the rejection sidesteps the bug.
+     *
+     * Users wanting sub-hour offsets should write +0:53 / -0:53
+     * (broken form) or +0053 / -0053 (4-digit packed form).
+     */
+    assert_timestamp_reject("2024-01-15 12:00:00+053");
+    assert_timestamp_reject("2024-01-15 12:00:00-053");
+    assert_timestamp_reject("2024-01-15 12:00:00+019");
+    assert_timestamp_reject("2024-01-15 12:00:00-001");
+
+    /* But the canonical 4-digit alternatives accept normally. */
+    assert_timestamps_equivalent("2024-01-15 12:00:00+0053",
+                                 "2024-01-15 11:07:00 UTC");
+    assert_timestamps_equivalent("2024-01-15 12:00:00-0053",
+                                 "2024-01-15 12:53:00 UTC");
+    /* And the broken form too. */
+    assert_timestamps_equivalent("2024-01-15 12:00:00+0:53",
+                                 "2024-01-15 11:07:00 UTC");
+    assert_timestamps_equivalent("2024-01-15 12:00:00-0:53",
+                                 "2024-01-15 12:53:00 UTC");
+}
+
+static void test_tz_extremes_accepted(void)
+{
+    /* ±14:00 is the documented maximum. */
+    assert_timestamps_equivalent("2024-01-15 12:00:00+14:00",
+                                 "2024-01-14 22:00:00 UTC");
+    assert_timestamps_equivalent("2024-01-15 12:00:00-14:00",
+                                 "2024-01-16 02:00:00 UTC");
+}
+
+static void test_tz_reject_out_of_range(void)
+{
+    assert_timestamp_reject("2024-01-15 12:00:00+14:30");
+    assert_timestamp_reject("2024-01-15 12:00:00+15:00");
+    assert_timestamp_reject("2024-01-15 12:00:00-15:00");
+    assert_timestamp_reject("2024-01-15 12:00:00+99:00");
+}
+
+static void test_tz_reject_negative_zero(void)
+{
+    /* GRAMMAR.md: -00:00 is explicitly disallowed. */
+    assert_timestamp_reject("2024-01-15 12:00:00-00:00");
+    assert_timestamp_reject("2024-01-15 12:00:00-0000");
+    assert_timestamp_reject("2024-01-15 12:00:00-00");
+}
+
+static void test_tz_positive_zero_ok(void)
+{
+    /* +00:00 is fine (equivalent to UTC). */
+    assert_timestamps_equivalent("2024-01-15 12:00:00+00:00",
+                                 "2024-01-15 12:00:00 UTC");
+    assert_timestamps_equivalent("2024-01-15 12:00:00+0000",
+                                 "2024-01-15 12:00:00 UTC");
+}
+
+static void test_tz_crosses_date_boundary(void)
+{
+    /* +14:00 applied to 03:00 rolls to previous UTC day. */
+    assert_timestamps_equivalent("2024-01-15 03:00:00+14:00",
+                                 "2024-01-14 13:00:00 UTC");
+    /* -12:00 applied to 18:00 rolls to next UTC day. */
+    assert_timestamps_equivalent("2024-01-15 18:00:00-12:00",
+                                 "2024-01-16 06:00:00 UTC");
+}
+
+static void test_tz_broken_single_digit_components(void)
+{
+    /* GRAMMAR.md: <tz-hour> = [+-][0-9]{1,2}, <minute> = [0-9]{1,2}.
+       Single-digit hours and minutes are explicitly allowed in the
+       broken form. */
+    assert_timestamps_equivalent("2024-01-15 12:00:00+5:30",
+                                 "2024-01-15 06:30:00 UTC");
+    assert_timestamps_equivalent("2024-01-15 12:00:00+5:5",
+                                 "2024-01-15 06:55:00 UTC");
+    assert_timestamps_equivalent("2024-01-15 12:00:00+05:5",
+                                 "2024-01-15 06:55:00 UTC");
+}
+
+static void test_tz_broken_minute_out_of_range(void)
+{
+    /* Hour-only failures are exercised by test_tz_reject_out_of_range;
+       this pins the minute-side range check (<minute> must be 0-59). */
+    assert_timestamp_reject("2024-01-15 12:00:00+05:60");
+    assert_timestamp_reject("2024-01-15 12:00:00+05:99");
+    assert_timestamp_reject("2024-01-15 12:00:00-05:60");
+}
+
+static void test_tz_broken_format_errors(void)
+{
+    /* These hit the candidate's dedicated scanner error rules
+       (scanner.l <CLOCK_SEEN> block): dot-instead-of-colon, dangling
+       colon, missing hour digits, unsigned form. */
+    assert_timestamp_reject("2024-01-15 12:00:00+05.30");  /* dot, not colon */
+    assert_timestamp_reject("2024-01-15 12:00:00+05:");    /* incomplete */
+    assert_timestamp_reject("2024-01-15 12:00:00+:30");    /* missing hour */
+    assert_timestamp_reject("2024-01-15 12:00:00 05:30");  /* unsigned */
+    assert_timestamp_reject("2024-01-15 12:00:00 00:00");  /* unsigned zero */
+}
+
+static void test_tz_broken_reject_seconds(void)
+{
+    /* GRAMMAR.md: <tz-clock-broken> = <tz-hour> ":" <minute> — no seconds.
+       (test_reject_garbage covers +5:30:00; this adds canonical-padded form.) */
+    assert_timestamp_reject("2024-01-15 12:00:00+05:30:00");
+    assert_timestamp_reject("2024-01-15 12:00:00-08:00:00");
+}
+
+static void test_tz_packed_single_digit(void)
+{
+    /* GRAMMAR.md packed-TZ length interpretation (right-align):
+         len 1 (after sign) -> H  (-> ±0H:00)
+       Not currently exercised in the existing tests (which use len 2 and 4). */
+    assert_timestamps_equivalent("2024-01-15 12:00:00+5",
+                                 "2024-01-15 07:00:00 UTC");
+    assert_timestamps_equivalent("2024-01-15 12:00:00-5",
+                                 "2024-01-15 17:00:00 UTC");
+    assert_timestamps_equivalent("2024-01-15 12:00:00+0",
+                                 "2024-01-15 12:00:00 UTC");
+}
+
+static void test_tz_packed_length_cap(void)
+{
+    /* Packed TZ is at most 4 digits after the sign (GRAMMAR.md). */
+    assert_timestamp_reject("2024-01-15 12:00:00+05300");
+    assert_timestamp_reject("2024-01-15 12:00:00-12345");
+    assert_timestamp_reject("2024-01-15 12:00:00+123456");
+}
+
+static void test_tz_packed_negative_zero_len1(void)
+{
+    /* -0 (len 1) is the small-form analogue of -00:00 / -0000 / -00
+       already covered by test_tz_reject_negative_zero. Pin it
+       separately so all four width variants of "negative zero" are
+       exercised. */
+    assert_timestamp_reject("2024-01-15 12:00:00-0");
+}
+
+static void test_tz_packed_unsigned_rejected(void)
+{
+    /* Packed TZ without sign isn't a TZ token. */
+    assert_timestamp_reject("2024-01-15 12:00:00 0530");
+    assert_timestamp_reject("2024-01-15 12:00:00 05");
+}
+
+static void test_tz_after_packed_clock(void)
+{
+    /* The TZ_CLOCK lexer state is entered after either broken_clock or
+       packed_clock. Existing TZ tests all use the broken form before
+       TZ; this exercises the packed-clock -> TZ transition. Lengths
+       1/2/4/6 are used (their right-align interpretation matches their
+       intuitive reading; lengths 3 and 5 are deliberately avoided here
+       since they're already extensively exercised by the packed-clock
+       tests themselves). */
+    assert_timestamps_equivalent("2024-01-15 12+05:30",
+                                 "2024-01-15 06:30:00 UTC");
+    assert_timestamps_equivalent("2024-01-15 1234+05:30",
+                                 "2024-01-15 07:04:00 UTC");
+    assert_timestamps_equivalent("2024-01-15 123045+05:30",
+                                 "2024-01-15 07:00:45 UTC");
+    assert_timestamp_origin("2024-01-15 1Z",       2024, 1, 15,  1,  0, 0.0);
+    assert_timestamp_origin("2024-01-15 1234Z",    2024, 1, 15, 12, 34, 0.0);
+    assert_timestamp_origin("2024-01-15 123045Z",  2024, 1, 15, 12, 30, 45.0);
+}
+
+/* ---------------------------------------------------------------------- */
+/*                          7. Z / GMT / UTC tokens                       */
+/* ---------------------------------------------------------------------- */
+
+static void test_zulu_after_clock(void)
+{
+    assert_timestamp_origin("2024-01-15 12:30:00Z",
+                            2024,  1, 15, 12, 30,  0.0);
+    assert_timestamp_origin("2024-01-15 12:30Z",
+                            2024,  1, 15, 12, 30,  0.0);
+}
+
+static void test_zulu_after_date_alone(void)
+{
+    /* GRAMMAR.md allows DATE Z_TOK (without CLOCK). */
+    assert_timestamp_origin("2024-01-15Z",
+                            2024,  1, 15,  0,  0,  0.0);
+}
+
+static void test_gmt_utc_after_clock(void)
+{
+    assert_timestamp_origin("2024-01-15 12:30:00 GMT",
+                            2024,  1, 15, 12, 30,  0.0);
+    assert_timestamp_origin("2024-01-15 12:30:00 UTC",
+                            2024,  1, 15, 12, 30,  0.0);
+    /* GMT/UTC/Z are all equivalent to no-offset. */
+    assert_timestamps_equivalent("2024-01-15 12:00:00 GMT",
+                                 "2024-01-15 12:00:00 UTC");
+    assert_timestamps_equivalent("2024-01-15 12:00:00Z",
+                                 "2024-01-15 12:00:00 UTC");
+}
+
+static void test_gmt_utc_reject_without_clock(void)
+{
+    /* Per grammar: GMT_TOK / UTC_TOK only valid after DATE CLOCK,
+       not after DATE alone. (Z is the asymmetric exception.) */
+    assert_timestamp_reject("2024-01-15 GMT");
+    assert_timestamp_reject("2024-01-15 UTC");
+    assert_timestamp_reject("2024-01-15GMT");
+    assert_timestamp_reject("2024-01-15UTC");
+}
+
+static void test_zulu_gmt_utc_accept_any_case(void)
+{
+    /* GRAMMAR.md spells the tokens with capitals (Z, GMT, UTC) by
+       convention, but the tokens are accepted in any case. This matches
+       pre-rewrite behaviour (main matched them with strcasecmp) and the
+       relevant standards: RFC 3339 5.6 makes uppercase a producer SHOULD
+       and a parser MAY; ISO 8601 has no GMT/UTC suffix; GMT/UTC are a
+       UDUNITS extension; CF is permissive. Assert the origin, not just
+       non-NULL, so a mis-decoded token still fails. */
+    assert_timestamp_origin("2024-01-15 12:00:00 z",
+                            2024,  1, 15, 12,  0,  0.0);
+    assert_timestamp_origin("2024-01-15 12:00:00 gmt",
+                            2024,  1, 15, 12,  0,  0.0);
+    assert_timestamp_origin("2024-01-15 12:00:00 utc",
+                            2024,  1, 15, 12,  0,  0.0);
+    /* Mixed case too. */
+    assert_timestamp_origin("2024-01-15 12:00:00 Gmt",
+                            2024,  1, 15, 12,  0,  0.0);
+    assert_timestamp_origin("2024-01-15 12:00:00 Utc",
+                            2024,  1, 15, 12,  0,  0.0);
+    /* Lowercase means exactly the same as uppercase. */
+    assert_timestamps_equivalent("2024-01-15 12:00:00 utc",
+                                 "2024-01-15 12:00:00 UTC");
+    assert_timestamps_equivalent("2024-01-15 12:00:00z",
+                                 "2024-01-15 12:00:00Z");
+    /* Lowercase z is also valid directly after a bare date (the Z
+       asymmetry is preserved regardless of case). */
+    assert_timestamp_origin("2024-01-15z",
+                            2024,  1, 15,  0,  0,  0.0);
+}
+
+static void test_reject_unknown_timezone_identifier(void)
+{
+    /* The scanner has a <CLOCK_SEEN>[A-Za-z]+ catch-all that emits
+       "Unknown timezone identifier ...". Pin that path: common
+       abbreviations like PST, EST, CET must be rejected; UDUNITS
+       supports only Z, GMT, UTC, and numeric offsets. */
+    assert_timestamp_reject("2024-01-15 12:00:00 PST");
+    assert_timestamp_reject("2024-01-15 12:00:00 EST");
+    assert_timestamp_reject("2024-01-15 12:00:00 CET");
+    assert_timestamp_reject("2024-01-15 12:00:00 JST");
+    /* Now that Z/GMT/UTC are case-insensitive, confirm the catch-all
+       still fires for lowercase junk and for near-misses that must not
+       partially match the (whole-word) GMT/UTC rules. */
+    assert_timestamp_reject("2024-01-15 12:00:00 pst");
+    assert_timestamp_reject("2024-01-15 12:00:00 est");
+    assert_timestamp_reject("2024-01-15 12:00:00 gmtx");
+    assert_timestamp_reject("2024-01-15 12:00:00 utcx");
+    assert_timestamp_reject("2024-01-15 12:00:00 ut");
+}
+
+/* ---------------------------------------------------------------------- */
+/*                          8. SHIFT with REAL / INT                      */
+/* ---------------------------------------------------------------------- */
+
+/*
+ * The shift productions also accept REAL and INT (not just timestamps).
+ * These are simple offset operations; make sure the datetime rewrite
+ * didn't break them.
+ */
+static void test_shift_real(void)
+{
+    ut_set_status(UT_SUCCESS);
+    ut_unit* u = ut_parse(unitSystem, "K @ 273.15", UT_UTF8);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(u);
+    /* K @ 273.15 should be celsius. */
+    ut_unit* celsius = ut_get_unit_by_name(unitSystem, "celsius");
+    CU_ASSERT_PTR_NOT_NULL_FATAL(celsius);
+    CU_ASSERT_EQUAL(ut_compare(u, celsius), 0);
+    ut_free(celsius);
+    ut_free(u);
+}
+
+static void test_shift_int(void)
+{
+    ut_set_status(UT_SUCCESS);
+    ut_unit* u = ut_parse(unitSystem, "K @ 273", UT_UTF8);
+    CU_ASSERT_PTR_NOT_NULL(u);
+    ut_free(u);
+}
+
+static void test_shift_keywords(void)
+{
+    /* "after", "from", "since", "ref", "@" all valid SHIFT operators. */
+    const char* prefixes[] = {
+        "K @ 273", "K after 273", "K from 273", "K since 273", "K ref 273",
+        "K AFTER 273", "K From 273", "K SiNcE 273", "K REF 273",
+    };
+    for (size_t i = 0; i < sizeof(prefixes)/sizeof(prefixes[0]); ++i) {
+        ut_unit* u = ut_parse(unitSystem, prefixes[i], UT_UTF8);
+        if (u == NULL) {
+            fprintf(stderr, "test_shift_keywords: failed on '%s'\n", prefixes[i]);
+        }
+        CU_ASSERT_PTR_NOT_NULL(u);
+        ut_free(u);
+    }
+}
+
+/* ---------------------------------------------------------------------- */
+/*                          9. miscellaneous edge cases                   */
+/* ---------------------------------------------------------------------- */
+
+static void test_date_clock_combinations_consistent(void)
+{
+    /* Several spellings of the same instant must agree. */
+    assert_timestamps_equivalent("2024-01-15 12:30:45",
+                                 "20240115 123045");
+    assert_timestamps_equivalent("2024-01-15 12:30:45",
+                                 "2024-01-15T12:30:45");
+    assert_timestamps_equivalent("2024-01-15 12",
+                                 "2024-01-15 12:00:00");
+    assert_timestamps_equivalent("2024-01-15",
+                                 "2024-01-15 00:00:00");
+}
+
+static void test_reject_garbage(void)
+{
+    assert_timestamp_reject("not-a-date");
+    assert_timestamp_reject("2024-01-15 12:30:45 garbage");
+    assert_timestamp_reject("2024-01-15 12:30:45+nonsense");
+    assert_timestamp_reject("2024-01-15 12:30:45+5:30:00"); /* TZ has no seconds */
+}
+
+static void test_leap_second_with_bad_tz(void)
+{
+    /* Leap-second carve-out and TZ validation are independent layers;
+       pin that both checks fire and both must pass. */
+    /* Leap at right time + good TZ: accepted. */
+    assert_timestamp_origin("2024-01-15 23:59:60Z",
+                            2024, 1, 16, 0, 0, 0.0);
+    /* Leap at right time + out-of-range TZ: rejected (TZ check fires). */
+    assert_timestamp_reject("2024-01-15 23:59:60+15:00");
+    assert_timestamp_reject("2024-01-15 23:59:60-15:00");
+    /* Leap at wrong time + good TZ: rejected (leap-second check fires). */
+    assert_timestamp_reject("2024-01-15 12:59:60+05:30");
+    assert_timestamp_reject("2024-01-15 23:58:60Z");
+}
+
+/* ---------------------------------------------------------------------- */
+/*           10. public API: ut_check_date, ut_check_clock, ut_check_time   */
+/* ---------------------------------------------------------------------- */
+
+/*
+ * These exercise the validators as a public API, independent of the parser.
+ * They lock in the contract documented in udunits2.h: year in [-5000000,
+ * 5000000], month 1-12, day 1-31, hour 0-23, minute 0-59, 0 <= second < 60.
+ */
+
+static void test_ut_check_date_valid(void)
+{
+    CU_ASSERT_EQUAL(ut_check_date(2024,  1,  1), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_check_date(2024, 12, 31), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_check_date(1970,  1,  1), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_check_date(   0,  1,  1), UT_SUCCESS); /* year 0 ok */
+    CU_ASSERT_EQUAL(ut_check_date(  -1,  6, 15), UT_SUCCESS); /* negative ok */
+    /* Feb 29 always valid (leap-year rule not enforced). */
+    CU_ASSERT_EQUAL(ut_check_date(2023,  2, 29), UT_SUCCESS);
+    /* Feb 30 valid under the 360_day calendar admittance. */
+    CU_ASSERT_EQUAL(ut_check_date(2024,  2, 30), UT_SUCCESS);
+    /* 30-day months: day 30 accepted, day 31 rejected (see bad-day test). */
+    CU_ASSERT_EQUAL(ut_check_date(2024,  4, 30), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_check_date(2024,  6, 30), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_check_date(2024,  9, 30), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_check_date(2024, 11, 30), UT_SUCCESS);
+    /* 31-day months: day 31 accepted. */
+    CU_ASSERT_EQUAL(ut_check_date(2024,  1, 31), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_check_date(2024,  3, 31), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_check_date(2024,  5, 31), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_check_date(2024,  7, 31), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_check_date(2024,  8, 31), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_check_date(2024, 10, 31), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_check_date(2024, 12, 31), UT_SUCCESS);
+    /* Extended-range years. */
+    CU_ASSERT_EQUAL(ut_check_date( 5000000,  1,  1), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_check_date(-5000000, 12, 31), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_check_date( 1000000,  6, 15), UT_SUCCESS);
+}
+
+static void test_ut_check_date_bad_year(void)
+{
+    ut_set_status(UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_check_date( 5000001, 1, 1), UT_BAD_ARG);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
+    CU_ASSERT_EQUAL(ut_check_date(-5000001, 1, 1), UT_BAD_ARG);
+    CU_ASSERT_EQUAL(ut_check_date(99999999, 1, 1), UT_BAD_ARG);
+}
+
+static void test_ut_check_date_bad_month(void)
+{
+    ut_set_status(UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_check_date(2024,  0,  1), UT_BAD_ARG);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
+    CU_ASSERT_EQUAL(ut_check_date(2024, 13,  1), UT_BAD_ARG);
+    CU_ASSERT_EQUAL(ut_check_date(2024, -1,  1), UT_BAD_ARG);
+    CU_ASSERT_EQUAL(ut_check_date(2024, 99,  1), UT_BAD_ARG);
+}
+
+static void test_ut_check_date_bad_day(void)
+{
+    /* Range floor / ceiling and negative day. */
+    CU_ASSERT_EQUAL(ut_check_date(2024,  1,  0), UT_BAD_ARG);
+    CU_ASSERT_EQUAL(ut_check_date(2024,  1, 32), UT_BAD_ARG);
+    CU_ASSERT_EQUAL(ut_check_date(2024,  1, -1), UT_BAD_ARG);
+
+    /*
+     * Per-month rejections: day 31 in a 30-day month and day > 30 in
+     * February. These would have been accepted (and silently rolled
+     * by ut_encode_date) under the previous 1-31 universal cap.
+     */
+    CU_ASSERT_EQUAL(ut_check_date(2024,  2, 31), UT_BAD_ARG); /* Feb 31 */
+    CU_ASSERT_EQUAL(ut_check_date(2024,  4, 31), UT_BAD_ARG); /* Apr */
+    CU_ASSERT_EQUAL(ut_check_date(2024,  6, 31), UT_BAD_ARG); /* Jun */
+    CU_ASSERT_EQUAL(ut_check_date(2024,  9, 31), UT_BAD_ARG); /* Sep */
+    CU_ASSERT_EQUAL(ut_check_date(2024, 11, 31), UT_BAD_ARG); /* Nov */
+}
+
+static void test_ut_check_date_sets_status_on_success(void)
+{
+    /* Status convention: a successful check sets status to UT_SUCCESS,
+       mirroring the UT_BAD_ARG it sets on failure. (Was errno-style
+       "do not clobber".) */
+    ut_set_status(UT_BAD_ARG);
+    CU_ASSERT_EQUAL(ut_check_date(2024, 1, 1), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS); /* cleared */
+    ut_set_status(UT_SUCCESS);
+}
+
+static void test_ut_check_clock_valid(void)
+{
+    CU_ASSERT_EQUAL(ut_check_clock( 0,  0,  0.0),       UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_check_clock(23, 59, 59.999999),  UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_check_clock(12, 30, 45.5),       UT_SUCCESS);
+}
+
+static void test_ut_check_clock_bad_components(void)
+{
+    CU_ASSERT_EQUAL(ut_check_clock(24,  0,  0.0), UT_BAD_ARG); /* hour */
+    CU_ASSERT_EQUAL(ut_check_clock(-1,  0,  0.0), UT_BAD_ARG);
+    CU_ASSERT_EQUAL(ut_check_clock( 0, 60,  0.0), UT_BAD_ARG); /* minute */
+    CU_ASSERT_EQUAL(ut_check_clock( 0, -1,  0.0), UT_BAD_ARG);
+    CU_ASSERT_EQUAL(ut_check_clock( 0,  0, -0.1), UT_BAD_ARG); /* second */
+    CU_ASSERT_EQUAL(ut_check_clock( 0,  0, 60.0), UT_BAD_ARG);
+}
+
+static void test_ut_check_clock_leap_second(void)
+{
+    /* The unified validator accepts the inserted-second form 23:59:60[.x]
+       (a valid time of day in the calendar union) and enforces it
+       positionally: 60 <= s < 61 only at 23:59, s >= 61 never. */
+    CU_ASSERT_EQUAL(ut_check_clock(23, 59, 60.0), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_check_clock(23, 59, 60.5), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_check_clock(12,  0, 60.0), UT_BAD_ARG); /* wrong tod */
+    CU_ASSERT_EQUAL(ut_check_clock(23, 59, 61.0), UT_BAD_ARG); /* upper bound */
+}
+
+static void test_ut_check_clock_nan(void)
+{
+    /* A NaN second must not slip through (the `!(s>=0 && s<60)` form). */
+    double nan_val = 0.0/0.0;
+    CU_ASSERT_EQUAL(ut_check_clock(12, 30, nan_val), UT_BAD_ARG);
+}
+
+static void test_ut_check_clock_sets_status_on_success(void)
+{
+    /* Status convention: success sets status to UT_SUCCESS. */
+    ut_set_status(UT_BAD_ARG);
+    CU_ASSERT_EQUAL(ut_check_clock(12, 0, 0.0), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS); /* cleared */
+    ut_set_status(UT_SUCCESS);
+}
+
+static void test_ut_encode_date_sets_status(void)
+{
+    /* Encoder convention: finite result => UT_SUCCESS; NaN => UT_BAD_ARG.
+       The NaN path is the year gate (review item 1): |year| > 5,000,000. */
+    ut_set_status(UT_BAD_ARG);
+    CU_ASSERT_FALSE(isnan(ut_encode_date(2024, 1, 1)));
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
+
+    /* Boundary: +/-5,000,000 is the inclusive cap -- still finite/SUCCESS. */
+    ut_set_status(UT_BAD_ARG);
+    CU_ASSERT_FALSE(isnan(ut_encode_date( 5000000, 1, 1)));
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
+    CU_ASSERT_FALSE(isnan(ut_encode_date(-5000000, 1, 1)));
+
+    /* Just past the cap: NaN + UT_BAD_ARG (overflow unreachable by construction). */
+    ut_set_status(UT_SUCCESS);
+    CU_ASSERT_TRUE(isnan(ut_encode_date( 5000001, 1, 1)));
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
+    CU_ASSERT_TRUE(isnan(ut_encode_date(-5000001, 1, 1)));
+    ut_set_status(UT_SUCCESS);
+}
+
+static void test_ut_encode_date_below_cap_bit_identical(void)
+{
+    /* The gate must not perturb in-range results: encode_time at 00:00:00
+       must equal encode_date for the same in-range date, across a spread
+       that includes the negative-year regime and both cap boundaries. */
+    static const int years[] = { -5000000, -4716, -1, 0, 1, 1582, 1970, 2024,
+                                 5000000 };
+    size_t i;
+    for (i = 0; i < sizeof(years)/sizeof(years[0]); ++i) {
+        double v = ut_encode_date(years[i], 6, 15);
+        CU_ASSERT_FALSE(isnan(v));
+        CU_ASSERT_DOUBLE_EQUAL(ut_encode_time(years[i], 6, 15, 0, 0, 0.0),
+                               v, 0.0);
+    }
+}
+
+static void test_ut_encode_time_sets_status(void)
+{
+    /* Finite => UT_SUCCESS; a non-finite `second` => NaN composite =>
+       UT_BAD_ARG. The rejection happens inside ut_encode_clock, which
+       collapses NaN and +/-Inf alike to NaN; ut_encode_time then derives the
+       status from the composite. The NaN path needs no year gate. */
+    double nan_val = 0.0/0.0;
+    double r;
+
+    ut_set_status(UT_BAD_ARG);
+    (void)ut_encode_time(2024, 1, 1, 0, 0, 0.0);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
+
+    ut_set_status(UT_SUCCESS);
+    r = ut_encode_time(2024, 1, 1, 0, 0, nan_val);
+    CU_ASSERT_TRUE(isnan(r));
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
+
+    /* An infinite `second` must not reach the caller as an infinity: a lone
+       Inf is not a NaN and would break the "NaN <=> UT_BAD_ARG" contract. */
+    ut_set_status(UT_SUCCESS);
+    r = ut_encode_time(2024, 1, 1, 0, 0, HUGE_VAL);
+    CU_ASSERT_TRUE(isnan(r));
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
+
+    ut_set_status(UT_SUCCESS);
+    r = ut_encode_time(2024, 1, 1, 0, 0, -HUGE_VAL);
+    CU_ASSERT_TRUE(isnan(r));
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
+
+    /* Date-side NaN (year past the gate) propagates through the `+` too. */
+    ut_set_status(UT_SUCCESS);
+    r = ut_encode_time(5000001, 1, 1, 0, 0, 0.0);
+    CU_ASSERT_TRUE(isnan(r));
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
+    ut_set_status(UT_SUCCESS);
+}
+
+static void test_ut_encode_clock_sets_status_on_success(void)
+{
+    /* Status convention: success sets status to UT_SUCCESS. */
+    ut_set_status(UT_BAD_ARG);
+    CU_ASSERT_DOUBLE_EQUAL(ut_encode_clock(12, 0, 0.0), 43200.0, 0.0);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS); /* cleared */
+    ut_set_status(UT_SUCCESS);
+}
+
+static void test_ut_encode_clock_rejects_out_of_range(void)
+{
+    /* Bounds are symmetric about zero and looser than ut_check_clock's:
+       |hours| < 24, |minutes| < 60, |seconds| <= 62. Failure is signalled by
+       NaN, with UT_BAD_ARG as the in-sync copy. */
+    static const struct { int h; int m; double s; } bad[] = {
+	{  24,  0,  0.0 }, { -24,  0,  0.0 },
+	{   0, 60,  0.0 }, {   0, -60, 0.0 },
+	{   0,  0, 62.5 }, {   0,  0, -62.5 },
+	/* Extremes of int: INT_MIN in particular must be rejected by the
+	   comparison, not handed to abs(), whose result is undefined there. */
+	{ INT_MIN, 0, 0.0 }, { INT_MAX, 0, 0.0 },
+	{ 0, INT_MIN, 0.0 }, { 0, INT_MAX, 0.0 }
+    };
+    size_t i;
+
+    for (i = 0; i < sizeof(bad)/sizeof(bad[0]); ++i) {
+	ut_set_status(UT_SUCCESS);
+	CU_ASSERT_TRUE(isnan(ut_encode_clock(bad[i].h, bad[i].m, bad[i].s)));
+	CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
+    }
+
+    /* Just inside the bounds, including a negative offset and a leap second. */
+    ut_set_status(UT_BAD_ARG);
+    CU_ASSERT_DOUBLE_EQUAL(ut_encode_clock( 23, 59, 60.0),  86400.0, 0.0);
+    CU_ASSERT_DOUBLE_EQUAL(ut_encode_clock( -5,  0,  0.0), -18000.0, 0.0);
+    CU_ASSERT_DOUBLE_EQUAL(ut_encode_clock(  0,  0, 62.0),     62.0, 0.0);
+    CU_ASSERT_DOUBLE_EQUAL(ut_encode_clock(  0,  0,-62.0),    -62.0, 0.0);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
+    ut_set_status(UT_SUCCESS);
+}
+
+static void test_ut_encode_clock_rejects_non_finite_second(void)
+{
+    /* !(fabs(s) <= 62) rejects NaN and +/-Inf, so the "NaN return <=>
+       UT_BAD_ARG" invariant holds for ut_encode_clock as well. */
+    ut_set_status(UT_SUCCESS);
+    CU_ASSERT_TRUE(isnan(ut_encode_clock(0, 0, 0.0/0.0)));
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
+
+    ut_set_status(UT_SUCCESS);
+    CU_ASSERT_TRUE(isnan(ut_encode_clock(0, 0, HUGE_VAL)));
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
+
+    ut_set_status(UT_SUCCESS);
+    CU_ASSERT_TRUE(isnan(ut_encode_clock(0, 0, -HUGE_VAL)));
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
+    ut_set_status(UT_SUCCESS);
+}
+
+static void test_ut_encode_time_reports_bad_clock(void)
+{
+    /* Regression: an out-of-range clock component must reach the caller of
+       ut_encode_time as a failure, not as a plausible-looking number. */
+    ut_set_status(UT_SUCCESS);
+    CU_ASSERT_TRUE(isnan(ut_encode_time(2024, 1, 1, 25, 0, 0.0)));
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
+
+    ut_set_status(UT_SUCCESS);
+    CU_ASSERT_TRUE(isnan(ut_encode_time(2024, 1, 1, 12, 99, 0.0)));
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
+    ut_set_status(UT_SUCCESS);
+}
+
+static void test_ut_encode_clock_no_overflow_in_range(void)
+{
+    /* Computing in double rather than int keeps the encoder free of
+       signed-overflow UB. The int form (hours*60 + minutes)*60 overflows at
+       hours ~ 596,523; the range check puts that far out of reach, so this
+       now checks only that the accepted domain encodes exactly. */
+    CU_ASSERT_DOUBLE_EQUAL(ut_encode_clock(23, 59, 60.0), 86400.0, 0.0);
+    CU_ASSERT_DOUBLE_EQUAL(ut_encode_clock(0, 0, 0.0),    0.0,     0.0);
+    CU_ASSERT_DOUBLE_EQUAL(ut_encode_clock(-23, -59, -60.0), -86400.0, 0.0);
+}
+
+/* ---------------------------------------------------------------------- */
+/*   Channel-agreement sweeps: NaN return <=> UT_BAD_ARG, for all inputs   */
+/* ---------------------------------------------------------------------- */
+
+/*
+ * The tests above check outcomes pointwise: for a named input, the return
+ * value and the status are each compared against a known-correct answer. The
+ * sweeps below check something different and complementary -- that the two
+ * reporting channels always AGREE WITH EACH OTHER -- and so need no expected
+ * value per input. That catches the failure mode pointwise tests miss: a
+ * rejection path added later that returns NaN without setting the status, or
+ * sets UT_BAD_ARG while returning a finite value.
+ *
+ * The pre-call status is alternated so a function that never writes the
+ * channel at all is caught too, rather than passing by inheriting whatever
+ * the previous call left behind.
+ *
+ * Mismatches are counted rather than asserted per iteration: one assertion
+ * per sweep keeps the suite summary meaningful, and the first offending input
+ * is reported so a failure is diagnosable.
+ */
+
+#define AGREES(v) ((isnan(v) != 0) == (ut_get_status() == UT_BAD_ARG))
+
+static void test_encode_clock_channels_agree(void)
+{
+    static const double secs[] = {
+	-62.5, -62.0, -1.0, 0.0, 60.0, 62.0, 62.5, 0.0/0.0, HUGE_VAL, -HUGE_VAL
+    };
+    long   checked = 0, mismatches = 0;
+    int    bad_h = 0, bad_m = 0, bad_status = -1;
+    double bad_s = 0.0, bad_v = 0.0;
+    int    h, m;
+    size_t i;
+
+    for (h = -30; h <= 30; ++h) {
+	for (m = -70; m <= 70; ++m) {
+	    for (i = 0; i < sizeof(secs)/sizeof(secs[0]); ++i) {
+		double v;
+
+		ut_set_status((checked & 1) ? UT_BAD_ARG : UT_SUCCESS);
+		v = ut_encode_clock(h, m, secs[i]);
+		++checked;
+		if (!AGREES(v)) {
+		    if (mismatches++ == 0) {
+			bad_h = h; bad_m = m; bad_s = secs[i];
+			bad_v = v; bad_status = (int)ut_get_status();
+		    }
+		}
+	    }
+	}
+    }
+    if (mismatches != 0)
+	fprintf(stderr, "\nut_encode_clock(%d,%d,%g) -> %g, status %d"
+			" (%ld mismatches of %ld)\n",
+		bad_h, bad_m, bad_s, bad_v, bad_status, mismatches, checked);
+    CU_ASSERT_EQUAL(mismatches, 0);
+    ut_set_status(UT_SUCCESS);
+}
+
+static void test_encode_date_channels_agree(void)
+{
+    /*
+     * Month and day are held to valid values on purpose. ut_encode_date gates
+     * only the year; an out-of-range month or day passed directly can still
+     * overflow 31*(month + 12*year) in gregorianDateToJulianDay -- a
+     * pre-existing exposure this sweep must not provoke.
+     */
+    static const int bases[] = {
+	-5000000, -1000000, -4713, -1, 0, 1, 2024, 1000000, 5000000
+    };
+    long   checked = 0, mismatches = 0;
+    int    bad_y = 0, bad_mo = 0, bad_d = 0, bad_status = -1;
+    double bad_v = 0.0;
+    size_t b;
+    int    delta, mo, d;
+
+    for (b = 0; b < sizeof(bases)/sizeof(bases[0]); ++b) {
+	for (delta = -2; delta <= 2; ++delta) {
+	    const int y = bases[b] + delta;
+
+	    for (mo = 1; mo <= 12; ++mo) {
+		for (d = 1; d <= 28; ++d) {
+		    double v;
+
+		    ut_set_status((checked & 1) ? UT_BAD_ARG : UT_SUCCESS);
+		    v = ut_encode_date(y, mo, d);
+		    ++checked;
+		    if (!AGREES(v)) {
+			if (mismatches++ == 0) {
+			    bad_y = y; bad_mo = mo; bad_d = d;
+			    bad_v = v; bad_status = (int)ut_get_status();
+			}
+		    }
+		}
+	    }
+	}
+    }
+    if (mismatches != 0)
+	fprintf(stderr, "\nut_encode_date(%d,%d,%d) -> %g, status %d"
+			" (%ld mismatches of %ld)\n",
+		bad_y, bad_mo, bad_d, bad_v, bad_status, mismatches, checked);
+    CU_ASSERT_EQUAL(mismatches, 0);
+    ut_set_status(UT_SUCCESS);
+}
+
+static void test_encode_time_channels_agree(void)
+{
+    /* Composite: sweep the clock over a fixed valid date, then the year over
+       a fixed valid clock, so both failure sources are exercised. */
+    static const double secs[] = {
+	-62.5, 0.0, 60.0, 62.0, 62.5, 0.0/0.0, HUGE_VAL, -HUGE_VAL
+    };
+    static const int years[] = {
+	-5000001, -5000000, -4713, 0, 1, 2024, 5000000, 5000001
+    };
+    long   checked = 0, mismatches = 0;
+    int    h, m;
+    size_t i;
+
+    for (h = -30; h <= 30; ++h) {
+	for (m = -70; m <= 70; ++m) {
+	    for (i = 0; i < sizeof(secs)/sizeof(secs[0]); ++i) {
+		double v;
+
+		ut_set_status((checked & 1) ? UT_BAD_ARG : UT_SUCCESS);
+		v = ut_encode_time(2024, 1, 1, h, m, secs[i]);
+		++checked;
+		if (!AGREES(v))
+		    ++mismatches;
+	    }
+	}
+    }
+    for (i = 0; i < sizeof(years)/sizeof(years[0]); ++i) {
+	double v;
+
+	ut_set_status((checked & 1) ? UT_BAD_ARG : UT_SUCCESS);
+	v = ut_encode_time(years[i], 6, 15, 12, 30, 0.0);
+	++checked;
+	if (!AGREES(v))
+	    ++mismatches;
+    }
+    if (mismatches != 0)
+	fprintf(stderr, "\nut_encode_time: %ld mismatches of %ld\n",
+		mismatches, checked);
+    CU_ASSERT_EQUAL(mismatches, 0);
+    ut_set_status(UT_SUCCESS);
+}
+
+#undef AGREES
+
+static void test_clock_diagnostics_are_specific(void)
+{
+    /* Range failures are delegated to ut_check_clock, which names the
+       offending field instead of the generic "Invalid time-of-day format". */
+    assert_timestamp_reject_msg("2024-01-01 1275",      "Invalid minute 75");
+    assert_timestamp_reject_msg("2024-01-01 125961",    "Invalid second 61");
+
+    /* A format rule the checker cannot see, so the scanner reports it. */
+    assert_timestamp_reject_msg("2024-01-01 123.4",     "no seconds field");
+
+    /* Over-long fields. Each of these previously produced "Timezone offset
+       must include sign", or a bare leftover-text message. */
+    assert_timestamp_reject_msg("2024-01-01 123:45",    "hour field");
+    assert_timestamp_reject_msg("2024-01-01 12:345",    "minute field");
+    assert_timestamp_reject_msg("2024-01-01 12:34:567", "second field");
+    assert_timestamp_reject_msg("2024-01-01 1234567",   "at most 6");
+}
+
+static void test_timezone_diagnostics_are_specific(void)
+{
+    assert_timestamp_reject_msg("2024-01-01 00:00 +053",    "lose its sign");
+    assert_timestamp_reject_msg("2024-01-01 00:00 +12345",  "at most 4");
+    assert_timestamp_reject_msg("2024-01-01 00:00 +12:345", "minute field");
+    assert_timestamp_reject_msg("2024-01-01 00:00 +123:45", "hour field");
+}
+
+static void test_ut_check_time_valid(void)
+{
+    CU_ASSERT_EQUAL(ut_check_time(2024,  1, 15,  0,  0,  0.0), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_check_time(2024,  1, 15, 23, 59, 59.999999), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_check_time(2024,  1, 15, 12, 30, 45.5), UT_SUCCESS);
+}
+
+static void test_ut_check_time_leap_second(void)
+{
+    /* ut_check_time recomposes ut_check_date + ut_check_clock, so it inherits
+       the inserted-second acceptance: 23:59:60 is a valid time of day in the
+       calendar union and is accepted; the same value at any other time of day
+       is rejected (positional constraint). */
+    CU_ASSERT_EQUAL(ut_check_time(2024, 1, 15, 23, 59, 60.0), UT_SUCCESS);
+    CU_ASSERT_EQUAL(ut_check_time(2024, 1, 15, 12,  0, 60.0), UT_BAD_ARG);
+}
+
+static void test_ut_check_time_bad_components(void)
+{
+    CU_ASSERT_EQUAL(ut_check_time(2024,  1, 15, 24,  0,  0.0), UT_BAD_ARG); /* hour */
+    CU_ASSERT_EQUAL(ut_check_time(2024,  1, 15, -1,  0,  0.0), UT_BAD_ARG);
+    CU_ASSERT_EQUAL(ut_check_time(2024,  1, 15,  0, 60,  0.0), UT_BAD_ARG); /* minute */
+    CU_ASSERT_EQUAL(ut_check_time(2024,  1, 15,  0, -1,  0.0), UT_BAD_ARG);
+    CU_ASSERT_EQUAL(ut_check_time(2024,  1, 15,  0,  0, -0.1), UT_BAD_ARG); /* second */
+    CU_ASSERT_EQUAL(ut_check_time(2024,  1, 15,  0,  0, 60.0), UT_BAD_ARG);
+    /* date errors propagate */
+    CU_ASSERT_EQUAL(ut_check_time(2024, 13, 15, 12, 30,  0.0), UT_BAD_ARG);
+}
+
+static void test_ut_check_time_nan(void)
+{
+    /* Defensive: a NaN second must not slip through (the `!(s>=0 && s<60)`
+       form catches NaN, a plain `s < 0 || s >= 60` would not). */
+    double nan_val = 0.0/0.0;
+    CU_ASSERT_EQUAL(ut_check_time(2024, 1, 15, 12, 30, nan_val), UT_BAD_ARG);
+}
+
+/* ---------------------------------------------------------------------- */
+/*           11. encode → decode roundtrip (issue: neg-year bug)           */
+/* ---------------------------------------------------------------------- */
+
+/*
+ * Before the (int)-cast → floor() fix in julianDayToGregorianDate,
+ * any negative year roundtripped off by one (and the day shifted by one,
+ * sometimes corrupting the month as well). These tests lock that in.
+ *
+ * Pre-fix observed behavior:
+ *   ut_encode_date(-9000, 1, 1) → JD
+ *   ut_decode_time(JD)          → (-8999, 1, 2)    <-- wrong
+ *
+ * The root cause was (int)(negative_double), which truncates toward zero
+ * in C99+ where the algorithm needed floor() (round toward -infinity).
+ * The encoder already had the corresponding fix at unitcore.c:351-355;
+ * the decoder did not.
+ */
+
+static void assert_date_roundtrip(int Y, int M, int D)
+{
+    double encoded = ut_encode_date(Y, M, D);
+    int    y, m, d, h, mi;
+    double s, res;
+    ut_decode_time(encoded, &y, &m, &d, &h, &mi, &s, &res);
+    if (y != Y || m != M || d != D || h != 0 || mi != 0 || s != 0.0) {
+        fprintf(stderr,
+            "assert_date_roundtrip: input=(%d-%02d-%02d) "
+            "decoded=(%d-%02d-%02d %02d:%02d:%g)\n",
+            Y, M, D, y, m, d, h, mi, s);
+    }
+    CU_ASSERT_EQUAL(y, Y);
+    CU_ASSERT_EQUAL(m, M);
+    CU_ASSERT_EQUAL(d, D);
+    CU_ASSERT_EQUAL(h, 0);
+    CU_ASSERT_EQUAL(mi, 0);
+    CU_ASSERT_DOUBLE_EQUAL(s, 0.0, DECODE_SEC_EPS);
+}
+
+/* Specific regression for the historically-broken cases. */
+static void test_decode_roundtrip_negative_year_bug(void)
+{
+    /* The exact case the bug was demonstrated on. */
+    assert_date_roundtrip(-9000,  1,  1);
+    /* Same year, other months — pre-fix these had month corruption too,
+       producing nonsense like (-8998, -8, -29) for March. */
+    assert_date_roundtrip(-9000,  3,  1);
+    assert_date_roundtrip(-9000,  7, 15);
+    assert_date_roundtrip(-9000, 12, 31);
+    /* Boundary at the smallest negative year currently representable as ID. */
+    assert_date_roundtrip(   -1,  1,  1);
+    assert_date_roundtrip(   -1, 12, 31);
+    /* Mid-range negatives. */
+    assert_date_roundtrip( -100,  6, 15);
+    assert_date_roundtrip(-1000,  1,  1);
+}
+
+static void test_decode_roundtrip_positive_years(void)
+{
+    /* Modern era — must not regress. */
+    assert_date_roundtrip(2024,  1, 15);
+    assert_date_roundtrip(2024,  2, 29);  /* leap day */
+    assert_date_roundtrip(2024, 12, 31);
+    assert_date_roundtrip(2001,  1,  1);  /* origin */
+    assert_date_roundtrip(1970,  1,  1);  /* Unix epoch */
+    /* Gregorian cutover boundary (Oct 15, 1582). Note that Oct 5-14 1582
+       don't exist in the unified Julian/Gregorian calendar — those inputs
+       silently normalize to Gregorian dates (similar to how Feb 30 rolls
+       to Mar 1), so we don't test them here. */
+    assert_date_roundtrip(1582, 10, 15);  /* first Gregorian day */
+    assert_date_roundtrip(1582, 10,  4);  /* last Julian day */
+    assert_date_roundtrip(1583,  1,  1);
+    /* Pre-Gregorian. */
+    assert_date_roundtrip(1000,  6, 15);
+    assert_date_roundtrip(   1,  1,  1);
+    /* 4-digit-year boundary. */
+    assert_date_roundtrip(9999, 12, 31);
+}
+
+static void test_decode_roundtrip_year_zero(void)
+{
+    /* Per the documented behavior (udunits2.h, GRAMMAR.md): year 0 is
+       silently normalized to year 1. After encode→decode the value
+       therefore comes back as year 1, NOT year 0. This is a quirk of
+       the historical "no year zero" convention, not a roundtrip bug.
+
+       This test pins the contract so the normalization is not silently
+       lost by a future refactor. */
+    double encoded = ut_encode_date(0, 1, 1);
+    int    y, m, d, h, mi;
+    double s, res;
+    ut_decode_time(encoded, &y, &m, &d, &h, &mi, &s, &res);
+    CU_ASSERT_EQUAL(y, 1);  /* normalized */
+    CU_ASSERT_EQUAL(m, 1);
+    CU_ASSERT_EQUAL(d, 1);
+}
+
+static void test_decode_roundtrip_dense_sweep(void)
+{
+    /* Coarse but wide sweep across negative and positive ranges, exercising
+       every month. This caught all 252 dense-sweep failures in the pre-fix
+       extracted-function test. Extended in commit 2 to cover the new
+       \xc2\xb15M year range. */
+    static const int years[] = {
+        -5000000, -1000000, -99999, -9999, -5000, -1000, -100, -10, -2, -1,
+               1,        2,     10,   100,  1000,  5000, 9999, 99999,
+         1000000,  5000000,
+    };
+    for (size_t i = 0; i < sizeof(years)/sizeof(years[0]); i++) {
+        for (int m = 1; m <= 12; m++) {
+            assert_date_roundtrip(years[i], m, 1);
+            assert_date_roundtrip(years[i], m, 15);
+            /* Day 28 — last day common to all months, avoids leap-day noise. */
+            assert_date_roundtrip(years[i], m, 28);
+        }
+    }
+}
+
+/* ---------------------------------------------------------------------- */
+/*                          main / registration                            */
+/* ---------------------------------------------------------------------- */
+
+int main(const int argc, const char* const* argv)
+{
+    int exitCode = EXIT_FAILURE;
+
+    xmlPath = argv[1] ? argv[1] : getenv("UDUNITS2_XML_PATH");
+
+    if (CU_initialize_registry() != CUE_SUCCESS) {
+        fprintf(stderr, "CU_initialize_registry failed\n");
+        return EXIT_FAILURE;
+    }
+
+    CU_Suite* s = CU_add_suite(__FILE__, setup, teardown);
+    if (s == NULL) {
+        CU_cleanup_registry();
+        return EXIT_FAILURE;
+    }
+
+    /* 1. broken DATE */
+    CU_ADD_TEST(s, test_broken_date_full);
+    CU_ADD_TEST(s, test_broken_date_single_digit);
+    CU_ADD_TEST(s, test_broken_date_truncated);
+    CU_ADD_TEST(s, test_broken_date_year_only);
+    CU_ADD_TEST(s, test_broken_date_year_zero);
+    CU_ADD_TEST(s, test_broken_date_negative_year);
+    CU_ADD_TEST(s, test_broken_date_day_rollover);
+    CU_ADD_TEST(s, test_broken_date_reject_impossible_day);
+    CU_ADD_TEST(s, test_broken_date_per_month_max_accept);
+    CU_ADD_TEST(s, test_broken_date_gregorian_cutover_gap);
+    CU_ADD_TEST(s, test_broken_date_reject_bad_month);
+    CU_ADD_TEST(s, test_broken_date_reject_bad_day);
+    CU_ADD_TEST(s, test_broken_date_reject_year_too_long);
+    CU_ADD_TEST(s, test_broken_date_accept_long_year);
+    CU_ADD_TEST(s, test_broken_date_long_year_per_month_validation);
+    CU_ADD_TEST(s, test_broken_date_reject_bad_separator);
+
+    /* 2. packed DATE */
+    CU_ADD_TEST(s, test_packed_date_full);
+    CU_ADD_TEST(s, test_packed_date_truncated);
+    CU_ADD_TEST(s, test_packed_date_reject_bad_length);
+    CU_ADD_TEST(s, test_packed_date_reject_impossible_day);
+    CU_ADD_TEST(s, test_packed_date_day_rollover);
+    CU_ADD_TEST(s, test_packed_date_reject_day_zero);
+    CU_ADD_TEST(s, test_packed_date_negative_year);
+    CU_ADD_TEST(s, test_packed_date_year_still_4_digit);
+
+    /* 3. broken CLOCK */
+    CU_ADD_TEST(s, test_broken_clock_full);
+    CU_ADD_TEST(s, test_broken_clock_no_seconds);
+    CU_ADD_TEST(s, test_broken_clock_fractional_seconds);
+    CU_ADD_TEST(s, test_fractional_second_precision);
+    CU_ADD_TEST(s, test_broken_clock_single_digit_components);
+    CU_ADD_TEST(s, test_broken_clock_reject_bad_hour);
+    CU_ADD_TEST(s, test_broken_clock_reject_bad_minute);
+    CU_ADD_TEST(s, test_broken_clock_leap_second);
+    CU_ADD_TEST(s, test_broken_clock_reject_leap_second_elsewhere);
+    CU_ADD_TEST(s, test_broken_clock_reject_sign_on_hour);
+
+    /* 4. packed CLOCK */
+    CU_ADD_TEST(s, test_packed_clock_full);
+    CU_ADD_TEST(s, test_packed_clock_truncated);
+    CU_ADD_TEST(s, test_packed_clock_fractional_seconds);
+    CU_ADD_TEST(s, test_packed_clock_reject_fraction_too_short);
+    CU_ADD_TEST(s, test_packed_clock_reject_bad_range);
+    CU_ADD_TEST(s, test_packed_clock_reject_sign_on_hour);
+
+    /* 5. T separator */
+    CU_ADD_TEST(s, test_iso_t_separator);
+    CU_ADD_TEST(s, test_iso_t_no_trailing_space);
+
+    /* 6. TZ offset */
+    CU_ADD_TEST(s, test_tz_broken_positive);
+    CU_ADD_TEST(s, test_tz_broken_negative);
+    CU_ADD_TEST(s, test_tz_packed);
+    CU_ADD_TEST(s, test_tz_packed_three_digit);
+    CU_ADD_TEST(s, test_tz_packed_leading_zero_rejected);
+    CU_ADD_TEST(s, test_tz_extremes_accepted);
+    CU_ADD_TEST(s, test_tz_reject_out_of_range);
+    CU_ADD_TEST(s, test_tz_reject_negative_zero);
+    CU_ADD_TEST(s, test_tz_positive_zero_ok);
+    CU_ADD_TEST(s, test_tz_crosses_date_boundary);
+    CU_ADD_TEST(s, test_tz_broken_single_digit_components);
+    CU_ADD_TEST(s, test_tz_broken_minute_out_of_range);
+    CU_ADD_TEST(s, test_tz_broken_format_errors);
+    CU_ADD_TEST(s, test_tz_broken_reject_seconds);
+    CU_ADD_TEST(s, test_tz_packed_single_digit);
+    CU_ADD_TEST(s, test_tz_packed_length_cap);
+    CU_ADD_TEST(s, test_tz_packed_negative_zero_len1);
+    CU_ADD_TEST(s, test_tz_packed_unsigned_rejected);
+    CU_ADD_TEST(s, test_tz_after_packed_clock);
+
+    /* 7. Z / GMT / UTC */
+    CU_ADD_TEST(s, test_zulu_after_clock);
+    CU_ADD_TEST(s, test_zulu_after_date_alone);
+    CU_ADD_TEST(s, test_gmt_utc_after_clock);
+    CU_ADD_TEST(s, test_gmt_utc_reject_without_clock);
+    CU_ADD_TEST(s, test_zulu_gmt_utc_accept_any_case);
+    CU_ADD_TEST(s, test_reject_unknown_timezone_identifier);
+
+    /* 8. SHIFT with REAL/INT */
+    CU_ADD_TEST(s, test_shift_real);
+    CU_ADD_TEST(s, test_shift_int);
+    CU_ADD_TEST(s, test_shift_keywords);
+
+    /* 9. misc */
+    CU_ADD_TEST(s, test_date_clock_combinations_consistent);
+    CU_ADD_TEST(s, test_reject_garbage);
+    CU_ADD_TEST(s, test_leap_second_with_bad_tz);
+
+    /* 10. public API: ut_check_date / ut_check_time */
+    CU_ADD_TEST(s, test_ut_check_date_valid);
+    CU_ADD_TEST(s, test_ut_check_date_bad_year);
+    CU_ADD_TEST(s, test_ut_check_date_bad_month);
+    CU_ADD_TEST(s, test_ut_check_date_bad_day);
+    CU_ADD_TEST(s, test_ut_check_date_sets_status_on_success);
+    CU_ADD_TEST(s, test_ut_check_clock_valid);
+    CU_ADD_TEST(s, test_ut_check_clock_bad_components);
+    CU_ADD_TEST(s, test_ut_check_clock_leap_second);
+    CU_ADD_TEST(s, test_ut_check_clock_nan);
+    CU_ADD_TEST(s, test_ut_check_clock_sets_status_on_success);
+    CU_ADD_TEST(s, test_ut_encode_date_sets_status);
+    CU_ADD_TEST(s, test_ut_encode_date_below_cap_bit_identical);
+    CU_ADD_TEST(s, test_ut_encode_time_sets_status);
+    CU_ADD_TEST(s, test_ut_encode_clock_sets_status_on_success);
+    CU_ADD_TEST(s, test_ut_encode_clock_rejects_out_of_range);
+    CU_ADD_TEST(s, test_ut_encode_clock_rejects_non_finite_second);
+    CU_ADD_TEST(s, test_ut_encode_time_reports_bad_clock);
+    CU_ADD_TEST(s, test_ut_encode_clock_no_overflow_in_range);
+    CU_ADD_TEST(s, test_encode_clock_channels_agree);
+    CU_ADD_TEST(s, test_encode_date_channels_agree);
+    CU_ADD_TEST(s, test_encode_time_channels_agree);
+    CU_ADD_TEST(s, test_clock_diagnostics_are_specific);
+    CU_ADD_TEST(s, test_timezone_diagnostics_are_specific);
+    CU_ADD_TEST(s, test_ut_check_time_valid);
+    CU_ADD_TEST(s, test_ut_check_time_leap_second);
+    CU_ADD_TEST(s, test_ut_check_time_bad_components);
+    CU_ADD_TEST(s, test_ut_check_time_nan);
+
+    /* 11. encode→decode roundtrip (negative-year regression + sweep) */
+    CU_ADD_TEST(s, test_decode_roundtrip_negative_year_bug);
+    CU_ADD_TEST(s, test_decode_roundtrip_positive_years);
+    CU_ADD_TEST(s, test_decode_roundtrip_year_zero);
+    CU_ADD_TEST(s, test_decode_roundtrip_dense_sweep);
+
+    /* Silence the (noisy, expected) error messages from reject tests. */
+    ut_set_error_message_handler(ut_ignore);
+
+    if (CU_basic_run_tests() == CUE_SUCCESS) {
+        if (CU_get_number_of_tests_failed() == 0) exitCode = EXIT_SUCCESS;
+    }
+
+    CU_cleanup_registry();
+    return exitCode;
+}
