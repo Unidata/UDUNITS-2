@@ -103,6 +103,33 @@ enum utStatus {
 };
 typedef enum utStatus          ut_status;
 
+
+/*
+ * STATUS CONVENTION
+ *
+ * This library maintains a single, global status value, readable with
+ * ut_get_status(). Functions that participate in the convention report the
+ * outcome of *their own* call: UT_SUCCESS when they succeed, and a specific
+ * failure code -- usually UT_BAD_ARG -- when they do not. Success is reported
+ * explicitly; a successful call does not leave the status untouched.
+ *
+ * This is deliberately unlike errno, which a successful call is free to leave
+ * alone. The status therefore describes the most recent participating call and
+ * nothing before it. Read it immediately after the call whose outcome matters:
+ * a status inspected once at the end of a sequence of calls reflects only the
+ * last of them, so failures cannot be accumulated and checked in bulk.
+ *
+ * Functions returning double -- the ut_encode_* family -- additionally use NaN
+ * as the authoritative failure signal, with the status as a secondary, in-sync
+ * copy: a NaN return and UT_BAD_ARG always accompany one another. Of the two,
+ * NaN is the one to prefer, since it is carried in the return value rather
+ * than in global state.
+ *
+ * The ut_check_* and ut_encode_* families documented below follow this
+ * convention, as do most other functions in this header that report a
+ * ut_status.
+ */
+
 enum utEncoding {
     UT_ASCII = 0,
     UT_ISO_8859_1 = 1,
@@ -1200,7 +1227,15 @@ ut_accept_visitor(
  *	month		The month.
  *	day		The day (1 = the first of the month).
  * Returns:
- *	The date encoded as a scalar value.
+ *	The date encoded as a scalar value, or NaN if |year| > 5,000,000.
+ *
+ * Validation: the year is range-checked. If |year| > 5,000,000 the function
+ * returns NaN and sets ut_get_status() to UT_BAD_ARG; the cap keeps the
+ * internal Julian-day arithmetic within int32. The month and day are NOT
+ * checked: out-of-range values are silently normalized via the underlying
+ * Julian-day arithmetic (year 0 becomes year 1; month 13 rolls into the next
+ * year; day 32 rolls into the next month). Callers that want full input
+ * validation should call ut_check_date() first.
  */
 EXTERNL double
 ut_encode_date(
@@ -1210,17 +1245,66 @@ ut_encode_date(
 
 
 /*
- * Encodes a time as a double-precision value. If an input value isn't within
- * its allowed range, then zero is returned and `ut_get_status()` will return
- * `UT_BAD_ARG`.
+ * Reports whether (year, month, day) is acceptable input to ut_encode_date()
+ * -- i.e. in range and free of obvious typos. This is a precondition check for
+ * the encoder: it does not describe any calendar, and it does not describe the
+ * value the encoder produces. Inputs that pass may still be normalized at
+ * encode time (see ut_encode_date).
  *
- * @param[in] hours    The number of hours (0 = midnight). `abs(hours)` must be
- *                     less than 24.
- * @param[in] minutes  The number of minutes. `abs(minutes)` must be less than
- *                     60.
+ * Arguments:
+ *	year	Must be in the inclusive range [-5000000, 5000000]. Year 0 is
+ *		valid input; ut_encode_date interprets it as year 1. The cap is
+ *		a practical limit set by the int32 arithmetic in
+ *		gregorianDateToJulianDay; see lib/unitcore.c.
+ *	month	Must be in the inclusive range [1, 12].
+ *	day	Must not exceed the per-month maximum:
+ *
+ *		    Jan, Mar, May, Jul, Aug, Oct, Dec  ->  1..31
+ *		    Apr, Jun,      Sep, Nov            ->  1..30
+ *		    Feb                                ->  1..30
+ *
+ *		These maxima are deliberately lenient: the leap-year rule is
+ *		not enforced (Feb 29 is accepted in every year) and February
+ *		admits up to 30. Apr 31, Feb 31, etc. are rejected. Accepted
+ *		day values that the encoder cannot represent directly (e.g.
+ *		Feb 29 of a non-leap year, or Feb 30) are normalized by
+ *		ut_encode_date, which uses Gregorian arithmetic.
+ *
+ * Returns:
+ *	UT_SUCCESS	The arguments are acceptable input to ut_encode_date.
+ *	UT_BAD_ARG	An argument is out of range. ut_status is set and an
+ *			error message has been emitted via the handler set by
+ *			ut_set_error_message_handler().
+ */
+EXTERNL ut_status
+ut_check_date(
+    int		year,
+    int		month,
+    int		day);
+
+
+/*
+ * Encodes a clock-time (time of day) as a double-precision value.
+ *
+ * The components are range-checked. The bounds are symmetric about zero, so
+ * that negative components encode as negative offsets, and are looser than
+ * ut_check_clock()'s: they are sanity bounds on an arithmetic encoder, not a
+ * wall-clock validation. Callers that need the components validated as a time
+ * of day -- including the leap-second rule -- should call ut_check_clock().
+ *
+ * Follows the status convention documented above: UT_SUCCESS on success,
+ * UT_BAD_ARG on failure, with NaN as the authoritative failure signal.
+ *
+ * @param[in] hours    The number of hours (0 = midnight). Must satisfy
+ *                     -24 < hours < 24.
+ * @param[in] minutes  The number of minutes. Must satisfy
+ *                     -60 < minutes < 60.
  * @param[in] seconds  The number of seconds. `fabs(seconds)` must be less than
- *                     or equal to 62.
- * @return             The clock-time encoded as a scalar value.
+ *                     or equal to 62. A NaN or infinite value is rejected.
+ * @return             The clock-time encoded as a scalar value, i.e.
+ *                     hours*3600 + minutes*60 + seconds; or NaN if any
+ *                     argument is out of range, in which case ut_get_status()
+ *                     returns UT_BAD_ARG.
  */
 EXTERNL double
 ut_encode_clock(
@@ -1230,9 +1314,11 @@ ut_encode_clock(
 
 
 /*
- * Encodes a time as a double-precision value.  The convenience function is
+ * Encodes a time as a double-precision value.  This convenience function is
  * equivalent to "ut_encode_date(year,month,day) +
- * ut_encode_clock(hour,minute,second)"
+ * ut_encode_clock(hour,minute,second)": both callees collapse their own
+ * failures to NaN, so an out-of-range or non-finite component reaches the
+ * caller as NaN rather than as a plausible-looking number (see Returns).
  *
  * Arguments:
  *	year	The year.
@@ -1242,7 +1328,11 @@ ut_encode_clock(
  *	minute	The minute.
  *	second	The second.
  * Returns:
- *	The time encoded as a scalar value.
+ *	The time encoded as a scalar value, or NaN if any component is out of
+ *	range: |year| > 5,000,000 (see ut_encode_date), or an hour, minute or
+ *	second outside the bounds of ut_encode_clock, including a non-finite
+ *	`second`. Any non-finite result is reported as NaN, and when the result
+ *	is NaN, ut_get_status() is set to UT_BAD_ARG.
  */
 EXTERNL double
 ut_encode_time(
@@ -1252,6 +1342,68 @@ ut_encode_time(
     const int		hour,
     const int		minute,
     const double	second);
+
+
+/*
+ * Validates clock-time (time-of-day) components.
+ *
+ * This is the companion check to ut_encode_clock(): the encoder applies only
+ * loose sanity bounds, so a caller that wants the components validated as a
+ * real wall-clock time of day calls this first. The unit-string parser applies the
+ * same check, so a clock accepted here is accepted by the parser and a clock
+ * rejected here is rejected by the parser.
+ *
+ * Arguments:
+ *	hour	Must be in the inclusive range [0, 23].
+ *	minute	Must be in the inclusive range [0, 59].
+ *	second	Must satisfy 0.0 <= second < 60.0, except that
+ *		60.0 <= second < 61.0 is accepted only when hour == 23 and
+ *		minute == 59 (the inserted-second form, normalized to the
+ *		following 00:00:00 at encode time). Any second >= 60.0 at any
+ *		other time of day, any second >= 61.0, and NaN are rejected.
+ *
+ * Returns:
+ *	UT_SUCCESS	The arguments form a valid time of day.
+ *	UT_BAD_ARG	An argument is out of range. ut_status is set and
+ *			an error message has been emitted via the handler
+ *			set by ut_set_error_message_handler().
+ */
+EXTERNL ut_status
+ut_check_clock(
+    int		hour,
+    int		minute,
+    double	second);
+
+
+/*
+ * Reports whether the components are acceptable input to ut_encode_time()
+ * -- i.e. in range and free of obvious typos. Like its companions, this is a
+ * precondition check for the encoder: it does not describe any calendar (Feb
+ * 30, or Feb 29 of a non-leap year, are accepted), and it does not describe
+ * the value the encoder produces.
+ *
+ * Equivalent to ut_check_date(year, month, day) followed by
+ * ut_check_clock(hour, minute, second); it succeeds only if both do.
+ *
+ * Arguments:
+ *	year, month, day	As for ut_check_date().
+ *	hour, minute, second	As for ut_check_clock() (including the
+ *				inserted-second acceptance described there).
+ *
+ * Returns:
+ *	UT_SUCCESS	The arguments are acceptable input to ut_encode_time.
+ *	UT_BAD_ARG	An argument is out of range. ut_status is set and
+ *			an error message has been emitted via the handler
+ *			set by ut_set_error_message_handler().
+ */
+EXTERNL ut_status
+ut_check_time(
+    int		year,
+    int		month,
+    int		day,
+    int		hour,
+    int		minute,
+    double	second);
 
 
 /*
