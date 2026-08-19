@@ -1221,9 +1221,24 @@ Operating-system error. See @code{errno} for the reason.
 
 @anchor{ut_compare()}
 @deftypefun @code{int} ut_compare @code{(const ut_unit* @var{unit1}, const ut_unit* @var{unit2})}
-Compares two units.  Returns a value less than, equal to, or greater than
-zero as @var{unit1} is considered less than, equal to, or greater than
-@var{unit2}, respectively.
+Compares two units and imposes a consistent total ordering on them.
+Returns a value less than, equal to, or greater than zero as @var{unit1}
+is considered less than, equal to, or greater than @var{unit2},
+respectively.
+The ordering is consistent but otherwise arbitrary.  It is intended only
+for imposing a definite order on units, for example as the comparison
+function of a sorted collection, and does @emph{not} reflect their relative
+magnitude, dimensionality, or convertibility.  In particular, one unit does
+not compare greater than another merely because it represents a larger
+quantity (e.g., @code{km} does not necessarily compare greater than
+@code{m}).
+A return value of zero indicates that the two units have the same
+dimensions, the same scale factor, and the same offset, and hence convert
+to one another by the identity transformation.  Two units can be
+convertible yet not compare equal (e.g., @code{degC} and @code{K}); use
+@ref{ut_are_convertible(),ut_are_convertible} to test for convertibility and
+@ref{ut_get_converter(),ut_get_converter} to obtain the numeric relationship
+between two units.
 Units from different @ref{unit-system}s never compare equal.
 The value zero is also returned if both unit pointers are @code{NULL}.
 @end deftypefun
