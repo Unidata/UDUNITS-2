@@ -106,6 +106,54 @@ errMsg(
 }
 
 
+/**
+ * Error handler used while parsing the "have" (-H) unit specification.
+ *
+ * A bare "syntax error" reaches this handler only for genuine grammar
+ * errors; the lexer routes its specific date/time diagnostics through
+ * yylval.error_msg and uterror() surfaces them verbatim, so anything other
+ * than "syntax error" is a detailed message worth showing to the user.
+ *
+ * The classification compares against bison's untranslated "syntax error".
+ * This is safe only because the build enables no bison NLS message catalogue
+ * (no --enable-nls / gettext wiring), so the string is never localized. If
+ * bison NLS is ever enabled, this is the spot to revisit -- replace the text
+ * comparison with a flag set by the scanner/parser when a specific message
+ * was emitted.
+ */
+static int
+handle_have_parse_error(const char* fmt, va_list args)
+{
+    char buffer[512];
+    vsnprintf(buffer, sizeof(buffer), fmt, args);
+
+    if (strcmp(buffer, "syntax error") == 0) {
+        errMsg("Don't recognize input unit: \"%s\"", _haveUnitSpec);
+    } else {
+        errMsg("Error in input unit: %s", buffer);
+    }
+    return 0;
+}
+
+/**
+ * Error handler used while parsing the "want" (-W) unit specification.
+ * See handle_have_parse_error for the message-classification rationale.
+ */
+static int
+handle_want_parse_error(const char* fmt, va_list args)
+{
+    char buffer[512];
+    vsnprintf(buffer, sizeof(buffer), fmt, args);
+
+    if (strcmp(buffer, "syntax error") == 0) {
+        errMsg("Don't recognize output unit: \"%s\"", _wantSpec);
+    } else {
+        errMsg("Error in output unit: %s", buffer);
+    }
+    return 0;
+}
+
+
 static int
 decodeCommandLine(
     int         argc,
@@ -463,11 +511,14 @@ decodeInput(
 
     (void)strncpy(_haveUnitSpec, input, sizeof(_haveUnitSpec));
     _haveUnitSpec[sizeof(_haveUnitSpec)-1] = 0;
+    ut_error_message_handler prev_handler =
+            ut_set_error_message_handler(handle_have_parse_error);
+
     _haveUnit = ut_parse(_unitSystem, _haveUnitSpec, _encoding);
-    if (_haveUnit == NULL) {
-        errMsg("Don't recognize \"%s\"", _haveUnitSpec);
-    }
-    else {
+
+    ut_set_error_message_handler(prev_handler);
+
+    if (_haveUnit != NULL) {
         success = 1;
     }
 
@@ -539,12 +590,15 @@ decodeOutput(
         ut_free(_wantUnit);
 
         _wantDefinition = 0;
+
+        ut_error_message_handler prev_handler =
+                ut_set_error_message_handler(handle_want_parse_error);
+
         _wantUnit = ut_parse(_unitSystem, buf, _encoding);
 
-        if (_wantUnit == NULL) {
-            errMsg("Don't recognize \"%s\"", buf);
-        }
-        else {
+        ut_set_error_message_handler(prev_handler);
+
+        if (_wantUnit != NULL) {
             success = 1;
         }
     }
