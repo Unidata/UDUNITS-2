@@ -3311,6 +3311,13 @@ ut_set_second(
  * the second unit, respectively.  Units from different unit-systems never
  * compare equal.
  *
+ * This is a total ordering used to store units as keys in lookup
+ * structures (e.g. binary search trees).  The ordering is stable but
+ * arbitrary: it does not reflect physical magnitude, and a nonzero
+ * result does not mean the units are incompatible.  To compare numeric
+ * values, convert them to a common unit (see ut_are_convertible() and
+ * ut_get_converter()) and compare the resulting numbers.
+ *
  * Arguments:
  *	unit1		Pointer to a unit or NULL.
  *	unit2		Pointer to another unit or NULL.
@@ -3386,7 +3393,7 @@ ut_scale(
     else {
 	if (factor == 0) {
 	    ut_set_status(UT_BAD_ARG);
-	    ut_handle_error_message("ut_scale(): NULL factor argument");
+	    ut_handle_error_message("ut_scale(): Unit cannot have zero scale factor");
 	}
 	else {
 	    result = factor == 1
