@@ -18,6 +18,7 @@
 #endif
 
 #include <errno.h>
+#include <assert.h>
 #include <ctype.h>
 #ifndef _MSC_VER
 #include <libgen.h>
@@ -39,6 +40,12 @@
 #   define _POSIX_MAX_INPUT 255
 #endif
 
+/* Longest accepted unit specification, in bytes, excluding the NUL. */
+#define MAX_SPEC_LEN    _POSIX_MAX_INPUT
+
+/* Line buffer for interactive input: specification, newline, NUL. */
+#define SPEC_LINE_SIZE  (MAX_SPEC_LEN+2)
+
 static const char*      _cmdHave; /* command-line "have" unit specification */
 static const char*      _cmdWant; /* command-line "want" unit specification */
 static int		_reveal; /* reveal problems with unit database? */
@@ -48,9 +55,9 @@ static char             _progname[1024];
 static const char*	_xmlPath = NULL; /* use default path */
 static ut_system*	_unitSystem;
 static double           _haveUnitAmount; /* amount of "have" unit */
-static char		_haveUnitSpec[_POSIX_MAX_INPUT+1]; /* "have" unit minus
+static char		_haveUnitSpec[MAX_SPEC_LEN+1]; /* "have" unit minus
                                                               amount */
-static char		_wantSpec[_POSIX_MAX_INPUT+1]; /* complete "want" unit
+static char		_wantSpec[MAX_SPEC_LEN+1]; /* complete "want" unit
                                                           specification */
 static ut_unit*		_haveUnit; /* "have" unit minus amount */
 static ut_unit*		_wantUnit; /* complete "want" unit */
@@ -441,23 +448,57 @@ getSpec(
 {
     int		nbytes = -1;		/* failure */
 
-    if (fputs(prompt, stdout) == EOF) {
-	errMsg("Couldn't write prompt: %s", strerror(errno));
-    } else if (fgets(spec, (int)size, stdin) == NULL) {
-	putchar('\n');
+    for (;;) {
+	size_t	len;
 
-	if (feof(stdin)) {
-	    _exitStatus = EXIT_SUCCESS;
-	} else {
-	    errMsg("Couldn't read from standard input: %s", strerror(errno));
+	if (fputs(prompt, stdout) == EOF) {
+	    errMsg("Couldn't write prompt: %s", strerror(errno));
+	    break;
 	}
-    } else {
+
+	if (fgets(spec, (int)size, stdin) == NULL) {
+	    putchar('\n');
+
+	    if (feof(stdin)) {
+		_exitStatus = EXIT_SUCCESS;
+	    } else {
+		errMsg("Couldn't read from standard input: %s",
+		    strerror(errno));
+	    }
+	    break;
+	}
+
+	/*
+	 * A full buffer with no newline means the line was longer than the
+	 * buffer. Truncating it would silently change the specification, so
+	 * discard the remainder of the line and prompt again.
+	 */
+	len = strlen(spec);
+
+	if (len == size - 1 && spec[len-1] != '\n') {
+	    int	    c;
+
+	    errMsg("Unit specification is too long (limit is %u characters)",
+		(unsigned)(size - 2));
+
+	    while ((c = getc(stdin)) != EOF && c != '\n')
+		;
+
+	    if (c == EOF) {
+		_exitStatus = EXIT_SUCCESS;
+		break;
+	    }
+
+	    continue;
+	}
+
 	/*
 	 * Trim any whitespace from the specification.
 	 */
 	(void)ut_trim(spec, _encoding);
 
         nbytes = (int)strlen(spec);
+	break;
     }
 
     return nbytes;
@@ -509,6 +550,12 @@ decodeInput(
         _haveUnitAmount = 1;
     }
 
+    if (strlen(input) >= sizeof(_haveUnitSpec)) {
+	errMsg("Input unit specification is too long (limit is %u characters)",
+	    (unsigned)(sizeof(_haveUnitSpec) - 1));
+	return 0;
+    }
+
     (void)strncpy(_haveUnitSpec, input, sizeof(_haveUnitSpec));
     _haveUnitSpec[sizeof(_haveUnitSpec)-1] = 0;
     ut_error_message_handler prev_handler =
@@ -556,7 +603,7 @@ getInputValue(void)
     }
     else {
         for (;;) {
-            char    buf[sizeof(_haveUnitSpec)];
+            char    buf[SPEC_LINE_SIZE];
             int	nbytes = getSpec("You have: ", buf, sizeof(buf));
 
             if (nbytes < 0)
@@ -619,6 +666,13 @@ getOutputRequest(void)
             success = 1;
         }
         else {
+            if (strlen(_cmdWant) >= sizeof(_wantSpec)) {
+                errMsg("Output unit specification is too long "
+                    "(limit is %u characters)",
+                    (unsigned)(sizeof(_wantSpec) - 1));
+                return 0;
+            }
+
             (void)strncpy(_wantSpec, _cmdWant, sizeof(_wantSpec));
             _wantSpec[sizeof(_wantSpec)-1] = 0;
 
@@ -628,10 +682,15 @@ getOutputRequest(void)
     }
     else {
         for (;;) {
-            int	nbytes = getSpec("You want: ", _wantSpec, sizeof(_wantSpec));
+            char	buf[SPEC_LINE_SIZE];
+            int	nbytes = getSpec("You want: ", buf, sizeof(buf));
 
             if (nbytes < 0)
                 break;
+
+            /* getSpec() has already bounded the length. */
+            (void)strncpy(_wantSpec, buf, sizeof(_wantSpec));
+            _wantSpec[sizeof(_wantSpec)-1] = 0;
 
             success = decodeOutput(_wantSpec);
 
@@ -678,7 +737,8 @@ handleRequest(void)
 		    errMsg("Couldn't get unit converter");
 		}
 		else {
-                    char        haveExp[_POSIX_MAX_INPUT+1];
+                    /* Room for the specification plus "(x/(" and "))". */
+                    char        haveExp[sizeof(_haveUnitSpec)+8];
                     char        exp[_POSIX_MAX_INPUT+1];
                     char        whiteSpace[] = " \t\n\r\f\v\xa0";
 		    int	        needsParens =
@@ -694,12 +754,14 @@ handleRequest(void)
 			cv_convert_double(conv, _haveUnitAmount),
                         _wantSpec);
 
-                    (void)sprintf(haveExp,
+                    n = snprintf(haveExp, sizeof(haveExp),
                         strpbrk(_haveUnitSpec, whiteSpace) ||
                                 strpbrk(_haveUnitSpec, "/")
                             ? "(x/(%s))"
                             : "(x/%s)",
                         _haveUnitSpec);
+
+                    assert(n >= 0 && (size_t)n < sizeof(haveExp));
 
                     n = cv_get_expression(conv, exp, sizeof(exp), haveExp);
 
