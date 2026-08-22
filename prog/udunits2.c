@@ -18,6 +18,7 @@
 #endif
 
 #include <errno.h>
+#include <assert.h>
 #include <ctype.h>
 #ifndef _MSC_VER
 #include <libgen.h>
@@ -678,7 +679,8 @@ handleRequest(void)
 		    errMsg("Couldn't get unit converter");
 		}
 		else {
-                    char        haveExp[_POSIX_MAX_INPUT+1];
+                    /* Room for the specification plus "(x/(" and "))". */
+                    char        haveExp[sizeof(_haveUnitSpec)+8];
                     char        exp[_POSIX_MAX_INPUT+1];
                     char        whiteSpace[] = " \t\n\r\f\v\xa0";
 		    int	        needsParens =
@@ -694,12 +696,14 @@ handleRequest(void)
 			cv_convert_double(conv, _haveUnitAmount),
                         _wantSpec);
 
-                    (void)sprintf(haveExp,
+                    n = snprintf(haveExp, sizeof(haveExp),
                         strpbrk(_haveUnitSpec, whiteSpace) ||
                                 strpbrk(_haveUnitSpec, "/")
                             ? "(x/(%s))"
                             : "(x/%s)",
                         _haveUnitSpec);
+
+                    assert(n >= 0 && (size_t)n < sizeof(haveExp));
 
                     n = cv_get_expression(conv, exp, sizeof(exp), haveExp);
 
