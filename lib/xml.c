@@ -351,6 +351,8 @@ utf8_to_latin1(
             return 0;
 
         if (!IS_ASCII(*in)) {
+            if (in[1] == 0)
+                return 0;       /* truncated multibyte sequence */
             numSpecial++;
             in++;
         }
