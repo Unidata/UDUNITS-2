@@ -2166,8 +2166,12 @@ default_udunits2_xml_path()
             }
             else {
                 strncpy(buf, info.dli_fname, sizeof(buf))[sizeof(buf)-1] = 0;
-                memmove(buf, dirname(buf), sizeof(buf)); // "lib"
-                memmove(buf, dirname(buf), sizeof(buf)); // "lib/.."
+                {
+                    char* dir = dirname(buf);   // strip filename
+                    memmove(buf, dir, strlen(dir) + 1);
+                    dir = dirname(buf);         // strip "lib"
+                    memmove(buf, dir, strlen(dir) + 1);
+                }
                 prefix = buf;
             }
 #       elif defined(_WIN32)
