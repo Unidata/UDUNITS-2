@@ -55,6 +55,7 @@ static ut_unit*		_finalUnit;	/* fully-parsed specification */
 static ut_system*	_unitSystem;	/* The unit-system to use */
 static ut_encoding	_encoding;	/* encoding of string to be parsed */
 static int		_restartScanner;/* restart scanner? */
+static int		_trailingToken;	/* unshiftable lookahead at YYACCEPT? */
 static int		_isTime;        /* product_exp is time? */
 
 
@@ -219,12 +220,23 @@ static int isTime(
 
 %%
 
+		/*
+		 * LALR(1) reads one lookahead token before it can reduce to
+		 * unit_spec.  If that lookahead is a token the grammar cannot
+		 * shift in this state, YYACCEPT ends the parse with the token
+		 * still in yychar and it is silently discarded.  The scanner
+		 * has already advanced past it, so ut_parse's end-of-input
+		 * test would see the whole string as consumed.  Record the
+		 * outstanding lookahead so ut_parse can locate and report it.
+		 */
 unit_spec:      /* nothing */ {
 		    _finalUnit = ut_get_dimensionless_unit_one(_unitSystem);
+		    _trailingToken = (yychar != YYEMPTY && yychar != YYEOF);
 		    YYACCEPT;
 		} |
 		shift_exp {
 		    _finalUnit = $1;
+		    _trailingToken = (yychar != YYEMPTY && yychar != YYEOF);
 		    YYACCEPT;
 		} |
 		error {
@@ -651,6 +663,7 @@ ut_parse(
             _unitSystem = (ut_system*)system;
             _encoding = encoding;
             _restartScanner = 1;
+            _trailingToken = 0;
 
 #if YYDEBUG
             utdebug = 0;
@@ -661,9 +674,19 @@ ut_parse(
 
             if (utparse() == 0) {
                 int       status;
-                ptrdiff_t n = yy_c_buf_p  - buf->yy_ch_buf;
+                /*
+                 * yy_c_buf_p is where the scanner stopped, which is past any
+                 * lookahead token the parser accepted without shifting (see
+                 * unit_spec).  When such a token is outstanding, the honest
+                 * end of the parse is where that token starts, not where the
+                 * scanner stopped; uttext still points at it because no
+                 * further token has been scanned.
+                 */
+                ptrdiff_t n = _trailingToken
+                                ? uttext - buf->yy_ch_buf
+                                : yy_c_buf_p - buf->yy_ch_buf;
 
-                if (n >= strlen(utf8String)) {
+                if (n >= (ptrdiff_t)strlen(utf8String)) {
                     unit = _finalUnit;	/* success */
                     status = UT_SUCCESS;
                 }
