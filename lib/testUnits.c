@@ -2051,6 +2051,94 @@ test_parsing(void)
 }
 
 
+static char	trailingMessage[512];
+
+static int
+captureMessage(
+    const char*	fmt,
+    va_list	args)
+{
+    vsnprintf(trailingMessage, sizeof(trailingMessage), fmt, args);
+    return 0;
+}
+
+
+static void
+test_trailing_text(void)
+{
+    /*
+     * A single unshiftable token trailing a complete specification used to be
+     * discarded silently, so these parsed as if the trailing text were absent
+     * ("m)" became "m").  ")" and "m &" were rejected before, but left behind
+     * whatever status the previous call had set.
+     */
+    static const char*	reject[] = {
+	"m)", "kg)", "m.(s))", "m.(s)))", "lg(re: m))", "s since 2024-01-01x",
+	")", "m &"
+    };
+    /*
+     * Genuine specifications that must keep parsing, so the rejection does not
+     * spread beyond the swallowed token: "m2" is metre squared, balanced and
+     * nested parentheses are fine, and the empty string is the dimensionless
+     * unit one.
+     */
+    static const char*	accept[] = {
+	"m", "m2", "m.s", "(m)", "m.(s)", "m.(((s)))", "km", ""
+    };
+    ut_error_message_handler	prev;
+    ut_unit*			unit;
+    size_t			i;
+
+    for (i = 0; i < sizeof(reject)/sizeof(reject[0]); ++i) {
+	unit = ut_parse(unitSystem, reject[i], UT_ASCII);
+	if (unit != NULL)
+	    fprintf(stderr, "test_trailing_text: \"%s\" unexpectedly parsed\n",
+		reject[i]);
+	CU_ASSERT_PTR_NULL(unit);
+	CU_ASSERT_EQUAL(ut_get_status(), UT_SYNTAX);
+	ut_free(unit);
+    }
+
+    for (i = 0; i < sizeof(accept)/sizeof(accept[0]); ++i) {
+	unit = ut_parse(unitSystem, accept[i], UT_ASCII);
+	if (unit == NULL)
+	    fprintf(stderr, "test_trailing_text: \"%s\" unexpectedly rejected\n",
+		accept[i]);
+	CU_ASSERT_PTR_NOT_NULL(unit);
+	CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
+	ut_free(unit);
+    }
+
+    /*
+     * The reported leftover starts at the swallowed token, not after it.  The
+     * message formerly began one token too late, so "m)x" reported "x".
+     */
+    trailingMessage[0] = '\0';
+    prev = ut_set_error_message_handler(captureMessage);
+    unit = ut_parse(unitSystem, "m)x", UT_ASCII);
+    (void)ut_set_error_message_handler(prev);
+    CU_ASSERT_PTR_NULL(unit);
+    ut_free(unit);
+    if (strstr(trailingMessage, "\")x\"") == NULL)
+	fprintf(stderr, "test_trailing_text: expected \")x\" in: %s\n",
+	    trailingMessage);
+    CU_ASSERT_PTR_NOT_NULL(strstr(trailingMessage, "\")x\""));
+
+    /*
+     * An unknown identifier sets UT_UNKNOWN and must keep doing so; a syntax
+     * error that follows must report its own status rather than inherit it.
+     */
+    unit = ut_parse(unitSystem, "xyzzy", UT_ASCII);
+    CU_ASSERT_PTR_NULL(unit);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_UNKNOWN);
+    ut_free(unit);
+    unit = ut_parse(unitSystem, ")", UT_ASCII);
+    CU_ASSERT_PTR_NULL(unit);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SYNTAX);
+    ut_free(unit);
+}
+
+
 static void
 test_visitor(void)
 {
@@ -2500,6 +2588,7 @@ main(
 	    CU_ADD_TEST(testSuite, test_utSetEncoding);
 	    CU_ADD_TEST(testSuite, test_utCompare);
 	    CU_ADD_TEST(testSuite, test_parsing);
+	    CU_ADD_TEST(testSuite, test_trailing_text);
 	    CU_ADD_TEST(testSuite, test_visitor);
 	    CU_ADD_TEST(testSuite, test_xml);
 	    CU_ADD_TEST(testSuite, test_timeResolution);
