@@ -659,6 +659,7 @@ ut_parse(
 
         if (utf8String != NULL) {
             YY_BUFFER_STATE	buf = ut_scan_string(utf8String);
+            int		parseStatus;
 
             _unitSystem = (ut_system*)system;
             _encoding = encoding;
@@ -672,7 +673,17 @@ ut_parse(
 
             _finalUnit = NULL;
 
-            if (utparse() == 0) {
+            /*
+             * Give this call a definite starting status.  A pure syntax error
+             * sets none of its own (uterror() only reports a message), while
+             * the unknown-identifier rule sets UT_UNKNOWN itself; the baseline
+             * distinguishes the two below.
+             */
+            ut_set_status(UT_SUCCESS);
+
+            parseStatus = utparse();
+
+            if (parseStatus == 0) {
                 int       status;
                 /*
                  * yy_c_buf_p is where the scanner stopped, which is past any
@@ -728,6 +739,18 @@ ut_parse(
                 }
 
                 ut_set_status(status);
+            }
+            else if (ut_get_status() == UT_SUCCESS) {
+                /*
+                 * A hard parse failure that recorded no status of its own:
+                 * a syntax error (bison returns 1) or memory exhaustion
+                 * (2).  ut_parse previously returned NULL here while leaving
+                 * whatever status the preceding call had set.  Paths that do
+                 * record a status -- the unknown-identifier rule's
+                 * UT_UNKNOWN, reached via YYERROR rather than uterror() --
+                 * are left alone.
+                 */
+                ut_set_status(parseStatus == 2 ? UT_OS : UT_SYNTAX);
             }
 
             ut_delete_buffer(buf);

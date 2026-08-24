@@ -1733,10 +1733,16 @@ test_parsing(void)
     CU_ASSERT_PTR_NULL(unit);
     CU_ASSERT_EQUAL(ut_get_status(), UT_UNKNOWN);
 
+    /*
+     * '$' is neither an identifier character nor an operator, so this is a
+     * syntax error, not an unknown identifier.  The assertion of UT_UNKNOWN
+     * held only because the preceding "34 quatloos" case left that status
+     * behind; ut_parse now reports each call's own outcome.
+     */
     spec = "$&/^";
     unit = ut_parse(unitSystem, spec, UT_ASCII);
     CU_ASSERT_PTR_NULL(unit);
-    CU_ASSERT_EQUAL(ut_get_status(), UT_UNKNOWN);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SYNTAX);
 
     unit = ut_parse(unitSystem, NULL, UT_ASCII);
     CU_ASSERT_PTR_NULL(unit);
