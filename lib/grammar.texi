@@ -160,12 +160,27 @@ EXPONENT: one of
 
 @emph{Timestamp}: one of
         DATE
-        DATE Z_TOK
-        DATE CLOCK
-        DATE CLOCK TZ_CLOCK
-        DATE CLOCK Z_TOK
-        DATE CLOCK GMT_TOK
-        DATE CLOCK UTC_TOK
+        DATE @emph{UtcDesignator}
+        DATE @emph{DateTimeSep} CLOCK
+        DATE @emph{DateTimeSep} CLOCK @emph{Zone}
+        DATE @emph{DateTimeSep} CLOCK @emph{Offset}
+
+@emph{DateTimeSep}: one of
+        SPACE_SEP
+        T_SEP
+
+@emph{UtcDesignator}:
+        SPACE_SEP? Z_TOK
+// NOTE: after a bare DATE only "Z" is accepted.  GMT and UTC are rejected
+//       with a diagnostic saying that a time is required.
+
+@emph{Zone}: one of
+        SPACE_SEP? Z_TOK
+        SPACE_SEP? GMT_TOK
+        SPACE_SEP? UTC_TOK
+
+@emph{Offset}:
+        SPACE_SEP? TZ_CLOCK
 
 // VALIDATION PHILOSOPHY FOR DATE/TIME ELEMENTS:
 // The lexical patterns for date/time components (<year-broken>, <year-packed>,
@@ -187,13 +202,40 @@ EXPONENT: one of
 //     is no year zero, which is used in the combined Julian/Gregorian (standard)
 //     calendar that UDUNITS follows.
 
+SPACE_SEP:
+        <space>+
+// NOTE: recognised only after a DATE or a CLOCK, and only where a further
+//       timestamp component follows.  Elsewhere <space>+ is MULTIPLY, so
+//       the scanner decides by context which one it is.
+// NOTE: no whitespace may follow a timestamp, as for any other unit
+//       specification (ut_parse() expects none; see ut_trim()).
+//       Invalid: "2024-06-01 ", "2024-06-01 12:00 ", "2024-06-01 12:00Z "
+
+T_SEP:
+        "T"
+// NOTE: recognised only after a DATE.  Elsewhere "T" is an identifier --
+//       it is the symbol for the tesla.
+// NOTE: no <space> is admitted on either side of T_SEP, and the grammar
+//       provides no production in which T_SEP is not followed by a CLOCK.
+// NOTE: a separator is required before a CLOCK, so that DATE and CLOCK
+//       remain distinct components.  ISO 8601 permits omitting it only
+//       where no confusion can arise, which is not the case here: a digit
+//       run after the shift operator is also a valid numeric origin, and
+//       the longest-match rule takes the whole run, so "seconds since
+//       202401011200" is the number 202401011200 rather than a timestamp.
+//       In the broken forms the boundary is visible but the omission is
+//       rejected too, for one rule rather than two.
+//       Valid:   "2024-06-01T12:00", "2024-06-01 12:00", "2024-06-01"
+//                "2024-06-01T12:00Z", "2024-06-01Z", "2024-06-01 Z"
+//       Invalid: "2024-06-01T 12:00" (space after T)
+//                "2024-06-01 T12:00" (space before T)
+//                "2024-06-01T"       (no time after T)
+//                "2024-06-01TZ"      (a zone designator is not a time)
+//                "2024-06-0112:00"   (no separator at all)
+
 DATE: one of
-        <date-broken> ("T" | <space>*)
-        <date-packed> ("T" | <space>*)
-// NOTE: The trailing "T" or <space>* is included in the DATE token
-// NOTE: "T" separator prohibits spaces before CLOCK (ISO 8601 compliance)
-//       Valid: "2024-06-01T12:00", "2024-06-01 12:00"
-//       Invalid: "2024-06-01T 12:00" (space after T rejected)
+        <date-broken>
+        <date-packed>
 // NOTE: Packed dates only return DATE token when appearing after time-related units;
 //       otherwise parsed as REAL
 
@@ -217,9 +259,8 @@ DATE: one of
         //   decimal point and decimals are accepted but then <date-packed> is interpreted as a REAL and not as a DATE
 
 CLOCK: one of
-        <clock-broken> <space>*
-        <clock-packed> <space>*
-        // NOTE: The trailing <space>* is included in the CLOCK token
+        <clock-broken>
+        <clock-packed>
 
 <clock-broken>:
         <tod-hour> ":" <minute> (":" <second>)?  // allow truncation from the right
