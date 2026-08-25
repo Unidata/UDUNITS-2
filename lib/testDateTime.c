@@ -1702,6 +1702,137 @@ static void test_trailing_text_after_timestamp(void)
     assert_timestamp_reject_msg("2024-01-01QQ", "\"QQ\"");
 }
 
+/*
+ * The separator between a date and a time. The composite DATE and CLOCK tokens
+ * admitted two classes of malformed input: a "T" or whitespace swallowed into
+ * the token and then discarded, so a dangling separator was invisible; and a
+ * missing separator, indistinguishable from an empty one. The cases below
+ * exercise both, together with the boundary cases around them. Some of the
+ * latter are rejected on the parent branch already, by its trailing-token
+ * check ("2024-01-01 T12:00" reports the text "T12:00"); what changes for
+ * those is which component is named, not whether they parse.
+ */
+static void test_date_time_separator(void)
+{
+    /*
+     * A "T" is only meaningful when a time follows it immediately, and each
+     * way of getting that wrong names the separator rather than falling back
+     * to "syntax error": nothing after it, a doubled "T", a zone designator,
+     * whitespace between it and the time, and unrelated trailing text.
+     */
+    assert_timestamp_reject_msg("2024-01-01T",       "followed immediately");
+    assert_timestamp_reject_msg("2024-01-01TT",      "followed immediately");
+    assert_timestamp_reject_msg("2024-01-01TZ",      "followed immediately");
+    assert_timestamp_reject_msg("2024-01-01T ",      "followed immediately");
+    assert_timestamp_reject_msg("2024-01-01T 12:00", "followed immediately");
+    assert_timestamp_reject_msg("2024-01-01T Z",     "followed immediately");
+    assert_timestamp_reject_msg("2024-01-01Tx",      "followed immediately");
+    assert_timestamp_reject_msg("20240101T",         "followed immediately");
+    assert_timestamp_reject_msg("2024-01T",          "followed immediately");
+
+    /* A space before the "T" is likewise rejected, though the separator is
+       never reached, so the message names the text instead. */
+    CU_ASSERT_PTR_NULL(parse_seconds_since("2024-01-01 T12:00"));
+
+    /* A separator is required: a date and a time cannot simply be run
+       together. */
+    CU_ASSERT_PTR_NULL(parse_seconds_since("2024-01-0112:00"));
+    CU_ASSERT_PTR_NULL(parse_seconds_since("2024-01-011200"));
+    CU_ASSERT_PTR_NULL(parse_seconds_since("2024-01-0112"));
+    CU_ASSERT_PTR_NULL(parse_seconds_since("2024-01-0112:00Z"));
+
+    /* The scanner's specific clock diagnostics survive the rejection, in
+       each of the three separator positions. */
+    assert_timestamp_reject_msg("2024-01-0112:345",   "minute field");
+    assert_timestamp_reject_msg("2024-01-01 12:345",  "minute field");
+    assert_timestamp_reject_msg("2024-01-01T12:345",  "minute field");
+    assert_timestamp_reject_msg("2024-01-0125:00",    "Invalid hour 25");
+
+    /* Both separators work, in every date form, and agree. */
+    assert_timestamps_equivalent("2024-01-01T12:00",  "2024-01-01 12:00");
+    assert_timestamps_equivalent("20240101T1200",     "2024-01-01 12:00");
+    assert_timestamps_equivalent("2024-01T12",        "2024-01-01 12:00");
+    assert_timestamps_equivalent("2024-01-01  12:00", "2024-01-01 12:00");
+    assert_timestamps_equivalent("2024-01-01T12:00Z", "2024-01-01 12:00Z");
+
+    /*
+     * SPACE_SEP is {space}+, so every character of the scanner's whitespace
+     * class separates a date from a time, not the space alone. Pinned
+     * deliberately: the set is inherited from the scanner's {space}, and
+     * narrowing it to space and tab would be a separate decision.
+     */
+    assert_timestamps_equivalent("2024-01-01\t12:00",  "2024-01-01 12:00");
+    assert_timestamps_equivalent("2024-01-01\r12:00",  "2024-01-01 12:00");
+    assert_timestamps_equivalent("2024-01-01\f12:00",  "2024-01-01 12:00");
+    assert_timestamps_equivalent("2024-01-01\v12:00",  "2024-01-01 12:00");
+    assert_timestamps_equivalent("20240101\t1200",     "2024-01-01 12:00");
+    assert_timestamps_equivalent("2024-01-01\t12:00 UTC", "2024-01-01 12:00Z");
+
+    /*
+     * A bare date with a zone designator and no time is a different
+     * production and stays valid, with or without whitespace.
+     */
+    assert_timestamps_equivalent("2024-01-01Z",  "2024-01-01");
+    assert_timestamps_equivalent("2024-01-01 Z", "2024-01-01");
+
+    /*
+     * No component of a timestamp may be followed by whitespace, as for any
+     * other unit specification: ut_parse() expects none (see ut_trim()).
+     * Every character of the scanner's {space} class is rejected alike, and
+     * the leftover is reported as trailing text.
+     */
+    assert_timestamp_reject_msg("2024-01-01 ",           "Unexpected text");
+    assert_timestamp_reject_msg("2024-01 ",              "Unexpected text");
+    assert_timestamp_reject_msg("20240101 ",             "Unexpected text");
+    assert_timestamp_reject_msg("2024-01-01 12:00 ",     "Unexpected text");
+    assert_timestamp_reject_msg("2024-01-01T12:00 ",     "Unexpected text");
+    assert_timestamp_reject_msg("2024-01-01Z ",          "Unexpected text");
+    assert_timestamp_reject_msg("2024-01-01 12:00Z ",    "Unexpected text");
+    assert_timestamp_reject_msg("2024-01-01 12:00 UTC ", "Unexpected text");
+    assert_timestamp_reject_msg("2024-01-01 12:00 +01 ", "Unexpected text");
+    assert_timestamp_reject_msg("2024-01-01 12:00+0100 ", "Unexpected text");
+    assert_timestamp_reject_msg("20240101\t",            "Unexpected text");
+    assert_timestamp_reject_msg("20240101\r",            "Unexpected text");
+    assert_timestamp_reject_msg("20240101\f",            "Unexpected text");
+    assert_timestamp_reject_msg("20240101\v",            "Unexpected text");
+    assert_timestamp_reject_msg("2024-01-01 12:00\r",    "Unexpected text");
+
+    /* Text after whitespace that cannot continue the timestamp is likewise
+       trailing text. */
+    assert_timestamp_reject_msg("2024-01-01 x", "\" x\"");
+    assert_timestamp_reject_msg("20240101 x",   "\" x\"");
+
+    /* Optional whitespace before a zone or an offset is unchanged. */
+    assert_timestamps_equivalent("2024-01-01 12:00 Z",   "2024-01-01 12:00Z");
+    assert_timestamps_equivalent("2024-01-01 12:00 +01", "2024-01-01 12:00+01");
+    assert_timestamps_equivalent("2024-01-01 12:00 GMT", "2024-01-01 12:00GMT");
+}
+
+/*
+ * An integer origin on a non-time unit matched the packed-date rule, whose
+ * whitespace suffix was discarded by decodeReal(), so "K @ 273 " parsed while
+ * "K @ 273.15 " did not. Both are now rejected.
+ */
+static void test_trailing_whitespace_after_numeric_origin(void)
+{
+    static const char* reject[] = { "K @ 273 ", "K @ 273.15 ", "m since 5 " };
+    size_t i;
+
+    for (i = 0; i < sizeof(reject) / sizeof(reject[0]); i++) {
+        ut_unit* u;
+        ut_set_status(UT_SUCCESS);
+        u = ut_parse(unitSystem, reject[i], UT_UTF8);
+        CU_ASSERT_PTR_NULL(u);
+        CU_ASSERT_EQUAL(ut_get_status(), UT_SYNTAX);
+        ut_free(u);
+    }
+    {
+        ut_unit* u = ut_parse(unitSystem, "K @ 273", UT_UTF8);
+        CU_ASSERT_PTR_NOT_NULL(u);
+        ut_free(u);
+    }
+}
+
 static void test_timezone_diagnostics_are_specific(void)
 {
     assert_timestamp_reject_msg("2024-01-01 00:00 +053",    "lose its sign");
@@ -2001,6 +2132,8 @@ int main(const int argc, const char* const* argv)
     CU_ADD_TEST(s, test_encode_time_channels_agree);
     CU_ADD_TEST(s, test_clock_diagnostics_are_specific);
     CU_ADD_TEST(s, test_trailing_text_after_timestamp);
+    CU_ADD_TEST(s, test_date_time_separator);
+    CU_ADD_TEST(s, test_trailing_whitespace_after_numeric_origin);
     CU_ADD_TEST(s, test_timezone_diagnostics_are_specific);
     CU_ADD_TEST(s, test_ut_check_time_valid);
     CU_ADD_TEST(s, test_ut_check_time_leap_second);
