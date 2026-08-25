@@ -755,6 +755,16 @@ idchar       [A-Za-z0-9_]
     return ERR;
 }
 
+<CLOCK_SEEN>[+-][0-9]{1,2}:[0-9]{1,2}\.[0-9]+ {
+    /* Matches further than the valid {broken_tz_clock} prefix, so flex
+       prefers it; without this the fractional part falls past the valid
+       match and is reported as unexpected trailing text. */
+    snprintf(yylval.error_msg, sizeof(yylval.error_msg),
+             "Invalid timezone offset '%s': the minute field has no "
+             "fractional part (expected +HH:MM)", yytext);
+    return ERR;
+}
+
 <CLOCK_SEEN>[A-Za-z]+ {
     snprintf(yylval.error_msg, sizeof(yylval.error_msg), "Unknown timezone identifier '%s' (expected Z, GMT, UTC, or numeric offset like +05:30)", yytext);
     return ERR;

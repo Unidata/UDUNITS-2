@@ -1839,6 +1839,32 @@ static void test_timezone_diagnostics_are_specific(void)
     assert_timestamp_reject_msg("2024-01-01 00:00 +12345",  "at most 4");
     assert_timestamp_reject_msg("2024-01-01 00:00 +12:345", "minute field");
     assert_timestamp_reject_msg("2024-01-01 00:00 +123:45", "hour field");
+
+    /*
+     * A fractional minute reached the generic leftover check, because the
+     * fractional part falls past the valid {broken_tz_clock} prefix; the
+     * user was told about ".5" rather than about the offset.  Contrast
+     * "+1.5", which the wrong-separator rule already caught.
+     */
+    assert_timestamp_reject_msg("2024-01-01 00:00 +01:30.5",  "fractional part");
+    assert_timestamp_reject_msg("2024-01-01 00:00 +1:2.5",    "fractional part");
+    assert_timestamp_reject_msg("2024-01-01 00:00 -05:45.25", "fractional part");
+    assert_timestamp_reject_msg("2024-01-01 00:00 +1.5",      "use ':' not '.'");
+
+    /* Neighbouring rules are unshadowed: these still parse. */
+    {
+        static const char* const valid[] = {
+            "2024-01-01 00:00 +01:30",
+            "2024-01-01 00:00 +1:2",
+            "2024-01-01 00:00 -05:45"
+        };
+        size_t i;
+        for (i = 0; i < sizeof(valid)/sizeof(valid[0]); ++i) {
+            ut_unit* u = parse_seconds_since(valid[i]);
+            CU_ASSERT_PTR_NOT_NULL(u);
+            ut_free(u);
+        }
+    }
 }
 
 static void test_ut_check_time_valid(void)
