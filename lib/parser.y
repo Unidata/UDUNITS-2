@@ -167,6 +167,8 @@ static int isTime(
 %token	<rval>	DATE
 %token	<rval>	CLOCK
 %token  <rval>  TZ_CLOCK
+%token          SPACE_SEP
+%token          T_SEP
 %token          Z_TOK
 %token          GMT_TOK
 %token          UTC_TOK
@@ -178,6 +180,7 @@ static int isTime(
 %type   <unit>	power_exp
 %type   <unit>	basic_exp
 %type   <rval>	timestamp
+%type   <rval>	tz_offset
 %type   <rval>	number
 
 /*
@@ -435,23 +438,17 @@ number:		INT {
 timestamp:      DATE {
                     $$ = $1;
                 } |
-                DATE CLOCK {
-                    $$ = $1 + $2;
-                } |
-                DATE CLOCK TZ_CLOCK {
-                    $$ = $1 + ($2 - $3);
-                } |
-                DATE CLOCK Z_TOK {
-                    $$ = $1 + $2;
-                } |
-                DATE CLOCK GMT_TOK {
-                    $$ = $1 + $2;
-                } |
-                DATE CLOCK UTC_TOK {
-                    $$ = $1 + $2;
-                } |
-                DATE Z_TOK {
+                DATE utc_designator {
                     $$ = $1;
+                } |
+                DATE date_time_sep CLOCK {
+                    $$ = $1 + $3;
+                } |
+                DATE date_time_sep CLOCK zone {
+                    $$ = $1 + $3;
+                } |
+                DATE date_time_sep CLOCK tz_offset {
+                    $$ = $1 + ($3 - $4);
                 } |
                 ERR {
                     /* Date parsing error. Some lexer paths emit the
@@ -461,13 +458,21 @@ timestamp:      DATE {
                     YYERROR;
                 } |
                 DATE ERR {
-                    /* Clock parsing error (see ERR rule above). */
+                    /* Clock-shaped error with no separator before it, e.g.
+                       "2024-01-01" followed directly by "12:345". The input
+                       is invalid either way, but this keeps the scanner's
+                       specific diagnostic instead of "syntax error". */
                     if ($2[0] != '\0') ut_handle_error_message("%s", $2);
                     YYERROR;
                 } |
-                DATE CLOCK ERR {
-                    /* Timezone offset parsing error (see ERR rule above). */
+                DATE date_time_sep ERR {
+                    /* Clock parsing error (see ERR rule above). */
                     if ($3[0] != '\0') ut_handle_error_message("%s", $3);
+                    YYERROR;
+                } |
+                DATE date_time_sep CLOCK ERR {
+                    /* Timezone offset parsing error (see ERR rule above). */
+                    if ($4[0] != '\0') ut_handle_error_message("%s", $4);
                     YYERROR;
                 }
                 /*
@@ -480,6 +485,43 @@ timestamp:      DATE {
                  * through to the outer `product_exp SHIFT error` catcher,
                  * which produces the same "syntax error" message.
                  */
+                ;
+
+                /*
+                 * The separator between a date and a time: whitespace, or a
+                 * "T" with nothing on either side of it. The grammar admits
+                 * T_SEP only here, immediately before a CLOCK, so a dangling
+                 * "T" has no derivation. The scanner has a separate rule that
+                 * returns ERR with a specific diagnostic for a "T" that cannot
+                 * introduce a clock; that rule supplies the message and does
+                 * not enlarge the accepted language.
+                 */
+date_time_sep:  SPACE_SEP |
+                T_SEP
+                ;
+
+                /*
+                 * A bare date takes only "Z"; GMT and UTC are rejected in the
+                 * scanner with a message saying that a time is required.
+                 */
+utc_designator: Z_TOK |
+                SPACE_SEP Z_TOK
+                ;
+
+zone:           Z_TOK |
+                GMT_TOK |
+                UTC_TOK |
+                SPACE_SEP Z_TOK |
+                SPACE_SEP GMT_TOK |
+                SPACE_SEP UTC_TOK
+                ;
+
+tz_offset:      TZ_CLOCK {
+                    $$ = $1;
+                } |
+                SPACE_SEP TZ_CLOCK {
+                    $$ = $2;
+                }
                 ;
 
 %%

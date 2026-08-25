@@ -150,9 +150,6 @@ static int decodePackedDate(
         q++;
     }
 
-    // Skip trailing T or spaces
-    while (*q == 'T' || *q == ' ' || *q == '\t') q++;
-
     // Should have consumed entire input
     if (*q != '\0') {
         snprintf(yylval.error_msg, sizeof(yylval.error_msg), "Invalid packed date format: %s", text);
@@ -401,10 +398,7 @@ static int decodeClockFlexible(const char* text, double* seconds, char* error_ms
         return 0;
     }
 
-    /* The lexer rule appends optional trailing whitespace to the token; the
-       sub-parsers don't consume it. Anything else past `end` is a leftover
-       that the lexer should never have produced — defensive check. */
-    while (*end == ' ' || *end == '\t' || *end == '\r' || *end == '\f' || *end == '\v') end++;
+    /* Defensive trailing-junk check (lexer shouldn't produce one). */
     if (*end != '\0') {
         snprintf(error_msg, UT_ERR_MSG_LEN, "Invalid time-of-day format: %s (trailing junk after parse)", text);
         return 0;
@@ -672,7 +666,7 @@ idchar       [A-Za-z0-9_]
     return status;
 }
 
-<SHIFT_SEEN>{year_broken}-{month}-{day}(T|{space}*) {
+<SHIFT_SEEN>{year_broken}-{month}-{day} {
     BEGIN DATE_SEEN;
     return decodeDate((char*)yytext, "%d-%d-%d", &yylval.rval);
 }
@@ -684,12 +678,12 @@ idchar       [A-Za-z0-9_]
     return ERR;
 }
 
-<SHIFT_SEEN>{year_broken}-{month}(T|{space}*) {
+<SHIFT_SEEN>{year_broken}-{month} {
     BEGIN DATE_SEEN;
     return decodeDate((char*)yytext, "%d-%d", &yylval.rval);
 }
 
-<SHIFT_SEEN>{packed_date}(T|{space}*) {
+<SHIFT_SEEN>{packed_date} {
     if (_isTime) {
         BEGIN DATE_SEEN;
         return decodePackedDate((char*)yytext, &yylval.rval);
@@ -712,8 +706,8 @@ idchar       [A-Za-z0-9_]
     return ERR;
 }
 
-<DATE_SEEN>{broken_clock}{space}*    |
-<DATE_SEEN>{packed_clock}{space}*    {
+<DATE_SEEN>{broken_clock}    |
+<DATE_SEEN>{packed_clock}    {
     double sec = 0.0;
     if (!decodeClockFlexible((const char*)yytext, &sec, yylval.error_msg)) {
         return ERR;
@@ -723,8 +717,8 @@ idchar       [A-Za-z0-9_]
     return CLOCK;
 }
 
-<CLOCK_SEEN>{broken_tz_clock}{space}*    |
-<CLOCK_SEEN>{packed_tz_clock}{space}*    {
+<CLOCK_SEEN>{broken_tz_clock}    |
+<CLOCK_SEEN>{packed_tz_clock}    {
     double off = 0.0;
     if (!decodeTzOffsetFlexible((const char*)yytext, &off, yylval.error_msg)) {
         return ERR;
@@ -820,6 +814,42 @@ idchar       [A-Za-z0-9_]
     snprintf(yylval.error_msg, sizeof(yylval.error_msg),
              "Invalid timezone offset '%s': too many digits (the packed form takes at most 4: +HHMM)", yytext);
     return ERR;
+}
+
+<DATE_SEEN>T/({broken_clock}|{packed_clock}) {
+    /* The ISO 8601 date/time separator. The grammar admits T_SEP only before
+       a CLOCK; the trailing context is not what enforces that, but it lets
+       the rule below give a specific message instead of "syntax error". */
+    return T_SEP;
+}
+
+<DATE_SEEN>T {
+    /* A "T" that does not introduce a time: end of input, a space, a zone
+       designator, or anything else. Rejected either way -- there is no
+       production for it -- but "DATE ERR" carries this message out. */
+    snprintf(yylval.error_msg, sizeof(yylval.error_msg),
+             "The 'T' date/time separator must be followed immediately by a "
+             "time (e.g., '2024-01-01T00:00')");
+    return ERR;
+}
+
+    /* Whitespace separating the components of a timestamp. Elsewhere a run of
+       spaces is MULTIPLY; that rule is confined to INITIAL and ID_SEEN. The
+       two rules are written out rather than joined with "|", which would give
+       flex a variable trailing context. */
+<DATE_SEEN>{space}+/([0-9]|[zZ]|[gG][mM][tT]|[uU][tT][cC]) {
+    return SPACE_SEP;
+}
+<CLOCK_SEEN>{space}+/[^ \t\r\f\v] {
+    return SPACE_SEP;
+}
+<DATE_SEEN,CLOCK_SEEN>{space}+ {
+    /* Whitespace that cannot introduce a further timestamp component:
+       trailing whitespace, or text that is not part of the timestamp.
+       Rescan it as ordinary input so that it is reported as trailing
+       text, as it is after any other complete unit specification. */
+    yyless(0);
+    BEGIN INITIAL;
 }
 
 <DATE_SEEN>[zZ] {
