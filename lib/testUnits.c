@@ -798,6 +798,8 @@ test_utRaise(void)
     ut_unit*	minutesPerKilometer;
     ut_unit*	kilometersSquaredPerMinuteSquared;
     ut_unit*	unit;
+    ut_unit*	bigScale;
+    ut_unit*	tinyScale;
     char	buf[80];
     int		nchar;
 
@@ -891,6 +893,44 @@ test_utRaise(void)
     CU_ASSERT_STRING_EQUAL(buf,
         "m\xe2\x81\xbb\xc2\xb2\xe2\x81\xb5\xe2\x81\xb5");
     ut_free(unit);
+
+    /*
+     * A scale factor that overflows to infinity or underflows to zero must be
+     * rejected rather than stored.  Raising a Galilean unit raises its scale,
+     * so this is reachable well inside the permitted range of a unit power:
+     * kilometer^103 has a scale of 1e309.
+     */
+    unit = ut_raise(kilometer, 100);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    ut_free(unit);
+    unit = ut_raise(kilometer, 103);
+    CU_ASSERT_PTR_NULL(unit);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
+    unit = ut_raise(kilometer, 200);
+    CU_ASSERT_PTR_NULL(unit);
+
+    /*
+     * The scale is checked again after one Galilean unit is flattened onto
+     * another, which multiplies the two scales.  ut_scale() reaches that path
+     * without the caller having combined them first, so the entry check alone
+     * does not cover it.
+     */
+    bigScale = ut_scale(1e200, meter);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(bigScale);
+    unit = ut_scale(1e200, bigScale);
+    CU_ASSERT_PTR_NULL(unit);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
+    unit = ut_scale(2, bigScale);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    ut_free(unit);
+    ut_free(bigScale);
+
+    /* Underflow yielded a zero scale and a NaN offset before this check. */
+    tinyScale = ut_scale(1e-200, meter);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(tinyScale);
+    unit = ut_scale(1e-200, tinyScale);
+    CU_ASSERT_PTR_NULL(unit);
+    ut_free(tinyScale);
 
     minutesPerKilometer = ut_divide(minute, kilometer);
     kilometersSquaredPerMinuteSquared = ut_raise(minutesPerKilometer, -2);
