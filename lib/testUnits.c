@@ -852,6 +852,46 @@ test_utRaise(void)
     CU_ASSERT_STRING_EQUAL(buf, "1000000 m2");
     ut_free(unit);
 
+    /*
+     * Exponents of three or more decimal digits exercise the scratch array in
+     * utf8PrintProduct() beyond its first two elements.  The output is checked
+     * here; the out-of-bounds write that a mis-sized array produces is only
+     * observable under a checking allocator, so run this suite under
+     * AddressSanitizer to exercise that aspect.
+     */
+    unit = ut_raise(meter, 100);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(unit);
+    nchar = ut_format(unit, buf, sizeof(buf)-1, UT_UTF8);
+    CU_ASSERT_TRUE_FATAL(nchar > 0);
+    CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
+    buf[nchar] = 0;
+    CU_ASSERT_STRING_EQUAL(buf, "m\xc2\xb9\xe2\x81\xb0\xe2\x81\xb0");
+    nchar = ut_format(unit, buf, sizeof(buf)-1, UT_UTF8 | UT_NAMES);
+    CU_ASSERT_TRUE_FATAL(nchar > 0);
+    CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
+    buf[nchar] = 0;
+    CU_ASSERT_STRING_EQUAL(buf, "meter\xc2\xb9\xe2\x81\xb0\xe2\x81\xb0");
+    ut_free(unit);
+
+    unit = ut_raise(meter, 255);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(unit);
+    nchar = ut_format(unit, buf, sizeof(buf)-1, UT_UTF8);
+    CU_ASSERT_TRUE_FATAL(nchar > 0);
+    CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
+    buf[nchar] = 0;
+    CU_ASSERT_STRING_EQUAL(buf, "m\xc2\xb2\xe2\x81\xb5\xe2\x81\xb5");
+    ut_free(unit);
+
+    unit = ut_raise(meter, -255);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(unit);
+    nchar = ut_format(unit, buf, sizeof(buf)-1, UT_UTF8);
+    CU_ASSERT_TRUE_FATAL(nchar > 0);
+    CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
+    buf[nchar] = 0;
+    CU_ASSERT_STRING_EQUAL(buf,
+        "m\xe2\x81\xbb\xc2\xb2\xe2\x81\xb5\xe2\x81\xb5");
+    ut_free(unit);
+
     minutesPerKilometer = ut_divide(minute, kilometer);
     kilometersSquaredPerMinuteSquared = ut_raise(minutesPerKilometer, -2);
     ut_free(minutesPerKilometer);

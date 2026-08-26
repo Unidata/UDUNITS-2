@@ -50,6 +50,15 @@ typedef struct {
 #undef ABS
 #define ABS(x)			((x) < 0 ? -(x) : (x))
 #define RETURNS_NAME(getId)	((getId) == getName)
+/*
+ * Number of array elements sufficient to hold the decimal digits of any value
+ * of the same type as "x", with room to spare.  302/1000 slightly exceeds
+ * log10(2), so the count is never short.  Uses integer arithmetic only, so the
+ * result is an integer constant expression and the array is not a
+ * variable-length array (which MSVC does not support).
+ */
+#define UT_DECIMAL_DIGITS(x)	((sizeof(x)*CHAR_BIT*302)/1000 + 2)
+
 #define SUBTRACT_SIZET(a, b)    ((a) > (b) ? (a) - (b) : 0)
 
 static int
@@ -464,36 +473,27 @@ utf8PrintProduct(
                      * Append UTF-8 encoding of exponent magnitude.
                      */
                     {
-                        static int*	digit = NULL;
+                        int	digit[UT_DECIMAL_DIGITS(powers[0])];
+                        int	idig = 0;
 
-                        digit = realloc(digit, (size_t)((sizeof(powers[0])*
-                                        CHAR_BIT*(M_LOG10E/M_LOG2E)) + 1));
+                        for (; power > 0; power /= 10)
+                            digit[idig++] = power % 10;
 
-                        if (digit == NULL) {
-                            nchar = -1;
-                        }
-                        else {
-                            int	idig = 0;
+                        while (idig-- > 0) {
+                            n = snprintf(buf+nchar, size, "%s",
+                                    exponentStrings[digit[idig]]);
 
-                            for (; power > 0; power /= 10)
-                                digit[idig++] = power % 10;
-
-                            while (idig-- > 0) {
-                                n = snprintf(buf+nchar, size, "%s",
-                                        exponentStrings[digit[idig]]);
-
-                                if (n < 0) {
-                                    nchar = n;
-                                    break;
-                                }
-
-                                nchar += n;
-                                size = SUBTRACT_SIZET(size, n);
+                            if (n < 0) {
+                                nchar = n;
+                                break;
                             }
 
-                            if (nchar < 0)
-                                break;
+                            nchar += n;
+                            size = SUBTRACT_SIZET(size, n);
                         }
+
+                        if (nchar < 0)
+                            break;
                     }		/* exponent digits block */
                 }		/* must print exponent */
             }			/* must print basic-unit */
