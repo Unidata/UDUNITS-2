@@ -38,6 +38,7 @@
 #include "config.h"
 
 #include "udunits2.h"		/* this module's API */
+#include "udunits2Internal.h"
 #include "converter.h"
 
 #include <assert.h>
@@ -1377,8 +1378,9 @@ productMultiply(
 		    int				count = 0;
 		    int				i1 = 0;
 		    int				i2 = 0;
+		    int				ok = 1;
 
-		    while (i1 < count1 || i2 < count2) {
+		    while (ok && (i1 < count1 || i2 < count2)) {
 			if (i1 >= count1) {
 			    indexes[count] = indexes2[i2];
 			    powers[count++] = powers2[i2++];
@@ -1397,8 +1399,27 @@ productMultiply(
 			}
 			else {
 			    if (powers1[i1] != -powers2[i2]) {
+				/*
+				 * Computed in a wider type: the sum can
+				 * exceed the range of the destination,
+				 * which is what is being detected.
+				 */
+				long	sum = (long)powers1[i1] +
+					      (long)powers2[i2];
+
+				if (sum < -UT_MAX_UNIT_POWER ||
+					sum > UT_MAX_UNIT_POWER) {
+				    ut_set_status(UT_BAD_ARG);
+				    ut_handle_error_message("productMultiply(): "
+					"Resulting unit power %ld is outside "
+					"the range [%d, %d]", sum,
+					-UT_MAX_UNIT_POWER, UT_MAX_UNIT_POWER);
+				    ok = 0;
+				    break;
+				}
+
 				indexes[count] = indexes1[i1];
-				powers[count++] = powers1[i1] + powers2[i2];
+				powers[count++] = (short)sum;
 			    }
 
 			    i1++;
@@ -1406,8 +1427,9 @@ productMultiply(
 			}
 		    }
 
-		    result = (ut_unit*)productNew(unit1->common.system,
-			indexes, powers, count);
+		    if (ok)
+			result = (ut_unit*)productNew(unit1->common.system,
+			    indexes, powers, count);
 		}			/* "powers" re-allocated */
 	    }				/* "indexes" re-allocated */
 	}				/* "sumCount > 0" */
@@ -1463,12 +1485,32 @@ productRaise(
         else {
             const short* const	oldPowers = product->powers;
             int			i;
+            int			ok = 1;
 
-            for (i = 0; i < count; i++)
-                newPowers[i] = (short)(oldPowers[i] * power);
+            for (i = 0; i < count; i++) {
+                /*
+                 * Computed in a wider type: the product can exceed the range
+                 * of the destination, which is what is being detected.
+                 */
+                long	newPower = (long)oldPowers[i] * (long)power;
 
-            result = (ut_unit*)productNew(unit->common.system,
-                product->indexes, newPowers, count);
+                if (newPower < -UT_MAX_UNIT_POWER ||
+                        newPower > UT_MAX_UNIT_POWER) {
+                    ut_set_status(UT_BAD_ARG);
+                    ut_handle_error_message("productRaise(): "
+                        "Resulting unit power %ld is outside the range "
+                        "[%d, %d]", newPower, -UT_MAX_UNIT_POWER,
+                        UT_MAX_UNIT_POWER);
+                    ok = 0;
+                    break;
+                }
+
+                newPowers[i] = (short)newPower;
+            }
+
+            if (ok)
+                result = (ut_unit*)productNew(unit->common.system,
+                    product->indexes, newPowers, count);
 
             free(newPowers);
         }				/* "newPowers" allocated */

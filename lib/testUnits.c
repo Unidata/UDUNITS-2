@@ -800,6 +800,7 @@ test_utRaise(void)
     ut_unit*	unit;
     ut_unit*	bigScale;
     ut_unit*	tinyScale;
+    ut_unit*	raised;
     char	buf[80];
     int		nchar;
 
@@ -892,6 +893,67 @@ test_utRaise(void)
     buf[nchar] = 0;
     CU_ASSERT_STRING_EQUAL(buf,
         "m\xe2\x81\xbb\xc2\xb2\xe2\x81\xb5\xe2\x81\xb5");
+    ut_free(unit);
+
+    /*
+     * Composition can drive a unit power out of range even though every
+     * exponent written was inside it.  Raising bounds the product of the two;
+     * previously (m^255)^255 wrapped the short to -511 and (m^181)^181
+     * reached 32761.
+     */
+    unit = ut_raise(meter, 255);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(unit);
+    raised = ut_raise(unit, 255);
+    CU_ASSERT_PTR_NULL(raised);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
+    ut_free(unit);
+
+    unit = ut_raise(meter, 181);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(unit);
+    raised = ut_raise(unit, 181);
+    CU_ASSERT_PTR_NULL(raised);
+    ut_free(unit);
+
+    /* 15*17 == 255 is still permitted; 16*16 == 256 is not. */
+    unit = ut_raise(meter, 15);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(unit);
+    raised = ut_raise(unit, 17);
+    CU_ASSERT_PTR_NOT_NULL(raised);
+    ut_free(raised);
+    ut_free(unit);
+
+    unit = ut_raise(meter, 16);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(unit);
+    raised = ut_raise(unit, 16);
+    CU_ASSERT_PTR_NULL(raised);
+    ut_free(unit);
+
+    /*
+     * Multiplying bounds the sum, which is the route by which a limit on what
+     * may be written could otherwise be circumvented by factoring.
+     */
+    unit = ut_raise(meter, 200);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(unit);
+    raised = ut_raise(meter, 100);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(raised);
+    bigScale = ut_multiply(unit, raised);          /* 300: rejected */
+    CU_ASSERT_PTR_NULL(bigScale);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
+    ut_free(raised);
+
+    raised = ut_raise(meter, 55);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(raised);
+    bigScale = ut_multiply(unit, raised);          /* 255: permitted */
+    CU_ASSERT_PTR_NOT_NULL(bigScale);
+    ut_free(bigScale);
+    ut_free(raised);
+
+    raised = ut_raise(meter, -100);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(raised);
+    bigScale = ut_multiply(unit, raised);          /* 100: permitted */
+    CU_ASSERT_PTR_NOT_NULL(bigScale);
+    ut_free(bigScale);
+    ut_free(raised);
     ut_free(unit);
 
     /*
