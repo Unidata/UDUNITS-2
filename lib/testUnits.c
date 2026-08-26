@@ -828,6 +828,30 @@ test_utRaise(void)
     buf[nchar] = 0;
     CU_ASSERT_STRING_EQUAL(buf, "K3");
 
+    /*
+     * Raising a Galilean unit whose scale underflows to zero must fail *and*
+     * report the failure.  The intermediate unit is freed inside
+     * galileanRaise(), and ut_free() reports its own success, so an
+     * unpreserved status would leave UT_SUCCESS behind on a NULL return.
+     */
+    unit = ut_raise(kilometer, -255);
+    CU_ASSERT_PTR_NULL(unit);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
+
+    /*
+     * The same must hold for a scale that stays representable: a successful
+     * raise reports UT_SUCCESS explicitly.
+     */
+    unit = ut_raise(kilometer, 2);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
+    nchar = ut_format(unit, buf, sizeof(buf)-1, asciiSymbolDef);
+    CU_ASSERT_TRUE_FATAL(nchar > 0);
+    CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
+    buf[nchar] = 0;
+    CU_ASSERT_STRING_EQUAL(buf, "1000000 m2");
+    ut_free(unit);
+
     minutesPerKilometer = ut_divide(minute, kilometer);
     kilometersSquaredPerMinuteSquared = ut_raise(minutesPerKilometer, -2);
     ut_free(minutesPerKilometer);
