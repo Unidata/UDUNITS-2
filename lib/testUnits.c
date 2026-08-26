@@ -2464,6 +2464,44 @@ test_xml(void)
     ut_free(unit1);
 
     /*
+     * An exponent that is representable as a long but not as an int must be
+     * rejected, not narrowed.  Narrowing wraps the value into the permitted
+     * range and yields a unit the specification did not ask for: before this
+     * was checked, "m^4294967297" parsed as "m" and "m^4294967296" as the
+     * dimensionless unit.
+     *
+     * Only the returned pointer is asserted.  ut_parse() leaves UT_SUCCESS on
+     * every rejection rather than the UT_SYNTAX its contract promises; that is
+     * a separate defect, tracked by issue #157, and is not addressed here.
+     */
+    unit2 = ut_parse(xmlSystem, "m^4294967296", UT_ASCII);
+    CU_ASSERT_PTR_NULL(unit2);
+    unit2 = ut_parse(xmlSystem, "m^4294967297", UT_ASCII);
+    CU_ASSERT_PTR_NULL(unit2);
+    unit2 = ut_parse(xmlSystem, "m^4294967298", UT_ASCII);
+    CU_ASSERT_PTR_NULL(unit2);
+    unit2 = ut_parse(xmlSystem, "m^9223372036854775807", UT_ASCII);
+    CU_ASSERT_PTR_NULL(unit2);
+    unit2 = ut_parse(xmlSystem, "m^-9223372036854775808", UT_ASCII);
+    CU_ASSERT_PTR_NULL(unit2);
+
+    /* The juxtaposed form is narrowed by the same production. */
+    unit2 = ut_parse(xmlSystem, "m4294967297", UT_ASCII);
+    CU_ASSERT_PTR_NULL(unit2);
+    unit2 = ut_parse(xmlSystem, "m9223372036854775807", UT_ASCII);
+    CU_ASSERT_PTR_NULL(unit2);
+
+    /* The limits themselves are unaffected. */
+    unit2 = ut_parse(xmlSystem, "m^255", UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit2);
+    ut_free(unit2);
+    unit2 = ut_parse(xmlSystem, "m^-255", UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit2);
+    ut_free(unit2);
+    unit2 = ut_parse(xmlSystem, "m^256", UT_ASCII);
+    CU_ASSERT_PTR_NULL(unit2);
+
+    /*
      * Boundary behaviour of the ASCII exponent conversions.  Values outside
      * the range of a long are rejected by the scanner; values inside it are
      * passed on and judged by the range check on the unit power.  These
