@@ -585,25 +585,31 @@ idchar       [A-Za-z0-9_]
 
 <INITIAL,ID_SEEN>("^"|"**")[+-]?{int} {
     int		status;
+    long	value;
+    char*	end;
+    const char*	cp = (const char*)yytext;
 
-    if (sscanf(yytext, "%*[*^]%ld", &yylval.ival) != 1) {
-        ut_handle_error_message("Invalid integer\n", stderr);
+    /*
+     * Skip the "^" or "**" operator.  strtol() is used rather than sscanf()
+     * with "%ld": the conversion specifiers of the scanf family have
+     * undefined behaviour when the converted value is not representable,
+     * whereas strtol() is required to report that case through errno.
+     */
+    while (*cp == '*' || *cp == '^')
+	cp++;
 
+    errno	= 0;
+    value	= strtol(cp, &end, 10);
+
+    if (errno == ERANGE || end == cp || *end != '\0') {
+        snprintf(yylval.error_msg, sizeof(yylval.error_msg),
+             "Integer overflow or invalid integer '%s'", yytext);
 	status	= ERR;
     }
     else {
-	status	= EXPONENT;
+	yylval.ival	= value;
+	status		= EXPONENT;
     }
-
-    /*
-     * The ERR token carries a message in yylval.error_msg (see parser.y).
-     * This path sets none, so clear it so that uterror() does not read an
-     * indeterminate union value and the generic "syntax error" is emitted.
-     * The regex constrains the match to a valid integer, so ERR is in
-     * practice unreachable here.
-     */
-    if (status == ERR)
-	yylval.error_msg[0] = '\0';
 
     return status;
 }
@@ -851,16 +857,25 @@ idchar       [A-Za-z0-9_]
 
 <INITIAL,ID_SEEN,SHIFT_SEEN>[+-]?{int} {
     int		status;
+    long	value;
+    char*	end;
 
+    /*
+     * strtol() rather than atol(): atol() has undefined behaviour when the
+     * converted value is not representable and is not required to set errno,
+     * so the errno test that followed it was not guaranteed to detect
+     * anything.
+     */
     errno	= 0;
-    yylval.ival = atol((char*)yytext);
+    value	= strtol((const char*)yytext, &end, 10);
 
-    if (errno == 0) {
-	status	= INT;
-    } else {
+    if (errno == ERANGE || end == (char*)yytext || *end != '\0') {
         snprintf(yylval.error_msg, sizeof(yylval.error_msg),
              "Integer overflow or invalid integer '%s'", yytext);
         status = ERR;
+    } else {
+	yylval.ival	= value;
+	status		= INT;
     }
 
     BEGIN INITIAL;

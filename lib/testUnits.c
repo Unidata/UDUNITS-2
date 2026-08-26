@@ -2463,6 +2463,37 @@ test_xml(void)
     ut_free(unit2);
     ut_free(unit1);
 
+    /*
+     * Boundary behaviour of the ASCII exponent conversions.  Values outside
+     * the range of a long are rejected by the scanner; values inside it are
+     * passed on and judged by the range check on the unit power.  These
+     * assertions pin the boundaries -- they do not distinguish strtol() from
+     * the sscanf()/atol() conversions it replaced, because on glibc those
+     * happen to behave the same way.  The difference is that strtol() is
+     * required to report the out-of-range case, whereas the others have
+     * undefined behaviour there.
+     */
+    unit2 = ut_parse(xmlSystem, "m^9223372036854775808", UT_ASCII);
+    CU_ASSERT_PTR_NULL(unit2);
+    unit2 = ut_parse(xmlSystem, "m^-9223372036854775809", UT_ASCII);
+    CU_ASSERT_PTR_NULL(unit2);
+    unit2 = ut_parse(xmlSystem, "m^99999999999999999999", UT_ASCII);
+    CU_ASSERT_PTR_NULL(unit2);
+    unit2 = ut_parse(xmlSystem, "m9223372036854775808", UT_ASCII);
+    CU_ASSERT_PTR_NULL(unit2);
+    unit2 = ut_parse(xmlSystem, "m99999999999999999999", UT_ASCII);
+    CU_ASSERT_PTR_NULL(unit2);
+
+    /* m^000000000000000000002 == m2 : more digits than a long, value is 2 */
+    unit1 = ut_parse(xmlSystem, "m2", UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit1);
+    unit2 = ut_parse(xmlSystem, "m^000000000000000000002", UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit2);
+    if (unit1 && unit2)
+        CU_ASSERT_EQUAL(ut_compare(unit1, unit2), 0);
+    ut_free(unit2);
+    ut_free(unit1);
+
     /* m⁰⁰² == m2 : leading zeros are not digit-count limited */
     unit1 = ut_parse(xmlSystem, "m2", UT_ASCII);
     CU_ASSERT_PTR_NOT_NULL(unit1);
