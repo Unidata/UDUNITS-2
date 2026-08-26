@@ -83,6 +83,9 @@ Here is the unit-syntax understood by the UDUNITS-2 package. Words printed \_Thu
 
     <exponent>:
             ("e" | "E") [+-]? <digit>+
+    // NOTE: <exponent> is the exponent of a REAL mantissa, as in 5e10.  It is
+    //       unrelated to EXPONENT, which raises a unit to a power.  The two are
+    //       distinct and should not be conflated.
 
     // Note: NaN and Inf[inity] are explicitly excluded (cf. PR #136)
 
@@ -153,6 +156,36 @@ Here is the unit-syntax understood by the UDUNITS-2 package. Words printed \_Thu
             U+2077      // superscript seven
             U+2078      // superscript eight
             U+2079      // superscript nine
+
+    // VALIDATION PHILOSOPHY FOR EXPONENTS:
+    // As with date/time elements below, the lexical patterns above are intentionally
+    // PERMISSIVE. <raise-with-int> and <utf8-exponent> accept any number of digits,
+    // and leading zeros are permitted and carry no meaning: m2, m02 and m⁰⁰² denote
+    // the same unit, as do 10^2 and 10^02. The scanner requires only that the value
+    // be representable as an int. Everything else is decided during semantic
+    // analysis, because it depends on what the exponent is applied to, which the
+    // grammar cannot see.
+    //
+    // LIMITS APPLIED DURING SEMANTIC ANALYSIS:
+    //   - Applied to a unit, an exponent yields a unit power, whose magnitude must
+    //     not exceed 255. This is a policy limit rather than a property of any type;
+    //     no physical quantity approaches it, and it may be changed.
+    //   - Applied to a number, an exponent yields a scale factor, bounded only by
+    //     being a finite, non-zero double. The base is unrestricted: 10^308 and
+    //     2^1000 are accepted, 10^400 is not.
+    //   - A numeric factor applied to a unit is both, and both limits apply:
+    //     "(1000 m)^308" is rejected on the power of the metre, "(1000 m)^103" on
+    //     the resulting scale factor.
+    //
+    // THE LIMIT ON UNIT POWERS APPLIES TO RESULTS, NOT ONLY TO WHAT IS WRITTEN:
+    // raising and multiplying can produce a power that no specification could have
+    // expressed. Each of the following is a single specification, and each is
+    // rejected even though every exponent written in it is within range:
+    //         "m^200 m^100"  →  m300   // juxtaposition multiplies the units
+    //         (m^16)^16      →  m256
+    // Two reasons: formatted output must be parseable again, which fails if an
+    // operation may produce a power that may not be written; and a limit on written
+    // exponents alone could be circumvented by factoring.
 
 // Date/Time Elements
 
