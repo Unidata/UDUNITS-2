@@ -896,6 +896,22 @@ test_utRaise(void)
     ut_free(unit);
 
     /*
+     * The power of ut_raise() is no longer bounded as an argument: what a
+     * power may be depends on the unit it is applied to.  Raising the
+     * dimensionless unit scales it, and is limited only by the result being
+     * representable, so a power far outside the range permitted for a unit
+     * power is accepted here.
+     */
+    unit = ut_raise(ut_get_dimensionless_unit_one(unitSystem), 1000);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    ut_free(unit);
+
+    /* Applied to a unit, the same power is rejected on the resulting power. */
+    unit = ut_raise(meter, 1000);
+    CU_ASSERT_PTR_NULL(unit);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
+
+    /*
      * Composition can drive a unit power out of range even though every
      * exponent written was inside it.  Raising bounds the product of the two;
      * previously (m^255)^255 wrapped the short to -511 and (m^181)^181
