@@ -2423,6 +2423,57 @@ test_xml(void)
     ut_free(unit2);
     ut_free(unit1);
 
+    /*
+     * A superscript run whose value exceeds INT_MAX must be rejected by the
+     * scanner rather than accumulated into a signed overflow.  The guard has
+     * to know the digit before testing, so the interesting cases straddle
+     * INT_MAX: 2147483647 is representable, 2147483648 and 2147483649 are not
+     * and previously overflowed while being accumulated.  All of these are
+     * rejected in the end -- 2147483647 by the range check on the unit power
+     * -- so this test only distinguishes the two implementations when the
+     * suite is built with UndefinedBehaviorSanitizer.
+     */
+    unit2 = ut_parse(xmlSystem,                     /* m²¹⁴⁷⁴⁸³⁶⁴⁷ */
+        "m\xc2\xb2\xc2\xb9\xe2\x81\xb4\xe2\x81\xb7\xe2\x81\xb4"
+        "\xe2\x81\xb8\xc2\xb3\xe2\x81\xb6\xe2\x81\xb4\xe2\x81\xb7", UT_UTF8);
+    CU_ASSERT_PTR_NULL(unit2);
+    unit2 = ut_parse(xmlSystem,                     /* m²¹⁴⁷⁴⁸³⁶⁴⁸ */
+        "m\xc2\xb2\xc2\xb9\xe2\x81\xb4\xe2\x81\xb7\xe2\x81\xb4"
+        "\xe2\x81\xb8\xc2\xb3\xe2\x81\xb6\xe2\x81\xb4\xe2\x81\xb8", UT_UTF8);
+    CU_ASSERT_PTR_NULL(unit2);
+    unit2 = ut_parse(xmlSystem,                     /* m²¹⁴⁷⁴⁸³⁶⁴⁹ */
+        "m\xc2\xb2\xc2\xb9\xe2\x81\xb4\xe2\x81\xb7\xe2\x81\xb4"
+        "\xe2\x81\xb8\xc2\xb3\xe2\x81\xb6\xe2\x81\xb4\xe2\x81\xb9", UT_UTF8);
+    CU_ASSERT_PTR_NULL(unit2);
+
+    /* ⁴²⁹⁴⁹⁶⁷²⁹⁷ : more digits than an int can hold */
+    unit2 = ut_parse(xmlSystem,
+        "m\xe2\x81\xb4\xc2\xb2\xe2\x81\xb9\xe2\x81\xb4\xe2\x81\xb9"
+        "\xe2\x81\xb6\xe2\x81\xb7\xc2\xb2\xe2\x81\xb9\xe2\x81\xb7", UT_UTF8);
+    CU_ASSERT_PTR_NULL(unit2);
+
+    /* m²⁵⁵ == m255 : the largest accepted unit power, unaffected */
+    unit1 = ut_parse(xmlSystem, "m255", UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit1);
+    unit2 = ut_parse(xmlSystem,
+        "m\xc2\xb2\xe2\x81\xb5\xe2\x81\xb5", UT_UTF8);
+    CU_ASSERT_PTR_NOT_NULL(unit2);
+    if (unit1 && unit2)
+        CU_ASSERT_EQUAL(ut_compare(unit1, unit2), 0);
+    ut_free(unit2);
+    ut_free(unit1);
+
+    /* m⁰⁰² == m2 : leading zeros are not digit-count limited */
+    unit1 = ut_parse(xmlSystem, "m2", UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit1);
+    unit2 = ut_parse(xmlSystem,
+        "m\xe2\x81\xb0\xe2\x81\xb0\xc2\xb2", UT_UTF8);
+    CU_ASSERT_PTR_NOT_NULL(unit2);
+    if (unit1 && unit2)
+        CU_ASSERT_EQUAL(ut_compare(unit1, unit2), 0);
+    ut_free(unit2);
+    ut_free(unit1);
+
     /* kg·m²·s⁻³ == W (watt) : compound with mixed superscripts */
     unit1 = ut_parse(xmlSystem, "W", UT_ASCII);
     CU_ASSERT_PTR_NOT_NULL(unit1);

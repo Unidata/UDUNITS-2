@@ -640,18 +640,10 @@ idchar       [A-Za-z0-9_]
 	    {"\xe2\x81\xb9", 3},        /* 9 */
 	};
 
-        if (exponent > INT_MAX/10) {
-            status = ERR;
-            break;
-        }
-
-	exponent *= 10;
-
 	for (j = 0; j < 10; j++) {
 	    int	len = utf8_exponents[j].len;
 
 	    if (strncmp(cp, utf8_exponents[j].string, len) == 0) {
-		exponent += j;
 		cp += len;
 		break;
 	    }
@@ -661,6 +653,21 @@ idchar       [A-Za-z0-9_]
 	    status = ERR;
 	    break;
 	}
+
+	/*
+	 * Accumulate the digit only if the result is representable.  The
+	 * digit must be known before the test: guarding on
+	 * "exponent > INT_MAX/10" alone admits exponent == INT_MAX/10 and
+	 * then overflows on the addition of a digit exceeding INT_MAX%10.
+	 * This bounds only what an int can hold; the permitted range of a
+	 * unit power is enforced by the parser and the library.
+	 */
+	if (exponent > (INT_MAX - j) / 10) {
+	    status = ERR;
+	    break;
+	}
+
+	exponent = exponent * 10 + j;
     }
 
     if (status == EXPONENT)
