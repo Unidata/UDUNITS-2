@@ -321,6 +321,12 @@ Here is the unit-syntax understood by the UDUNITS-2 package. Words printed \_Thu
 
     LOGREF:
             <log> <space>* "(" <space>* <re> ":"? <space>*   // NOTE: LOGREF token spans through the base marker (e.g., "lg(re" or "ln(re:"), but not the closing ")"
+            // <re> only ends the token here if what follows it cannot extend
+            // an identifier: a colon, whitespace, ")", or end of input. "re"
+            // immediately followed by a letter, digit, or "_" (e.g. the
+            // "rem" in "lg(rem)") does not match LOGREF at all -- it is left
+            // for ordinary identifier lexing, so the whole expression fails
+            // to parse instead of silently naming the wrong reference unit.
 
     <log>: one of
             "log"
