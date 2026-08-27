@@ -537,7 +537,8 @@ broken_clock		{tod_hour}:{minute}(:{second})?
 packed_clock		{tod_hour}({minute}{second}?)?
 broken_tz_clock		{tz_hour}:{minute}
 packed_tz_clock		{tz_hour}{minute}?
-logref			\({space}*[Rr][Ee](:{space})?{space}*
+logref_head		\({space}*[Rr][Ee]
+logref_sep		(:{space}*|{space}+)
 after                   [Aa][Ff][Tt][Ee][Rr]
 from                    [Ff][Rr][Oo][Mm]
 since                   [Ss][Ii][Nn][Cc][Ee]
@@ -860,17 +861,34 @@ idchar       [A-Za-z0-9_]
     return status;
 }
 
-(log|lg){space}*{logref} {
+    /*
+     * The "re" marker of a logarithmic-unit reference (e.g. "lg(re 1 nV)" or
+     * "lg(re:1 nV)") is only unambiguous when something that cannot continue
+     * an identifier follows it: a colon, whitespace, or (via the
+     * trailing-context alternative below) the token that ends it, such as
+     * ')'. Without that check, "re" also matches as a prefix of an ordinary
+     * identifier that happens to start with it -- e.g. "lg(rem)" (the dose
+     * unit "rem") would lex as LOGREF "lg(re" followed by identifier "m",
+     * silently producing "lg(re 1 m)" instead of failing or naming "rem".
+     * The first alternative of each pair below consumes an explicit
+     * separator (colon and/or whitespace); the second, trailing-context
+     * alternative allows a bare "re" only when the next character could not
+     * extend an identifier.
+     */
+(log|lg){space}*{logref_head}{logref_sep}		|
+(log|lg){space}*{logref_head}/[^A-Za-z0-9_] {
     yylval.rval = 10;
     return LOGREF;
 }
 
-ln{space}*{logref} {
+ln{space}*{logref_head}{logref_sep}		|
+ln{space}*{logref_head}/[^A-Za-z0-9_] {
     yylval.rval = M_E;
     return LOGREF;
 }
 
-lb{space}*{logref} {
+lb{space}*{logref_head}{logref_sep}		|
+lb{space}*{logref_head}/[^A-Za-z0-9_] {
     yylval.rval = 2;
     return LOGREF;
 }
