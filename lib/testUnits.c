@@ -1949,6 +1949,62 @@ test_parsing(void)
     CU_ASSERT_EQUAL(ut_compare(unit, dBZ), 0);
     ut_free(unit);
 
+    /*
+     * The LOGREF "re" marker must not swallow the first two letters of an
+     * ordinary identifier that happens to start with "re" (issue #156's
+     * scanner-boundary group). "rem" (the radiation-dose unit) is a real
+     * offender: before the fix, "lg(rem)" silently lexed as LOGREF "lg(re"
+     * followed by identifier "m" (meter), so it *parsed successfully* to
+     * the wrong unit -- log base 10 referenced to one meter -- instead of
+     * failing outright.
+     */
+    spec = "lg(rem)";
+    unit = ut_parse(unitSystem, spec, UT_ASCII);
+    CU_ASSERT_PTR_NULL(unit);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_UNKNOWN);
+
+    spec = "ln(refrigeration_ton)";
+    unit = ut_parse(unitSystem, spec, UT_ASCII);
+    CU_ASSERT_PTR_NULL(unit);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_UNKNOWN);
+
+    /* A bare "re" immediately followed by the unit's closing parenthesis
+     * (no reference value at all) is still a syntax error, not a swallow --
+     * this exercises the trailing-context alternative with nothing after
+     * it but ')'. */
+    spec = "lb(re)";
+    unit = ut_parse(unitSystem, spec, UT_ASCII);
+    CU_ASSERT_PTR_NULL(unit);
+
+    /*
+     * A colon immediately followed by non-space (no space between "re:"
+     * and the reference value) was previously left dangling and rejected;
+     * it must now parse identically to the space-separated form.
+     */
+    {
+        ut_unit* spaceForm;
+
+        spec = "lg(re 1e-3 kg.m2.s-3)";
+        spaceForm = ut_parse(unitSystem, spec, UT_ASCII);
+        CU_ASSERT_PTR_NOT_NULL_FATAL(spaceForm);
+
+        spec = "lg(re:1e-3 kg.m2.s-3)";
+        unit = ut_parse(unitSystem, spec, UT_ASCII);
+        CU_ASSERT_PTR_NOT_NULL(unit);
+        CU_ASSERT_EQUAL(ut_compare(unit, spaceForm), 0);
+        ut_free(unit);
+
+        /* Case-insensitivity and extra internal whitespace around "re"
+         * must keep working exactly as before. */
+        spec = "lg(Re   1e-3 kg.m2.s-3)";
+        unit = ut_parse(unitSystem, spec, UT_ASCII);
+        CU_ASSERT_PTR_NOT_NULL(unit);
+        CU_ASSERT_EQUAL(ut_compare(unit, spaceForm), 0);
+        ut_free(unit);
+
+        ut_free(spaceForm);
+    }
+
     {
         char    buf[] = " (K/1.8) @ 459.67 ";
 
