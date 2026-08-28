@@ -10,6 +10,7 @@
 #include "udunits2.h"
 
 #include <float.h>
+#include <limits.h>
 #include <glob.h>
 #include <math.h>
 #include <stdarg.h>
@@ -910,6 +911,34 @@ test_utRaise(void)
     unit = ut_raise(meter, 1000);
     CU_ASSERT_PTR_NULL(unit);
     CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
+
+    /*
+     * The intermediate product oldPower*power must be computed in a type
+     * genuinely wider than int.  "long" is not: on the LLP64 model it is 32
+     * bits, and 2*INT_MAX overflows it, wrapping to -2 -- a value inside the
+     * permitted range, so the operation would be accepted and m^-2 returned
+     * instead of the request being rejected.  These cases detect that on any
+     * data model, without needing a sanitizer.
+     */
+    unit = ut_raise(meter, 2);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(unit);
+    raised = ut_raise(unit, INT_MAX);
+    CU_ASSERT_PTR_NULL(raised);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
+    ut_free(unit);
+
+    unit = ut_raise(meter, -2);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(unit);
+    raised = ut_raise(unit, INT_MIN);
+    CU_ASSERT_PTR_NULL(raised);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
+    ut_free(unit);
+
+    unit = ut_raise(meter, 2);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(unit);
+    raised = ut_raise(unit, INT_MIN);
+    CU_ASSERT_PTR_NULL(raised);
+    ut_free(unit);
 
     /*
      * Composition can drive a unit power out of range even though every

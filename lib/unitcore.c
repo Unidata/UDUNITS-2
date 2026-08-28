@@ -1400,18 +1400,24 @@ productMultiply(
 			else {
 			    if (powers1[i1] != -powers2[i2]) {
 				/*
-				 * Computed in a wider type: the sum can
-				 * exceed the range of the destination,
-				 * which is what is being detected.
+				 * Computed in a type wider than the
+				 * destination: the sum can exceed the
+				 * range of a short, which is what is
+				 * being detected.  Both operands are
+				 * already bounded, so int would serve
+				 * here; long long matches productRaise()
+				 * so that the two need not be reasoned
+				 * about separately.
 				 */
-				long	sum = (long)powers1[i1] +
-					      (long)powers2[i2];
+				long long	sum =
+				    (long long)powers1[i1] +
+				    (long long)powers2[i2];
 
 				if (sum < -UT_MAX_UNIT_POWER ||
 					sum > UT_MAX_UNIT_POWER) {
 				    ut_set_status(UT_BAD_ARG);
 				    ut_handle_error_message("productMultiply(): "
-					"Resulting unit power %ld is outside "
+					"Resulting unit power %lld is outside "
 					"the range [%d, %d]", sum,
 					-UT_MAX_UNIT_POWER, UT_MAX_UNIT_POWER);
 				    ok = 0;
@@ -1488,16 +1494,23 @@ productRaise(
 
             for (i = 0; i < count; i++) {
                 /*
-                 * Computed in a wider type: the product can exceed the range
-                 * of the destination, which is what is being detected.
+                 * Computed in long long, which the standard guarantees is at
+                 * least 64 bits.  "long" will not serve: it is only required
+                 * to be at least as wide as int, and on the LLP64 model both
+                 * are 32 bits, so the product would overflow -- signed
+                 * overflow, and undefined -- for the very arguments this test
+                 * exists to reject.  |oldPowers[i]| is at most
+                 * UT_MAX_UNIT_POWER and |power| at most INT_MAX, so the
+                 * product cannot exceed 2^39.
                  */
-                long	newPower = (long)oldPowers[i] * (long)power;
+                long long	newPower =
+                    (long long)oldPowers[i] * (long long)power;
 
                 if (newPower < -UT_MAX_UNIT_POWER ||
                         newPower > UT_MAX_UNIT_POWER) {
                     ut_set_status(UT_BAD_ARG);
                     ut_handle_error_message("productRaise(): "
-                        "Resulting unit power %ld is outside the range "
+                        "Resulting unit power %lld is outside the range "
                         "[%d, %d]", newPower, -UT_MAX_UNIT_POWER,
                         UT_MAX_UNIT_POWER);
                     ok = 0;
