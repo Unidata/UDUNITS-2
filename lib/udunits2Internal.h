@@ -30,8 +30,12 @@
  * Greatest magnitude permitted for the power of a unit, in a specification and
  * in the result of an operation on units.
  *
- * This is a policy, not a property of a type: no physical quantity approaches
- * it, and the value may be changed.  Two constraints on any replacement:
+ * This is a software policy limit rather than a bound arising from quantity
+ * calculus or from the representation type.  Dimensional exponents have no
+ * mathematical upper bound, and no rationale for this particular value is
+ * recorded anywhere in the source; it is retained for compatibility and for
+ * round-trip consistency, and may be changed.  Two constraints on any
+ * replacement:
  *
  *   - it must be representable in the type of ProductUnit.powers, so that a
  *     permitted power can actually be stored; and

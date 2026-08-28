@@ -162,7 +162,9 @@ Here is the unit-syntax understood by the UDUNITS-2 package. Words printed \_Thu
     // PERMISSIVE. <raise-with-int> and <utf8-exponent> accept any number of digits,
     // and leading zeros are permitted and carry no meaning: m2, m02 and m⁰⁰² denote
     // the same unit, as do 10^2 and 10^02. The scanner requires only that the value
-    // be representable as an int. Everything else is decided during semantic
+    // be representable as an int; the superscript form accumulates a magnitude
+    // before applying the sign, so its most negative accepted value is -INT_MAX.
+    // Everything else is decided during semantic
     // analysis, because it depends on what the exponent is applied to, which the
     // grammar cannot see.
     //

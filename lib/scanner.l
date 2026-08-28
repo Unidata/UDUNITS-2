@@ -665,8 +665,12 @@ idchar       [A-Za-z0-9_]
 	 * digit must be known before the test: guarding on
 	 * "exponent > INT_MAX/10" alone admits exponent == INT_MAX/10 and
 	 * then overflows on the addition of a digit exceeding INT_MAX%10.
-	 * This bounds only what an int can hold; the permitted range of a
-	 * unit power is enforced by the parser and the library.
+	 * This bounds the accumulated magnitude, which is what an int can
+	 * hold.  The sign is applied afterwards, so the magnitude 2147483648
+	 * is refused and the superscript spelling of INT_MIN is rejected
+	 * although that value is representable; the ASCII spelling is not
+	 * affected.  The permitted range of a unit power is enforced by the
+	 * parser and the library.
 	 */
 	if (exponent > (INT_MAX - j) / 10) {
 	    status = ERR;
