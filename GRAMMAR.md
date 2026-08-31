@@ -320,13 +320,17 @@ Here is the unit-syntax understood by the UDUNITS-2 package. Words printed \_Thu
 // Logarithmic Elements
 
     LOGREF:
-            <log> <space>* "(" <space>* <re> ":"? <space>*   // NOTE: LOGREF token spans through the base marker (e.g., "lg(re" or "ln(re:"), but not the closing ")"
-            // <re> only ends the token here if what follows it cannot extend
-            // an identifier: a colon, whitespace, ")", or end of input. "re"
-            // immediately followed by a letter, digit, or "_" (e.g. the
-            // "rem" in "lg(rem)") does not match LOGREF at all -- it is left
-            // for ordinary identifier lexing, so the whole expression fails
-            // to parse instead of silently naming the wrong reference unit.
+            <log> <space>* "(" <space>* <re> (":" <space>* | <space>+)   // NOTE: LOGREF token spans through the base marker (e.g., "lg(re " or "ln(re:"), but not the closing ")"
+            // <re> requires an explicit separator after it -- a colon
+            // (optionally followed by spaces) or one-or-more spaces -- and
+            // is never matched bare. Without a required separator, "re"
+            // immediately followed by any identifier character in any
+            // script (e.g. the "rem" in "lg(rem)", or the "reµm" in
+            // "lg(reµm)") is indistinguishable, one token of lookahead at a
+            // time, from "re" as the start of a longer identifier; the
+            // separator is what breaks that ambiguity. A consequence is
+            // that a delimiter-free numeric reference such as "lg(re1 nV)"
+            // is not valid: write "lg(re 1 nV)" or "lg(re:1 nV)" instead.
 
     <log>: one of
             "log"
