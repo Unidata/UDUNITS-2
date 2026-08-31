@@ -863,32 +863,42 @@ idchar       [A-Za-z0-9_]
 
     /*
      * The "re" marker of a logarithmic-unit reference (e.g. "lg(re 1 nV)" or
-     * "lg(re:1 nV)") is only unambiguous when something that cannot continue
-     * an identifier follows it: a colon, whitespace, or (via the
-     * trailing-context alternative below) the token that ends it, such as
-     * ')'. Without that check, "re" also matches as a prefix of an ordinary
-     * identifier that happens to start with it -- e.g. "lg(rem)" (the dose
-     * unit "rem") would lex as LOGREF "lg(re" followed by identifier "m",
-     * silently producing "lg(re 1 m)" instead of failing or naming "rem".
-     * The first alternative of each pair below consumes an explicit
-     * separator (colon and/or whitespace); the second, trailing-context
-     * alternative allows a bare "re" only when the next character could not
-     * extend an identifier.
+     * "lg(re:1 nV)") is recognized only when it is followed by an explicit
+     * separator: a colon (optionally followed by spaces), or one or more
+     * spaces. "re" is never matched bare.
+     *
+     * An earlier version of this rule instead used flex trailing context to
+     * allow a bare "re" whenever the next character could not itself extend
+     * an identifier, checking that against the ASCII class
+     * [^A-Za-z0-9_]. That was wrong on two counts: the scanner's actual
+     * identifier alphabet ({letter}/{alphanum} above) is far broader than
+     * ASCII -- it includes Latin-1 and multi-byte UTF-8 sequences such as
+     * the micro sign -- so a non-ASCII identifier continuation (e.g. the
+     * "re" in "lg(re\xc2\xb5m)", i.e. "reµm") was invisible to that class and
+     * still got silently swallowed, exactly the bug this rule exists to
+     * prevent. It also meant a numeric reference could immediately follow
+     * "re" with no separator at all as long as its first character (a sign
+     * or decimal point) happened not to be in that class, while a
+     * digit-first reference could not -- an accidental, unjustifiable
+     * asymmetry. Requiring an explicit separator unconditionally avoids
+     * both problems: nothing after "re" can ever extend it into a longer
+     * identifier, regardless of script, and the two behaviors are no longer
+     * asymmetric. This does mean a delimiter-free numeric reference such as
+     * "lg(re1 nV)" -- accepted by earlier releases as an accident of the
+     * old, ambiguous rule, and never documented or tested -- is no longer
+     * accepted; write "lg(re 1 nV)" or "lg(re:1 nV)" instead.
      */
-(log|lg){space}*{logref_head}{logref_sep}		|
-(log|lg){space}*{logref_head}/[^A-Za-z0-9_] {
+(log|lg){space}*{logref_head}{logref_sep} {
     yylval.rval = 10;
     return LOGREF;
 }
 
-ln{space}*{logref_head}{logref_sep}		|
-ln{space}*{logref_head}/[^A-Za-z0-9_] {
+ln{space}*{logref_head}{logref_sep} {
     yylval.rval = M_E;
     return LOGREF;
 }
 
-lb{space}*{logref_head}{logref_sep}		|
-lb{space}*{logref_head}/[^A-Za-z0-9_] {
+lb{space}*{logref_head}{logref_sep} {
     yylval.rval = 2;
     return LOGREF;
 }
