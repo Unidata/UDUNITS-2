@@ -1968,10 +1968,61 @@ test_parsing(void)
     CU_ASSERT_PTR_NULL(unit);
     CU_ASSERT_EQUAL(ut_get_status(), UT_UNKNOWN);
 
+    /*
+     * The identifier-swallow bug is not an ASCII-only problem: the
+     * scanner's actual identifier alphabet ({letter}/{alphanum} in
+     * scanner.l) includes Latin-1 and multi-byte UTF-8 characters such as
+     * the micro sign. "re" immediately followed by one of those must be
+     * rejected exactly like "re" followed by an ASCII letter -- an earlier,
+     * since-replaced version of this fix checked only the ASCII class
+     * [^A-Za-z0-9_], so "lg(re\xc2\xb5m)" ("lg(reµm)") still silently
+     * swallowed "re" and resolved to "lg(re 1 µm)", the same class of bug
+     * as "lg(rem)" above, just for a non-ASCII unit name.
+     */
+    spec = "lg(re\xc2\xb5m)";
+    unit = ut_parse(unitSystem, spec, UT_UTF8);
+    CU_ASSERT_PTR_NULL(unit);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_UNKNOWN);
+
+    /*
+     * "re" is now recognized only when followed by an explicit separator
+     * (a colon or whitespace) -- never bare. That is a deliberate,
+     * documented compatibility break: earlier releases accepted a
+     * delimiter-free numeric reference such as "lg(re1 nV)" as an accident
+     * of the old, ambiguous scanner rule (it was never tested or mentioned
+     * in GRAMMAR.md). The same applies to a sign- or decimal-point-led
+     * reference immediately following "re" with no separator; an earlier,
+     * since-replaced version of this fix let those through by accident
+     * (a sign or "." happened to fall outside the ASCII class it checked),
+     * which was its own unjustifiable asymmetry with the digit-led case.
+     * All delimiter-free forms are rejected uniformly now.
+     */
+    spec = "lg(re1 nV)";
+    unit = ut_parse(unitSystem, spec, UT_ASCII);
+    CU_ASSERT_PTR_NULL(unit);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_UNKNOWN);
+
+    spec = "lg(re+1 nV)";
+    unit = ut_parse(unitSystem, spec, UT_ASCII);
+    CU_ASSERT_PTR_NULL(unit);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_UNKNOWN);
+
+    spec = "lg(re-1 nV)";
+    unit = ut_parse(unitSystem, spec, UT_ASCII);
+    CU_ASSERT_PTR_NULL(unit);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_UNKNOWN);
+
+    spec = "lg(re.5 nV)";
+    unit = ut_parse(unitSystem, spec, UT_ASCII);
+    CU_ASSERT_PTR_NULL(unit);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_UNKNOWN);
+
     /* A bare "re" immediately followed by the unit's closing parenthesis
      * (no reference value at all) is still a syntax error, not a swallow --
-     * this exercises the trailing-context alternative with nothing after
-     * it but ')'. */
+     * "re" is never matched without an explicit separator, so this now
+     * fails to lex as LOGREF at all and "re" is left as an ordinary,
+     * unresolvable identifier. Either way, it was already a syntax error
+     * before this fix too, since LOGREF requires a product_exp before ')'. */
     spec = "lb(re)";
     unit = ut_parse(unitSystem, spec, UT_ASCII);
     CU_ASSERT_PTR_NULL(unit);
