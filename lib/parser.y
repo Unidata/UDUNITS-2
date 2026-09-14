@@ -55,6 +55,7 @@ static ut_unit*		_finalUnit;	/* fully-parsed specification */
 static ut_system*	_unitSystem;	/* The unit-system to use */
 static ut_encoding	_encoding;	/* encoding of string to be parsed */
 static int		_restartScanner;/* restart scanner? */
+static int		_trailingToken;	/* unshiftable lookahead at YYACCEPT? */
 static int		_isTime;        /* product_exp is time? */
 
 
@@ -219,12 +220,23 @@ static int isTime(
 
 %%
 
+		/*
+		 * LALR(1) reads one lookahead token before it can reduce to
+		 * unit_spec.  If that lookahead is a token the grammar cannot
+		 * shift in this state, YYACCEPT ends the parse with the token
+		 * still in yychar and it is silently discarded.  The scanner
+		 * has already advanced past it, so ut_parse's end-of-input
+		 * test would see the whole string as consumed.  Record the
+		 * outstanding lookahead so ut_parse can locate and report it.
+		 */
 unit_spec:      /* nothing */ {
 		    _finalUnit = ut_get_dimensionless_unit_one(_unitSystem);
+		    _trailingToken = (yychar != YYEMPTY && yychar != YYEOF);
 		    YYACCEPT;
 		} |
 		shift_exp {
 		    _finalUnit = $1;
+		    _trailingToken = (yychar != YYEMPTY && yychar != YYEOF);
 		    YYACCEPT;
 		} |
 		error {
@@ -647,10 +659,12 @@ ut_parse(
 
         if (utf8String != NULL) {
             YY_BUFFER_STATE	buf = ut_scan_string(utf8String);
+            int		parseStatus;
 
             _unitSystem = (ut_system*)system;
             _encoding = encoding;
             _restartScanner = 1;
+            _trailingToken = 0;
 
 #if YYDEBUG
             utdebug = 0;
@@ -659,11 +673,31 @@ ut_parse(
 
             _finalUnit = NULL;
 
-            if (utparse() == 0) {
-                int       status;
-                ptrdiff_t n = yy_c_buf_p  - buf->yy_ch_buf;
+            /*
+             * Give this call a definite starting status.  A pure syntax error
+             * sets none of its own (uterror() only reports a message), while
+             * the unknown-identifier rule sets UT_UNKNOWN itself; the baseline
+             * distinguishes the two below.
+             */
+            ut_set_status(UT_SUCCESS);
 
-                if (n >= strlen(utf8String)) {
+            parseStatus = utparse();
+
+            if (parseStatus == 0) {
+                int       status;
+                /*
+                 * yy_c_buf_p is where the scanner stopped, which is past any
+                 * lookahead token the parser accepted without shifting (see
+                 * unit_spec).  When such a token is outstanding, the honest
+                 * end of the parse is where that token starts, not where the
+                 * scanner stopped; uttext still points at it because no
+                 * further token has been scanned.
+                 */
+                ptrdiff_t n = _trailingToken
+                                ? uttext - buf->yy_ch_buf
+                                : yy_c_buf_p - buf->yy_ch_buf;
+
+                if (n >= (ptrdiff_t)strlen(utf8String)) {
                     unit = _finalUnit;	/* success */
                     status = UT_SUCCESS;
                 }
@@ -705,6 +739,18 @@ ut_parse(
                 }
 
                 ut_set_status(status);
+            }
+            else if (ut_get_status() == UT_SUCCESS) {
+                /*
+                 * A hard parse failure that recorded no status of its own:
+                 * a syntax error (bison returns 1) or memory exhaustion
+                 * (2).  ut_parse previously returned NULL here while leaving
+                 * whatever status the preceding call had set.  Paths that do
+                 * record a status -- the unknown-identifier rule's
+                 * UT_UNKNOWN, reached via YYERROR rather than uterror() --
+                 * are left alone.
+                 */
+                ut_set_status(parseStatus == 2 ? UT_OS : UT_SYNTAX);
             }
 
             ut_delete_buffer(buf);
