@@ -24,6 +24,7 @@
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
+#include <limits.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -56,6 +57,44 @@ static ut_system*	_unitSystem;	/* The unit-system to use */
 static ut_encoding	_encoding;	/* encoding of string to be parsed */
 static int		_restartScanner;/* restart scanner? */
 static int		_isTime;        /* product_exp is time? */
+
+
+/*
+ * Raises a unit to a power taken from a specification.
+ *
+ * The scanner delivers the exponent as a long, while ut_raise() takes an int.
+ * Narrowing an out-of-range value would wrap it into the range the callee
+ * accepts and silently yield the wrong unit -- "m^4294967297" becoming "m",
+ * for example -- so the value is checked before it is converted.
+ *
+ * This checks only that the exponent is representable.  What the exponent may
+ * mean is decided by the callee, which is the only layer that knows whether
+ * the base is a unit, whose power is bounded, or a numeric factor, whose scale
+ * is bounded only by what a double can hold.  The grammar cannot tell those
+ * apart, and does not need to.
+ *
+ * Arguments:
+ *	unit	The unit to be raised.
+ *	power	The power, as delivered by the scanner.
+ * Returns:
+ *	NULL	Failure.  ut_get_status() will be UT_BAD_ARG if "power" is not
+ *		representable as an int; otherwise as ut_raise() sets it.
+ *	else	The resulting unit.
+ */
+static ut_unit*
+raiseUnitByLong(
+    const ut_unit* const	unit,
+    const long			power)
+{
+    if (power < INT_MIN || power > INT_MAX) {
+	ut_set_status(UT_BAD_ARG);
+	ut_handle_error_message("Exponent %ld is not representable", power);
+
+	return NULL;
+    }
+
+    return ut_raise(unit, (int)power);
+}
 
 
 /*
@@ -313,13 +352,13 @@ power_exp:	basic_exp {
 		    $$ = $1;
 		} |
 		basic_exp INT {
-		    $$ = ut_raise($1, $2);
+		    $$ = raiseUnitByLong($1, $2);
 		    ut_free($1);
 		    if ($$ == NULL)
 			YYERROR;
 		} |
 		basic_exp EXPONENT {
-		    $$ = ut_raise($1, $2);
+		    $$ = raiseUnitByLong($1, $2);
 		    ut_free($1);
 		    if ($$ == NULL)
 			YYERROR;

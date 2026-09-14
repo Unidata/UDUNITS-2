@@ -10,6 +10,7 @@
 #include "udunits2.h"
 
 #include <float.h>
+#include <limits.h>
 #include <glob.h>
 #include <math.h>
 #include <stdarg.h>
@@ -798,6 +799,9 @@ test_utRaise(void)
     ut_unit*	minutesPerKilometer;
     ut_unit*	kilometersSquaredPerMinuteSquared;
     ut_unit*	unit;
+    ut_unit*	bigScale;
+    ut_unit*	tinyScale;
+    ut_unit*	raised;
     char	buf[80];
     int		nchar;
 
@@ -827,6 +831,213 @@ test_utRaise(void)
     CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
     buf[nchar] = 0;
     CU_ASSERT_STRING_EQUAL(buf, "K3");
+
+    /*
+     * Raising a Galilean unit whose scale underflows to zero must fail *and*
+     * report the failure.  The intermediate unit is freed inside
+     * galileanRaise(), and ut_free() reports its own success, so an
+     * unpreserved status would leave UT_SUCCESS behind on a NULL return.
+     */
+    unit = ut_raise(kilometer, -255);
+    CU_ASSERT_PTR_NULL(unit);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
+
+    /*
+     * The same must hold for a scale that stays representable: a successful
+     * raise reports UT_SUCCESS explicitly.
+     */
+    unit = ut_raise(kilometer, 2);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
+    nchar = ut_format(unit, buf, sizeof(buf)-1, asciiSymbolDef);
+    CU_ASSERT_TRUE_FATAL(nchar > 0);
+    CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
+    buf[nchar] = 0;
+    CU_ASSERT_STRING_EQUAL(buf, "1000000 m2");
+    ut_free(unit);
+
+    /*
+     * Exponents of three or more decimal digits exercise the scratch array in
+     * utf8PrintProduct() beyond its first two elements.  The output is checked
+     * here; the out-of-bounds write that a mis-sized array produces is only
+     * observable under a checking allocator, so run this suite under
+     * AddressSanitizer to exercise that aspect.
+     */
+    unit = ut_raise(meter, 100);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(unit);
+    nchar = ut_format(unit, buf, sizeof(buf)-1, UT_UTF8);
+    CU_ASSERT_TRUE_FATAL(nchar > 0);
+    CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
+    buf[nchar] = 0;
+    CU_ASSERT_STRING_EQUAL(buf, "m\xc2\xb9\xe2\x81\xb0\xe2\x81\xb0");
+    nchar = ut_format(unit, buf, sizeof(buf)-1, UT_UTF8 | UT_NAMES);
+    CU_ASSERT_TRUE_FATAL(nchar > 0);
+    CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
+    buf[nchar] = 0;
+    CU_ASSERT_STRING_EQUAL(buf, "meter\xc2\xb9\xe2\x81\xb0\xe2\x81\xb0");
+    ut_free(unit);
+
+    unit = ut_raise(meter, 255);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(unit);
+    nchar = ut_format(unit, buf, sizeof(buf)-1, UT_UTF8);
+    CU_ASSERT_TRUE_FATAL(nchar > 0);
+    CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
+    buf[nchar] = 0;
+    CU_ASSERT_STRING_EQUAL(buf, "m\xc2\xb2\xe2\x81\xb5\xe2\x81\xb5");
+    ut_free(unit);
+
+    unit = ut_raise(meter, -255);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(unit);
+    nchar = ut_format(unit, buf, sizeof(buf)-1, UT_UTF8);
+    CU_ASSERT_TRUE_FATAL(nchar > 0);
+    CU_ASSERT_TRUE_FATAL(nchar < sizeof(buf));
+    buf[nchar] = 0;
+    CU_ASSERT_STRING_EQUAL(buf,
+        "m\xe2\x81\xbb\xc2\xb2\xe2\x81\xb5\xe2\x81\xb5");
+    ut_free(unit);
+
+    /*
+     * The power of ut_raise() is no longer bounded as an argument: what a
+     * power may be depends on the unit it is applied to.  Raising the
+     * dimensionless unit scales it, and is limited only by the result being
+     * representable, so a power far outside the range permitted for a unit
+     * power is accepted here.
+     */
+    unit = ut_raise(ut_get_dimensionless_unit_one(unitSystem), 1000);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    ut_free(unit);
+
+    /* Applied to a unit, the same power is rejected on the resulting power. */
+    unit = ut_raise(meter, 1000);
+    CU_ASSERT_PTR_NULL(unit);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
+
+    /*
+     * The intermediate product oldPower*power must be computed in a type
+     * genuinely wider than int.  "long" is not: on the LLP64 model it is 32
+     * bits, and 2*INT_MAX overflows it, wrapping to -2 -- a value inside the
+     * permitted range, so the operation would be accepted and m^-2 returned
+     * instead of the request being rejected.  These cases detect that on any
+     * data model, without needing a sanitizer.
+     */
+    unit = ut_raise(meter, 2);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(unit);
+    raised = ut_raise(unit, INT_MAX);
+    CU_ASSERT_PTR_NULL(raised);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
+    ut_free(unit);
+
+    unit = ut_raise(meter, -2);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(unit);
+    raised = ut_raise(unit, INT_MIN);
+    CU_ASSERT_PTR_NULL(raised);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
+    ut_free(unit);
+
+    unit = ut_raise(meter, 2);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(unit);
+    raised = ut_raise(unit, INT_MIN);
+    CU_ASSERT_PTR_NULL(raised);
+    ut_free(unit);
+
+    /*
+     * Composition can drive a unit power out of range even though every
+     * exponent written was inside it.  Raising bounds the product of the two;
+     * previously (m^255)^255 wrapped the short to -511 and (m^181)^181
+     * reached 32761.
+     */
+    unit = ut_raise(meter, 255);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(unit);
+    raised = ut_raise(unit, 255);
+    CU_ASSERT_PTR_NULL(raised);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
+    ut_free(unit);
+
+    unit = ut_raise(meter, 181);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(unit);
+    raised = ut_raise(unit, 181);
+    CU_ASSERT_PTR_NULL(raised);
+    ut_free(unit);
+
+    /* 15*17 == 255 is still permitted; 16*16 == 256 is not. */
+    unit = ut_raise(meter, 15);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(unit);
+    raised = ut_raise(unit, 17);
+    CU_ASSERT_PTR_NOT_NULL(raised);
+    ut_free(raised);
+    ut_free(unit);
+
+    unit = ut_raise(meter, 16);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(unit);
+    raised = ut_raise(unit, 16);
+    CU_ASSERT_PTR_NULL(raised);
+    ut_free(unit);
+
+    /*
+     * Multiplying bounds the sum, which is the route by which a limit on what
+     * may be written could otherwise be circumvented by factoring.
+     */
+    unit = ut_raise(meter, 200);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(unit);
+    raised = ut_raise(meter, 100);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(raised);
+    bigScale = ut_multiply(unit, raised);          /* 300: rejected */
+    CU_ASSERT_PTR_NULL(bigScale);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
+    ut_free(raised);
+
+    raised = ut_raise(meter, 55);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(raised);
+    bigScale = ut_multiply(unit, raised);          /* 255: permitted */
+    CU_ASSERT_PTR_NOT_NULL(bigScale);
+    ut_free(bigScale);
+    ut_free(raised);
+
+    raised = ut_raise(meter, -100);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(raised);
+    bigScale = ut_multiply(unit, raised);          /* 100: permitted */
+    CU_ASSERT_PTR_NOT_NULL(bigScale);
+    ut_free(bigScale);
+    ut_free(raised);
+    ut_free(unit);
+
+    /*
+     * A scale factor that overflows to infinity or underflows to zero must be
+     * rejected rather than stored.  Raising a Galilean unit raises its scale,
+     * so this is reachable well inside the permitted range of a unit power:
+     * kilometer^103 has a scale of 1e309.
+     */
+    unit = ut_raise(kilometer, 100);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    ut_free(unit);
+    unit = ut_raise(kilometer, 103);
+    CU_ASSERT_PTR_NULL(unit);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
+    unit = ut_raise(kilometer, 200);
+    CU_ASSERT_PTR_NULL(unit);
+
+    /*
+     * The scale is checked again after one Galilean unit is flattened onto
+     * another, which multiplies the two scales.  ut_scale() reaches that path
+     * without the caller having combined them first, so the entry check alone
+     * does not cover it.
+     */
+    bigScale = ut_scale(1e200, meter);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(bigScale);
+    unit = ut_scale(1e200, bigScale);
+    CU_ASSERT_PTR_NULL(unit);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
+    unit = ut_scale(2, bigScale);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    ut_free(unit);
+    ut_free(bigScale);
+
+    /* Underflow yielded a zero scale and a NaN offset before this check. */
+    tinyScale = ut_scale(1e-200, meter);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(tinyScale);
+    unit = ut_scale(1e-200, tinyScale);
+    CU_ASSERT_PTR_NULL(unit);
+    ut_free(tinyScale);
 
     minutesPerKilometer = ut_divide(minute, kilometer);
     kilometersSquaredPerMinuteSquared = ut_raise(minutesPerKilometer, -2);
@@ -2235,6 +2446,126 @@ test_xml(void)
     CU_ASSERT_PTR_NOT_NULL(unit1);
     unit2 = ut_parse(xmlSystem,
         "kg\xc2\xb7m\xe2\x81\xbb\xc2\xb3", UT_UTF8);  /* kg·m⁻³ */
+    CU_ASSERT_PTR_NOT_NULL(unit2);
+    if (unit1 && unit2)
+        CU_ASSERT_EQUAL(ut_compare(unit1, unit2), 0);
+    ut_free(unit2);
+    ut_free(unit1);
+
+    /*
+     * A superscript run whose value exceeds INT_MAX must be rejected by the
+     * scanner rather than accumulated into a signed overflow.  The guard has
+     * to know the digit before testing, so the interesting cases straddle
+     * INT_MAX: 2147483647 is representable, 2147483648 and 2147483649 are not
+     * and previously overflowed while being accumulated.  All of these are
+     * rejected in the end -- 2147483647 by the range check on the unit power
+     * -- so this test only distinguishes the two implementations when the
+     * suite is built with UndefinedBehaviorSanitizer.
+     */
+    unit2 = ut_parse(xmlSystem,                     /* m²¹⁴⁷⁴⁸³⁶⁴⁷ */
+        "m\xc2\xb2\xc2\xb9\xe2\x81\xb4\xe2\x81\xb7\xe2\x81\xb4"
+        "\xe2\x81\xb8\xc2\xb3\xe2\x81\xb6\xe2\x81\xb4\xe2\x81\xb7", UT_UTF8);
+    CU_ASSERT_PTR_NULL(unit2);
+    unit2 = ut_parse(xmlSystem,                     /* m²¹⁴⁷⁴⁸³⁶⁴⁸ */
+        "m\xc2\xb2\xc2\xb9\xe2\x81\xb4\xe2\x81\xb7\xe2\x81\xb4"
+        "\xe2\x81\xb8\xc2\xb3\xe2\x81\xb6\xe2\x81\xb4\xe2\x81\xb8", UT_UTF8);
+    CU_ASSERT_PTR_NULL(unit2);
+    unit2 = ut_parse(xmlSystem,                     /* m²¹⁴⁷⁴⁸³⁶⁴⁹ */
+        "m\xc2\xb2\xc2\xb9\xe2\x81\xb4\xe2\x81\xb7\xe2\x81\xb4"
+        "\xe2\x81\xb8\xc2\xb3\xe2\x81\xb6\xe2\x81\xb4\xe2\x81\xb9", UT_UTF8);
+    CU_ASSERT_PTR_NULL(unit2);
+
+    /* ⁴²⁹⁴⁹⁶⁷²⁹⁷ : more digits than an int can hold */
+    unit2 = ut_parse(xmlSystem,
+        "m\xe2\x81\xb4\xc2\xb2\xe2\x81\xb9\xe2\x81\xb4\xe2\x81\xb9"
+        "\xe2\x81\xb6\xe2\x81\xb7\xc2\xb2\xe2\x81\xb9\xe2\x81\xb7", UT_UTF8);
+    CU_ASSERT_PTR_NULL(unit2);
+
+    /* m²⁵⁵ == m255 : the largest accepted unit power, unaffected */
+    unit1 = ut_parse(xmlSystem, "m255", UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit1);
+    unit2 = ut_parse(xmlSystem,
+        "m\xc2\xb2\xe2\x81\xb5\xe2\x81\xb5", UT_UTF8);
+    CU_ASSERT_PTR_NOT_NULL(unit2);
+    if (unit1 && unit2)
+        CU_ASSERT_EQUAL(ut_compare(unit1, unit2), 0);
+    ut_free(unit2);
+    ut_free(unit1);
+
+    /*
+     * An exponent that is representable as a long but not as an int must be
+     * rejected, not narrowed.  Narrowing wraps the value into the permitted
+     * range and yields a unit the specification did not ask for: before this
+     * was checked, "m^4294967297" parsed as "m" and "m^4294967296" as the
+     * dimensionless unit.
+     *
+     * Only the returned pointer is asserted.  ut_parse() leaves UT_SUCCESS on
+     * every rejection rather than the UT_SYNTAX its contract promises; that is
+     * a separate defect, tracked by issue #157, and is not addressed here.
+     */
+    unit2 = ut_parse(xmlSystem, "m^4294967296", UT_ASCII);
+    CU_ASSERT_PTR_NULL(unit2);
+    unit2 = ut_parse(xmlSystem, "m^4294967297", UT_ASCII);
+    CU_ASSERT_PTR_NULL(unit2);
+    unit2 = ut_parse(xmlSystem, "m^4294967298", UT_ASCII);
+    CU_ASSERT_PTR_NULL(unit2);
+    unit2 = ut_parse(xmlSystem, "m^9223372036854775807", UT_ASCII);
+    CU_ASSERT_PTR_NULL(unit2);
+    unit2 = ut_parse(xmlSystem, "m^-9223372036854775808", UT_ASCII);
+    CU_ASSERT_PTR_NULL(unit2);
+
+    /* The juxtaposed form is narrowed by the same production. */
+    unit2 = ut_parse(xmlSystem, "m4294967297", UT_ASCII);
+    CU_ASSERT_PTR_NULL(unit2);
+    unit2 = ut_parse(xmlSystem, "m9223372036854775807", UT_ASCII);
+    CU_ASSERT_PTR_NULL(unit2);
+
+    /* The limits themselves are unaffected. */
+    unit2 = ut_parse(xmlSystem, "m^255", UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit2);
+    ut_free(unit2);
+    unit2 = ut_parse(xmlSystem, "m^-255", UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit2);
+    ut_free(unit2);
+    unit2 = ut_parse(xmlSystem, "m^256", UT_ASCII);
+    CU_ASSERT_PTR_NULL(unit2);
+
+    /*
+     * Boundary behaviour of the ASCII exponent conversions.  Values outside
+     * the range of a long are rejected by the scanner; values inside it are
+     * passed on and judged by the range check on the unit power.  These
+     * assertions pin the boundaries -- they do not distinguish strtol() from
+     * the sscanf()/atol() conversions it replaced, because on glibc those
+     * happen to behave the same way.  The difference is that strtol() is
+     * required to report the out-of-range case, whereas the others have
+     * undefined behaviour there.
+     */
+    unit2 = ut_parse(xmlSystem, "m^9223372036854775808", UT_ASCII);
+    CU_ASSERT_PTR_NULL(unit2);
+    unit2 = ut_parse(xmlSystem, "m^-9223372036854775809", UT_ASCII);
+    CU_ASSERT_PTR_NULL(unit2);
+    unit2 = ut_parse(xmlSystem, "m^99999999999999999999", UT_ASCII);
+    CU_ASSERT_PTR_NULL(unit2);
+    unit2 = ut_parse(xmlSystem, "m9223372036854775808", UT_ASCII);
+    CU_ASSERT_PTR_NULL(unit2);
+    unit2 = ut_parse(xmlSystem, "m99999999999999999999", UT_ASCII);
+    CU_ASSERT_PTR_NULL(unit2);
+
+    /* m^000000000000000000002 == m2 : more digits than a long, value is 2 */
+    unit1 = ut_parse(xmlSystem, "m2", UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit1);
+    unit2 = ut_parse(xmlSystem, "m^000000000000000000002", UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit2);
+    if (unit1 && unit2)
+        CU_ASSERT_EQUAL(ut_compare(unit1, unit2), 0);
+    ut_free(unit2);
+    ut_free(unit1);
+
+    /* m⁰⁰² == m2 : leading zeros are not digit-count limited */
+    unit1 = ut_parse(xmlSystem, "m2", UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit1);
+    unit2 = ut_parse(xmlSystem,
+        "m\xe2\x81\xb0\xe2\x81\xb0\xc2\xb2", UT_UTF8);
     CU_ASSERT_PTR_NOT_NULL(unit2);
     if (unit1 && unit2)
         CU_ASSERT_EQUAL(ut_compare(unit1, unit2), 0);

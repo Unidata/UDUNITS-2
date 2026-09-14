@@ -585,25 +585,31 @@ idchar       [A-Za-z0-9_]
 
 <INITIAL,ID_SEEN>("^"|"**")[+-]?{int} {
     int		status;
+    long	value;
+    char*	end;
+    const char*	cp = (const char*)yytext;
 
-    if (sscanf(yytext, "%*[*^]%ld", &yylval.ival) != 1) {
-        ut_handle_error_message("Invalid integer\n", stderr);
+    /*
+     * Skip the "^" or "**" operator.  strtol() is used rather than sscanf()
+     * with "%ld": the conversion specifiers of the scanf family have
+     * undefined behaviour when the converted value is not representable,
+     * whereas strtol() is required to report that case through errno.
+     */
+    while (*cp == '*' || *cp == '^')
+	cp++;
 
+    errno	= 0;
+    value	= strtol(cp, &end, 10);
+
+    if (errno == ERANGE || end == cp || *end != '\0') {
+        snprintf(yylval.error_msg, sizeof(yylval.error_msg),
+             "Integer overflow or invalid integer '%s'", yytext);
 	status	= ERR;
     }
     else {
-	status	= EXPONENT;
+	yylval.ival	= value;
+	status		= EXPONENT;
     }
-
-    /*
-     * The ERR token carries a message in yylval.error_msg (see parser.y).
-     * This path sets none, so clear it so that uterror() does not read an
-     * indeterminate union value and the generic "syntax error" is emitted.
-     * The regex constrains the match to a valid integer, so ERR is in
-     * practice unreachable here.
-     */
-    if (status == ERR)
-	yylval.error_msg[0] = '\0';
 
     return status;
 }
@@ -640,18 +646,10 @@ idchar       [A-Za-z0-9_]
 	    {"\xe2\x81\xb9", 3},        /* 9 */
 	};
 
-        if (exponent > INT_MAX/10) {
-            status = ERR;
-            break;
-        }
-
-	exponent *= 10;
-
 	for (j = 0; j < 10; j++) {
 	    int	len = utf8_exponents[j].len;
 
 	    if (strncmp(cp, utf8_exponents[j].string, len) == 0) {
-		exponent += j;
 		cp += len;
 		break;
 	    }
@@ -661,6 +659,25 @@ idchar       [A-Za-z0-9_]
 	    status = ERR;
 	    break;
 	}
+
+	/*
+	 * Accumulate the digit only if the result is representable.  The
+	 * digit must be known before the test: guarding on
+	 * "exponent > INT_MAX/10" alone admits exponent == INT_MAX/10 and
+	 * then overflows on the addition of a digit exceeding INT_MAX%10.
+	 * This bounds the accumulated magnitude, which is what an int can
+	 * hold.  The sign is applied afterwards, so the magnitude 2147483648
+	 * is refused and the superscript spelling of INT_MIN is rejected
+	 * although that value is representable; the ASCII spelling is not
+	 * affected.  The permitted range of a unit power is enforced by the
+	 * parser and the library.
+	 */
+	if (exponent > (INT_MAX - j) / 10) {
+	    status = ERR;
+	    break;
+	}
+
+	exponent = exponent * 10 + j;
     }
 
     if (status == EXPONENT)
@@ -844,16 +861,25 @@ idchar       [A-Za-z0-9_]
 
 <INITIAL,ID_SEEN,SHIFT_SEEN>[+-]?{int} {
     int		status;
+    long	value;
+    char*	end;
 
+    /*
+     * strtol() rather than atol(): atol() has undefined behaviour when the
+     * converted value is not representable and is not required to set errno,
+     * so the errno test that followed it was not guaranteed to detect
+     * anything.
+     */
     errno	= 0;
-    yylval.ival = atol((char*)yytext);
+    value	= strtol((const char*)yytext, &end, 10);
 
-    if (errno == 0) {
-	status	= INT;
-    } else {
+    if (errno == ERANGE || end == (char*)yytext || *end != '\0') {
         snprintf(yylval.error_msg, sizeof(yylval.error_msg),
              "Integer overflow or invalid integer '%s'", yytext);
         status = ERR;
+    } else {
+	yylval.ival	= value;
+	status		= INT;
     }
 
     BEGIN INITIAL;
