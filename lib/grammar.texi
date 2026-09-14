@@ -160,22 +160,53 @@ EXPONENT: one of
 
 @emph{Timestamp}: one of
         DATE
+        DATE Z_TOK
         DATE CLOCK
-        DATE CLOCK CLOCK    // timezone offset as a second CLOCK, which cannot have <second>
-        DATE CLOCK ID       // timezone ID (UTC/GMT/Z)
-        DATE ID             // date-only with timezone ID (only Z)
+        DATE CLOCK TZ_CLOCK
+        DATE CLOCK Z_TOK
+        DATE CLOCK GMT_TOK
+        DATE CLOCK UTC_TOK
+
+// VALIDATION PHILOSOPHY FOR DATE/TIME ELEMENTS:
+// The lexical patterns for date/time components (<year-broken>, <year-packed>,
+// <month>, <day>, <tod-hour>, <minute>, <second>, <tz-hour>) are intentionally
+// PERMISSIVE - they accept any appropriate-length digit sequences. Range validation
+// (e.g., month must be 1-12, hour must be 0-23) is performed during semantic
+// analysis, not during lexical analysis. This approach:
+//   - Provides better error messages showing the actual invalid values
+//   - Maintains clean separation between lexical tokenization and validation
+//   - Allows consistent error reporting through the parser
+//
+// NORMALIZATION AFTER VALIDATION: values that pass validation may still be adjusted
+// when the date/time is encoded:
+//   - A <day> that is within the per-month maximum, but outside what is allowed in
+//     the Julian/Gregorian calendar, is silently interpreted as the corresponding
+//     day of the next month, e.g., 1999-02-29 (non-leap year) → 1999-03-01,
+//     2004-02-29 (leap year) stays the same.
+//   - Year 0 is silently normalized to year 1 because in the Julian calendar there
+//     is no year zero, which is used in the combined Julian/Gregorian (standard)
+//     calendar that UDUNITS follows.
 
 DATE: one of
         <date-broken> ("T" | <space>*)
         <date-packed> ("T" | <space>*)
-        // NOTE: The trailing "T" or <space>* is included in the DATE token and serves as a separator when followed by CLOCK
-        // NOTE: Packed dates only return DATE token when appearing after time-related units; otherwise parsed as REAL
+// NOTE: The trailing "T" or <space>* is included in the DATE token
+// NOTE: "T" separator prohibits spaces before CLOCK (ISO 8601 compliance)
+//       Valid: "2024-06-01T12:00", "2024-06-01 12:00"
+//       Invalid: "2024-06-01T 12:00" (space after T rejected)
+// NOTE: Packed dates only return DATE token when appearing after time-related units;
+//       otherwise parsed as REAL
 
 <date-broken>:
-        <year> "-" <month> ("-" <day>)?  // allow truncation from the right
+        <year-broken> "-" <month> ("-" <day>)?  // allow truncation from the right
+        // NOTE: truncation stops at <month>: a broken date requires the month,
+        //       otherwise the input is interpreted as a <date-packed>. A bare year
+        //       is therefore limited to the 1-4 digits of <year-packed>; years
+        //       outside -9999 to 9999 must be written with at least a month, e.g.
+        //       "1000000-06".
 
 <date-packed>:
-        <year> (<month> <day>)?
+        <year-packed> (<month> <day>?)?
         // Allow truncation from the right:
         // Length-based interpretation for <date-packed> (not counting a sign):
         //   len = 1-4  → Y, YY, YYY, YYYY  → YYYY0101
@@ -191,45 +222,102 @@ CLOCK: one of
         // NOTE: The trailing <space>* is included in the CLOCK token
 
 <clock-broken>:
-        <hour> ":" <minute> (":" <second>)?  // allow truncation from the right
+        <tod-hour> ":" <minute> (":" <second>)?  // allow truncation from the right
 
 <clock-packed>:
-        <hour> (<minute> (<second>)?)?
+        <tod-hour> (<minute> (<second>)?)?
         // Allow truncation from the right:
         // Length-based interpretation for <clock-packed>.
         // Length is measured on the INTEGER part (before any decimal point).
         //   len = 1  → H       → 0H0000   decimals are not allowed
         //   len = 2  → HH      → HH0000   decimals are not allowed
-        //   len = 3  → HHM     → HH0M00   decimals accepted: HH0M00.dddd...
-        //   len = 4  → HHMM    → HHMM00   decimals accepted: HHMM00.dddd...
+        //   len = 3  → HHM     → HH0M00   decimals are not allowed
+        //   len = 4  → HHMM    → HHMM00   decimals are not allowed
         //   len = 5  → HHMMS   → HHMM0S   decimals accepted: HHMM0S.dddd...
         //   len = 6  → HHMMSS  → HHMMSS   decimals accepted: HHMMSS.dddd...
 
-<year>:
-        [+-]? [0-9]@{1,4@}    // year 0 is silently interpreted as year 1
+<year-broken>:
+        [+-]? [0-9]@{1,7@}
+        // Lexically accepts a sign and 1-7 digits
+        // Semantic validation: must be in the inclusive range -5,000,000 to 5,000,000
+        // NOTE: 8 or more digits is reported as a lexical error
+
+<year-packed>:
+        [+-]? [0-9]@{1,4@}
+        // Lexically accepts a sign and 1-4 digits, so the semantic year range
+        // (-5,000,000 to 5,000,000) cannot be exceeded in this form
 
 <month>:
-        "0"?[1-9] | "1"[0-2]
+        [0-9]@{1,2@}
+        // Lexically accepts any 1-2 digit number
+        // Semantic validation: must be 1-12
 
 <day>:
-        "0"?[1-9] | [1-2][0-9] | "30" | "31"
+        [0-9]@{1,2@}
+        // Lexically accepts any 1-2 digit number
+        // Semantic validation: must not exceed the per-month maximum:
+        //     Jan, Mar, May, Jul, Aug, Oct, Dec  →  1-31
+        //     Apr, Jun,      Sep, Nov            →  1-30
+        //     Feb                                →  1-30
+        // These maxima are deliberately lenient: the leap-year rule is not enforced
+        // (Feb 29 is accepted in every year) and February admits up to 30, which
+        // supports 360-day calendar input. Apr 31, Feb 31, etc. are rejected.
 
-<hour>:
-        [+-]?[0-1]?[0-9] | 2[0-3]
-        // In principle sign may appear in both time-of-day and timezone offsets. However,
-        // sign only applies to 0-19, not 20-23. This is correct: time-of-day (0-23) should
-        // be unsigned whereas timezone offsets that are in the range (±0-14) should have signs.
-        // BUG (main, 2026-05): when <hour> carries a sign and the hour magnitude is zero,
-        // the sign is silently dropped. Affects all signed timezone-offset forms;
-        // "-0:53", "-053", and "-0053" are all parsed as +0:53. The defect is in the
-        // decodeClock() helper in lib/scanner.l, not in this rule.
+<tod-hour>:
+        [0-9]@{1,2@}
+        // Lexically accepts any 1-2 digit number (no sign allowed)
+        // Semantic validation: must be 0-23
 
 <minute>:
-        [0-5]?[0-9]
+        [0-9]@{1,2@}
+        // Lexically accepts any 1-2 digit number
+        // Semantic validation: must be 0-59
 
 <second>:
-        (<minute> | "60") ("." <digit>*)?
-        // leap second (= 60) is silently interpreted as the same as 00 of the immediately succeeding minute
+        [0-9]@{1,2@} (\. <digit>*)?
+        // Lexically accepts any 1-2 digit number with optional decimal
+        // Semantic validation: 0 <= <second> < 60, except that
+        //     60 <= <second> < 61 is accepted at 23:59 (leap second)
+        // NOTE: a leap second is silently interpreted as 00 of the immediately
+        //       succeeding minute, e.g., 23:59:60.5 → 00:00:00.5 of the next day
+
+@c Timezone Elements
+
+TZ_CLOCK: one of
+        <tz-clock-broken>
+        <tz-clock-packed>
+
+<tz-clock-broken>:
+        <tz-hour> ":" <minute>     // timezone: no seconds; e.g., +11:00, -05:30
+
+<tz-clock-packed>:
+        <tz-hour> <minute>?        // timezone: no seconds; e.g., +11, -0530
+        // Length-based interpretation after the sign:
+        //   total_len(sign excluded) = 1 → H
+        //   total_len(sign excluded) = 2 → HH
+        //   total_len(sign excluded) = 3 → HHM, except that a leading zero is
+        //       rejected (e.g., "+053", "-053"); write "+0:53" or "+0053" instead
+        //   total_len(sign excluded) = 4 → HHMM
+
+<tz-hour>:
+        [+-][0-9]@{1,2@}
+        // Lexically accepts sign followed by any 1-2 digit number
+        // Semantic validation: must be ±0 to ±14, and ±14 only with <minute> = 00,
+        //     i.e., ±14:00 is the largest offset accepted
+        // NOTE: -00:00 (negative zero) is not allowed
+
+// The Z / GMT / UTC tokens are conventionally written in uppercase
+// (as shown below), but are accepted in any case: "z", "gmt", "Utc",
+// etc. all mean the same as their uppercase forms.
+
+Z_TOK:
+        "Z"     // case-insensitive
+
+GMT_TOK:
+        "GMT"   // case-insensitive
+
+UTC_TOK:
+        "UTC"   // case-insensitive
 
 @c Logarithmic Elements
 
@@ -242,7 +330,6 @@ LOGREF:
         "ln"
         "lb"
 
-<re>: one of
-        "re"
-        "RE"
+<re>:
+        [Rr][Ee]
 @end example

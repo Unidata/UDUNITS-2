@@ -55,6 +55,7 @@ EXTRA_DIST = udunits_snprintf.c \
              scanner.l \
              scanner.c \
              tsearch.c tsearch.h \
+             testParseLeak.c \
              udunits-1.c udunits.h \
              udunits2.xml \
              udunits2-accepted.xml \
@@ -72,9 +73,9 @@ LDADD			= \
     @LD_CUNIT@ \
     @LIBS_COVERAGE@ \
     @LIBS@
-check_PROGRAMS		= testUnits
+check_PROGRAMS		= testUnits testDateTime
 TESTS_ENVIRONMENT	= UDUNITS2_XML_PATH='$(srcdir)/udunits2.xml'
-TESTS = testUnits
+TESTS = testUnits testDateTime
 else
 LDADD			= @LIBS@
 endif

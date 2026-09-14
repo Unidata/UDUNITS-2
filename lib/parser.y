@@ -34,9 +34,25 @@
 
 extern int utlex (void);
 
+/*
+ *  YACC error routine. Defined in the post-%% section so it can inspect
+ *  yychar/yylval (declared by bison's generated yyparse). When the lookahead
+ *  is an ERR token carrying a scanner-supplied message, emit that message
+ *  instead of the generic "syntax error".
+ */
+void uterror(const char *s);
+
+/*
+ * Size of the error-message buffer carried on the ERR token. Used by
+ * scanner.l and by the parser's uterror() routine. Bumping this value
+ * automatically resizes the union member below and every snprintf that
+ * writes into it, provided callers use sizeof(yylval.error_msg) or
+ * UT_ERR_MSG_LEN.
+ */
+#define UT_ERR_MSG_LEN 256
+
 static ut_unit*		_finalUnit;	/* fully-parsed specification */
 static ut_system*	_unitSystem;	/* The unit-system to use */
-static char*		_errorMessage;	/* last error-message */
 static ut_encoding	_encoding;	/* encoding of string to be parsed */
 static int		_restartScanner;/* restart scanner? */
 static int		_isTime;        /* product_exp is time? */
@@ -87,24 +103,6 @@ ut_trim(
 }
 
 
-/*
- *  YACC error routine:
- */
-void
-uterror(
-    char        	*s)
-{
-    static char*	nomem = "uterror(): out of memory";
-
-    if (_errorMessage != NULL && _errorMessage != nomem)
-	free(_errorMessage);
-
-    _errorMessage = strdup(s);
-
-    if (_errorMessage == NULL)
-	_errorMessage = nomem;
-}
-
 /**
  * Parses an integer value into broken-down clock-time. The value is assumed to
  * have the form H[H[MM[SS]]].
@@ -127,62 +125,6 @@ static void to_clock(
     *hour = value / 10000;
     *minute = (value % 10000) / 100;
     *second = value % 100;
-}
-
-/**
- * Converts an integer value into a timezone offset as used by this package.
- *
- * @param[in]  value  The integer value. Must correspond to [+|-]H[H[MM]].
- * @param[out] time   The corresponding time as used by this package.
- * @retval     0      Success. "*time" is set.
- * @retval     -1     The integer value is invalid.
- */
-static int timezone_to_time(
-    const long    value,
-    double* const time)
-{
-    unsigned hour, minute, second;
-
-    if (value < -2400 || value > 2400)
-        return -1;
-
-    to_clock(value < 0 ? -value : value, &hour, &minute, &second);
-
-    if (hour > 24 || minute >= 60)
-        return -1;
-
-    *time = (value >= 0)
-            ? ut_encode_clock(hour, minute, second)
-            : -ut_encode_clock(hour, minute, second);
-
-    return 0;
-}
-
-/**
- * Converts an integer value into a time as used by this package.
- *
- * @param[in]  value  The integer value. Must correspond to H[H[MM[SS]]].
- * @param[out] time   The corresponding time as used by this package.
- * @retval     0      Success. "*time" is set.
- * @retval     -1     The integer value is invalid.
- */
-static int clock_to_time(
-    const long    value,
-    double* const time)
-{
-    unsigned hour, minute, second;
-
-    if (value < 0)
-        return -1;
-
-    to_clock(value, &hour, &minute, &second);
-
-    if (hour > 24 || minute >= 60 || second > 60) /* allow leap second */
-        return -1;
-
-    *time = ut_encode_clock(hour, minute, second);
-
-    return 0;
 }
 
 /**
@@ -210,9 +152,10 @@ static int isTime(
     ut_unit*	unit;			/* "unit" structure */
     double	rval;			/* floating-point numerical value */
     long	ival;			/* integer numerical value */
+    char	error_msg[UT_ERR_MSG_LEN];	/* error message from lexer */
 }
 
-%token  	ERR
+%token  <error_msg>	ERR
 %token		SHIFT
 %token  	MULTIPLY
 %token  	DIVIDE
@@ -222,7 +165,10 @@ static int isTime(
 %token  <id>	ID
 %token	<rval>	DATE
 %token	<rval>	CLOCK
-%token	<rval>	TIMESTAMP
+%token  <rval>  TZ_CLOCK
+%token          Z_TOK
+%token          GMT_TOK
+%token          UTC_TOK
 %token	<rval>	LOGREF
 
 %type	<unit>	unit_spec
@@ -232,6 +178,44 @@ static int isTime(
 %type   <unit>	basic_exp
 %type   <rval>	timestamp
 %type   <rval>	number
+
+/*
+ * Free the identifier string carried by any <id> token that the parser
+ * discards without reducing it through basic_exp:ID. This happens when a
+ * complete specification is followed by trailing text that the scanner
+ * tokenizes as an ID (e.g. "s since 2024-01-01 12:00 garbage"): the
+ * timestamp reduces to a full shift_exp and the trailing ID becomes an
+ * unreduced lookahead. Without this destructor the strdup() in the
+ * scanner's <INITIAL,CLOCK_SEEN>{id} rule leaks.
+ */
+%destructor { free($$); } ID
+
+/*
+ * NOTE on parser conflicts.
+ *
+ * This grammar has 3 shift/reduce and 9 reduce/reduce conflicts. Both are
+ * pre-existing (they predate the issue #124 datetime work) and are
+ * intentionally accepted rather than refactored out:
+ *
+ *   - The 3 shift/reduce conflicts are all in error-recovery paths
+ *     (`product_exp . error`, `'(' product_exp . error`) plus the
+ *     juxtaposition ambiguity at `basic_exp . INT` — e.g. in "m 2" the
+ *     parser must decide whether the INT is an exponent on the preceding
+ *     basic_exp or a fresh number being multiplied in. Bison's default
+ *     (shift) gives "m^2", which is the desired behavior.
+ *
+ *   - The 9 reduce/reduce conflicts are all inside `LOGREF product_exp
+ *     error`, where the same error sequence can reduce via two different
+ *     productions. Both paths produce the same user-visible "syntax
+ *     error" — the conflict is harmless.
+ *
+ * We deliberately do not use %expect: bison treats it as also asserting
+ * %expect-rr 0, and %expect-rr itself is GLR-only. Switching to a GLR
+ * parser is a larger change than these warnings warrant. The build will
+ * therefore continue to emit two conflict warnings on every build; a
+ * future PR refactoring the error-recovery rules should bring both
+ * counts down together.
+ */
 
 %%
 
@@ -436,60 +420,55 @@ number:		INT {
 		}
 		;
 
-timestamp:	DATE {
-		    $$ = $1;
-		} |
-		DATE CLOCK {
-		    $$ = $1 + $2;
-		} |
-		DATE CLOCK CLOCK {
-		    $$ = $1 + ($2 - $3);
-		} |
-		DATE CLOCK ID {
-		    int	error = 0;
-
-		    if (strcasecmp($3, "UTC") != 0 &&
-			    strcasecmp($3, "GMT") != 0 &&
-			    strcasecmp($3, "Z") != 0) {
-			ut_set_status(UT_UNKNOWN);
-			error = 1;
-		    }
-
-		    free($3);
-
-		    if (!error) {
-			$$ = $1 + $2;
-		    }
-		    else {
-			YYERROR;
-		    }
-		} |
-		TIMESTAMP {
-		    $$ = $1;
-		} |
-		TIMESTAMP CLOCK {
-		    $$ = $1 - $2;
-		} |
-		TIMESTAMP ID {
-		    int	error = 0;
-
-		    if (strcasecmp($2, "UTC") != 0 &&
-			    strcasecmp($2, "GMT") != 0 &&
-			    strcasecmp($2, "Z") != 0) {
-			ut_set_status(UT_UNKNOWN);
-			error = 1;
-		    }
-
-		    free($2);
-
-		    if (!error) {
-			$$ = $1;
-		    }
-		    else {
-			YYERROR;
-		    }
-		}
-		;
+timestamp:      DATE {
+                    $$ = $1;
+                } |
+                DATE CLOCK {
+                    $$ = $1 + $2;
+                } |
+                DATE CLOCK TZ_CLOCK {
+                    $$ = $1 + ($2 - $3);
+                } |
+                DATE CLOCK Z_TOK {
+                    $$ = $1 + $2;
+                } |
+                DATE CLOCK GMT_TOK {
+                    $$ = $1 + $2;
+                } |
+                DATE CLOCK UTC_TOK {
+                    $$ = $1 + $2;
+                } |
+                DATE Z_TOK {
+                    $$ = $1;
+                } |
+                ERR {
+                    /* Date parsing error. Some lexer paths emit the
+                       message themselves (e.g. via ut_check_date) and
+                       leave $1 empty to signal "do not re-emit". */
+                    if ($1[0] != '\0') ut_handle_error_message("%s", $1);
+                    YYERROR;
+                } |
+                DATE ERR {
+                    /* Clock parsing error (see ERR rule above). */
+                    if ($2[0] != '\0') ut_handle_error_message("%s", $2);
+                    YYERROR;
+                } |
+                DATE CLOCK ERR {
+                    /* Timezone offset parsing error (see ERR rule above). */
+                    if ($3[0] != '\0') ut_handle_error_message("%s", $3);
+                    YYERROR;
+                }
+                /*
+                 * Note: no `DATE error` / `DATE CLOCK error` productions.
+                 * They added two undeclared shift/reduce conflicts (the
+                 * parser couldn't tell whether `DATE . error` should reduce
+                 * `DATE` into a complete timestamp first or shift the
+                 * error into an inline rule). Removing them changes nothing
+                 * user-visible: errors after DATE/DATE-CLOCK now fall
+                 * through to the outer `product_exp SHIFT error` catcher,
+                 * which produces the same "syntax error" message.
+                 */
+                ;
 
 %%
 
@@ -530,6 +509,32 @@ timestamp:	DATE {
 #define yyrule		utyyrule
 
 #include "scanner.c"
+
+
+/*
+ *  YACC error routine.
+ *
+ *  Bison calls this with "syntax error" when the current lookahead (yychar)
+ *  has no valid action in the current parser state. The scanner attaches a
+ *  detailed message to yylval.error_msg for ERR tokens that diagnose
+ *  specific lexical problems (integer overflow, invalid date components,
+ *  disallowed NaN/Inf, etc.). When such an ERR is unconsumed by any
+ *  grammar production — i.e. it falls through to default error recovery —
+ *  this routine emits the scanner's detailed message instead of the
+ *  bison-supplied generic string.
+ *
+ *  Productions that consume ERR explicitly (see timestamp:) emit the
+ *  message inline and then invoke YYERROR, which does not call yyerror.
+ *  Those paths are unaffected.
+ */
+void uterror(const char *s)
+{
+    if (yychar == ERR && yylval.error_msg[0] != '\0') {
+        ut_handle_error_message("%s", yylval.error_msg);
+    } else {
+        ut_handle_error_message("%s", s);
+    }
+}
 
 
 /*
@@ -666,6 +671,35 @@ ut_parse(
                     /*
                      * Parsing terminated before the end of the string.
                      */
+					size_t consumed = (size_t)n;
+					const char* leftover = utf8String + consumed;
+
+					/*
+					 * Truncate leftover text for display (~50 chars).
+					 * %.47s is a byte-count cap, so we must not stop in
+					 * the middle of a UTF-8 multi-byte sequence; walk
+					 * back to the nearest lead byte (a non-continuation
+					 * byte, i.e. (c & 0xC0) != 0x80).
+					 */
+					char leftover_snippet[64];
+					size_t leftover_len = strlen(leftover);
+					if (leftover_len > 50) {
+					    size_t cut = 47;
+					    while (cut > 0 &&
+					           ((unsigned char)leftover[cut] & 0xC0) == 0x80) {
+					        --cut;
+					    }
+					    snprintf(leftover_snippet, sizeof(leftover_snippet),
+					             "%.*s...", (int)cut, leftover);
+					} else {
+					    snprintf(leftover_snippet, sizeof(leftover_snippet),
+					             "%s", leftover);
+					}
+
+					ut_handle_error_message(
+						"Unexpected text after unit specification: \"%s\"",
+						leftover_snippet);
+
                     ut_free(_finalUnit);
                     status = UT_SYNTAX;
                 }

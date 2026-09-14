@@ -110,6 +110,14 @@ static ut_system*	unitSystem = NULL;
 static char*            text = NULL;
 static size_t           nbytes = 0; /// Number of characters excluding NUL
 
+/*
+ * Upper bound on the text accumulated for a single XML element. Element text
+ * becomes unit names, symbols, and definitions, all of which are far shorter
+ * than this and are separately bounded to NAME_SIZE-1 by their consumers. The
+ * cap exists only to bound memory when parsing an untrusted database.
+ */
+#define MAX_ELEMENT_TEXT (4*1024)
+
 
 /*
  * Returns the plural form of a name.
@@ -343,6 +351,8 @@ utf8_to_latin1(
             return 0;
 
         if (!IS_ASCII(*in)) {
+            if (in[1] == 0)
+                return 0;       /* truncated multibyte sequence */
             numSpecial++;
             in++;
         }
@@ -944,7 +954,16 @@ accumulateText(
     const char*		string,		/* input text in UTF-8 */
     int			len)
 {
-    char*	tmp = realloc(text, nbytes + len + 1);
+    char*	tmp;
+
+    if (len < 0 || nbytes + (size_t)len + 1 > MAX_ELEMENT_TEXT) {
+	ut_set_status(UT_SYNTAX);
+	ut_handle_error_message("Element text is too long");
+	XML_StopParser(currFile->parser, 0);
+	return;
+    }
+
+    tmp = realloc(text, nbytes + len + 1);
 
     if (tmp == NULL) {
         ut_set_status(UT_OS);
@@ -2149,8 +2168,12 @@ default_udunits2_xml_path()
             }
             else {
                 strncpy(buf, info.dli_fname, sizeof(buf))[sizeof(buf)-1] = 0;
-                memmove(buf, dirname(buf), sizeof(buf)); // "lib"
-                memmove(buf, dirname(buf), sizeof(buf)); // "lib/.."
+                {
+                    char* dir = dirname(buf);   // strip filename
+                    memmove(buf, dir, strlen(dir) + 1);
+                    dir = dirname(buf);         // strip "lib"
+                    memmove(buf, dir, strlen(dir) + 1);
+                }
                 prefix = buf;
             }
 #       elif defined(_WIN32)

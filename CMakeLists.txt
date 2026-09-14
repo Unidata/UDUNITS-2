@@ -4,7 +4,25 @@ PROJECT(udunits VERSION 2.2.28
         DESCRIPTION "C library and utility for units of physical quantities")
 set(CMAKE_PROJECT_HOMEPAGE_URL https://www.unidata.ucar.edu/software/udunits)
 
-# Specify the C standard
+# Specify the C standard.
+#
+# C99 is the baseline, and it is load-bearing rather than aspirational: the
+# library does not compile as C90 on any platform. lib/unitcore.c uses
+# `long long` (in decodeTime, for dates near year 1) with no platform guard,
+# and C99 declaration and comment forms are used throughout lib/ and prog/.
+#
+# Portable subset: C99 MINUS variable-length arrays. MSVC has never
+# implemented VLAs -- they are optional in C11 and absent from MSVC in every
+# mode -- so a VLA compiles on the POSIX targets and fails on Windows. The
+# one VLA in the tree, in lib/xml.c (default_udunits2_xml_path), sits inside
+# the `#else` of an `#ifdef _MSC_VER`, which is why the Windows builds pass;
+# treat that as the pattern to follow rather than as licence to add more.
+#
+# Note that configure.ac states no standard at all (bare AC_PROG_CC under
+# AC_PREREQ 2.59). The autotools build works because autoconf >= 2.70 selects
+# the newest standard the compiler supports, and because gcc/clang default to
+# gnu11 or later regardless. The two build systems therefore agree in practice
+# but not on paper.
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED True)
 
