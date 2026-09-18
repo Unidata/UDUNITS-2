@@ -1949,6 +1949,142 @@ test_parsing(void)
     CU_ASSERT_EQUAL(ut_compare(unit, dBZ), 0);
     ut_free(unit);
 
+    /*
+     * The LOGREF "re" marker must not swallow the first two letters of an
+     * ordinary identifier that happens to start with "re" (issue #156's
+     * scanner-boundary group). "rem" (the radiation-dose unit) is a real
+     * offender: before the fix, "lg(rem)" silently lexed as LOGREF "lg(re"
+     * followed by identifier "m" (meter), so it *parsed successfully* to
+     * the wrong unit -- log base 10 referenced to one meter -- instead of
+     * failing outright.
+     */
+    spec = "lg(rem)";
+    unit = ut_parse(unitSystem, spec, UT_ASCII);
+    CU_ASSERT_PTR_NULL(unit);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_UNKNOWN);
+
+    spec = "ln(refrigeration_ton)";
+    unit = ut_parse(unitSystem, spec, UT_ASCII);
+    CU_ASSERT_PTR_NULL(unit);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_UNKNOWN);
+
+    /*
+     * The identifier-swallow bug is not an ASCII-only problem: the
+     * scanner's actual identifier alphabet ({letter}/{alphanum} in
+     * scanner.l) includes Latin-1 and multi-byte UTF-8 characters such as
+     * the micro sign. "re" immediately followed by one of those must be
+     * rejected exactly like "re" followed by an ASCII letter -- an earlier,
+     * since-replaced version of this fix checked only the ASCII class
+     * [^A-Za-z0-9_], so "lg(re\xc2\xb5m)" ("lg(reµm)") still silently
+     * swallowed "re" and resolved to "lg(re 1 µm)", the same class of bug
+     * as "lg(rem)" above, just for a non-ASCII unit name.
+     */
+    spec = "lg(re\xc2\xb5m)";
+    unit = ut_parse(unitSystem, spec, UT_UTF8);
+    CU_ASSERT_PTR_NULL(unit);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_UNKNOWN);
+
+    /*
+     * "re" is now recognized only when followed by an explicit separator
+     * (a colon or whitespace) -- never bare. That is a deliberate
+     * compatibility break: earlier releases accepted a delimiter-free
+     * numeric reference such as "lg(re1 nV)", and the previous formal
+     * grammar (<re> ":"? <space>*, both parts independently nullable)
+     * genuinely permitted it, even though it was apparently unintended and
+     * not covered by the test suite. The same applies to a sign- or
+     * decimal-point-led reference immediately following "re" with no
+     * separator; an earlier, since-replaced version of this fix let those
+     * through by accident (a sign or "." happened to fall outside the
+     * ASCII class it checked), which was its own unjustifiable asymmetry
+     * with the digit-led case. All delimiter-free forms are rejected
+     * uniformly now.
+     */
+    spec = "lg(re1 nV)";
+    unit = ut_parse(unitSystem, spec, UT_ASCII);
+    CU_ASSERT_PTR_NULL(unit);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_UNKNOWN);
+
+    spec = "lg(re+1 nV)";
+    unit = ut_parse(unitSystem, spec, UT_ASCII);
+    CU_ASSERT_PTR_NULL(unit);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_UNKNOWN);
+
+    spec = "lg(re-1 nV)";
+    unit = ut_parse(unitSystem, spec, UT_ASCII);
+    CU_ASSERT_PTR_NULL(unit);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_UNKNOWN);
+
+    spec = "lg(re.5 nV)";
+    unit = ut_parse(unitSystem, spec, UT_ASCII);
+    CU_ASSERT_PTR_NULL(unit);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_UNKNOWN);
+
+    /*
+     * Positive complement to the swallow-rejection tests above: an
+     * identifier that happens to start with "re" must remain usable as
+     * the actual reference unit once "re" is properly delimited. This
+     * proves the fix rejects "re" swallowing an identifier, not
+     * "re"-prefixed identifiers generally. "rem" is mapped here as a
+     * throwaway alias for "meter" purely so the test has a real, defined
+     * unit name beginning with "re" to exercise.
+     */
+    CU_ASSERT_EQUAL(ut_map_name_to_unit("rem", UT_ASCII, meter), UT_SUCCESS);
+    {
+        ut_unit* viaRem;
+        ut_unit* viaMeter;
+
+        spec = "lg(re 1 rem)";
+        viaRem = ut_parse(unitSystem, spec, UT_ASCII);
+        CU_ASSERT_PTR_NOT_NULL_FATAL(viaRem);
+
+        spec = "lg(re 1 m)";
+        viaMeter = ut_parse(unitSystem, spec, UT_ASCII);
+        CU_ASSERT_PTR_NOT_NULL_FATAL(viaMeter);
+
+        CU_ASSERT_EQUAL(ut_compare(viaRem, viaMeter), 0);
+        ut_free(viaRem);
+        ut_free(viaMeter);
+    }
+
+    /* A bare "re" immediately followed by the unit's closing parenthesis
+     * (no reference value at all) is still a syntax error, not a swallow --
+     * "re" is never matched without an explicit separator, so this now
+     * fails to lex as LOGREF at all and "re" is left as an ordinary,
+     * unresolvable identifier. Either way, it was already a syntax error
+     * before this fix too, since LOGREF requires a product_exp before ')'. */
+    spec = "lb(re)";
+    unit = ut_parse(unitSystem, spec, UT_ASCII);
+    CU_ASSERT_PTR_NULL(unit);
+
+    /*
+     * A colon immediately followed by non-space (no space between "re:"
+     * and the reference value) was previously left dangling and rejected;
+     * it must now parse identically to the space-separated form.
+     */
+    {
+        ut_unit* spaceForm;
+
+        spec = "lg(re 1e-3 kg.m2.s-3)";
+        spaceForm = ut_parse(unitSystem, spec, UT_ASCII);
+        CU_ASSERT_PTR_NOT_NULL_FATAL(spaceForm);
+
+        spec = "lg(re:1e-3 kg.m2.s-3)";
+        unit = ut_parse(unitSystem, spec, UT_ASCII);
+        CU_ASSERT_PTR_NOT_NULL(unit);
+        CU_ASSERT_EQUAL(ut_compare(unit, spaceForm), 0);
+        ut_free(unit);
+
+        /* Case-insensitivity and extra internal whitespace around "re"
+         * must keep working exactly as before. */
+        spec = "lg(Re   1e-3 kg.m2.s-3)";
+        unit = ut_parse(unitSystem, spec, UT_ASCII);
+        CU_ASSERT_PTR_NOT_NULL(unit);
+        CU_ASSERT_EQUAL(ut_compare(unit, spaceForm), 0);
+        ut_free(unit);
+
+        ut_free(spaceForm);
+    }
+
     {
         char    buf[] = " (K/1.8) @ 459.67 ";
 

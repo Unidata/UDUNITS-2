@@ -537,7 +537,8 @@ broken_clock		{tod_hour}:{minute}(:{second})?
 packed_clock		{tod_hour}({minute}{second}?)?
 broken_tz_clock		{tz_hour}:{minute}
 packed_tz_clock		{tz_hour}{minute}?
-logref			\({space}*[Rr][Ee](:{space})?{space}*
+logref_head		\({space}*[Rr][Ee]
+logref_sep		(:{space}*|{space}+)
 after                   [Aa][Ff][Tt][Ee][Rr]
 from                    [Ff][Rr][Oo][Mm]
 since                   [Ss][Ii][Nn][Cc][Ee]
@@ -860,17 +861,46 @@ idchar       [A-Za-z0-9_]
     return status;
 }
 
-(log|lg){space}*{logref} {
+    /*
+     * The "re" marker of a logarithmic-unit reference (e.g. "lg(re 1 nV)" or
+     * "lg(re:1 nV)") is recognized only when it is followed by an explicit
+     * separator: a colon (optionally followed by spaces), or one or more
+     * spaces. "re" is never matched bare.
+     *
+     * An earlier version of this rule instead used flex trailing context to
+     * allow a bare "re" whenever the next character could not itself extend
+     * an identifier, checking that against the ASCII class
+     * [^A-Za-z0-9_]. That was wrong on two counts: the scanner's actual
+     * identifier alphabet ({letter}/{alphanum} above) is far broader than
+     * ASCII -- it includes Latin-1 and multi-byte UTF-8 sequences such as
+     * the micro sign -- so a non-ASCII identifier continuation (e.g. the
+     * "re" in "lg(re\xc2\xb5m)", i.e. "reµm") was invisible to that class and
+     * still got silently swallowed, exactly the bug this rule exists to
+     * prevent. It also meant a numeric reference could immediately follow
+     * "re" with no separator at all as long as its first character (a sign
+     * or decimal point) happened not to be in that class, while a
+     * digit-first reference could not -- an accidental, unjustifiable
+     * asymmetry. Requiring an explicit separator unconditionally avoids
+     * both problems: nothing after "re" can ever extend it into a longer
+     * identifier, regardless of script, and the two behaviors are no longer
+     * asymmetric. This does mean a delimiter-free numeric reference such as
+     * "lg(re1 nV)" -- accepted by earlier releases and permitted by the
+     * previous formal grammar (both ":"? and <space>* there could match
+     * zero characters), although apparently unintended and not covered by
+     * the test suite -- is no longer accepted; write "lg(re 1 nV)" or
+     * "lg(re:1 nV)" instead.
+     */
+(log|lg){space}*{logref_head}{logref_sep} {
     yylval.rval = 10;
     return LOGREF;
 }
 
-ln{space}*{logref} {
+ln{space}*{logref_head}{logref_sep} {
     yylval.rval = M_E;
     return LOGREF;
 }
 
-lb{space}*{logref} {
+lb{space}*{logref_head}{logref_sep} {
     yylval.rval = 2;
     return LOGREF;
 }
