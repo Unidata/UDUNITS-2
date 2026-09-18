@@ -84,7 +84,7 @@ Here is the unit-syntax understood by the UDUNITS-2 package. Words printed \_Thu
     <exponent>:
             ("e" | "E") [+-]? <digit>+
 
-    // Note: NaN and Inf[inity] are explicitly excluded (cf. PR #136)
+    // Note: NaN and Inf[inity] are explicitly excluded
 
 // Identifiers
 
@@ -124,8 +124,8 @@ Here is the unit-syntax understood by the UDUNITS-2 package. Words printed \_Thu
             <space>* <divide-op> <space>*
 
     <divide-op>: one of
-            " per "      // surrounding space required, cf. PR #135
-            " PER "      // surrounding space required, cf. PR #135
+            " per "      // surrounding space required
+            " PER "      // surrounding space required
             "/"
 
     EXPONENT: one of
