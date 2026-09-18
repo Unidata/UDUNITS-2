@@ -884,9 +884,11 @@ idchar       [A-Za-z0-9_]
      * both problems: nothing after "re" can ever extend it into a longer
      * identifier, regardless of script, and the two behaviors are no longer
      * asymmetric. This does mean a delimiter-free numeric reference such as
-     * "lg(re1 nV)" -- accepted by earlier releases as an accident of the
-     * old, ambiguous rule, and never documented or tested -- is no longer
-     * accepted; write "lg(re 1 nV)" or "lg(re:1 nV)" instead.
+     * "lg(re1 nV)" -- accepted by earlier releases and permitted by the
+     * previous formal grammar (both ":"? and <space>* there could match
+     * zero characters), although apparently unintended and not covered by
+     * the test suite -- is no longer accepted; write "lg(re 1 nV)" or
+     * "lg(re:1 nV)" instead.
      */
 (log|lg){space}*{logref_head}{logref_sep} {
     yylval.rval = 10;

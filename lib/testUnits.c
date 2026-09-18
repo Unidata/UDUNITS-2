@@ -1986,16 +1986,18 @@ test_parsing(void)
 
     /*
      * "re" is now recognized only when followed by an explicit separator
-     * (a colon or whitespace) -- never bare. That is a deliberate,
-     * documented compatibility break: earlier releases accepted a
-     * delimiter-free numeric reference such as "lg(re1 nV)" as an accident
-     * of the old, ambiguous scanner rule (it was never tested or mentioned
-     * in GRAMMAR.md). The same applies to a sign- or decimal-point-led
-     * reference immediately following "re" with no separator; an earlier,
-     * since-replaced version of this fix let those through by accident
-     * (a sign or "." happened to fall outside the ASCII class it checked),
-     * which was its own unjustifiable asymmetry with the digit-led case.
-     * All delimiter-free forms are rejected uniformly now.
+     * (a colon or whitespace) -- never bare. That is a deliberate
+     * compatibility break: earlier releases accepted a delimiter-free
+     * numeric reference such as "lg(re1 nV)", and the previous formal
+     * grammar (<re> ":"? <space>*, both parts independently nullable)
+     * genuinely permitted it, even though it was apparently unintended and
+     * not covered by the test suite. The same applies to a sign- or
+     * decimal-point-led reference immediately following "re" with no
+     * separator; an earlier, since-replaced version of this fix let those
+     * through by accident (a sign or "." happened to fall outside the
+     * ASCII class it checked), which was its own unjustifiable asymmetry
+     * with the digit-led case. All delimiter-free forms are rejected
+     * uniformly now.
      */
     spec = "lg(re1 nV)";
     unit = ut_parse(unitSystem, spec, UT_ASCII);
@@ -2016,6 +2018,33 @@ test_parsing(void)
     unit = ut_parse(unitSystem, spec, UT_ASCII);
     CU_ASSERT_PTR_NULL(unit);
     CU_ASSERT_EQUAL(ut_get_status(), UT_UNKNOWN);
+
+    /*
+     * Positive complement to the swallow-rejection tests above: an
+     * identifier that happens to start with "re" must remain usable as
+     * the actual reference unit once "re" is properly delimited. This
+     * proves the fix rejects "re" swallowing an identifier, not
+     * "re"-prefixed identifiers generally. "rem" is mapped here as a
+     * throwaway alias for "meter" purely so the test has a real, defined
+     * unit name beginning with "re" to exercise.
+     */
+    CU_ASSERT_EQUAL(ut_map_name_to_unit("rem", UT_ASCII, meter), UT_SUCCESS);
+    {
+        ut_unit* viaRem;
+        ut_unit* viaMeter;
+
+        spec = "lg(re 1 rem)";
+        viaRem = ut_parse(unitSystem, spec, UT_ASCII);
+        CU_ASSERT_PTR_NOT_NULL_FATAL(viaRem);
+
+        spec = "lg(re 1 m)";
+        viaMeter = ut_parse(unitSystem, spec, UT_ASCII);
+        CU_ASSERT_PTR_NOT_NULL_FATAL(viaMeter);
+
+        CU_ASSERT_EQUAL(ut_compare(viaRem, viaMeter), 0);
+        ut_free(viaRem);
+        ut_free(viaMeter);
+    }
 
     /* A bare "re" immediately followed by the unit's closing parenthesis
      * (no reference value at all) is still a syntax error, not a swallow --
