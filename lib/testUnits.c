@@ -1738,6 +1738,30 @@ test_parsing(void)
     CU_ASSERT_PTR_NULL(unit);
     CU_ASSERT_EQUAL(ut_get_status(), UT_UNKNOWN);
 
+    /* Issue 179: an exponent outside ut_raise()'s range fails with UT_BAD_ARG
+     * inside the parser; freeing the operand afterwards must not overwrite
+     * that status with UT_SUCCESS. */
+    spec = "m-256";
+    unit = ut_parse(unitSystem, spec, UT_ASCII);
+    CU_ASSERT_PTR_NULL(unit);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
+
+    spec = "m^256";
+    unit = ut_parse(unitSystem, spec, UT_ASCII);
+    CU_ASSERT_PTR_NULL(unit);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
+
+    spec = "kg m-256";
+    unit = ut_parse(unitSystem, spec, UT_ASCII);
+    CU_ASSERT_PTR_NULL(unit);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
+
+    spec = "m-255";
+    unit = ut_parse(unitSystem, spec, UT_ASCII);
+    CU_ASSERT_PTR_NOT_NULL(unit);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SUCCESS);
+    ut_free(unit);
+
     unit = ut_parse(unitSystem, NULL, UT_ASCII);
     CU_ASSERT_PTR_NULL(unit);
     CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
