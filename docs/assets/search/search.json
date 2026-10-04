@@ -1,0 +1,1322 @@
+[
+
+
+
+
+{
+"title": "Basic Examples",
+"tags": "",
+"keywords": "",
+"url": "basic-examples.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "Building from Source",
+"tags": "",
+"keywords": "",
+"url": "building-from-source.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "Building Applications",
+"tags": "",
+"keywords": "",
+"url": "building-applications.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "API Function Index",
+"tags": "",
+"keywords": "",
+"url": "c-api-function-index.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "UDUNITS-2 C API Overview",
+"tags": "",
+"keywords": "",
+"url": "c-api-overview.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "Compiler &amp; Linker Flags",
+"tags": "",
+"keywords": "",
+"url": "compiler-linker-flags.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "Converters",
+"tags": "",
+"keywords": "",
+"url": "concepts-converters.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "Dimensions",
+"tags": "",
+"keywords": "",
+"url": "concepts-dimensions.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "Concepts Overview",
+"tags": "",
+"keywords": "",
+"url": "concepts-overview.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "Unit Expressions",
+"tags": "",
+"keywords": "",
+"url": "concepts-unit-expressions.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "Unit Systems",
+"tags": "",
+"keywords": "",
+"url": "concepts-unit-systems.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "Units",
+"tags": "",
+"keywords": "",
+"url": "concepts-units.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "Conda Installation",
+"tags": "",
+"keywords": "",
+"url": "conda-installation.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "Configure Script Options",
+"tags": "",
+"keywords": "",
+"url": "configure-options.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "cv_combine()",
+"tags": "",
+"keywords": "",
+"url": "cv-combine.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "cv_convert_double()",
+"tags": "",
+"keywords": "",
+"url": "cv-convert-double.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "cv_convert_doubles()",
+"tags": "",
+"keywords": "",
+"url": "cv-convert-doubles.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "cv_convert_float()",
+"tags": "",
+"keywords": "",
+"url": "cv-convert-float.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "cv_convert_floats()",
+"tags": "",
+"keywords": "",
+"url": "cv-convert-floats.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "cv_converter",
+"tags": "",
+"keywords": "",
+"url": "cv-converter.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "cv_free()",
+"tags": "",
+"keywords": "",
+"url": "cv-free.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "Data Structures",
+"tags": "",
+"keywords": "",
+"url": "data-structures.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "Developing UDUNITS-2",
+"tags": "",
+"keywords": "",
+"url": "developing-udunits.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "Environment Variables",
+"tags": "",
+"keywords": "",
+"url": "environment-variables.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "Error Handling API",
+"tags": "",
+"keywords": "",
+"url": "error-handling-api.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "Extended Unit API",
+"tags": "",
+"keywords": "",
+"url": "extended-unit-api.html",
+"summary": ""
+}
+
+
+
+
+
+
+,
+{
+"title": "Function man Pages",
+"tags": "",
+"keywords": "",
+"url": "function-man-pages.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "Overview of UDUNITS-2",
+"tags": "",
+"keywords": "",
+"url": "index.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "Installation Layout",
+"tags": "",
+"keywords": "",
+"url": "installation-layout.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "Package Manager Installation",
+"tags": "",
+"keywords": "",
+"url": "package-manager-installation.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "Quick Start Guide",
+"tags": "",
+"keywords": "",
+"url": "quick-start-guide.html",
+"summary": ""
+}
+
+
+
+
+
+
+,
+{
+"title": "Troubleshooting API Issues",
+"tags": "",
+"keywords": "",
+"url": "troubleshooting-api-issues.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "UDUNITS-1 Data Structures",
+"tags": "",
+"keywords": "",
+"url": "udunits-1-data-structures.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "UDUNITS-1 Legacy API",
+"tags": "",
+"keywords": "",
+"url": "udunits-1-legacy-api.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "udunits2 CLI Utility",
+"tags": "",
+"keywords": "",
+"url": "udunits2-cli-utility.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "Unit Arithmetic API",
+"tags": "",
+"keywords": "",
+"url": "unit-arithmetic-api.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "Unit Conversion API",
+"tags": "",
+"keywords": "",
+"url": "unit-conversion-api.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "Unit Creation &amp; Destruction API",
+"tags": "",
+"keywords": "",
+"url": "unit-creation-destruction-api.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "Unit Name &amp; Symbols Mapping API",
+"tags": "",
+"keywords": "",
+"url": "unit-name-symbols-mapping-api.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "Unit Parsing &amp; Formatting API",
+"tags": "",
+"keywords": "",
+"url": "unit-parsing-formatting-api.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "Unit Query &amp; Introspection API",
+"tags": "",
+"keywords": "",
+"url": "unit-query-introspection-api.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "Unit Systems API",
+"tags": "",
+"keywords": "",
+"url": "unit-systems-api.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "Unit Time Utilities API",
+"tags": "",
+"keywords": "",
+"url": "unit-time-utilities-api.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "Unit Expression Language",
+"tags": "",
+"keywords": "",
+"url": "unit-expression-language.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "Unit Expression Language Specification",
+"tags": "",
+"keywords": "",
+"url": "unit-expression-language-specification.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "Units Database",
+"tags": "",
+"keywords": "",
+"url": "units-database.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "Using the C API",
+"tags": "",
+"keywords": "",
+"url": "using-the-c-api.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "ut_accept_visitor()",
+"tags": "",
+"keywords": "",
+"url": "ut-accept-visitor.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "ut_add_name_prefix()",
+"tags": "",
+"keywords": "",
+"url": "ut-add-name-prefix.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "ut_add_symbol_prefix()",
+"tags": "",
+"keywords": "",
+"url": "ut-add-symbol-prefix.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "ut_are_convertible()",
+"tags": "",
+"keywords": "",
+"url": "ut-are-convertible.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "ut_clone()",
+"tags": "",
+"keywords": "",
+"url": "ut-clone.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "ut_compare()",
+"tags": "",
+"keywords": "",
+"url": "ut-compare.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "ut_decode_time()",
+"tags": "",
+"keywords": "",
+"url": "ut-decode-time.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "ut_divide()",
+"tags": "",
+"keywords": "",
+"url": "ut-divide.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "ut_encode_clock()",
+"tags": "",
+"keywords": "",
+"url": "ut-encode-clock.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "ut_encode_date()",
+"tags": "",
+"keywords": "",
+"url": "ut-encode-date.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "ut_encode_time()",
+"tags": "",
+"keywords": "",
+"url": "ut-encode-time.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "ut_format()",
+"tags": "",
+"keywords": "",
+"url": "ut-format.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "ut_free_system()",
+"tags": "",
+"keywords": "",
+"url": "ut-free-system.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "ut_free()",
+"tags": "",
+"keywords": "",
+"url": "ut-free.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "ut_get_converter()",
+"tags": "",
+"keywords": "",
+"url": "ut-get-converter.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "ut_get_dimensionless_unit_one()",
+"tags": "",
+"keywords": "",
+"url": "ut-get-dimensionless-unit-one.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "ut_get_name()",
+"tags": "",
+"keywords": "",
+"url": "ut-get-name.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "ut_get_path_xml()",
+"tags": "",
+"keywords": "",
+"url": "ut-get-path-xml.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "ut_get_status()",
+"tags": "",
+"keywords": "",
+"url": "ut-get-status.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "ut_get_symbol()",
+"tags": "",
+"keywords": "",
+"url": "ut-get-symbol.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "ut_get_system()",
+"tags": "",
+"keywords": "",
+"url": "ut-get-system.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "ut_get_unit_by_name()",
+"tags": "",
+"keywords": "",
+"url": "ut-get-unit-by-name.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "ut_get_unit_by_symbol()",
+"tags": "",
+"keywords": "",
+"url": "ut-get-unit-by-symbol.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "ut_handle_error_message()",
+"tags": "",
+"keywords": "",
+"url": "ut-handle-error-message.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "ut_ignore()",
+"tags": "",
+"keywords": "",
+"url": "ut-ignore.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "ut_invert()",
+"tags": "",
+"keywords": "",
+"url": "ut-invert.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "ut_is_dimensionless()",
+"tags": "",
+"keywords": "",
+"url": "ut-is-dimensionless.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "ut_log()",
+"tags": "",
+"keywords": "",
+"url": "ut-log.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "ut_map_name_to_unit()",
+"tags": "",
+"keywords": "",
+"url": "ut-map-name-to-unit.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "ut_map_symbol_to_unit()",
+"tags": "",
+"keywords": "",
+"url": "ut-map-symbol-to-unit.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "ut_map_unit_to_name()",
+"tags": "",
+"keywords": "",
+"url": "ut-map-unit-to-name.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "ut_map_unit_to_symbol()",
+"tags": "",
+"keywords": "",
+"url": "ut-map-unit-to-symbol.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "ut_multiply()",
+"tags": "",
+"keywords": "",
+"url": "ut-multiply.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "ut_new_base_unit()",
+"tags": "",
+"keywords": "",
+"url": "ut-new-base-unit.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "ut_new_dimensionless_unit()",
+"tags": "",
+"keywords": "",
+"url": "ut-new-dimensionless-unit.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "ut_new_system()",
+"tags": "",
+"keywords": "",
+"url": "ut-new-system.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "ut_offset_by_time()",
+"tags": "",
+"keywords": "",
+"url": "ut-offset-by-time.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "ut_offset()",
+"tags": "",
+"keywords": "",
+"url": "ut-offset.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "ut_parse()",
+"tags": "",
+"keywords": "",
+"url": "ut-parse.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "ut_raise()",
+"tags": "",
+"keywords": "",
+"url": "ut-raise.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "ut_read_xml()",
+"tags": "",
+"keywords": "",
+"url": "ut-read-xml.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "ut_root()",
+"tags": "",
+"keywords": "",
+"url": "ut-root.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "ut_same_system()",
+"tags": "",
+"keywords": "",
+"url": "ut-same-system.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "ut_scale()",
+"tags": "",
+"keywords": "",
+"url": "ut-scale.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "ut_set_error_message_handler()",
+"tags": "",
+"keywords": "",
+"url": "ut-set-error-message-handler.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "ut_set_second()",
+"tags": "",
+"keywords": "",
+"url": "ut-set-second.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "ut_set_status()",
+"tags": "",
+"keywords": "",
+"url": "ut-set-status.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "ut_system",
+"tags": "",
+"keywords": "",
+"url": "ut-system.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "ut_trim()",
+"tags": "",
+"keywords": "",
+"url": "ut-trim.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "ut_unit",
+"tags": "",
+"keywords": "",
+"url": "ut-unit.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "ut_unmap_name_to_unit()",
+"tags": "",
+"keywords": "",
+"url": "ut-unmap-name-to-unit.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "ut_unmap_symbol_to_unit()",
+"tags": "",
+"keywords": "",
+"url": "ut-unmap-symbol-to-unit.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "ut_unmap_unit_to_name()",
+"tags": "",
+"keywords": "",
+"url": "ut-unmap-unit-to-name.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "ut_unmap_unit_to_symbol()",
+"tags": "",
+"keywords": "",
+"url": "ut-unmap-unit-to-symbol.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "ut_write_to_stderr()",
+"tags": "",
+"keywords": "",
+"url": "ut-write-to-stderr.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "utConvert()",
+"tags": "",
+"keywords": "",
+"url": "utConvert.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "utCopy()",
+"tags": "",
+"keywords": "",
+"url": "utCopy.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "utFree()",
+"tags": "",
+"keywords": "",
+"url": "utFree.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "utIsTime()",
+"tags": "",
+"keywords": "",
+"url": "utIsTime.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "utPrint()",
+"tags": "",
+"keywords": "",
+"url": "utPrint.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "utScan()",
+"tags": "",
+"keywords": "",
+"url": "utScan.html",
+"summary": ""
+}
+
+
+
+
+,
+{
+"title": "XML Units Database Reference",
+"tags": "",
+"keywords": "",
+"url": "xml-units-database-reference.html",
+"summary": ""
+}
+
+
+
+
+
+
+
+
+
+]
