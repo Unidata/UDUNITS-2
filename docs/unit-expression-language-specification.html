@@ -1,0 +1,1464 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="">
+<meta name="keywords" content=" ">
+<meta name="doc_version" content="2.2.28">
+<title>Unit Expression Language Specification | UDUNITS-2 Documentation</title>
+<link rel="stylesheet" href="assets/css/syntax.css">
+
+
+<link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
+<!--<link rel="stylesheet" type="text/css" href="assets/css/bootstrap.min.css">-->
+<link rel="stylesheet" href="assets/css/modern-business.css">
+<link rel="stylesheet" href="assets/css/lavish-bootstrap.css">
+<link rel="stylesheet" href="assets/css/theme-unidata.css">
+<link rel="stylesheet" href="assets/css/customstyles.css">
+
+<script
+    src="https://code.jquery.com/jquery-3.7.1.min.js"
+    integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
+    crossorigin="anonymous"></script>
+<script
+    src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"
+    integrity="sha512-3j3VU6WC5rPQB4Ld1jnLV7Kd5xr+cq9avvhwqzbH/taCRNURoeEpoPBK9pDyeukwSxwRPJ8fDgvYXd6SkaZ2TA=="
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"></script>
+<script src="assets/js/jquery.navgoco.min.js"></script>
+
+
+<script
+    src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
+    integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
+    crossorigin="anonymous"></script>
+<script
+    src="https://cdnjs.cloudflare.com/ajax/libs/anchor-js/4.3.1/anchor.min.js"
+    integrity="sha512-zPB79j2C+3sFS9zcA3vg/z6bVKzJVEyu9pY5w89akQRys76zpAT2t6S3wZKla3QQ14O5l/Yt0RUQ/DHXx82Y5g=="
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"></script>
+<script src="assets/js/toc.js"></script>
+<script src="assets/js/customscripts.js"></script>
+
+<link rel="shortcut icon" href="assets/images/favicon.ico">
+
+  <script>
+    $(document).ready(function () {
+      // Initialize navgoco with default options
+      $("#mysidebar").navgoco({
+        caretHtml: '',
+        accordion: true,
+        openClass: 'active', // open
+        save: false, // leave false or nav highlighting doesn't work right
+        cookie: {
+          name: 'navgoco',
+          expires: false,
+          path: '/'
+        },
+        slide: {
+          duration: 400,
+          easing: 'swing'
+        }
+      });
+
+      $("#collapseAll").click(function (e) {
+        e.preventDefault();
+        $("#mysidebar").navgoco('toggle', false);
+      });
+
+      $("#expandAll").click(function (e) {
+        e.preventDefault();
+        $("#mysidebar").navgoco('toggle', true);
+      });
+
+    });
+
+  </script>
+  <script>
+    $(function () {
+      $('[data-toggle="tooltip"]').tooltip()
+    })
+  </script>
+  <script>
+    $(document).ready(function () {
+      $("#tg-sb-link").click(function () {
+        $("#tg-sb-sidebar").toggle();
+        $("#tg-sb-content").toggleClass('col-md-9');
+        $("#tg-sb-content").toggleClass('col-md-12');
+        $("#tg-sb-icon").toggleClass('fa-toggle-on');
+        $("#tg-sb-icon").toggleClass('fa-toggle-off');
+      });
+    });
+  </script>
+  
+
+</head>
+
+<body>
+  <!-- Navigation -->
+<nav class="navbar navbar-inverse navbar-static-top">
+    <div class="container topnavlinks">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="fa fa-home fa-lg navbar-brand" href="index.html" style="padding-right:0px;">&nbsp;<span class="projectTitle">
+          UDUNITS-2 Documentation</span></a>
+        </div>
+        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+            <ul class="nav navbar-nav navbar-left">
+              
+              <li class="dropdown" id="vermenu">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">Version 2.2.28<b class="caret"></b></a>
+                <ul class="dropdown-menu" id="docmenu">
+                  
+                  
+                  <li id="remove"><a href="">Menu Loading...</a></li>
+                  
+                  
+                </ul>
+              </li>
+              
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <!-- toggle sidebar button -->
+                <li><a id="tg-sb-link" href="#"><i id="tg-sb-icon" class="fa fa-toggle-on"></i> Nav</a></li>
+                <!-- entries without drop-downs appear here -->
+
+
+
+
+                
+                
+                
+                <li><a href="https://www.unidata.ucar.edu/software/udunits" target="_blank">UDUNITS-2 Home Page</a></li>
+                
+                
+                
+                <li><a href="https://github.com/Unidata/UDUNITS-2" target="_blank">GitHub</a></li>
+                
+                
+                
+                <!-- entries with drop-downs appear here -->
+                <!-- conditional logic to control which topnav appears for the audience defined in the configuration file.-->
+                
+                
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">Jekyll Help<b class="caret"></b></a>
+                    <ul class="dropdown-menu" id="">
+                        
+                        
+                        <li id=""><a href="https://talk.jekyllrb.com" target="_blank">Jekyll Talk</a></li>
+                        
+                        
+                        
+                        <li id=""><a href="http://jekyllrb.com/docs/home/" target="_blank">Jekyll documentation</a></li>
+                        
+                        
+                        
+                        <li id=""><a href="http://stackoverflow.com/questions/tagged/jekyll" target="_blank">Jekyll on Stack Overflow</a></li>
+                        
+                        
+                        
+                        <li id=""><a href="http://idratherbewriting.com/category-jekyll/" target="_blank">Jekyll on my blog</a></li>
+                        
+                        
+                    </ul>
+                </li>
+                
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">Products<b class="caret"></b></a>
+                    <ul class="dropdown-menu" id="">
+                        
+                        
+                        <li id=""><a href="mydoc_introduction.html">Upstream Jekyll Documentation Theme Info</a></li>
+                        
+                        
+                        
+                        <li id=""><a href="p1_landing_page.html">Product 1</a></li>
+                        
+                        
+                        
+                        <li id=""><a href="p2_landing_page.html">Product 2</a></li>
+                        
+                        
+                    </ul>
+                </li>
+                
+                
+                
+			<li>
+
+
+
+  <a class="email" title="Submit feedback" href="https://github.com/Unidata/UDUNITS-2/issues/new?title=Documentation%20feedback">Feedback</a>
+
+</li>
+
+		
+                <!--comment out this block if you want to hide search-->
+                <li>
+                    <!--start search-->
+                    <div id="search-demo-container">
+                        <input type="text" id="search-input" placeholder="search...">
+                        <ul id="results-container"></ul>
+                    </div>
+                    <script src="assets/js/jekyll-search.js" type="text/javascript"></script>
+                    <script type="text/javascript">
+                            var pageLocation = window.location.href;
+                            var searchJson = pageLocation.substring(0, pageLocation.lastIndexOf('/') + 1) + "assets/search/search.json";
+                            SimpleJekyllSearch.init({
+                                searchInput: document.getElementById('search-input'),
+                                resultsContainer: document.getElementById('results-container'),
+                                dataSource: searchJson,
+                                searchResultTemplate: '<li><a href="{url}" title="Unit Expression Language Specification">{title}</a></li>',
+                    noResultsText: 'No results found.',
+                            limit: 10,
+                            fuzzy: true,
+                    })
+                    </script>
+                    <!--end search-->
+                </li>
+            </ul>
+        </div>
+        </div>
+        <!-- /.container -->
+</nav>
+
+  <!-- Page Content -->
+  <div class="container">
+    <div id="main">
+      <!-- Content Row -->
+      <div class="row" id="content">
+        
+        
+        <!-- Sidebar Column -->
+        <div class="col-md-3" id="tg-sb-sidebar">
+          
+
+<ul id="mysidebar" class="nav">
+  <!-- figure out title for sidebar
+     sidebar[0].product -> sidebar[0].title -> site.site_title -> empty
+       (sidebar yaml)       (sidebar yaml)     (_config.yaml)
+    -->
+  
+
+  <!-- figure out title for sidebar
+   sidebar[0].version -> site.docset_version -> empty
+     (sidebar yaml)        (_config.yaml)
+    -->
+  
+
+  
+
+  <!-- Both sidebar_title and sidebar_version defined -->
+  
+  <li class="sidebarTitle"><a href="index.html">UDUNITS-2 Documentation 2.2.28</a></li>
+  <!-- Only sidebar_title defined -->
+  
+
+  
+  
+  
+      
+  
+  <li>
+      <a title="Getting Started" href="#">Getting Started</a>
+      <ul>
+          
+          
+          
+          <li><a title="Overview" href="index.html">Overview</a></li>
+          
+          
+          
+          <li class="subfolders">
+              <a title="Installation" href="#">Installation</a>
+              <ul>
+                  
+                  
+                  
+                  <li><a title="Building from Source" href="building-from-source.html">Building from Source</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Package Manager Installation" href="package-manager-installation.html">Package Manager Installation</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Installation Via Conda" href="conda-installation.html">Installation Via Conda</a></li>
+                  
+                  
+                  
+              </ul>
+          </li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Quick Start Guide" href="quick-start-guide.html">Quick Start Guide</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Basic Examples" href="basic-examples.html">Basic Examples</a></li>
+          
+          
+          
+          
+      </ul>
+   </li>
+     
+      
+  
+  <li>
+      <a title="Concepts" href="#">Concepts</a>
+      <ul>
+          
+          
+          
+          <li><a title="Overview" href="concepts-overview.html">Overview</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Units" href="concepts-units.html">Units</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Dimensions" href="concepts-dimensions.html">Dimensions</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Unit Systems" href="concepts-unit-systems.html">Unit Systems</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Unit Expressions" href="concepts-unit-expressions.html">Unit Expressions</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Converters" href="concepts-converters.html">Converters</a></li>
+          
+          
+          
+          
+      </ul>
+   </li>
+     
+      
+  
+  <li>
+      <a title="User Guide" href="#">User Guide</a>
+      <ul>
+          
+          
+          
+          <li><a title="Unit Expression Language" href="unit-expression-language.html">Unit Expression Language</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Units Database" href="units-database.html">Units Database</a></li>
+          
+          
+          
+          
+      </ul>
+   </li>
+     
+      
+  
+  <li>
+      <a title="Developer Guide" href="#">Developer Guide</a>
+      <ul>
+          
+          
+          
+          <li><a title="Building Applications" href="building-applications.html">Building Applications</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Developing UDUNITS-2" href="developing-udunits.html">Developing UDUNITS-2</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Using the C API" href="using-the-c-api.html">Using the C API</a></li>
+          
+          
+          
+          
+      </ul>
+   </li>
+     
+      
+  
+  <li>
+      <a title="Tools" href="#">Tools</a>
+      <ul>
+          
+          
+          
+          <li><a title="udunits2 CLI Utility" href="udunits2-cli-utility.html">udunits2 CLI Utility</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Validation and Testing" href="validation-and-testing.html">Validation and Testing</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Man Pages" href="man-pages.html">Man Pages</a></li>
+          
+          
+          
+          
+      </ul>
+   </li>
+     
+      
+  
+  <li>
+      <a title="Reference" href="#">Reference</a>
+      <ul>
+          
+          
+          
+          <li><a title="Configure Script Options" href="configure-options.html">Configure Script Options</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Compiler & Linker Flags" href="compiler-linker-flags.html">Compiler & Linker Flags</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Environment Variables" href="environment-variables.html">Environment Variables</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Installation Layout" href="installation-layout.html">Installation Layout</a></li>
+          
+          
+          
+          
+          
+          
+          <li class="active"><a title="Unit Expression Language Spec" href="unit-expression-language-specification.html">Unit Expression Language Spec</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="XML Units Database Reference" href="xml-units-database-reference.html">XML Units Database Reference</a></li>
+          
+          
+          
+          <li class="subfolders">
+              <a title="C API" href="#">C API</a>
+              <ul>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="API Overview" href="c-api-overview.html">API Overview</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Data Structures" href="data-structures.html">Data Structures</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Unit Systems API" href="unit-systems-api.html">Unit Systems API</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Unit Creation & Destruction API" href="unit-creation-destruction-api.html">Unit Creation & Destruction API</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Unit Parsing & Formatting API" href="unit-parsing-formatting-api.html">Unit Parsing & Formatting API</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Unit Arithmetic API" href="unit-arithmetic-api.html">Unit Arithmetic API</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Unit Conversion API" href="unit-conversion-api.html">Unit Conversion API</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Unit Query & Introspection API" href="unit-query-introspection-api.html">Unit Query & Introspection API</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Unit Name & Symbols Mapping API" href="unit-name-symbols-mapping-api.html">Unit Name & Symbols Mapping API</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Unit Time Utilities API" href="unit-time-utilities-api.html">Unit Time Utilities API</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Extended Unit API" href="extended-unit-api.html">Extended Unit API</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Error Handling API" href="error-handling-api.html">Error Handling API</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Troubleshooting API Issues" href="troubleshooting-api-issues.html">Troubleshooting API Issues</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="UDUNITS-1 Legacy API" href="udunits-1-legacy-api.html">UDUNITS-1 Legacy API</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="C API Function Index" href="c-api-function-index.html">C API Function Index</a></li>
+                  
+                  
+                  
+              </ul>
+          </li>
+          
+          
+          
+          
+      </ul>
+   </li>
+     
+      
+      
+      <!-- if you aren't using the accordion, uncomment this block:
+         <p class="external">
+             <a href="#" id="collapseAll">Collapse All</a> | <a href="#" id="expandAll">Expand All</a>
+         </p>
+         -->
+</ul>
+
+<!-- this highlights the active parent class in the navgoco sidebar. this is critical so that the parent expands when you're viewing a page. This must appear below the sidebar code above. Otherwise, if placed inside customscripts.js, the script runs before the sidebar code runs and the class never gets inserted.-->
+<script>$("li.active").parents('li').toggleClass("active");</script>
+
+        </div>
+
+        
+        
+
+        <!-- Content Column -->
+        <div class="col-md-6" id="tg-sb-content">
+          <div class="post-header">
+   <h1 class="post-title-main">Unit Expression Language Specification</h1>
+</div>
+
+
+
+<div class="post-content">
+
+   
+
+    
+   <!--
+  If breadcrumbs explicitly set in the front matter of the markdown source, use it.
+  -->
+
+
+
+
+
+
+<div id="breadcrumbs">
+  
+  <a href="index.html" class="bcStart">UDUNITS-2 Documentation</a>
+  
+  
+  <span class="bcEnd">Unit Expression Language Specification</span>
+  
+  
+</div>
+
+   <p>This page provides the complete lexical and syntactic reference for the unit expression language understood by UDUNITS-2.</p>
+
+<p>The grammar definitions describe how tokens combine to form unit expressions.
+The lexical definitions describe how individual tokens, such as identifiers, numbers, operators, dates, and times, are formed.</p>
+
+<p>For a user-oriented introduction to unit expressions, see <a href="unit-expression-syntax.html">Basic Syntax</a>.
+For a condensed overview of the formal grammar, see <a href="unit-expression-grammar.html">Grammar</a>.</p>
+
+<h2 id="grammar-conventions">Grammar Conventions</h2>
+
+<p>The grammar uses the following conventions:</p>
+
+<ul>
+  <li><em>Italic names</em> represent <strong>non-terminals</strong>.</li>
+  <li><code class="language-plaintext highlighter-rouge">UPPERCASE</code> names represent <strong>terminals</strong>.</li>
+  <li><code class="language-plaintext highlighter-rouge">&lt;angle-bracketed names&gt;</code> represent <strong>lexical elements</strong>.</li>
+</ul>
+
+<p>The productions use the form:</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;non-terminal&gt;: one of
+        alternative
+        alternative
+</code></pre></div></div>
+
+<p>Comments following <code class="language-plaintext highlighter-rouge">//</code> describe individual lexical values or implementation behavior.</p>
+
+<h2 id="main-grammar-structure">Main Grammar Structure</h2>
+
+<h3 id="unit-specification">Unit Specification</h3>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;Unit-Spec&gt;: one of
+        nothing
+        &lt;Shift-Spec&gt;
+</code></pre></div></div>
+
+<h3 id="shift-specification">Shift Specification</h3>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;Shift-Spec&gt;: one of
+        &lt;Product-Spec&gt;
+        &lt;Product-Spec&gt; SHIFT REAL
+        &lt;Product-Spec&gt; SHIFT INT
+        &lt;Product-Spec&gt; SHIFT &lt;Timestamp&gt;
+</code></pre></div></div>
+
+<p>A shift specification consists of a product specification with an optional shift.
+Shifts are used for unit offsets and reference-time expressions.</p>
+
+<h3 id="product-specification">Product Specification</h3>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;Product-Spec&gt;: one of
+        &lt;Power-Spec&gt;
+        &lt;Product-Spec&gt; &lt;Power-Spec&gt;
+        &lt;Product-Spec&gt; MULTIPLY &lt;Power-Spec&gt;
+        &lt;Product-Spec&gt; DIVIDE &lt;Power-Spec&gt;
+</code></pre></div></div>
+
+<p>A product specification combines power specifications through adjacency, multiplication, or division.</p>
+
+<h3 id="power-specification">Power Specification</h3>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;Power-Spec&gt;: one of
+        &lt;Basic-Spec&gt;
+        &lt;Basic-Spec&gt; INT
+        &lt;Basic-Spec&gt; EXPONENT
+</code></pre></div></div>
+
+<p>A power specification consists of a basic specification, optionally followed by an exponent.</p>
+
+<h3 id="basic-specification">Basic Specification</h3>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;Basic-Spec&gt;: one of
+        ID
+        "(" &lt;Shift-Spec&gt; ")"
+        LOGREF &lt;Product-Spec&gt; ")"
+        &lt;Number&gt;
+</code></pre></div></div>
+
+<p>A basic specification can be a unit identifier, a parenthesized expression, a logarithmic expression, or a number.</p>
+
+<p>The <code class="language-plaintext highlighter-rouge">LOGREF</code> token includes the logarithm function and reference marker, but does not include the closing parenthesis.
+The closing parenthesis is part of the enclosing <code class="language-plaintext highlighter-rouge">Basic-Spec</code> production.</p>
+
+<h2 id="lexical-building-blocks">Lexical Building Blocks</h2>
+
+<h3 id="whitespace">Whitespace</h3>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;space&gt;: one of
+        U+0020      // space
+        U+0009      // horizontal tab
+        U+000D      // carriage return
+        U+000C      // form feed
+        U+000B      // vertical tab
+</code></pre></div></div>
+
+<p>These characters represent space, horizontal tab, carriage return, form feed, and vertical tab.</p>
+
+<p>Newline (<code class="language-plaintext highlighter-rouge">U+000A</code>) is not part of <code class="language-plaintext highlighter-rouge">&lt;space&gt;</code>.</p>
+
+<p>Non-breaking space (<code class="language-plaintext highlighter-rouge">U+00A0</code>) is also not whitespace, although it is permitted as part of an identifier.</p>
+
+<h3 id="digits">Digits</h3>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;digit&gt;:
+        [0-9]
+</code></pre></div></div>
+
+<h3 id="alphabetic-characters">Alphabetic Characters</h3>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;alpha&gt;: one of
+        [A-Za-z_]
+        &lt;iso-8859-1-alpha&gt;
+</code></pre></div></div>
+
+<p>The supported Latin-1 characters are:</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;iso-8859-1-alpha&gt;: one of
+        U+00A0          // non-breaking space
+        U+00AD          // soft hyphen
+        U+00B0          // degree sign
+        U+00B5          // micro sign
+        U+00C0-U+00D6   // À-Ö, excluding U+00D7
+        U+00D8-U+00F6   // Ø-ö, excluding U+00F7
+        U+00F8-U+00FF   // ø-ÿ
+</code></pre></div></div>
+
+<p>These ranges include characters such as the degree sign, micro sign, and Latin letters with diacritics.</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;alphanum&gt;: one of
+        &lt;alpha&gt;
+        &lt;digit&gt;
+</code></pre></div></div>
+
+<h2 id="numbers">Numbers</h2>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;Number&gt;: one of
+        INT
+        REAL
+</code></pre></div></div>
+
+<h3 id="integers">Integers</h3>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>INT:
+        [+-]? &lt;digit&gt;+
+</code></pre></div></div>
+
+<p>An integer consists of an optional sign followed by one or more digits.</p>
+
+<p>Examples:</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>5
+-5
+42
+</code></pre></div></div>
+
+<h3 id="real-numbers">Real Numbers</h3>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>REAL:
+        [+-]? &lt;real-value&gt;
+</code></pre></div></div>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;real-value&gt;: one of
+        &lt;digit&gt;+ &lt;exponent&gt;
+        &lt;mantissa&gt; &lt;exponent&gt;?
+</code></pre></div></div>
+
+<p>Examples include:</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>5e10
+3E-2
+3.14
+.5
+2.
+3.14e-10
+</code></pre></div></div>
+
+<h3 id="mantissas">Mantissas</h3>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;mantissa&gt;: one of
+        &lt;digit&gt;+ "."
+        "." &lt;digit&gt;+
+        &lt;digit&gt;+ "." &lt;digit&gt;+
+</code></pre></div></div>
+
+<h3 id="exponents">Exponents</h3>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;exponent&gt;:
+        ("e" | "E") [+-]? &lt;digit&gt;+
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">NaN</code> and <code class="language-plaintext highlighter-rouge">Inf</code>/<code class="language-plaintext highlighter-rouge">Infinity</code> are not valid numeric values.</p>
+
+<h2 id="identifiers">Identifiers</h2>
+
+<p>Unit names and symbols are represented by <code class="language-plaintext highlighter-rouge">ID</code>.</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ID: one of
+        &lt;id&gt;
+        "%"
+        "'"
+        "\""
+        U+00B0
+        U+00B5
+</code></pre></div></div>
+
+<p>The general identifier form is:</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;id&gt;: one of
+        &lt;alpha&gt;
+        &lt;alpha&gt; &lt;alphanum&gt;* &lt;alpha&gt;
+</code></pre></div></div>
+
+<p>A multi-character identifier must end with an <code class="language-plaintext highlighter-rouge">&lt;alpha&gt;</code> character rather than a digit.</p>
+
+<p>Examples include:</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>m
+meter
+second
+degC
+µm
+</code></pre></div></div>
+
+<p>The complete set of supported identifier characters is defined by <code class="language-plaintext highlighter-rouge">&lt;alpha&gt;</code> and <code class="language-plaintext highlighter-rouge">&lt;alphanum&gt;</code> above.</p>
+
+<h2 id="operators">Operators</h2>
+
+<h3 id="shift">Shift</h3>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SHIFT:
+        &lt;space&gt;* &lt;shift-op&gt; &lt;space&gt;*
+</code></pre></div></div>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;shift-op&gt;: one of
+        "@"
+        "after"
+        "from"
+        "since"
+        "ref"
+</code></pre></div></div>
+
+<p>Shift operators are used for unit offsets and reference-time expressions.</p>
+
+<p>For example:</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>m @ 10
+days since 1970-01-01
+</code></pre></div></div>
+
+<p>The user-oriented discussion of reference-time expressions is provided in <a href="unit-expression-reference-time-units.html">Reference Time Units</a>.</p>
+
+<h3 id="multiplication">Multiplication</h3>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>MULTIPLY: one of
+        "-"
+        "."
+        "*"
+        &lt;space&gt;+
+        U+00B7
+</code></pre></div></div>
+
+<p>The supported multiplication forms are:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Syntax</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">-</code></td>
+      <td>Hyphen</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">.</code></td>
+      <td>Period</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">*</code></td>
+      <td>Asterisk</td>
+    </tr>
+    <tr>
+      <td>whitespace</td>
+      <td>One or more spaces</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">U+00B7</code></td>
+      <td>Centered middle dot (<code class="language-plaintext highlighter-rouge">·</code>)</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Examples:</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>kg m
+kg*m
+kg.m
+kg-m
+kg·m
+</code></pre></div></div>
+
+<h3 id="division">Division</h3>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>DIVIDE:
+        &lt;space&gt;* &lt;divide-op&gt; &lt;space&gt;*
+</code></pre></div></div>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;divide-op&gt;: one of
+        " per "
+        " PER "
+        "/"
+</code></pre></div></div>
+
+<p>The <code class="language-plaintext highlighter-rouge">per</code> forms require surrounding spaces.</p>
+
+<p>Examples:</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>m/s
+m per s
+m PER s
+</code></pre></div></div>
+
+<h3 id="exponents-1">Exponents</h3>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>EXPONENT: one of
+        &lt;raise-with-int&gt;
+        &lt;utf8-exponent&gt;
+</code></pre></div></div>
+
+<p>An exponent can use an ASCII operator followed by an integer or UTF-8 superscript characters.</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;raise-with-int&gt;:
+        ("^" | "**") INT
+</code></pre></div></div>
+
+<p>Examples:</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>m^2
+m**2
+m^-2
+</code></pre></div></div>
+
+<p>UTF-8 superscript exponents use:</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;utf8-exponent&gt;:
+        &lt;utf8-exp-sign&gt;? &lt;utf8-exp-digit&gt;+
+</code></pre></div></div>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;utf8-exp-sign&gt;: one of
+        U+207A      // superscript plus sign
+        U+207B      // superscript minus sign
+</code></pre></div></div>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;utf8-exp-digit&gt;: one of
+        U+2070      // superscript zero
+        U+00B9      // superscript one
+        U+00B2      // superscript two
+        U+00B3      // superscript three
+        U+2074      // superscript four
+        U+2075      // superscript five
+        U+2076      // superscript six
+        U+2077      // superscript seven
+        U+2078      // superscript eight
+        U+2079      // superscript nine
+</code></pre></div></div>
+
+<p>Examples:</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>m²
+s⁻¹
+</code></pre></div></div>
+
+<p>For user-oriented guidance on operators, see <a href="unit-expression-operators.html">Operators</a>.</p>
+
+<h2 id="date-and-time-elements">Date and Time Elements</h2>
+
+<p>Reference-time expressions use the <code class="language-plaintext highlighter-rouge">&lt;Timestamp&gt;</code> non-terminal.</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;Timestamp&gt;: one of
+        DATE
+        DATE CLOCK
+        DATE CLOCK CLOCK
+        DATE CLOCK ID
+        DATE ID
+</code></pre></div></div>
+
+<p>The second <code class="language-plaintext highlighter-rouge">CLOCK</code> represents a numeric time-zone offset.
+The <code class="language-plaintext highlighter-rouge">ID</code> forms represent a time-zone identifier.</p>
+
+<h3 id="dates">Dates</h3>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>DATE: one of
+        &lt;date-broken&gt; ("T" | &lt;space&gt;*)
+        &lt;date-packed&gt; ("T" | &lt;space&gt;*)
+</code></pre></div></div>
+
+<p>The trailing <code class="language-plaintext highlighter-rouge">T</code> or whitespace serves as the separator when a <code class="language-plaintext highlighter-rouge">CLOCK</code> follows.</p>
+
+<p>Packed dates are recognized as <code class="language-plaintext highlighter-rouge">DATE</code> only when they occur after time-related units.
+Otherwise, they are interpreted as <code class="language-plaintext highlighter-rouge">REAL</code>.</p>
+
+<h3 id="broken-form-dates">Broken-Form Dates</h3>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;date-broken&gt;:
+        &lt;year&gt; "-" &lt;month&gt; ("-" &lt;day&gt;)?
+</code></pre></div></div>
+
+<p>The date may be truncated from the right.</p>
+
+<p>Examples:</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>2000
+2000-01
+2000-01-15
+</code></pre></div></div>
+
+<h3 id="packed-dates">Packed Dates</h3>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;date-packed&gt;:
+        &lt;year&gt; (&lt;month&gt; &lt;day&gt;)?
+</code></pre></div></div>
+
+<p>Packed dates may also be truncated from the right.
+The interpretation is based on the number of digits, excluding a leading sign:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: right">Length</th>
+      <th>Interpretation</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: right">1–4</td>
+      <td><code class="language-plaintext highlighter-rouge">Y</code>, <code class="language-plaintext highlighter-rouge">YY</code>, <code class="language-plaintext highlighter-rouge">YYY</code>, <code class="language-plaintext highlighter-rouge">YYYY</code> → <code class="language-plaintext highlighter-rouge">YYYY0101</code></td>
+    </tr>
+    <tr>
+      <td style="text-align: right">5</td>
+      <td><code class="language-plaintext highlighter-rouge">YYYYM</code> → <code class="language-plaintext highlighter-rouge">YYYY0M01</code></td>
+    </tr>
+    <tr>
+      <td style="text-align: right">6</td>
+      <td><code class="language-plaintext highlighter-rouge">YYYYMM</code> → <code class="language-plaintext highlighter-rouge">YYYYMM01</code></td>
+    </tr>
+    <tr>
+      <td style="text-align: right">7</td>
+      <td><code class="language-plaintext highlighter-rouge">YYYYMMD</code> → <code class="language-plaintext highlighter-rouge">YYYYMM0D</code></td>
+    </tr>
+    <tr>
+      <td style="text-align: right">8</td>
+      <td><code class="language-plaintext highlighter-rouge">YYYYMMDD</code> → <code class="language-plaintext highlighter-rouge">YYYYMMDD</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<p>A decimal point and decimal digits cause the value to be interpreted as a <code class="language-plaintext highlighter-rouge">REAL</code> rather than a <code class="language-plaintext highlighter-rouge">DATE</code>.</p>
+
+<h3 id="year">Year</h3>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;year&gt;:
+        [+-]? [0-9]{1,4}
+</code></pre></div></div>
+
+<p>Year zero is silently interpreted as year 1.</p>
+
+<h3 id="month">Month</h3>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;month&gt;:
+        "0"?[1-9] | "1"[0-2]
+</code></pre></div></div>
+
+<h3 id="day">Day</h3>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;day&gt;:
+        "0"?[1-9] | [1-2][0-9] | "30" | "31"
+</code></pre></div></div>
+
+<h3 id="clocks">Clocks</h3>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CLOCK: one of
+        &lt;clock-broken&gt; &lt;space&gt;*
+        &lt;clock-packed&gt; &lt;space&gt;*
+</code></pre></div></div>
+
+<p>The trailing whitespace is part of the <code class="language-plaintext highlighter-rouge">CLOCK</code> token.</p>
+
+<h4 id="broken-form-times">Broken-Form Times</h4>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;clock-broken&gt;:
+        &lt;hour&gt; ":" &lt;minute&gt; (":" &lt;second&gt;)?
+</code></pre></div></div>
+
+<p>The time may be truncated from the right.</p>
+
+<p>Examples:</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>12:00
+12:00:30
+</code></pre></div></div>
+
+<h4 id="packed-times">Packed Times</h4>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;clock-packed&gt;:
+        &lt;hour&gt; (&lt;minute&gt; (&lt;second&gt;)?)?
+</code></pre></div></div>
+
+<p>The interpretation is based on the length of the integer portion before any decimal point:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: right">Length</th>
+      <th>Interpretation</th>
+      <th>Decimals</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: right">1</td>
+      <td><code class="language-plaintext highlighter-rouge">H</code> → <code class="language-plaintext highlighter-rouge">0H0000</code></td>
+      <td>Not allowed</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">2</td>
+      <td><code class="language-plaintext highlighter-rouge">HH</code> → <code class="language-plaintext highlighter-rouge">HH0000</code></td>
+      <td>Not allowed</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">3</td>
+      <td><code class="language-plaintext highlighter-rouge">HHM</code> → <code class="language-plaintext highlighter-rouge">HH0M00</code></td>
+      <td>Allowed</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">4</td>
+      <td><code class="language-plaintext highlighter-rouge">HHMM</code> → <code class="language-plaintext highlighter-rouge">HHMM00</code></td>
+      <td>Allowed</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">5</td>
+      <td><code class="language-plaintext highlighter-rouge">HHMMS</code> → <code class="language-plaintext highlighter-rouge">HHMM0S</code></td>
+      <td>Allowed</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">6</td>
+      <td><code class="language-plaintext highlighter-rouge">HHMMSS</code> → <code class="language-plaintext highlighter-rouge">HHMMSS</code></td>
+      <td>Allowed</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="hour">Hour</h3>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;hour&gt;:
+        [+-]?[0-1]?[0-9] | 2[0-3]
+</code></pre></div></div>
+
+<p>The sign is used for time-zone offsets.
+The allowed range for a signed hour is 0–19, while unsigned times may extend through 23.</p>
+
+<h3 id="minute">Minute</h3>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;minute&gt;:
+        [0-5]?[0-9]
+</code></pre></div></div>
+
+<h3 id="second">Second</h3>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;second&gt;:
+        (&lt;minute&gt; | "60") ("." &lt;digit&gt;*)?
+</code></pre></div></div>
+
+<p>The grammar permits a leap-second value of <code class="language-plaintext highlighter-rouge">60</code>.</p>
+
+<p>According to the reference behavior, a leap second is silently interpreted as the same as <code class="language-plaintext highlighter-rouge">00</code> of the immediately succeeding minute.</p>
+
+<h2 id="reference-time-expressions">Reference-Time Expressions</h2>
+
+<p>Reference-time expressions combine a time unit, shift operator, and timestamp.</p>
+
+<p>Examples:</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>seconds since 1970-01-01
+hours since 2000-01-01 12:00:00
+hours since 2024-01-01 00:00:00 UTC
+</code></pre></div></div>
+
+<p>The supported shift operators are:</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>@
+after
+from
+since
+ref
+</code></pre></div></div>
+
+<p>For a user-oriented explanation of reference-time expressions, see <a href="unit-expression-reference-time-units.html">Reference Time Units</a>.</p>
+
+<p>For the complete date, time, and time-zone syntax, see the preceding <a href="#date-and-time-elements">Date and Time Elements</a> section.</p>
+
+<h2 id="logarithmic-elements">Logarithmic Elements</h2>
+
+<p>Logarithmic expressions use the <code class="language-plaintext highlighter-rouge">LOGREF</code> terminal.</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>LOGREF:
+        &lt;log&gt; &lt;space&gt;* "(" &lt;space&gt;* &lt;re&gt; ":"? &lt;space&gt;*
+</code></pre></div></div>
+
+<p>The <code class="language-plaintext highlighter-rouge">LOGREF</code> token includes the logarithm function, opening parenthesis, reference marker, optional colon, and trailing whitespace, but not the closing parenthesis.</p>
+
+<p>The closing parenthesis is supplied by the enclosing <code class="language-plaintext highlighter-rouge">&lt;Basic-Spec&gt;</code> production:</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;Basic-Spec&gt;: one of
+        ID
+        "(" &lt;Shift-Spec&gt; ")"
+        LOGREF &lt;Product-Spec&gt; ")"
+        &lt;Number&gt;
+</code></pre></div></div>
+
+<h3 id="logarithm-functions">Logarithm Functions</h3>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;log&gt;: one of
+        "log"
+        "lg"
+        "ln"
+        "lb"
+</code></pre></div></div>
+
+<h3 id="reference-marker">Reference Marker</h3>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;re&gt;: one of
+        "re"
+        "RE"
+</code></pre></div></div>
+
+<p>A reference may optionally be followed by a colon.</p>
+
+<p>Examples:</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>log(re W)
+lg(re W)
+ln(re W)
+lb(re W)
+</code></pre></div></div>
+
+<h2 id="grammar-hierarchy">Grammar Hierarchy</h2>
+
+<p>The principal grammar structure can be summarized as:</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;Unit-Spec&gt;
+    └── &lt;Shift-Spec&gt;
+          └── &lt;Product-Spec&gt;
+                └── &lt;Power-Spec&gt;
+                      └── &lt;Basic-Spec&gt;
+                            ├── ID
+                            ├── parenthesized expression
+                            ├── LOGREF
+                            └── &lt;Number&gt;
+</code></pre></div></div>
+
+<p>The lexical definitions provide the terminals used by these productions, including identifiers, numbers, operators, dates, times, and logarithmic references.</p>
+
+<h2 id="interpretation-and-implementation-behavior">Interpretation and Implementation Behavior</h2>
+
+<p>Some rules in this reference describe how UDUNITS-2 interprets otherwise syntactically valid input rather than defining syntax alone.</p>
+
+<p>These behaviors include:</p>
+
+<ul>
+  <li>Packed dates are interpreted according to their digit length.</li>
+  <li>Packed dates are recognized as dates only in the appropriate time-unit context.</li>
+  <li>A decimal point causes a numeric value to be interpreted as a <code class="language-plaintext highlighter-rouge">REAL</code> rather than a packed date.</li>
+  <li>Year zero is interpreted as year 1.</li>
+  <li>A leap-second value of <code class="language-plaintext highlighter-rouge">60</code> is interpreted as <code class="language-plaintext highlighter-rouge">00</code> of the immediately succeeding minute.</li>
+</ul>
+
+<p>These behaviors are documented here because they affect how valid input is interpreted by UDUNITS-2.</p>
+
+<h2 id="complete-specification">Complete Specification</h2>
+
+<p>This page is the authoritative reference for the complete unit expression language.
+The <a href="unit-expression-grammar.html">User Guide Grammar</a> page provides a condensed overview of the same grammar for readers who need to understand the structure without reviewing every lexical production.</p>
+
+<p>The complete specification includes:</p>
+
+<ul>
+  <li>grammar productions</li>
+  <li>whitespace and character definitions</li>
+  <li>identifier construction</li>
+  <li>integer and real number syntax</li>
+  <li>multiplication, division, exponent, and shift operators</li>
+  <li>parenthesized expressions</li>
+  <li>date and time syntax</li>
+  <li>packed and broken date and time forms</li>
+  <li>time-zone representations</li>
+  <li>logarithmic expressions</li>
+  <li>terminal and non-terminal definitions</li>
+</ul>
+
+<h2 id="see-also">See Also</h2>
+
+<ul>
+  <li><strong><a href="unit-expression-language.html">User Guide: Unit Expression Language</a></strong></li>
+  <li><strong><a href="units-database.html">User Guide: Units Database</a></strong></li>
+</ul>
+
+
+    <div class="tags">
+        
+    </div>
+
+
+
+
+</div>
+
+
+        </div>
+        
+        <div class="col-md-3" id="tg-sb-sidebar-toc">
+          
+<!-- this handles the automatic toc. use ## for subheads to auto-generate the on-page minitoc. if you use html tags, you must supply an ID for the heading element in order for it to appear in the minitoc. -->
+<script>
+$( document ).ready(function() {
+  // Handler for .ready() called.
+
+$('#toc').toc({ minimumHeaders: 0, listType: 'ul', showSpeed: 0, headers: '.container h2, .container h3, .container h4' });
+
+/* this offset helps account for the space taken up by the floating toolbar. */
+$('#toc').on('click', 'a', function() {
+  var target = $(this.getAttribute('href'))
+    , scroll_target = target.offset().top
+
+  $(window).scrollTop(scroll_target - 10);
+  return false
+})
+  
+});
+</script>
+
+<div id="toc" class="fa fa-list-ul"></div>
+
+        </div>
+        
+        <!-- /.row -->
+      </div>
+      <!-- /.container -->
+    </div>
+    <!-- /#main -->
+  </div>
+  <div id="footer">
+       <footer class="unidata">
+
+    <div id="content-footer">
+     <h2>NSF Unidata Support</h2>
+     <ul>
+      <li>NSF Unidata provides free technical support to our community members. For more information, please see our <a href="https://support.unidata.ucar.edu/conditions-of-support/">Conditions Of Support</a>.</li>
+      <li>Visit: <a href="https://support.unidata.ucar.edu/">NSF Unidata Support </a></li>
+      <li>Email: <a href="mailto:support@unidata.ucar.edu">support@unidata.ucar.edu</a></li>
+      <li>Report a security issue/vulnerability: <a href="mailto:security@unidata.ucar.edu">security@unidata.ucar.edu</a></li>
+     </ul>
+    </div> <!-- /#content-footer -->
+
+    <div id="legal-footer">
+     <ul>
+      <li>&#169; NSF Unidata</li>
+      <li><a href="https://support.unidata.ucar.edu/conditions-of-support">Conditions of Support</a></li>
+      <li><a href="https://www.unidata.ucar.edu/legal/participation.html">Participation Policy</a></li>
+      <li><a href="https://www.ucar.edu/privacy-policy">Privacy Policy</a></li>
+      <li><a href="https://www.ucar.edu/terms-of-use">Terms of Use</a></li>
+      <li><a href="https://www.ucar.edu/accessibility">Accessibility</a></li>
+     </ul>
+    </div> <!-- /#legal-footer -->
+
+    <div id="nsf-footer">
+     <a href="https://www.nsf.gov" class="logo">
+      <img src="assets/images/nsf_logo_transparent.png" alt="U.S. National Science Foundation"/>
+     </a>
+     <div>
+      NSF Unidata is a member of the
+      <a href="https://www.ucp.ucar.edu/">UCAR Community Programs</a>,
+      managed by the
+      <a href="https://www.ucar.edu">University Corporation for Atmospheric Research</a>,
+      and funded by the
+      <a href="https://www.nsf.gov">U.S. National Science Foundation</a>.
+     </div>
+    </div> <!-- /#nsf-footer -->
+
+   </footer>
+  </div>
+
+</body>
+
+<!-- the google_analytics_id gets auto inserted from the config file -->
+
+
+
+<script>(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)})(window,document,'script','//www.google-analytics.com/analytics.js','ga');ga('create','UA-92978945-1','auto');ga('require','displayfeatures');ga('send','pageview');</script>
+
+
+
+</html>

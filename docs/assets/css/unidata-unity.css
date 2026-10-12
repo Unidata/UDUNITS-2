@@ -1,0 +1,56 @@
+@charset "UTF-8";
+
+/*!
+ * UCAR/Unity theme styling brought forward to Unidata Jekyll sites
+ */
+:root {
+
+  /* from Unity bootstrap colors */
+  --bs-primary: #0d6efd;
+  --bs-secondary: #6c757d;
+  --bs-success: #198754;
+  --bs-info: #fdd509;
+  --bs-warning: #faa119;
+  --bs-danger: #ff1f1f;
+  --bs-light: #f8f9fa;
+  --bs-dark: #212529;
+  --bs-link-color: #0d6efd;
+  --bs-link-hover-color: #0a58ca;
+  --bs-code-color: #000;
+  --bs-highlight-bg: #fff3cd;
+  --bs-body-color: #011837;
+  --bs-body-bg: #f6f7f6;
+  --bs-border-width: 1px;
+  --bs-border-style: solid;
+  --bs-border-color: #dee2e6;
+  --bs-border-color-translucent: rgba(0, 0, 0, 0.175);
+  --bs-border-radius: 0.375rem;
+  --bs-border-radius-sm: 0.25rem;
+  --bs-border-radius-lg: 0.5rem;
+  --bs-border-radius-xl: 1rem;
+  --bs-border-radius-2xl: 2rem;
+  --bs-border-radius-pill: 50rem;
+  --bs-link-color: #0d6efd;
+  --bs-link-hover-color: #0a58ca;
+  --bs-code-color: #000;
+  --bs-highlight-bg: #fff3cd;
+
+  /* Unidata Unity colors */
+  --uu-heading-color: #00357a;
+  --uu-header-background-color: hsl(from var(--uu-heading-color) h 40% 40%);
+  --uu-footer-background-color: var(--bs-body-color);
+  --uu-footer-legal-background-color: hsl(from var(--uu-heading-color) h 40% 40%);
+  --uu-footer-nsf-background-color: #556379;
+  --uu-footer-text-color: #c3d7ee;
+  --uu-footer-link-color: #42c0ff;
+  --uu-footer-link-hover-color: #34e1f4;
+  --uu-body-text-color: var(--bs-body-color);
+  --uu-body-background-color: var(--bs-body-bg);
+  --uu-sidenav-background-color: hsl(from var(--bs-body-bg) h s 93%);
+  --uu-body-background-image: url("../../assets/images/UCAR-Waves-Lines-Only-66.png");
+  --uu-link-color: hsl(from var(--uu-heading-color) h s 30%);
+  --uu-link-hover-color: hsl(from var(--uu-link-color) h 70% 70%);
+  --uu-mono-font-family: Roboto Mono, monospace;
+  --uu-text-font-family: Inter, Poppins, sans-serif;
+  --uu-heading-font-family: Poppins, sans-serif;
+}

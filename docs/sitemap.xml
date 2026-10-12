@@ -1,0 +1,667 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  
+
+
+  
+  
+  <url>
+    <loc>/basic-examples.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/building-from-source.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/building-applications.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/c-api-function-index.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/c-api-overview.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/compiler-linker-flags.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/concepts-converters.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/concepts-dimensions.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/concepts-overview.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/concepts-unit-expressions.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/concepts-unit-systems.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/concepts-units.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/conda-installation.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/configure-options.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/cv-combine.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/cv-convert-double.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/cv-convert-doubles.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/cv-convert-float.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/cv-convert-floats.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/cv-converter.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/cv-free.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/data-structures.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/developing-udunits.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/environment-variables.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/error-handling-api.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/extended-unit-api.html</loc>
+  </url>
+  
+  
+  
+  
+  
+  <url>
+    <loc>/function-man-pages.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/index.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/installation-layout.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/package-manager-installation.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/quick-start-guide.html</loc>
+  </url>
+  
+  
+  
+  
+  
+  <url>
+    <loc>/troubleshooting-api-issues.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/udunits-1-data-structures.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/udunits-1-legacy-api.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/udunits2-cli-utility.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/unit-arithmetic-api.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/unit-conversion-api.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/unit-creation-destruction-api.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/unit-name-symbols-mapping-api.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/unit-parsing-formatting-api.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/unit-query-introspection-api.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/unit-systems-api.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/unit-time-utilities-api.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/unit-expression-language.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/unit-expression-language-specification.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/units-database.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/using-the-c-api.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/ut-accept-visitor.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/ut-add-name-prefix.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/ut-add-symbol-prefix.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/ut-are-convertible.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/ut-clone.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/ut-compare.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/ut-decode-time.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/ut-divide.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/ut-encode-clock.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/ut-encode-date.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/ut-encode-time.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/ut-format.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/ut-free-system.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/ut-free.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/ut-get-converter.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/ut-get-dimensionless-unit-one.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/ut-get-name.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/ut-get-path-xml.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/ut-get-status.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/ut-get-symbol.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/ut-get-system.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/ut-get-unit-by-name.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/ut-get-unit-by-symbol.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/ut-handle-error-message.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/ut-ignore.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/ut-invert.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/ut-is-dimensionless.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/ut-log.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/ut-map-name-to-unit.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/ut-map-symbol-to-unit.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/ut-map-unit-to-name.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/ut-map-unit-to-symbol.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/ut-multiply.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/ut-new-base-unit.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/ut-new-dimensionless-unit.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/ut-new-system.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/ut-offset-by-time.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/ut-offset.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/ut-parse.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/ut-raise.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/ut-read-xml.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/ut-root.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/ut-same-system.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/ut-scale.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/ut-set-error-message-handler.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/ut-set-second.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/ut-set-status.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/ut-system.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/ut-trim.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/ut-unit.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/ut-unmap-name-to-unit.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/ut-unmap-symbol-to-unit.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/ut-unmap-unit-to-name.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/ut-unmap-unit-to-symbol.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/ut-write-to-stderr.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/utConvert.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/utCopy.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/utFree.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/utIsTime.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/utPrint.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/utScan.html</loc>
+  </url>
+  
+  
+  
+  <url>
+    <loc>/xml-units-database-reference.html</loc>
+  </url>
+  
+  
+  
+  
+</urlset>
