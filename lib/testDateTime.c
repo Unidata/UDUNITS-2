@@ -1688,6 +1688,20 @@ static void test_clock_diagnostics_are_specific(void)
     assert_timestamp_reject_msg("2024-01-01 1234567",   "at most 6");
 }
 
+/*
+ * The DATE_SEEN start condition has no catch-all rule, so every character the
+ * scanner cannot fit into a clock or timezone reaches the parser as a token it
+ * cannot shift.  Such a token used to be discarded silently, leaving
+ * "seconds since 2024-01-01x" indistinguishable from a clean timestamp.  The
+ * second case pins the leftover extent: it formerly reported "Q", the first
+ * "Q" having been consumed as the parser's lookahead.
+ */
+static void test_trailing_text_after_timestamp(void)
+{
+    assert_timestamp_reject_msg("2024-01-01x",  "\"x\"");
+    assert_timestamp_reject_msg("2024-01-01QQ", "\"QQ\"");
+}
+
 static void test_timezone_diagnostics_are_specific(void)
 {
     assert_timestamp_reject_msg("2024-01-01 00:00 +053",    "lose its sign");
@@ -1986,6 +2000,7 @@ int main(const int argc, const char* const* argv)
     CU_ADD_TEST(s, test_encode_date_channels_agree);
     CU_ADD_TEST(s, test_encode_time_channels_agree);
     CU_ADD_TEST(s, test_clock_diagnostics_are_specific);
+    CU_ADD_TEST(s, test_trailing_text_after_timestamp);
     CU_ADD_TEST(s, test_timezone_diagnostics_are_specific);
     CU_ADD_TEST(s, test_ut_check_time_valid);
     CU_ADD_TEST(s, test_ut_check_time_leap_second);
