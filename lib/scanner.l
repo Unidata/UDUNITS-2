@@ -277,10 +277,13 @@ static int parse_tod_packed(const char* s, int* H, int* M, double* S, const char
     double sec = (double)ss;
     double frac = 0.0;
     const char* r = q;
+    /* Test for the decimal point, not the fraction's value: "1234.0" has no
+       seconds field either. */
+    const int has_fraction = (*r == '.');
     /* Defensive: parse_fraction succeeds on every path. */
     if (!parse_fraction(&r, &frac)) return 0;
     if (had_seconds) sec += frac;
-    else if (frac != 0.0) return -1;  /* fraction but no seconds field */
+    else if (has_fraction) return -1;  /* fraction but no seconds field */
 
     *H = h; *M = m; *S = sec;
     *endptr = r;
