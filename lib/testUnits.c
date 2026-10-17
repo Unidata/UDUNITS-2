@@ -2617,26 +2617,35 @@ test_xml(void)
      * was checked, "m^4294967297" parsed as "m" and "m^4294967296" as the
      * dimensionless unit.
      *
-     * Only the returned pointer is asserted.  ut_parse() leaves UT_SUCCESS on
-     * every rejection rather than the UT_SYNTAX its contract promises; that is
-     * a separate defect, tracked by issue #157, and is not addressed here.
+     * The status is UT_BAD_ARG, set by the range check, and since #180 it
+     * reaches the caller.  It is the same code an out-of-range unit power
+     * reports below ("m^256") and on main ("m-256").  That ut_parse() passes
+     * an inner UT_BAD_ARG through, rather than translating it at its own
+     * boundary, is a general question and is not settled here.
      */
     unit2 = ut_parse(xmlSystem, "m^4294967296", UT_ASCII);
     CU_ASSERT_PTR_NULL(unit2);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
     unit2 = ut_parse(xmlSystem, "m^4294967297", UT_ASCII);
     CU_ASSERT_PTR_NULL(unit2);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
     unit2 = ut_parse(xmlSystem, "m^4294967298", UT_ASCII);
     CU_ASSERT_PTR_NULL(unit2);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
     unit2 = ut_parse(xmlSystem, "m^9223372036854775807", UT_ASCII);
     CU_ASSERT_PTR_NULL(unit2);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
     unit2 = ut_parse(xmlSystem, "m^-9223372036854775808", UT_ASCII);
     CU_ASSERT_PTR_NULL(unit2);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
 
     /* The juxtaposed form is narrowed by the same production. */
     unit2 = ut_parse(xmlSystem, "m4294967297", UT_ASCII);
     CU_ASSERT_PTR_NULL(unit2);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
     unit2 = ut_parse(xmlSystem, "m9223372036854775807", UT_ASCII);
     CU_ASSERT_PTR_NULL(unit2);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
 
     /* The limits themselves are unaffected. */
     unit2 = ut_parse(xmlSystem, "m^255", UT_ASCII);
@@ -2647,10 +2656,12 @@ test_xml(void)
     ut_free(unit2);
     unit2 = ut_parse(xmlSystem, "m^256", UT_ASCII);
     CU_ASSERT_PTR_NULL(unit2);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
 
     /*
      * Boundary behaviour of the ASCII exponent conversions.  Values outside
-     * the range of a long are rejected by the scanner; values inside it are
+     * the range of a long are rejected by the scanner, as a malformed token,
+     * and so report UT_SYNTAX rather than UT_BAD_ARG; values inside it are
      * passed on and judged by the range check on the unit power.  These
      * assertions pin the boundaries -- they do not distinguish strtol() from
      * the sscanf()/atol() conversions it replaced, because on glibc those
@@ -2660,14 +2671,19 @@ test_xml(void)
      */
     unit2 = ut_parse(xmlSystem, "m^9223372036854775808", UT_ASCII);
     CU_ASSERT_PTR_NULL(unit2);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SYNTAX);
     unit2 = ut_parse(xmlSystem, "m^-9223372036854775809", UT_ASCII);
     CU_ASSERT_PTR_NULL(unit2);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SYNTAX);
     unit2 = ut_parse(xmlSystem, "m^99999999999999999999", UT_ASCII);
     CU_ASSERT_PTR_NULL(unit2);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SYNTAX);
     unit2 = ut_parse(xmlSystem, "m9223372036854775808", UT_ASCII);
     CU_ASSERT_PTR_NULL(unit2);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SYNTAX);
     unit2 = ut_parse(xmlSystem, "m99999999999999999999", UT_ASCII);
     CU_ASSERT_PTR_NULL(unit2);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_SYNTAX);
 
     /* m^000000000000000000002 == m2 : more digits than a long, value is 2 */
     unit1 = ut_parse(xmlSystem, "m2", UT_ASCII);
