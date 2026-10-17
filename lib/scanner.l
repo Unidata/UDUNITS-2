@@ -95,11 +95,21 @@ static int read_1to2digits(const char* s, int* out, const char** endptr) {
     return 1;
 }
 
+/*
+ * Parses an optional decimal fraction "." <digit>* at *s and advances *s past
+ * it. The digits are optional, as in {second} in the lexer and <second> in
+ * GRAMMAR.md, so a bare "." is consumed and yields a zero fraction
+ * ("12:34:56." is 12:34:56, as in UDUNITS 2.2.28).
+ */
 static int parse_fraction(const char** s, double* frac) {
     const char* p = *s;
     if (*p != '.') return 1; /* ok, no fraction */
     p++;
-    if (*p < '0' || *p > '9') return 1;
+    if (*p < '0' || *p > '9') { /* bare ".": empty fraction */
+        *frac = 0.0;
+        *s = p;
+        return 1;
+    }
     double scale = 1.0;
     double f = 0.0;
     while (*p >= '0' && *p <= '9') {
@@ -221,7 +231,7 @@ static int parse_tod_broken(const char* s, int* H,int* M,double* S,const char** 
     return 1;
 }
 
-/* TOD packed: HH[MM[SS]][.frac] — at least HH; optional MM, then optional SS; fraction applies to SS if present else to HHMMSS interpretation */
+/* TOD packed: HH[MM[SS]][.frac], read from the left in two-digit fields. */
 /* Returns 1 on success, 0 if malformed, or -1 for a fraction with no seconds
    field -- a distinct reason the caller turns into a specific message. The
    -1 sentinel mirrors check_tz_range's negative-zero signal. */
@@ -232,44 +242,42 @@ static int parse_tod_packed(const char* s, int* H, int* M, double* S, const char
     if (len < 1 || len > 6) return 0;
 
     /*
-     * Right-align minute and second fields. Seconds occupy the last 2
-     * digits when present (len >= 5), minutes occupy the next 2 (len
-     * >= 3), and the hour takes whatever digits remain (1 or 2).
-     * Rationale: the minute and second fields are written 2-digit-wide
-     * by every standard (ISO 8601 basic form, POSIX, etc.); right-
-     * aligning to those fixed positions yields the only sensible
-     * reading of odd-length inputs (e.g., "123" -> 1:23, "12345" ->
-     * 1:23:45). Canonical 4-digit (HHMM) and 6-digit (HHMMSS) inputs
-     * are unaffected.
+     * Fields are taken from the left, two digits each: the hour, then the
+     * minute, then the second. The last field gets whatever digits remain,
+     * so an odd-length input has a one-digit final field:
+     *
+     *     "1"      -> 01:00:00        "1234"   -> 12:34:00
+     *     "12"     -> 12:00:00        "12345"  -> 12:34:05
+     *     "123"    -> 12:03:00        "123456" -> 12:34:56
+     *
+     * This is the reading of UDUNITS 2.2.28, which decoded the token with
+     * sscanf("%2d%2d%lf"), and the one GRAMMAR.md documents. It is kept for
+     * compatibility: an odd-length packed clock is ambiguous (1:23, 12:03 and
+     * 12:30 are all plausible readings of "123"), and changing the reading
+     * would silently change the value of existing strings. The one deliberate
+     * difference from 2.2.28 is that an out-of-range field is now an error;
+     * 2.2.28 silently encoded such a clock as midnight.
      *
      * Decimal fractions are accepted only when a seconds field exists
      * (len >= 5); they attach to the seconds. `had_seconds` is internal
      * to this parser: the public ut_check_clock validates the assembled
      * H:M:S, so the seconds field's presence need not be reported out.
      */
-    int h_digits;
-    int had_seconds;
-    if (len <= 2) {
-        h_digits = len;
-        had_seconds = 0;
-    } else if (len <= 4) {
-        h_digits = len - 2;   /* 1 or 2 */
-        had_seconds = 0;
-    } else {
-        h_digits = len - 4;   /* 1 or 2 */
-        had_seconds = 1;
-    }
+    const int h_digits = len < 2 ? len : 2;
+    const int m_digits = len <= 2 ? 0 : (len < 4 ? len - 2 : 2);
+    const int s_digits = len <= 4 ? 0 : len - 4;   /* 1 or 2 */
+    const int had_seconds = s_digits > 0;
 
     int h = 0, m = 0, ss = 0;
     const char* q = p;
     /* Defensive: the digits were counted above, so these cannot fail. */
     if (!read_ndigits(&q, h_digits, &h)) return 0;
-    if (len >= 3 && !read_ndigits(&q, 2, &m)) return 0;
-    if (had_seconds && !read_ndigits(&q, 2, &ss)) return 0;
+    if (m_digits && !read_ndigits(&q, m_digits, &m)) return 0;
+    if (s_digits && !read_ndigits(&q, s_digits, &ss)) return 0;
 
     /*
      * No range checking here. The field split is already fixed by the
-     * right-alignment above, so an out-of-range hour, minute or second is a
+     * digit count above, so an out-of-range hour, minute or second is a
      * pure rejection -- and ut_check_clock(), which decodeClockFlexible()
      * calls on the assembled H:M:S, rejects exactly the same values while
      * naming the offending field ("Invalid minute 75 (must be 0-59)").
@@ -279,10 +287,13 @@ static int parse_tod_packed(const char* s, int* H, int* M, double* S, const char
     double sec = (double)ss;
     double frac = 0.0;
     const char* r = q;
+    /* Test for the decimal point, not the fraction's value: "1234.0" has no
+       seconds field either. */
+    const int has_fraction = (*r == '.');
     /* Defensive: parse_fraction succeeds on every path. */
     if (!parse_fraction(&r, &frac)) return 0;
     if (had_seconds) sec += frac;
-    else if (frac != 0.0) return -1;  /* fraction but no seconds field */
+    else if (has_fraction) return -1;  /* fraction but no seconds field */
 
     *H = h; *M = m; *S = sec;
     *endptr = r;

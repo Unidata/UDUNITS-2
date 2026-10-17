@@ -634,6 +634,22 @@ static void test_broken_clock_fractional_seconds(void)
                             2024,  1, 15, 12, 30, 45.000001);
 }
 
+static void test_clock_empty_fraction(void)
+{
+    /* <second> is [0-9]{1,2} (\. <digit>*)? in GRAMMAR.md, so a bare "."
+       after the seconds is an empty fraction, as accepted by UDUNITS 2.2.28. */
+    assert_timestamp_origin("2024-01-15 12:30:45.",
+                            2024,  1, 15, 12, 30, 45.0);
+    assert_timestamp_origin("2024-01-15T12:30:45.",
+                            2024,  1, 15, 12, 30, 45.0);
+    assert_timestamp_origin("2024-01-15 123045.",
+                            2024,  1, 15, 12, 30, 45.0);
+    assert_timestamp_origin("2024-01-15 12345.",
+                            2024,  1, 15, 12, 34,  5.0);
+    assert_timestamps_equivalent("2024-01-15 12:30:45. UTC",
+                                 "2024-01-15 12:30:45 UTC");
+}
+
 static void test_fractional_second_precision(void)
 {
     /*
@@ -729,40 +745,47 @@ static void test_packed_clock_full(void)
 
 static void test_packed_clock_truncated(void)
 {
-    /* GRAMMAR.md packed-clock length interpretation (right-align):
+    /* GRAMMAR.md packed-clock length interpretation: fields are taken
+       from the left, two digits each, and the last field gets whatever
+       digits remain (the UDUNITS 2.2.28 reading):
          len 1  -> H        (-> 0H:00:00)
          len 2  -> HH       (-> HH:00:00)
-         len 3  -> H MM     (-> 0H:MM:00)
+         len 3  -> HH M     (-> HH:0M:00)
          len 4  -> HH MM    (-> HH:MM:00)
-         len 5  -> H MM SS  (-> 0H:MM:SS)
+         len 5  -> HH MM S  (-> HH:MM:0S)
          len 6  -> HH MM SS
-
-       Right-align means minutes are always positions -3,-4 from the
-       end of the digit sequence; seconds (when present) are -1,-2;
-       the hour takes whatever remains. So "123" reads as 1:23, not
-       12:3; "12345" reads as 1:23:45, not 12:34:5.
     */
     assert_timestamp_origin("2024-01-15 1",
                             2024,  1, 15,  1,  0,  0.0); /* len 1: H */
     assert_timestamp_origin("2024-01-15 12",
                             2024,  1, 15, 12,  0,  0.0); /* len 2: HH */
     assert_timestamp_origin("2024-01-15 123",
-                            2024,  1, 15,  1, 23,  0.0); /* len 3: H MM */
+                            2024,  1, 15, 12,  3,  0.0); /* len 3: HH M */
     assert_timestamp_origin("2024-01-15 1234",
                             2024,  1, 15, 12, 34,  0.0); /* len 4: HH MM */
     assert_timestamp_origin("2024-01-15 12345",
-                            2024,  1, 15,  1, 23, 45.0); /* len 5: H MM SS */
+                            2024,  1, 15, 12, 34,  5.0); /* len 5: HH MM S */
+}
+
+static void test_packed_clock_odd_length_out_of_range(void)
+{
+    /* UDUNITS 2.2.28 encoded an out-of-range packed clock as midnight,
+       without an error. The field split is unchanged, so these are now
+       rejected and the message names the offending field. */
+    assert_timestamp_reject_msg("2024-01-15 930",   "Invalid hour 93");
+    assert_timestamp_reject_msg("2024-01-15 93045", "Invalid hour 93");
+    assert_timestamp_reject_msg("2024-01-15 245",   "Invalid hour 24");
+    assert_timestamp_reject_msg("2024-01-15 1275",  "Invalid minute 75");
 }
 
 static void test_packed_clock_fractional_seconds(void)
 {
-    /* Per GRAMMAR.md: decimals only accepted for len 5+. Right-align
-       puts SS at the end, so the fraction attaches to the second
-       field as usual. */
+    /* Per GRAMMAR.md: decimals only accepted for len 5+, where a seconds
+       field exists; the fraction attaches to it. */
     assert_timestamp_origin("2024-01-15 123045.5",
                             2024,  1, 15, 12, 30, 45.5);
     assert_timestamp_origin("2024-01-15 12345.5",
-                            2024,  1, 15,  1, 23, 45.5);
+                            2024,  1, 15, 12, 34,  5.5);
 }
 
 static void test_packed_clock_reject_fraction_too_short(void)
@@ -772,6 +795,10 @@ static void test_packed_clock_reject_fraction_too_short(void)
     assert_timestamp_reject("2024-01-15 12.5");
     assert_timestamp_reject("2024-01-15 123.5");
     assert_timestamp_reject("2024-01-15 1234.5");
+    /* The decimal point decides, not the fraction's value. */
+    assert_timestamp_reject_msg("2024-01-15 123.0",  "no seconds field");
+    assert_timestamp_reject_msg("2024-01-15 1234.0", "no seconds field");
+    assert_timestamp_reject_msg("2024-01-15 1234.",  "no seconds field");
 }
 
 static void test_packed_clock_reject_bad_range(void)
@@ -781,9 +808,8 @@ static void test_packed_clock_reject_bad_range(void)
        outside the same ranges enforced for the broken form: hour 0-23,
        minute 0-59, second 0-60.
 
-       Test cases use lengths whose right-align interpretation puts the
-       bad field at HH or MM unambiguously, so the failure cannot be
-       misattributed. */
+       Test cases use even lengths, whose field split is unambiguous,
+       so the failure cannot be misattributed. */
     assert_timestamp_reject("2024-01-15 24");      /* len 2: HH=24 */
     assert_timestamp_reject("2024-01-15 2460");    /* len 4: HH=24, MM=60 */
     assert_timestamp_reject("2024-01-15 245959");  /* len 6: HH=24 */
@@ -1031,10 +1057,8 @@ static void test_tz_after_packed_clock(void)
     /* The TZ_CLOCK lexer state is entered after either broken_clock or
        packed_clock. Existing TZ tests all use the broken form before
        TZ; this exercises the packed-clock -> TZ transition. Lengths
-       1/2/4/6 are used (their right-align interpretation matches their
-       intuitive reading; lengths 3 and 5 are deliberately avoided here
-       since they're already extensively exercised by the packed-clock
-       tests themselves). */
+       1/2/4/6 are used (their field split is unambiguous; lengths 3 and
+       5 are exercised by the packed-clock tests themselves). */
     assert_timestamps_equivalent("2024-01-15 12+05:30",
                                  "2024-01-15 06:30:00 UTC");
     assert_timestamps_equivalent("2024-01-15 1234+05:30",
@@ -1918,6 +1942,7 @@ int main(const int argc, const char* const* argv)
     CU_ADD_TEST(s, test_broken_clock_full);
     CU_ADD_TEST(s, test_broken_clock_no_seconds);
     CU_ADD_TEST(s, test_broken_clock_fractional_seconds);
+    CU_ADD_TEST(s, test_clock_empty_fraction);
     CU_ADD_TEST(s, test_fractional_second_precision);
     CU_ADD_TEST(s, test_broken_clock_single_digit_components);
     CU_ADD_TEST(s, test_broken_clock_reject_bad_hour);
@@ -1929,6 +1954,7 @@ int main(const int argc, const char* const* argv)
     /* 4. packed CLOCK */
     CU_ADD_TEST(s, test_packed_clock_full);
     CU_ADD_TEST(s, test_packed_clock_truncated);
+    CU_ADD_TEST(s, test_packed_clock_odd_length_out_of_range);
     CU_ADD_TEST(s, test_packed_clock_fractional_seconds);
     CU_ADD_TEST(s, test_packed_clock_reject_fraction_too_short);
     CU_ADD_TEST(s, test_packed_clock_reject_bad_range);
