@@ -95,11 +95,21 @@ static int read_1to2digits(const char* s, int* out, const char** endptr) {
     return 1;
 }
 
+/*
+ * Parses an optional decimal fraction "." <digit>* at *s and advances *s past
+ * it. The digits are optional, as in {second} in the lexer and <second> in
+ * GRAMMAR.md, so a bare "." is consumed and yields a zero fraction
+ * ("12:34:56." is 12:34:56, as in UDUNITS 2.2.28).
+ */
 static int parse_fraction(const char** s, double* frac) {
     const char* p = *s;
     if (*p != '.') return 1; /* ok, no fraction */
     p++;
-    if (*p < '0' || *p > '9') return 1;
+    if (*p < '0' || *p > '9') { /* bare ".": empty fraction */
+        *frac = 0.0;
+        *s = p;
+        return 1;
+    }
     double scale = 1.0;
     double f = 0.0;
     while (*p >= '0' && *p <= '9') {

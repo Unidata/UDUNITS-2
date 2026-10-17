@@ -634,6 +634,22 @@ static void test_broken_clock_fractional_seconds(void)
                             2024,  1, 15, 12, 30, 45.000001);
 }
 
+static void test_clock_empty_fraction(void)
+{
+    /* <second> is [0-9]{1,2} (\. <digit>*)? in GRAMMAR.md, so a bare "."
+       after the seconds is an empty fraction, as accepted by UDUNITS 2.2.28. */
+    assert_timestamp_origin("2024-01-15 12:30:45.",
+                            2024,  1, 15, 12, 30, 45.0);
+    assert_timestamp_origin("2024-01-15T12:30:45.",
+                            2024,  1, 15, 12, 30, 45.0);
+    assert_timestamp_origin("2024-01-15 123045.",
+                            2024,  1, 15, 12, 30, 45.0);
+    assert_timestamp_origin("2024-01-15 12345.",
+                            2024,  1, 15, 12, 34,  5.0);
+    assert_timestamps_equivalent("2024-01-15 12:30:45. UTC",
+                                 "2024-01-15 12:30:45 UTC");
+}
+
 static void test_fractional_second_precision(void)
 {
     /*
@@ -1926,6 +1942,7 @@ int main(const int argc, const char* const* argv)
     CU_ADD_TEST(s, test_broken_clock_full);
     CU_ADD_TEST(s, test_broken_clock_no_seconds);
     CU_ADD_TEST(s, test_broken_clock_fractional_seconds);
+    CU_ADD_TEST(s, test_clock_empty_fraction);
     CU_ADD_TEST(s, test_fractional_second_precision);
     CU_ADD_TEST(s, test_broken_clock_single_digit_components);
     CU_ADD_TEST(s, test_broken_clock_reject_bad_hour);
