@@ -235,6 +235,13 @@ CLOCK: one of
         //   len = 4  → HHMM    → HHMM00   decimals are not allowed
         //   len = 5  → HHMMS   → HHMM0S   decimals accepted: HHMM0S.dddd...
         //   len = 6  → HHMMSS  → HHMMSS   decimals accepted: HHMMSS.dddd...
+        // NOTE: fields are taken from the left, two digits each, so an odd
+        //       number of digits shortens the LAST field: "123" is 12:03:00
+        //       and "12345" is 12:34:05, as in UDUNITS 2.2.28.  These
+        //       odd-length forms are ambiguous ("123" could also mean 01:23
+        //       or 12:30) and are a UDUNITS extension; ISO 8601 basic format
+        //       has only the even-length ones.  Write HHMM or HHMMSS, or the
+        //       broken form, to avoid the ambiguity.
 
 <year-broken>:
         [+-]? [0-9]@{1,7@}
