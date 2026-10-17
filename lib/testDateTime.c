@@ -751,6 +751,17 @@ static void test_packed_clock_truncated(void)
                             2024,  1, 15, 12, 34,  5.0); /* len 5: HH MM S */
 }
 
+static void test_packed_clock_odd_length_out_of_range(void)
+{
+    /* UDUNITS 2.2.28 encoded an out-of-range packed clock as midnight,
+       without an error. The field split is unchanged, so these are now
+       rejected and the message names the offending field. */
+    assert_timestamp_reject_msg("2024-01-15 930",   "Invalid hour 93");
+    assert_timestamp_reject_msg("2024-01-15 93045", "Invalid hour 93");
+    assert_timestamp_reject_msg("2024-01-15 245",   "Invalid hour 24");
+    assert_timestamp_reject_msg("2024-01-15 1275",  "Invalid minute 75");
+}
+
 static void test_packed_clock_fractional_seconds(void)
 {
     /* Per GRAMMAR.md: decimals only accepted for len 5+, where a seconds
@@ -768,6 +779,10 @@ static void test_packed_clock_reject_fraction_too_short(void)
     assert_timestamp_reject("2024-01-15 12.5");
     assert_timestamp_reject("2024-01-15 123.5");
     assert_timestamp_reject("2024-01-15 1234.5");
+    /* The decimal point decides, not the fraction's value. */
+    assert_timestamp_reject_msg("2024-01-15 123.0",  "no seconds field");
+    assert_timestamp_reject_msg("2024-01-15 1234.0", "no seconds field");
+    assert_timestamp_reject_msg("2024-01-15 1234.",  "no seconds field");
 }
 
 static void test_packed_clock_reject_bad_range(void)
@@ -1922,6 +1937,7 @@ int main(const int argc, const char* const* argv)
     /* 4. packed CLOCK */
     CU_ADD_TEST(s, test_packed_clock_full);
     CU_ADD_TEST(s, test_packed_clock_truncated);
+    CU_ADD_TEST(s, test_packed_clock_odd_length_out_of_range);
     CU_ADD_TEST(s, test_packed_clock_fractional_seconds);
     CU_ADD_TEST(s, test_packed_clock_reject_fraction_too_short);
     CU_ADD_TEST(s, test_packed_clock_reject_bad_range);
