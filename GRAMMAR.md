@@ -334,8 +334,9 @@ Here is the unit-syntax understood by the UDUNITS-2 package. Words printed \_Thu
             // Length-based interpretation after the sign:
             //   total_len(sign excluded) = 1 → H
             //   total_len(sign excluded) = 2 → HH
-            //   total_len(sign excluded) = 3 → HHM, except that a leading zero is
-            //       rejected (e.g., "+053", "-053"); write "+0:53" or "+0053" instead
+            //   total_len(sign excluded) = 3 → HMM (so "+530" is +05:30), except
+            //       that a leading zero is rejected (e.g., "+053", "-053") because
+            //       it would lose the sign; write "+0:53" or "+0053" instead
             //   total_len(sign excluded) = 4 → HHMM
 
     <tz-hour>:
