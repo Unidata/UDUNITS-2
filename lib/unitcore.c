@@ -3683,9 +3683,18 @@ ut_divide(
 	ut_unit*	inverse = RAISE(denom, -1);
 
 	if (inverse != NULL) {
+	    ut_status	status;
+
 	    result = MULTIPLY(numer, inverse);
 
+	    /*
+	     * ut_free() reports its own success, so calling it here would
+	     * overwrite any failure status set by the multiplication.
+	     */
+	    status = ut_get_status();
+
 	    ut_free(inverse);
+	    ut_set_status(status);
 	}
     }
 

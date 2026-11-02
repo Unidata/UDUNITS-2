@@ -788,6 +788,18 @@ test_utDivide(void)
 
     CU_ASSERT_PTR_NULL(ut_divide(NULL, meter));
     CU_ASSERT_PTR_NULL(ut_divide(meter, NULL));
+
+    /*
+     * A division that fails must report the failure.  The inverse is freed
+     * inside ut_divide(), and ut_free() reports its own success, so an
+     * unpreserved status would leave UT_SUCCESS behind on a NULL return.
+     */
+    unit = ut_raise(meter, 200);
+    unit2 = ut_raise(meter, -100);
+    CU_ASSERT_PTR_NULL(ut_divide(unit, unit2));
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
+    ut_free(unit2);
+    ut_free(unit);
 }
 
 
@@ -2657,6 +2669,20 @@ test_xml(void)
     unit2 = ut_parse(xmlSystem, "m^256", UT_ASCII);
     CU_ASSERT_PTR_NULL(unit2);
     CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
+
+    /* A failed division reports the same status as a failed multiplication. */
+    unit2 = ut_parse(xmlSystem, "m^200.m^100", UT_ASCII);
+    CU_ASSERT_PTR_NULL(unit2);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
+    unit2 = ut_parse(xmlSystem, "m^200/m^-100", UT_ASCII);
+    CU_ASSERT_PTR_NULL(unit2);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
+    unit2 = ut_parse(xmlSystem, "lg(re 1 mW) m", UT_ASCII);
+    CU_ASSERT_PTR_NULL(unit2);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_MEANINGLESS);
+    unit2 = ut_parse(xmlSystem, "lg(re 1 mW)/m", UT_ASCII);
+    CU_ASSERT_PTR_NULL(unit2);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_MEANINGLESS);
 
     /*
      * Boundary behaviour of the ASCII exponent conversions.  Values outside
