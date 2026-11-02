@@ -2670,6 +2670,27 @@ test_xml(void)
     CU_ASSERT_PTR_NULL(unit2);
     CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
 
+    /*
+     * A rejected scale factor must say so.  ut_raise() has no bound of its own
+     * on the power any more, so galileanNew() is the only place to report it.
+     */
+    {
+	static const char* const	spec[] = {"10^400", "(1000 m)^103"};
+	size_t				i;
+
+	for (i = 0; i < sizeof(spec)/sizeof(spec[0]); ++i) {
+	    ut_error_message_handler	prev;
+
+	    trailingMessage[0] = '\0';
+	    prev = ut_set_error_message_handler(captureMessage);
+	    unit2 = ut_parse(xmlSystem, spec[i], UT_ASCII);
+	    (void)ut_set_error_message_handler(prev);
+	    CU_ASSERT_PTR_NULL(unit2);
+	    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
+	    CU_ASSERT_PTR_NOT_NULL(strstr(trailingMessage, "galileanNew()"));
+	}
+    }
+
     /* A failed division reports the same status as a failed multiplication. */
     unit2 = ut_parse(xmlSystem, "m^200.m^100", UT_ASCII);
     CU_ASSERT_PTR_NULL(unit2);

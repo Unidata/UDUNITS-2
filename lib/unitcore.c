@@ -1910,6 +1910,8 @@ galileanNew(
 
     if (scale == 0 || !isfinite(scale) || unit == NULL) {
         ut_set_status(UT_BAD_ARG);
+        ut_handle_error_message("galileanNew(): "
+            "Scale is zero or not representable, or the unit is NULL");
         newUnit = NULL;
     }
     else {
