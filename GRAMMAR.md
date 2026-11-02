@@ -161,9 +161,13 @@ Here is the unit-syntax understood by the UDUNITS-2 package. Words printed \_Thu
     // As with date/time elements below, the lexical patterns above are intentionally
     // PERMISSIVE. <raise-with-int> and <utf8-exponent> accept any number of digits,
     // and leading zeros are permitted and carry no meaning: m2, m02 and m⁰⁰² denote
-    // the same unit, as do 10^2 and 10^02. The scanner requires only that the value
-    // be representable as an int; the superscript form accumulates a magnitude
-    // before applying the sign, so its most negative accepted value is -INT_MAX.
+    // the same unit, as do 10^2 and 10^02. The value must be representable as an
+    // int. The superscript form accumulates a magnitude before applying the sign,
+    // so its most negative accepted value is -INT_MAX. The ASCII forms are converted
+    // to a long first: a value outside the range of a long is a malformed token
+    // (UT_SYNTAX), and one inside it but outside the range of an int is rejected
+    // by the parser (UT_BAD_ARG). The width of a long varies between platforms, so
+    // the status for such a value does too; that it is rejected does not.
     // Everything else is decided during semantic
     // analysis, because it depends on what the exponent is applied to, which the
     // grammar cannot see.
