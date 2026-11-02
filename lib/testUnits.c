@@ -2396,6 +2396,7 @@ test_visitor(void)
 static void
 test_xml(void)
 {
+    ut_status	longerThanInt;
     ut_system*          xmlSystem;
     glob_t              files;
     int                 status;
@@ -2634,30 +2635,37 @@ test_xml(void)
      * reports below ("m^256") and on main ("m-256").  That ut_parse() passes
      * an inner UT_BAD_ARG through, rather than translating it at its own
      * boundary, is a general question and is not settled here.
+     *
+     * Where long is no wider than int, as on ILP32 and LLP64, these literals
+     * never reach that check: they are outside the range of a long, so the
+     * scanner rejects them as malformed tokens, as below, with UT_SYNTAX.
+     * Rejection is required everywhere; only the status depends on the width.
      */
+    longerThanInt = LONG_MAX > INT_MAX ? UT_BAD_ARG : UT_SYNTAX;
+
     unit2 = ut_parse(xmlSystem, "m^4294967296", UT_ASCII);
     CU_ASSERT_PTR_NULL(unit2);
-    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
+    CU_ASSERT_EQUAL(ut_get_status(), longerThanInt);
     unit2 = ut_parse(xmlSystem, "m^4294967297", UT_ASCII);
     CU_ASSERT_PTR_NULL(unit2);
-    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
+    CU_ASSERT_EQUAL(ut_get_status(), longerThanInt);
     unit2 = ut_parse(xmlSystem, "m^4294967298", UT_ASCII);
     CU_ASSERT_PTR_NULL(unit2);
-    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
+    CU_ASSERT_EQUAL(ut_get_status(), longerThanInt);
     unit2 = ut_parse(xmlSystem, "m^9223372036854775807", UT_ASCII);
     CU_ASSERT_PTR_NULL(unit2);
-    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
+    CU_ASSERT_EQUAL(ut_get_status(), longerThanInt);
     unit2 = ut_parse(xmlSystem, "m^-9223372036854775808", UT_ASCII);
     CU_ASSERT_PTR_NULL(unit2);
-    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
+    CU_ASSERT_EQUAL(ut_get_status(), longerThanInt);
 
     /* The juxtaposed form is narrowed by the same production. */
     unit2 = ut_parse(xmlSystem, "m4294967297", UT_ASCII);
     CU_ASSERT_PTR_NULL(unit2);
-    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
+    CU_ASSERT_EQUAL(ut_get_status(), longerThanInt);
     unit2 = ut_parse(xmlSystem, "m9223372036854775807", UT_ASCII);
     CU_ASSERT_PTR_NULL(unit2);
-    CU_ASSERT_EQUAL(ut_get_status(), UT_BAD_ARG);
+    CU_ASSERT_EQUAL(ut_get_status(), longerThanInt);
 
     /* The limits themselves are unaffected. */
     unit2 = ut_parse(xmlSystem, "m^255", UT_ASCII);
@@ -2709,12 +2717,10 @@ test_xml(void)
      * Boundary behaviour of the ASCII exponent conversions.  Values outside
      * the range of a long are rejected by the scanner, as a malformed token,
      * and so report UT_SYNTAX rather than UT_BAD_ARG; values inside it are
-     * passed on and judged by the range check on the unit power.  These
-     * assertions pin the boundaries -- they do not distinguish strtol() from
-     * the sscanf()/atol() conversions it replaced, because on glibc those
-     * happen to behave the same way.  The difference is that strtol() is
-     * required to report the out-of-range case, whereas the others have
-     * undefined behaviour there.
+     * passed on and judged by the range check on the unit power.  strtol() is
+     * required to report the out-of-range case, whereas the sscanf() it
+     * replaced has undefined behaviour there; with glibc, sscanf() saturated,
+     * and "m^9223372036854775808" parsed as "m-1".
      */
     unit2 = ut_parse(xmlSystem, "m^9223372036854775808", UT_ASCII);
     CU_ASSERT_PTR_NULL(unit2);
