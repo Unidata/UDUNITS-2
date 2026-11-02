@@ -1951,9 +1951,8 @@ test_parsing(void)
 
     /*
      * The LOGREF "re" marker must not swallow the first two letters of an
-     * ordinary identifier that happens to start with "re" (issue #156's
-     * scanner-boundary group). "rem" (the radiation-dose unit) is a real
-     * offender: before the fix, "lg(rem)" silently lexed as LOGREF "lg(re"
+     * ordinary identifier that happens to start with "re" (issue #172).
+     * "rem" (the radiation-dose unit) is a real offender: before the fix, "lg(rem)" silently lexed as LOGREF "lg(re"
      * followed by identifier "m" (meter), so it *parsed successfully* to
      * the wrong unit -- log base 10 referenced to one meter -- instead of
      * failing outright.
@@ -1999,22 +1998,27 @@ test_parsing(void)
      * with the digit-led case. All delimiter-free forms are rejected
      * uniformly now.
      */
-    spec = "lg(re1 nV)";
+    spec = "lg(re1 m)";
     unit = ut_parse(unitSystem, spec, UT_ASCII);
     CU_ASSERT_PTR_NULL(unit);
     CU_ASSERT_EQUAL(ut_get_status(), UT_UNKNOWN);
 
-    spec = "lg(re+1 nV)";
+    spec = "lg(re+1 m)";
     unit = ut_parse(unitSystem, spec, UT_ASCII);
     CU_ASSERT_PTR_NULL(unit);
     CU_ASSERT_EQUAL(ut_get_status(), UT_UNKNOWN);
 
-    spec = "lg(re-1 nV)";
+    spec = "lg(re-1 m)";
     unit = ut_parse(unitSystem, spec, UT_ASCII);
     CU_ASSERT_PTR_NULL(unit);
     CU_ASSERT_EQUAL(ut_get_status(), UT_UNKNOWN);
 
-    spec = "lg(re.5 nV)";
+    spec = "lg(re.5 m)";
+    unit = ut_parse(unitSystem, spec, UT_ASCII);
+    CU_ASSERT_PTR_NULL(unit);
+    CU_ASSERT_EQUAL(ut_get_status(), UT_UNKNOWN);
+
+    spec = "lg(re(1 m))";
     unit = ut_parse(unitSystem, spec, UT_ASCII);
     CU_ASSERT_PTR_NULL(unit);
     CU_ASSERT_EQUAL(ut_get_status(), UT_UNKNOWN);
