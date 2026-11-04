@@ -1,0 +1,77 @@
+# set the theme
+theme: unidata-jekyll-theme
+
+# this will appear in an HTML meta tag, sidebar, and perhaps elsewhere
+# be sure to quote the version number; if you use major.minor, it will be treated as a float
+# and things like 5.10 will render as 5.1.
+docset_version: "2.2.28"
+
+# this appears on the top navigation bar next to the home button
+topnav_title: UDUNITS-2 Documentation
+
+# this appears in the html browser tab for the site title (seen mostly by search engines, not users)
+site_title: UDUNITS-2 Documentation
+
+# this appears in the footer
+site_topic: UDUNITS-2 Documentation
+
+# if you're using Github, provide the basepath to the branch you've created for reviews. If not, leave this value blank.
+github_editme_path:
+
+# if you have google-analytics ID, put it in. if not, edit this value to blank.
+# e.g. google_analytics: UA-92978945-1
+google_analytics: UA-92978945-1
+
+# the preview server used. Leave as is.
+host: 127.0.0.1
+
+# the port where the preview is rendered. You can leave this as is unless you have other Jekyll builds using this same port that might cause conflicts. in that case, use another port such as 4006.
+port: 4000
+
+# these are the files and directories that jekyll will exclude from the build
+exclude:
+  - build/
+  - "Gemfile.*"
+  - .gitignore
+  - README.md
+
+# used for the Feedback link in the top navigation bar
+feedback_link: "https://github.com/Unidata/UDUNITS-2/issues/new?title=Documentation%20feedback"
+
+# library used for syntax highlighting
+highlighter: rouge
+
+# filter used to process markdown. note that kramdown differs from github-flavored markdown in some subtle ways
+markdown: kramdown
+kramdown:
+ input: GFM
+ auto_ids: true
+ hard_wrap: false
+ syntax_highlighter: rouge
+
+# collections are declared here. this renders the content in _tooltips and processes it, but doesn't output it as actual files in the output unless you change output to true
+collections:
+  tooltips:
+    output: false
+
+# these are defaults used for the frontmatter for these file types
+defaults:
+  -
+    scope:
+      path: ""
+      type: "pages"
+    values:
+      layout: "page"
+      comments: false
+      sidebar: sidebar
+
+sidebars:
+- sidebar
+
+
+# the description is used in the feed.xml file
+description: "Welcome to the user documentation for UDUNITS-2, a C library and command-line tool for parsing and converting physical units."
+
+# needed for sitemap.xml file only
+# must include trailing slash, leave off the version :-)
+base_docs_url: https://unidata.github.io/UDUNITS-2

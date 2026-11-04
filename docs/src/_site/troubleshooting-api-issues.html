@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="">
+<meta name="keywords" content=" ">
+<meta name="doc_version" content="2.2.28">
+<title>Troubleshooting API Issues | UDUNITS-2 Documentation</title>
+<link rel="stylesheet" href="assets/css/syntax.css">
+
+
+<link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
+<!--<link rel="stylesheet" type="text/css" href="assets/css/bootstrap.min.css">-->
+<link rel="stylesheet" href="assets/css/modern-business.css">
+<link rel="stylesheet" href="assets/css/lavish-bootstrap.css">
+<link rel="stylesheet" href="assets/css/theme-unidata.css">
+<link rel="stylesheet" href="assets/css/customstyles.css">
+
+<script
+    src="https://code.jquery.com/jquery-3.7.1.min.js"
+    integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
+    crossorigin="anonymous"></script>
+<script
+    src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"
+    integrity="sha512-3j3VU6WC5rPQB4Ld1jnLV7Kd5xr+cq9avvhwqzbH/taCRNURoeEpoPBK9pDyeukwSxwRPJ8fDgvYXd6SkaZ2TA=="
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"></script>
+<script src="assets/js/jquery.navgoco.min.js"></script>
+
+
+<script
+    src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
+    integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
+    crossorigin="anonymous"></script>
+<script
+    src="https://cdnjs.cloudflare.com/ajax/libs/anchor-js/4.3.1/anchor.min.js"
+    integrity="sha512-zPB79j2C+3sFS9zcA3vg/z6bVKzJVEyu9pY5w89akQRys76zpAT2t6S3wZKla3QQ14O5l/Yt0RUQ/DHXx82Y5g=="
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"></script>
+<script src="assets/js/toc.js"></script>
+<script src="assets/js/customscripts.js"></script>
+
+<link rel="shortcut icon" href="assets/images/favicon.ico">
+
+  <script>
+    $(document).ready(function () {
+      // Initialize navgoco with default options
+      $("#mysidebar").navgoco({
+        caretHtml: '',
+        accordion: true,
+        openClass: 'active', // open
+        save: false, // leave false or nav highlighting doesn't work right
+        cookie: {
+          name: 'navgoco',
+          expires: false,
+          path: '/'
+        },
+        slide: {
+          duration: 400,
+          easing: 'swing'
+        }
+      });
+
+      $("#collapseAll").click(function (e) {
+        e.preventDefault();
+        $("#mysidebar").navgoco('toggle', false);
+      });
+
+      $("#expandAll").click(function (e) {
+        e.preventDefault();
+        $("#mysidebar").navgoco('toggle', true);
+      });
+
+    });
+
+  </script>
+  <script>
+    $(function () {
+      $('[data-toggle="tooltip"]').tooltip()
+    })
+  </script>
+  <script>
+    $(document).ready(function () {
+      $("#tg-sb-link").click(function () {
+        $("#tg-sb-sidebar").toggle();
+        $("#tg-sb-content").toggleClass('col-md-9');
+        $("#tg-sb-content").toggleClass('col-md-12');
+        $("#tg-sb-icon").toggleClass('fa-toggle-on');
+        $("#tg-sb-icon").toggleClass('fa-toggle-off');
+      });
+    });
+  </script>
+  
+
+</head>
+
+<body>
+  <!-- Navigation -->
+<nav class="navbar navbar-inverse navbar-static-top">
+    <div class="container topnavlinks">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="fa fa-home fa-lg navbar-brand" href="index.html" style="padding-right:0px;">&nbsp;<span class="projectTitle">
+          UDUNITS-2 Documentation</span></a>
+        </div>
+        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+            <ul class="nav navbar-nav navbar-left">
+              
+              <li class="dropdown" id="vermenu">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">Version 2.2.28<b class="caret"></b></a>
+                <ul class="dropdown-menu" id="docmenu">
+                  
+                  
+                  <li id="remove"><a href="">Menu Loading...</a></li>
+                  
+                  
+                </ul>
+              </li>
+              
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <!-- toggle sidebar button -->
+                <li><a id="tg-sb-link" href="#"><i id="tg-sb-icon" class="fa fa-toggle-on"></i> Nav</a></li>
+                <!-- entries without drop-downs appear here -->
+
+
+
+
+                
+                
+                
+                <li><a href="https://www.unidata.ucar.edu/software/udunits" target="_blank">UDUNITS-2 Home Page</a></li>
+                
+                
+                
+                <li><a href="https://github.com/Unidata/UDUNITS-2" target="_blank">GitHub</a></li>
+                
+                
+                
+                <!-- entries with drop-downs appear here -->
+                <!-- conditional logic to control which topnav appears for the audience defined in the configuration file.-->
+                
+                
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">Jekyll Help<b class="caret"></b></a>
+                    <ul class="dropdown-menu" id="">
+                        
+                        
+                        <li id=""><a href="https://talk.jekyllrb.com" target="_blank">Jekyll Talk</a></li>
+                        
+                        
+                        
+                        <li id=""><a href="http://jekyllrb.com/docs/home/" target="_blank">Jekyll documentation</a></li>
+                        
+                        
+                        
+                        <li id=""><a href="http://stackoverflow.com/questions/tagged/jekyll" target="_blank">Jekyll on Stack Overflow</a></li>
+                        
+                        
+                        
+                        <li id=""><a href="http://idratherbewriting.com/category-jekyll/" target="_blank">Jekyll on my blog</a></li>
+                        
+                        
+                    </ul>
+                </li>
+                
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">Products<b class="caret"></b></a>
+                    <ul class="dropdown-menu" id="">
+                        
+                        
+                        <li id=""><a href="mydoc_introduction.html">Upstream Jekyll Documentation Theme Info</a></li>
+                        
+                        
+                        
+                        <li id=""><a href="p1_landing_page.html">Product 1</a></li>
+                        
+                        
+                        
+                        <li id=""><a href="p2_landing_page.html">Product 2</a></li>
+                        
+                        
+                    </ul>
+                </li>
+                
+                
+                
+			<li>
+
+
+
+  <a class="email" title="Submit feedback" href="https://github.com/Unidata/UDUNITS-2/issues/new?title=Documentation%20feedback">Feedback</a>
+
+</li>
+
+		
+                <!--comment out this block if you want to hide search-->
+                <li>
+                    <!--start search-->
+                    <div id="search-demo-container">
+                        <input type="text" id="search-input" placeholder="search...">
+                        <ul id="results-container"></ul>
+                    </div>
+                    <script src="assets/js/jekyll-search.js" type="text/javascript"></script>
+                    <script type="text/javascript">
+                            var pageLocation = window.location.href;
+                            var searchJson = pageLocation.substring(0, pageLocation.lastIndexOf('/') + 1) + "assets/search/search.json";
+                            SimpleJekyllSearch.init({
+                                searchInput: document.getElementById('search-input'),
+                                resultsContainer: document.getElementById('results-container'),
+                                dataSource: searchJson,
+                                searchResultTemplate: '<li><a href="{url}" title="Troubleshooting API Issues">{title}</a></li>',
+                    noResultsText: 'No results found.',
+                            limit: 10,
+                            fuzzy: true,
+                    })
+                    </script>
+                    <!--end search-->
+                </li>
+            </ul>
+        </div>
+        </div>
+        <!-- /.container -->
+</nav>
+
+  <!-- Page Content -->
+  <div class="container">
+    <div id="main">
+      <!-- Content Row -->
+      <div class="row" id="content">
+        
+        
+        <!-- Sidebar Column -->
+        <div class="col-md-3" id="tg-sb-sidebar">
+          
+
+<ul id="mysidebar" class="nav">
+  <!-- figure out title for sidebar
+     sidebar[0].product -> sidebar[0].title -> site.site_title -> empty
+       (sidebar yaml)       (sidebar yaml)     (_config.yaml)
+    -->
+  
+
+  <!-- figure out title for sidebar
+   sidebar[0].version -> site.docset_version -> empty
+     (sidebar yaml)        (_config.yaml)
+    -->
+  
+
+  
+
+  <!-- Both sidebar_title and sidebar_version defined -->
+  
+  <li class="sidebarTitle"><a href="index.html">UDUNITS-2 Documentation 2.2.28</a></li>
+  <!-- Only sidebar_title defined -->
+  
+
+  
+  
+  
+      
+  
+  <li>
+      <a title="Getting Started" href="#">Getting Started</a>
+      <ul>
+          
+          
+          
+          <li><a title="Overview" href="index.html">Overview</a></li>
+          
+          
+          
+          <li class="subfolders">
+              <a title="Installation" href="#">Installation</a>
+              <ul>
+                  
+                  
+                  
+                  <li><a title="Building from Source" href="building-from-source.html">Building from Source</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Package Manager Installation" href="package-manager-installation.html">Package Manager Installation</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Installation Via Conda" href="conda-installation.html">Installation Via Conda</a></li>
+                  
+                  
+                  
+              </ul>
+          </li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Quick Start Guide" href="quick-start-guide.html">Quick Start Guide</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Basic Examples" href="basic-examples.html">Basic Examples</a></li>
+          
+          
+          
+          
+      </ul>
+   </li>
+     
+      
+  
+  <li>
+      <a title="Concepts" href="#">Concepts</a>
+      <ul>
+          
+          
+          
+          <li><a title="Overview" href="concepts-overview.html">Overview</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Units" href="concepts-units.html">Units</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Dimensions" href="concepts-dimensions.html">Dimensions</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Unit Systems" href="concepts-unit-systems.html">Unit Systems</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Unit Expressions" href="concepts-unit-expressions.html">Unit Expressions</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Converters" href="concepts-converters.html">Converters</a></li>
+          
+          
+          
+          
+      </ul>
+   </li>
+     
+      
+  
+  <li>
+      <a title="User Guide" href="#">User Guide</a>
+      <ul>
+          
+          
+          
+          <li><a title="Unit Expression Language" href="unit-expression-language.html">Unit Expression Language</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Units Database" href="units-database.html">Units Database</a></li>
+          
+          
+          
+          
+      </ul>
+   </li>
+     
+      
+  
+  <li>
+      <a title="Developer Guide" href="#">Developer Guide</a>
+      <ul>
+          
+          
+          
+          <li><a title="Building Applications" href="building-applications.html">Building Applications</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Developing UDUNITS-2" href="developing-udunits.html">Developing UDUNITS-2</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Using the C API" href="using-the-c-api.html">Using the C API</a></li>
+          
+          
+          
+          
+      </ul>
+   </li>
+     
+      
+  
+  <li>
+      <a title="Tools" href="#">Tools</a>
+      <ul>
+          
+          
+          
+          <li><a title="udunits2 CLI Utility" href="udunits2-cli-utility.html">udunits2 CLI Utility</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Validation and Testing" href="validation-and-testing.html">Validation and Testing</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Man Pages" href="man-pages.html">Man Pages</a></li>
+          
+          
+          
+          
+      </ul>
+   </li>
+     
+      
+  
+  <li>
+      <a title="Reference" href="#">Reference</a>
+      <ul>
+          
+          
+          
+          <li><a title="Configure Script Options" href="configure-options.html">Configure Script Options</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Compiler & Linker Flags" href="compiler-linker-flags.html">Compiler & Linker Flags</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Environment Variables" href="environment-variables.html">Environment Variables</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Installation Layout" href="installation-layout.html">Installation Layout</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Unit Expression Language Spec" href="unit-expression-language-specification.html">Unit Expression Language Spec</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="XML Units Database Reference" href="xml-units-database-reference.html">XML Units Database Reference</a></li>
+          
+          
+          
+          <li class="subfolders">
+              <a title="C API" href="#">C API</a>
+              <ul>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="API Overview" href="c-api-overview.html">API Overview</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Data Structures" href="data-structures.html">Data Structures</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Unit Systems API" href="unit-systems-api.html">Unit Systems API</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Unit Creation & Destruction API" href="unit-creation-destruction-api.html">Unit Creation & Destruction API</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Unit Parsing & Formatting API" href="unit-parsing-formatting-api.html">Unit Parsing & Formatting API</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Unit Arithmetic API" href="unit-arithmetic-api.html">Unit Arithmetic API</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Unit Conversion API" href="unit-conversion-api.html">Unit Conversion API</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Unit Query & Introspection API" href="unit-query-introspection-api.html">Unit Query & Introspection API</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Unit Name & Symbols Mapping API" href="unit-name-symbols-mapping-api.html">Unit Name & Symbols Mapping API</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Unit Time Utilities API" href="unit-time-utilities-api.html">Unit Time Utilities API</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Extended Unit API" href="extended-unit-api.html">Extended Unit API</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Error Handling API" href="error-handling-api.html">Error Handling API</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li class="active"><a title="Troubleshooting API Issues" href="troubleshooting-api-issues.html">Troubleshooting API Issues</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="UDUNITS-1 Legacy API" href="udunits-1-legacy-api.html">UDUNITS-1 Legacy API</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="C API Function Index" href="c-api-function-index.html">C API Function Index</a></li>
+                  
+                  
+                  
+              </ul>
+          </li>
+          
+          
+          
+          
+      </ul>
+   </li>
+     
+      
+      
+      <!-- if you aren't using the accordion, uncomment this block:
+         <p class="external">
+             <a href="#" id="collapseAll">Collapse All</a> | <a href="#" id="expandAll">Expand All</a>
+         </p>
+         -->
+</ul>
+
+<!-- this highlights the active parent class in the navgoco sidebar. this is critical so that the parent expands when you're viewing a page. This must appear below the sidebar code above. Otherwise, if placed inside customscripts.js, the script runs before the sidebar code runs and the class never gets inserted.-->
+<script>$("li.active").parents('li').toggleClass("active");</script>
+
+        </div>
+
+        
+        
+
+        <!-- Content Column -->
+        <div class="col-md-6" id="tg-sb-content">
+          <div class="post-header">
+   <h1 class="post-title-main">Troubleshooting API Issues</h1>
+</div>
+
+
+
+<div class="post-content">
+
+   
+
+    
+   <!--
+  If breadcrumbs explicitly set in the front matter of the markdown source, use it.
+  -->
+
+
+
+
+
+
+<div id="breadcrumbs">
+  
+  <a href="index.html" class="bcStart">UDUNITS-2 Documentation</a>
+  
+  
+  <span class="bcEnd">Troubleshooting API Issues</span>
+  
+  
+</div>
+
+   <p>Most <strong>UDUNITS-2 C API usage issues</strong> fall into a small number of common categories.</p>
+
+<p>Before using the troubleshooting tables below, ensure that the <strong>unit system
+context</strong>, <strong>unit definitions</strong>, and <strong>conversion workflow</strong> follow the expected
+lifecycle described in the UDUNITS-2 C API reference.</p>
+
+<h2 id="unit-parsing-issues">Unit Parsing Issues</h2>
+
+<p>These errors occur when converting text unit specifications into
+<a href="ut-unit.html"><code class="language-plaintext highlighter-rouge">ut-unit</code></a> objects using <a href="ut-parse.html"><code class="language-plaintext highlighter-rouge">ut-parse()</code></a>.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Symptom</th>
+      <th>Cause</th>
+      <th>Diagnosis</th>
+      <th>Fix</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><a href="ut-parse.html"><code class="language-plaintext highlighter-rouge">ut_parse()</code></a> returns NULL</td>
+      <td>Unit string not recognized by grammar</td>
+      <td>Enable error handler using <a href="ut-set-error-message-handler.html"><code class="language-plaintext highlighter-rouge">ut_set_error_message_handler()</code></a> and inspect message</td>
+      <td>Verify spelling and grammar using <code class="language-plaintext highlighter-rouge">udunits2 -H</code></td>
+    </tr>
+    <tr>
+      <td>Valid-looking unit fails to parse using <a href="ut-parse.html"><code class="language-plaintext highlighter-rouge">ut_parse()</code></a></td>
+      <td>String uses unsupported syntax</td>
+      <td>Compare with canonical examples</td>
+      <td>Rewrite using UDUNITS grammar conventions</td>
+    </tr>
+    <tr>
+      <td>Prefix interpreted incorrectly</td>
+      <td>Ambiguous prefix usage</td>
+      <td>Inspect parsed output using <a href="ut-format.html"><code class="language-plaintext highlighter-rouge">ut_format()</code></a></td>
+      <td>Use explicit unit symbols</td>
+    </tr>
+    <tr>
+      <td>Expression parses but produces unexpected unit</td>
+      <td>Operator precedence misunderstood</td>
+      <td>Review parentheses in unit expression</td>
+      <td>Add explicit grouping</td>
+    </tr>
+    <tr>
+      <td>Parsing fails for exponent notation in <a href="ut-parse.html"><code class="language-plaintext highlighter-rouge">ut_parse()</code></a></td>
+      <td>Unsupported superscript characters used</td>
+      <td>Check character encoding</td>
+      <td>Use ASCII exponent syntax (<code class="language-plaintext highlighter-rouge">m^2</code>)</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="unit-system-consistency-issues">Unit-System Consistency Issues</h2>
+
+<p>These issues occur when units belong to different <code class="language-plaintext highlighter-rouge">ut_system*</code> contexts.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Symptom</th>
+      <th>Cause</th>
+      <th>Diagnosis</th>
+      <th>Fix</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><a href="ut-are-convertible.html"><code class="language-plaintext highlighter-rouge">ut_are_convertible()</code></a> returns 0 unexpectedly</td>
+      <td>Units created from different <a href="ut-system.html"><code class="language-plaintext highlighter-rouge">ut_system</code></a> instances</td>
+      <td>Verify system pointer used when calling <a href="ut-parse.html"><code class="language-plaintext highlighter-rouge">ut_parse()</code></a></td>
+      <td>Ensure all units originate from the same <a href="ut-system.html"><code class="language-plaintext highlighter-rouge">ut_system</code></a></td>
+    </tr>
+    <tr>
+      <td>Conversion fails between equivalent units</td>
+      <td>Units defined in separate XML databases</td>
+      <td>Compare system objects created by <a href="ut-read-xml.html"><code class="language-plaintext highlighter-rouge">ut_read_xml()</code></a></td>
+      <td>Load units from the same XML database file</td>
+    </tr>
+    <tr>
+      <td>Custom unit cannot convert with standard unit</td>
+      <td>Unit added to different system instance</td>
+      <td>Trace system creation calls using <a href="ut-new-base-unit.html"><code class="language-plaintext highlighter-rouge">ut_new_base_unit()</code></a></td>
+      <td>Define custom units within the same <a href="ut-system.html"><code class="language-plaintext highlighter-rouge">ut_system</code></a> context</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="conversion-semantics-issues">Conversion Semantics Issues</h2>
+
+<p>These problems occur when computing numeric conversions using <a href="ut-get-converter.html"><code class="language-plaintext highlighter-rouge">ut_get_converter()</code></a>.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Symptom</th>
+      <th>Cause</th>
+      <th>Diagnosis</th>
+      <th>Fix</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Conversion produces incorrect numeric results</td>
+      <td>Units not dimensionally compatible</td>
+      <td>Verify compatibility using <a href="ut-are-convertible.html"><code class="language-plaintext highlighter-rouge">ut_are_convertible()</code></a> before calling <a href="ut-get-converter.html"><code class="language-plaintext highlighter-rouge">ut_get_converter()</code></a></td>
+      <td>Confirm dimensional equivalence of both <a href="ut-unit.html"><code class="language-plaintext highlighter-rouge">ut_unit</code></a> objects</td>
+    </tr>
+    <tr>
+      <td>Temperature conversion produces unexpected offset</td>
+      <td>Affine conversion required for temperature scales</td>
+      <td>Inspect converter created by <a href="ut-get-converter.html"><code class="language-plaintext highlighter-rouge">ut_get_converter()</code></a> and evaluate results using <a href="cv-convert-double.html"><code class="language-plaintext highlighter-rouge">cv_convert_double()</code></a></td>
+      <td>Ensure correct temperature units (e.g., absolute vs relative) are used</td>
+    </tr>
+    <tr>
+      <td>Converter creation fails</td>
+      <td>Units not compatible</td>
+      <td>Check compatibility using <a href="ut-are-convertible.html"><code class="language-plaintext highlighter-rouge">ut_are_convertible()</code></a></td>
+      <td>Convert through a compatible intermediary unit or revise unit definitions</td>
+    </tr>
+    <tr>
+      <td>Conversion works but values appear scaled incorrectly</td>
+      <td>Prefix or exponent misinterpreted during parsing</td>
+      <td>Inspect parsed representation using <a href="ut-format.html"><code class="language-plaintext highlighter-rouge">ut_format()</code></a> after <a href="ut-parse.html"><code class="language-plaintext highlighter-rouge">ut_parse()</code></a></td>
+      <td>Validate input unit string and exponent syntax</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="memory-ownership-issues">Memory Ownership Issues</h2>
+
+<p>These issues occur when managing object lifetimes for <a href="ut-unit.html"><code class="language-plaintext highlighter-rouge">ut_unit</code></a>
+and converter objects returned by <a href="ut-get-converter.html"><code class="language-plaintext highlighter-rouge">ut_get_converter()</code></a>.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Symptom</th>
+      <th>Cause</th>
+      <th>Diagnosis</th>
+      <th>Fix</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Memory leak detected</td>
+      <td>Unit objects not freed</td>
+      <td>Audit lifecycle of objects created by <a href="ut-parse.html"><code class="language-plaintext highlighter-rouge">ut_parse()</code></a>, <a href="ut-scale.html"><code class="language-plaintext highlighter-rouge">ut_scale()</code></a>, or <a href="ut-multiply.html"><code class="language-plaintext highlighter-rouge">ut_multiply()</code></a></td>
+      <td>Release units using <a href="ut-free.html"><code class="language-plaintext highlighter-rouge">ut_free()</code></a></td>
+    </tr>
+    <tr>
+      <td>Crash during cleanup</td>
+      <td>Object freed multiple times</td>
+      <td>Trace ownership of objects returned by <a href="ut-clone.html"><code class="language-plaintext highlighter-rouge">ut_clone()</code></a> or <a href="ut-parse.html"><code class="language-plaintext highlighter-rouge">ut_parse()</code></a></td>
+      <td>Ensure each <a href="ut-unit.html"><code class="language-plaintext highlighter-rouge">ut_unit</code></a> object is freed exactly once using <a href="ut-free.html"><code class="language-plaintext highlighter-rouge">ut_free()</code></a></td>
+    </tr>
+    <tr>
+      <td>Converter object persists unexpectedly</td>
+      <td>Converter not explicitly freed</td>
+      <td>Inspect lifecycle of converter created by <a href="ut-get-converter.html"><code class="language-plaintext highlighter-rouge">ut_get_converter()</code></a></td>
+      <td>Free converter using <a href="cv-free.html"><code class="language-plaintext highlighter-rouge">cv_free()</code></a></td>
+    </tr>
+    <tr>
+      <td>Application frees memory incorrectly</td>
+      <td>Using <code class="language-plaintext highlighter-rouge">free()</code> instead of API lifecycle functions</td>
+      <td>Search code for incorrect deallocation of <a href="ut-unit.html"><code class="language-plaintext highlighter-rouge">ut_unit</code></a> or converter objects</td>
+      <td>Use <a href="ut-free.html"><code class="language-plaintext highlighter-rouge">ut_free()</code></a> and <a href="cv-free.html"><code class="language-plaintext highlighter-rouge">cv_free()</code></a> instead of <code class="language-plaintext highlighter-rouge">free()</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="error-handling-issues">Error Handling Issues</h2>
+
+<p>These issues occur when diagnostic messages are not captured or interpreted correctly.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Symptom</th>
+      <th>Cause</th>
+      <th>Diagnosis</th>
+      <th>Fix</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Function returns NULL with no explanation</td>
+      <td>Error handler not configured</td>
+      <td>Register custom handler using <a href="ut-set-error-message-handler.html"><code class="language-plaintext highlighter-rouge">ut_set_error_message_handler()</code></a></td>
+      <td>Configure error reporting before calling functions such as <a href="ut-parse.html"><code class="language-plaintext highlighter-rouge">ut_parse()</code></a></td>
+    </tr>
+    <tr>
+      <td>Unexpected error messages</td>
+      <td>Handler state persists across calls</td>
+      <td>Inspect global error handler configuration set by <a href="ut-set-error-message-handler.html"><code class="language-plaintext highlighter-rouge">ut_set_error_message_handler()</code></a></td>
+      <td>Reset or replace handler prior to subsequent API calls</td>
+    </tr>
+    <tr>
+      <td>Error messages missing context</td>
+      <td>Handler does not include sufficient diagnostic detail</td>
+      <td>Enable structured logging within custom handler registered via <a href="ut-set-error-message-handler.html"><code class="language-plaintext highlighter-rouge">ut_set_error_message_handler()</code></a></td>
+      <td>Add contextual logging around calls to <a href="ut-parse.html"><code class="language-plaintext highlighter-rouge">ut_parse()</code></a> or <a href="ut-get-converter.html"><code class="language-plaintext highlighter-rouge">ut_get_converter()</code></a></td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="unit-definition-issues">Unit Definition Issues</h2>
+
+<p>These issues arise when working with built-in or custom unit definitions.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Symptom</th>
+      <th>Cause</th>
+      <th>Diagnosis</th>
+      <th>Fix</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Expected unit symbol not recognized</td>
+      <td>Symbol not defined in unit database</td>
+      <td>Inspect definitions loaded via <a href="ut-read-xml.html"><code class="language-plaintext highlighter-rouge">ut_read_xml()</code></a></td>
+      <td>Use alternative symbol or define custom unit using <a href="ut-new-base-unit.html"><code class="language-plaintext highlighter-rouge">ut_new_base_unit()</code></a></td>
+    </tr>
+    <tr>
+      <td>Unit interpreted differently than expected</td>
+      <td>Symbol conflict or ambiguity</td>
+      <td>Inspect parsed structure using <a href="ut-parse.html"><code class="language-plaintext highlighter-rouge">ut_parse()</code></a> and format using <a href="ut-format.html"><code class="language-plaintext highlighter-rouge">ut_format()</code></a></td>
+      <td>Use explicit unit expression (e.g., products via <a href="ut-multiply.html"><code class="language-plaintext highlighter-rouge">ut_multiply()</code></a>)</td>
+    </tr>
+    <tr>
+      <td>Alias from UDUNITS-1 not recognized</td>
+      <td>Definition removed or renamed in UDUNITS-2 database</td>
+      <td>Compare legacy symbols with units loaded via <a href="ut-read-xml.html"><code class="language-plaintext highlighter-rouge">ut_read_xml()</code></a></td>
+      <td>Use updated canonical symbol recognized by <a href="ut-parse.html"><code class="language-plaintext highlighter-rouge">ut_parse()</code></a></td>
+    </tr>
+    <tr>
+      <td>Dimensionless unit behaves unexpectedly</td>
+      <td>Unit defined incorrectly or missing dimensionless representation</td>
+      <td>Inspect unit structure returned by <a href="ut-parse.html"><code class="language-plaintext highlighter-rouge">ut_parse()</code></a> or constructed using <a href="ut-scale.html"><code class="language-plaintext highlighter-rouge">ut_scale()</code></a></td>
+      <td>Define explicitly dimensionless unit using <a href="ut-scale.html"><code class="language-plaintext highlighter-rouge">ut_scale()</code></a> or equivalent identity unit</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="encoding-issues">Encoding Issues</h2>
+
+<p>These problems occur when unit strings contain unsupported character encodings.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Symptom</th>
+      <th>Cause</th>
+      <th>Diagnosis</th>
+      <th>Fix</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Parsing fails for valid-looking symbols</td>
+      <td>UTF-8 characters not recognized by parser</td>
+      <td>Inspect encoding flags used with <a href="ut-parse.html"><code class="language-plaintext highlighter-rouge">ut_parse()</code></a></td>
+      <td>Use ASCII equivalents when calling <a href="ut-parse.html"><code class="language-plaintext highlighter-rouge">ut_parse()</code></a></td>
+    </tr>
+    <tr>
+      <td>Superscript characters fail to parse</td>
+      <td>Non-ASCII exponent notation used</td>
+      <td>Examine byte representation of input passed to <a href="ut-parse.html"><code class="language-plaintext highlighter-rouge">ut_parse()</code></a></td>
+      <td>Replace superscripts with ASCII exponent syntax (<code class="language-plaintext highlighter-rouge">^</code>) before calling <a href="ut-parse.html"><code class="language-plaintext highlighter-rouge">ut_parse()</code></a></td>
+    </tr>
+    <tr>
+      <td>Unit string behaves differently across environments</td>
+      <td>Locale differences affect parsing behavior</td>
+      <td>Compare locale and encoding assumptions when invoking <a href="ut-parse.html"><code class="language-plaintext highlighter-rouge">ut_parse()</code></a></td>
+      <td>Normalize input encoding prior to parsing</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="legacy-migration-issues">Legacy Migration Issues</h2>
+
+<p>These issues occur when porting legacy application from UDUNITS-1 to UDUNITS-2.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Symptom</th>
+      <th>Cause</th>
+      <th>Diagnosis</th>
+      <th>Fix</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Previously valid unit no longer recognized</td>
+      <td>Database definitions updated in UDUNITS-2</td>
+      <td>Compare definitions loaded via <a href="ut-read-xml.html"><code class="language-plaintext highlighter-rouge">ut_read_xml()</code></a></td>
+      <td>Update unit expressions passed to <a href="ut-parse.html"><code class="language-plaintext highlighter-rouge">ut_parse()</code></a></td>
+    </tr>
+    <tr>
+      <td>Legacy API assumptions fail</td>
+      <td>Function behavior changed between UDUNITS-1 and UDUNITS-2</td>
+      <td>Review semantics of <a href="ut-parse.html"><code class="language-plaintext highlighter-rouge">ut_parse()</code></a>, <a href="ut-get-converter.html"><code class="language-plaintext highlighter-rouge">ut_get_converter()</code></a>, and <a href="ut-are-convertible.html"><code class="language-plaintext highlighter-rouge">ut_are_convertible()</code></a></td>
+      <td>Refactor code to follow UDUNITS-2 unit-system lifecycle</td>
+    </tr>
+    <tr>
+      <td>Conversion results differ from UDUNITS-1</td>
+      <td>Dimensional analysis rules more strictly enforced</td>
+      <td>Compare dimensional compatibility using <a href="ut-are-convertible.html"><code class="language-plaintext highlighter-rouge">ut_are_convertible()</code></a></td>
+      <td>Update conversion workflow using <a href="ut-get-converter.html"><code class="language-plaintext highlighter-rouge">ut_get_converter()</code></a></td>
+    </tr>
+    <tr>
+      <td>Symbol interpreted differently</td>
+      <td>Legacy alias removed or renamed in XML database</td>
+      <td>Inspect definitions loaded via <a href="ut-read-xml.html"><code class="language-plaintext highlighter-rouge">ut_read_xml()</code></a></td>
+      <td>Use canonical symbol recognized by <a href="ut-parse.html"><code class="language-plaintext highlighter-rouge">ut_parse()</code></a></td>
+    </tr>
+  </tbody>
+</table>
+
+
+    <div class="tags">
+        
+    </div>
+
+
+
+
+</div>
+
+
+        </div>
+        
+        <div class="col-md-3" id="tg-sb-sidebar-toc">
+          
+<!-- this handles the automatic toc. use ## for subheads to auto-generate the on-page minitoc. if you use html tags, you must supply an ID for the heading element in order for it to appear in the minitoc. -->
+<script>
+$( document ).ready(function() {
+  // Handler for .ready() called.
+
+$('#toc').toc({ minimumHeaders: 0, listType: 'ul', showSpeed: 0, headers: '.container h2, .container h3, .container h4' });
+
+/* this offset helps account for the space taken up by the floating toolbar. */
+$('#toc').on('click', 'a', function() {
+  var target = $(this.getAttribute('href'))
+    , scroll_target = target.offset().top
+
+  $(window).scrollTop(scroll_target - 10);
+  return false
+})
+  
+});
+</script>
+
+<div id="toc" class="fa fa-list-ul"></div>
+
+        </div>
+        
+        <!-- /.row -->
+      </div>
+      <!-- /.container -->
+    </div>
+    <!-- /#main -->
+  </div>
+  <div id="footer">
+       <footer class="unidata">
+
+    <div id="content-footer">
+     <h2>NSF Unidata Support</h2>
+     <ul>
+      <li>NSF Unidata provides free technical support to our community members. For more information, please see our <a href="https://support.unidata.ucar.edu/conditions-of-support/">Conditions Of Support</a>.</li>
+      <li>Visit: <a href="https://support.unidata.ucar.edu/">NSF Unidata Support </a></li>
+      <li>Email: <a href="mailto:support@unidata.ucar.edu">support@unidata.ucar.edu</a></li>
+      <li>Report a security issue/vulnerability: <a href="mailto:security@unidata.ucar.edu">security@unidata.ucar.edu</a></li>
+     </ul>
+    </div> <!-- /#content-footer -->
+
+    <div id="legal-footer">
+     <ul>
+      <li>&#169; NSF Unidata</li>
+      <li><a href="https://support.unidata.ucar.edu/conditions-of-support">Conditions of Support</a></li>
+      <li><a href="https://www.unidata.ucar.edu/legal/participation.html">Participation Policy</a></li>
+      <li><a href="https://www.ucar.edu/privacy-policy">Privacy Policy</a></li>
+      <li><a href="https://www.ucar.edu/terms-of-use">Terms of Use</a></li>
+      <li><a href="https://www.ucar.edu/accessibility">Accessibility</a></li>
+     </ul>
+    </div> <!-- /#legal-footer -->
+
+    <div id="nsf-footer">
+     <a href="https://www.nsf.gov" class="logo">
+      <img src="assets/images/nsf_logo_transparent.png" alt="U.S. National Science Foundation"/>
+     </a>
+     <div>
+      NSF Unidata is a member of the
+      <a href="https://www.ucp.ucar.edu/">UCAR Community Programs</a>,
+      managed by the
+      <a href="https://www.ucar.edu">University Corporation for Atmospheric Research</a>,
+      and funded by the
+      <a href="https://www.nsf.gov">U.S. National Science Foundation</a>.
+     </div>
+    </div> <!-- /#nsf-footer -->
+
+   </footer>
+  </div>
+
+</body>
+
+<!-- the google_analytics_id gets auto inserted from the config file -->
+
+
+
+<script>(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)})(window,document,'script','//www.google-analytics.com/analytics.js','ga');ga('create','UA-92978945-1','auto');ga('require','displayfeatures');ga('send','pageview');</script>
+
+
+
+</html>
