@@ -1042,11 +1042,13 @@ ut_divide(
  *
  * Arguments:
  *	unit	Pointer to the unit.
- *	power	The power by which to raise "unit".  Must be greater than or
- *		equal to -255 and less than or equal to 255.
+ *	power	The power by which to raise "unit".
  * Returns:
  *	NULL	Failure.  "ut_get_status()" will be:
- *		    UT_BAD_ARG		"unit" is NULL or "power" is invalid.
+ *		    UT_BAD_ARG		"unit" is NULL, or the resulting unit
+ *					would have a power of magnitude greater
+ *					than 255, or its scale factor would not
+ *					be representable.
  *		    UT_OS		Operating-system error. See "errno".
  *	else	Pointer to the resulting unit.  The pointer should be passed to
  *		ut_free() when the unit is no longer needed by the client.

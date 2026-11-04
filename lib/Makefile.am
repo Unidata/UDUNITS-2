@@ -15,6 +15,7 @@ libudunits2_la_SOURCES = unitcore.c \
                          unitAndId.c unitAndId.h \
                          systemMap.c systemMap.h \
                          prefix.c prefix.h \
+                         udunits2Internal.h \
                          parser.y \
                          status.c \
                          xml.c \
