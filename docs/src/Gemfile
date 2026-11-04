@@ -1,0 +1,6 @@
+source 'https://rubygems.org'
+
+git 'https://github.com/Unidata/unidata-jekyll-theme.git', branch: 'main' do
+  gem 'unidata-jekyll-theme'
+  gem 'unidata-jekyll-plugins'
+end

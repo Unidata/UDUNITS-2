@@ -1,0 +1,151 @@
+/* ------------------------------------------- */
+/* Styling for elements defined in footer      */
+/* ------------------------------------------- */
+
+footer {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  height: auto;
+  background-color: var(--uu-footer-background-color);
+  font-family: var(--uu-heading-font-family);
+  color: var(--uu-footer-text-color);
+}
+
+/* hyperlinks */
+footer a {
+  color: var(--uu-footer-link-color);
+  text-decoration: none;
+}
+
+footer a:hover {
+  color: var(--uu-footer-link-hover-color);
+  text-decoration: none;
+}
+
+footer a:visited {
+  text-decoration: none;
+}
+
+footer a::after {
+  display: none !important;
+}
+
+footer ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* content section */
+#content-footer {
+  padding: 1% 2%;
+}
+
+#content-footer h2 {
+  color: var(--bs-info);
+  font-weight: 600;
+  text-transform: uppercase;
+  margin: 0;
+  padding: 0.9rem 0;
+}
+
+#content-footer li {
+  margin: 8px auto;
+}
+
+/* legal section */
+#legal-footer {
+  background-color: var(--uu-footer-legal-background-color);
+  border-bottom: #455c7b solid 1px;
+  color: var(--bs-info);
+  width: auto;
+  padding: 1% 2%;
+}
+
+#legal-footer ul li {
+  display: inline;
+}
+
+#legal-footer ul li a {
+  padding: 0 1.5rem;
+  color: var(--uu-footer-text-color);
+  /* link colors differ from plain text color */
+}
+
+
+/* nsf section */
+#nsf-footer {
+  display: flex;
+  flex-direction: row;
+  background-color: var(--uu-footer-nsf-background-color);
+  padding: 1%;
+}
+
+#nsf-footer a.logo {
+  flex: 0 1 8%;
+}
+
+#nsf-footer img {
+  width: 80px;
+  margin: 0;
+  padding: 0;
+}
+
+#nsf-footer div {
+  height: 100%;
+  flex: 0 1 90%;
+}
+
+
+/* ------------------------------------------- */
+/* Styling for narrow screens                  */
+/* ------------------------------------------- */
+
+@media all and (max-width: 1200px) {
+  #nsf-footer div {
+    padding-left: 2%;
+  }
+}
+
+@media all and (max-width: 980px) {
+
+  /* Workaround for an IE bug with flexbox and max-width */
+  footer {
+    width: auto;
+  }
+}
+
+/* Mirror what happens in the Unity threme with legal section links */
+@media all and (max-width: 900px) {
+  #legal-footer li a {
+    padding: 0 1rem !important;
+  }
+}
+
+@media all and (max-width: 850px) {
+  #legal-footer li a {
+    padding: 0 0.8rem !important;
+  }
+}
+
+@media all and (max-width: 800px) {
+  #legal-footer ul {
+    margin-bottom: 10px;
+  }
+
+  #legal-footer li {
+    display: block !important;
+    padding-top: 1rem !important;
+  }
+
+  #legal-footer li a {
+    padding: 0 !important;
+  }
+}
+
+@media all and (max-width: 600px) {
+  footer {
+    flex-direction: column;
+  }
+}

@@ -1,0 +1,32 @@
+## Topnav single links
+## if you want to list an external url, use external_url instead of url. the theme will apply a different link base.
+
+# Documentation version menu
+topnav_docvermenu:
+- title: Version
+  id: docmenu
+  folderitems:
+    - title: Menu Loading...
+      url:
+      id: remove
+
+# if you do not need a topnav: or topnav_dropdowns: config for your documentation,
+# use an empty config, for example:
+#
+# topnav:
+#- title:
+#
+# or
+#
+# topnav_dropdowns:
+#- title:
+#
+# otherwise, the base theme will provide them for you.
+#
+topnav:
+- title: Topnav
+  items:
+    - title: UDUNITS-2 Home Page
+      external_url: https://www.unidata.ucar.edu/software/udunits
+    - title: GitHub
+      external_url: https://github.com/Unidata/UDUNITS-2
