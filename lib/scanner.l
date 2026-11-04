@@ -95,11 +95,21 @@ static int read_1to2digits(const char* s, int* out, const char** endptr) {
     return 1;
 }
 
+/*
+ * Parses an optional decimal fraction "." <digit>* at *s and advances *s past
+ * it. The digits are optional, as in {second} in the lexer and <second> in
+ * GRAMMAR.md, so a bare "." is consumed and yields a zero fraction
+ * ("12:34:56." is 12:34:56, as in UDUNITS 2.2.28).
+ */
 static int parse_fraction(const char** s, double* frac) {
     const char* p = *s;
     if (*p != '.') return 1; /* ok, no fraction */
     p++;
-    if (*p < '0' || *p > '9') return 1;
+    if (*p < '0' || *p > '9') { /* bare ".": empty fraction */
+        *frac = 0.0;
+        *s = p;
+        return 1;
+    }
     double scale = 1.0;
     double f = 0.0;
     while (*p >= '0' && *p <= '9') {
@@ -149,9 +159,6 @@ static int decodePackedDate(
         digit_count++;
         q++;
     }
-
-    // Skip trailing T or spaces
-    while (*q == 'T' || *q == ' ' || *q == '\t') q++;
 
     // Should have consumed entire input
     if (*q != '\0') {
@@ -221,7 +228,7 @@ static int parse_tod_broken(const char* s, int* H,int* M,double* S,const char** 
     return 1;
 }
 
-/* TOD packed: HH[MM[SS]][.frac] — at least HH; optional MM, then optional SS; fraction applies to SS if present else to HHMMSS interpretation */
+/* TOD packed: HH[MM[SS]][.frac], read from the left in two-digit fields. */
 /* Returns 1 on success, 0 if malformed, or -1 for a fraction with no seconds
    field -- a distinct reason the caller turns into a specific message. The
    -1 sentinel mirrors check_tz_range's negative-zero signal. */
@@ -232,44 +239,42 @@ static int parse_tod_packed(const char* s, int* H, int* M, double* S, const char
     if (len < 1 || len > 6) return 0;
 
     /*
-     * Right-align minute and second fields. Seconds occupy the last 2
-     * digits when present (len >= 5), minutes occupy the next 2 (len
-     * >= 3), and the hour takes whatever digits remain (1 or 2).
-     * Rationale: the minute and second fields are written 2-digit-wide
-     * by every standard (ISO 8601 basic form, POSIX, etc.); right-
-     * aligning to those fixed positions yields the only sensible
-     * reading of odd-length inputs (e.g., "123" -> 1:23, "12345" ->
-     * 1:23:45). Canonical 4-digit (HHMM) and 6-digit (HHMMSS) inputs
-     * are unaffected.
+     * Fields are taken from the left, two digits each: the hour, then the
+     * minute, then the second. The last field gets whatever digits remain,
+     * so an odd-length input has a one-digit final field:
+     *
+     *     "1"      -> 01:00:00        "1234"   -> 12:34:00
+     *     "12"     -> 12:00:00        "12345"  -> 12:34:05
+     *     "123"    -> 12:03:00        "123456" -> 12:34:56
+     *
+     * This is the reading of UDUNITS 2.2.28, which decoded the token with
+     * sscanf("%2d%2d%lf"), and the one GRAMMAR.md documents. It is kept for
+     * compatibility: an odd-length packed clock is ambiguous (1:23, 12:03 and
+     * 12:30 are all plausible readings of "123"), and changing the reading
+     * would silently change the value of existing strings. The one deliberate
+     * difference from 2.2.28 is that an out-of-range field is now an error;
+     * 2.2.28 silently encoded such a clock as midnight.
      *
      * Decimal fractions are accepted only when a seconds field exists
      * (len >= 5); they attach to the seconds. `had_seconds` is internal
      * to this parser: the public ut_check_clock validates the assembled
      * H:M:S, so the seconds field's presence need not be reported out.
      */
-    int h_digits;
-    int had_seconds;
-    if (len <= 2) {
-        h_digits = len;
-        had_seconds = 0;
-    } else if (len <= 4) {
-        h_digits = len - 2;   /* 1 or 2 */
-        had_seconds = 0;
-    } else {
-        h_digits = len - 4;   /* 1 or 2 */
-        had_seconds = 1;
-    }
+    const int h_digits = len < 2 ? len : 2;
+    const int m_digits = len <= 2 ? 0 : (len < 4 ? len - 2 : 2);
+    const int s_digits = len <= 4 ? 0 : len - 4;   /* 1 or 2 */
+    const int had_seconds = s_digits > 0;
 
     int h = 0, m = 0, ss = 0;
     const char* q = p;
     /* Defensive: the digits were counted above, so these cannot fail. */
     if (!read_ndigits(&q, h_digits, &h)) return 0;
-    if (len >= 3 && !read_ndigits(&q, 2, &m)) return 0;
-    if (had_seconds && !read_ndigits(&q, 2, &ss)) return 0;
+    if (m_digits && !read_ndigits(&q, m_digits, &m)) return 0;
+    if (s_digits && !read_ndigits(&q, s_digits, &ss)) return 0;
 
     /*
      * No range checking here. The field split is already fixed by the
-     * right-alignment above, so an out-of-range hour, minute or second is a
+     * digit count above, so an out-of-range hour, minute or second is a
      * pure rejection -- and ut_check_clock(), which decodeClockFlexible()
      * calls on the assembled H:M:S, rejects exactly the same values while
      * naming the offending field ("Invalid minute 75 (must be 0-59)").
@@ -279,10 +284,13 @@ static int parse_tod_packed(const char* s, int* H, int* M, double* S, const char
     double sec = (double)ss;
     double frac = 0.0;
     const char* r = q;
+    /* Test for the decimal point, not the fraction's value: "1234.0" has no
+       seconds field either. */
+    const int has_fraction = (*r == '.');
     /* Defensive: parse_fraction succeeds on every path. */
     if (!parse_fraction(&r, &frac)) return 0;
     if (had_seconds) sec += frac;
-    else if (frac != 0.0) return -1;  /* fraction but no seconds field */
+    else if (has_fraction) return -1;  /* fraction but no seconds field */
 
     *H = h; *M = m; *S = sec;
     *endptr = r;
@@ -401,10 +409,7 @@ static int decodeClockFlexible(const char* text, double* seconds, char* error_ms
         return 0;
     }
 
-    /* The lexer rule appends optional trailing whitespace to the token; the
-       sub-parsers don't consume it. Anything else past `end` is a leftover
-       that the lexer should never have produced — defensive check. */
-    while (*end == ' ' || *end == '\t' || *end == '\r' || *end == '\f' || *end == '\v') end++;
+    /* Defensive trailing-junk check (lexer shouldn't produce one). */
     if (*end != '\0') {
         snprintf(error_msg, UT_ERR_MSG_LEN, "Invalid time-of-day format: %s (trailing junk after parse)", text);
         return 0;
@@ -537,7 +542,8 @@ broken_clock		{tod_hour}:{minute}(:{second})?
 packed_clock		{tod_hour}({minute}{second}?)?
 broken_tz_clock		{tz_hour}:{minute}
 packed_tz_clock		{tz_hour}{minute}?
-logref			\({space}*[Rr][Ee](:{space})?{space}*
+logref_head		\({space}*[Rr][Ee]
+logref_sep		(:{space}*|{space}+)
 after                   [Aa][Ff][Tt][Ee][Rr]
 from                    [Ff][Rr][Oo][Mm]
 since                   [Ss][Ii][Nn][Cc][Ee]
@@ -689,7 +695,7 @@ idchar       [A-Za-z0-9_]
     return status;
 }
 
-<SHIFT_SEEN>{year_broken}-{month}-{day}(T|{space}*) {
+<SHIFT_SEEN>{year_broken}-{month}-{day} {
     BEGIN DATE_SEEN;
     return decodeDate((char*)yytext, "%d-%d-%d", &yylval.rval);
 }
@@ -701,12 +707,12 @@ idchar       [A-Za-z0-9_]
     return ERR;
 }
 
-<SHIFT_SEEN>{year_broken}-{month}(T|{space}*) {
+<SHIFT_SEEN>{year_broken}-{month} {
     BEGIN DATE_SEEN;
     return decodeDate((char*)yytext, "%d-%d", &yylval.rval);
 }
 
-<SHIFT_SEEN>{packed_date}(T|{space}*) {
+<SHIFT_SEEN>{packed_date} {
     if (_isTime) {
         BEGIN DATE_SEEN;
         return decodePackedDate((char*)yytext, &yylval.rval);
@@ -729,8 +735,8 @@ idchar       [A-Za-z0-9_]
     return ERR;
 }
 
-<DATE_SEEN>{broken_clock}{space}*    |
-<DATE_SEEN>{packed_clock}{space}*    {
+<DATE_SEEN>{broken_clock}    |
+<DATE_SEEN>{packed_clock}    {
     double sec = 0.0;
     if (!decodeClockFlexible((const char*)yytext, &sec, yylval.error_msg)) {
         return ERR;
@@ -740,8 +746,8 @@ idchar       [A-Za-z0-9_]
     return CLOCK;
 }
 
-<CLOCK_SEEN>{broken_tz_clock}{space}*    |
-<CLOCK_SEEN>{packed_tz_clock}{space}*    {
+<CLOCK_SEEN>{broken_tz_clock}    |
+<CLOCK_SEEN>{packed_tz_clock}    {
     double off = 0.0;
     if (!decodeTzOffsetFlexible((const char*)yytext, &off, yylval.error_msg)) {
         return ERR;
@@ -775,6 +781,16 @@ idchar       [A-Za-z0-9_]
 <CLOCK_SEEN>[+-][0-9]{1,2}: {
     snprintf(yylval.error_msg, sizeof(yylval.error_msg),
              "Incomplete timezone offset (expected minutes after ':')");
+    return ERR;
+}
+
+<CLOCK_SEEN>[+-][0-9]{1,2}:[0-9]{1,2}\.[0-9]+ {
+    /* Matches further than the valid {broken_tz_clock} prefix, so flex
+       prefers it; without this the fractional part falls past the valid
+       match and is reported as unexpected trailing text. */
+    snprintf(yylval.error_msg, sizeof(yylval.error_msg),
+             "Invalid timezone offset '%s': the minute field has no "
+             "fractional part (expected +HH:MM)", yytext);
     return ERR;
 }
 
@@ -839,6 +855,42 @@ idchar       [A-Za-z0-9_]
     return ERR;
 }
 
+<DATE_SEEN>T/({broken_clock}|{packed_clock}) {
+    /* The ISO 8601 date/time separator. The grammar admits T_SEP only before
+       a CLOCK; the trailing context is not what enforces that, but it lets
+       the rule below give a specific message instead of "syntax error". */
+    return T_SEP;
+}
+
+<DATE_SEEN>T {
+    /* A "T" that does not introduce a time: end of input, a space, a zone
+       designator, or anything else. Rejected either way -- there is no
+       production for it -- but "DATE ERR" carries this message out. */
+    snprintf(yylval.error_msg, sizeof(yylval.error_msg),
+             "The 'T' date/time separator must be followed immediately by a "
+             "time (e.g., '2024-01-01T00:00')");
+    return ERR;
+}
+
+    /* Whitespace separating the components of a timestamp. Elsewhere a run of
+       spaces is MULTIPLY; that rule is confined to INITIAL and ID_SEEN. The
+       two rules are written out rather than joined with "|", which would give
+       flex a variable trailing context. */
+<DATE_SEEN>{space}+/([0-9]|[zZ]|[gG][mM][tT]|[uU][tT][cC]) {
+    return SPACE_SEP;
+}
+<CLOCK_SEEN>{space}+/[^ \t\r\f\v] {
+    return SPACE_SEP;
+}
+<DATE_SEEN,CLOCK_SEEN>{space}+ {
+    /* Whitespace that cannot introduce a further timestamp component:
+       trailing whitespace, or text that is not part of the timestamp.
+       Rescan it as ordinary input so that it is reported as trailing
+       text, as it is after any other complete unit specification. */
+    yyless(0);
+    BEGIN INITIAL;
+}
+
 <DATE_SEEN>[zZ] {
     BEGIN INITIAL;
     return Z_TOK;
@@ -886,17 +938,46 @@ idchar       [A-Za-z0-9_]
     return status;
 }
 
-(log|lg){space}*{logref} {
+    /*
+     * The "re" marker of a logarithmic-unit reference (e.g. "lg(re 1 nV)" or
+     * "lg(re:1 nV)") is recognized only when it is followed by an explicit
+     * separator: a colon (optionally followed by spaces), or one or more
+     * spaces. "re" is never matched bare.
+     *
+     * An earlier version of this rule instead used flex trailing context to
+     * allow a bare "re" whenever the next character could not itself extend
+     * an identifier, checking that against the ASCII class
+     * [^A-Za-z0-9_]. That was wrong on two counts: the scanner's actual
+     * identifier alphabet ({letter}/{alphanum} above) is far broader than
+     * ASCII -- it includes Latin-1 and multi-byte UTF-8 sequences such as
+     * the micro sign -- so a non-ASCII identifier continuation (e.g. the
+     * "re" in "lg(re\xc2\xb5m)", i.e. "reµm") was invisible to that class and
+     * still got silently swallowed, exactly the bug this rule exists to
+     * prevent. It also meant a numeric reference could immediately follow
+     * "re" with no separator at all as long as its first character (a sign
+     * or decimal point) happened not to be in that class, while a
+     * digit-first reference could not -- an accidental, unjustifiable
+     * asymmetry. Requiring an explicit separator unconditionally avoids
+     * both problems: nothing after "re" can ever extend it into a longer
+     * identifier, regardless of script, and the two behaviors are no longer
+     * asymmetric. This does mean a delimiter-free numeric reference such as
+     * "lg(re1 nV)" -- accepted by earlier releases and permitted by the
+     * previous formal grammar (both ":"? and <space>* there could match
+     * zero characters), although apparently unintended and not covered by
+     * the test suite -- is no longer accepted; write "lg(re 1 nV)" or
+     * "lg(re:1 nV)" instead.
+     */
+(log|lg){space}*{logref_head}{logref_sep} {
     yylval.rval = 10;
     return LOGREF;
 }
 
-ln{space}*{logref} {
+ln{space}*{logref_head}{logref_sep} {
     yylval.rval = M_E;
     return LOGREF;
 }
 
-lb{space}*{logref} {
+lb{space}*{logref_head}{logref_sep} {
     yylval.rval = 2;
     return LOGREF;
 }
