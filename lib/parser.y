@@ -55,6 +55,7 @@ static ut_unit*		_finalUnit;	/* fully-parsed specification */
 static ut_system*	_unitSystem;	/* The unit-system to use */
 static ut_encoding	_encoding;	/* encoding of string to be parsed */
 static int		_restartScanner;/* restart scanner? */
+static int		_trailingToken;	/* unshiftable lookahead at YYACCEPT? */
 static int		_isTime;        /* product_exp is time? */
 
 
@@ -145,6 +146,23 @@ static int isTime(
     return isTime;
 }
 
+/**
+ * Frees a unit without disturbing the status set by a preceding operation.
+ * ut_free() unconditionally sets UT_SUCCESS, which would otherwise hide the
+ * reason a failed ut_raise(), ut_multiply(), etc. returned NULL from the
+ * caller of ut_parse() (issue 179).
+ *
+ * @param[in] unit      The unit to be freed.
+ */
+static void free_keep_status(
+    ut_unit* const unit)
+{
+    ut_status   prev = ut_get_status();
+
+    ut_free(unit);
+    ut_set_status(prev);
+}
+
 %}
 
 %union {
@@ -166,6 +184,8 @@ static int isTime(
 %token	<rval>	DATE
 %token	<rval>	CLOCK
 %token  <rval>  TZ_CLOCK
+%token          SPACE_SEP
+%token          T_SEP
 %token          Z_TOK
 %token          GMT_TOK
 %token          UTC_TOK
@@ -177,6 +197,7 @@ static int isTime(
 %type   <unit>	power_exp
 %type   <unit>	basic_exp
 %type   <rval>	timestamp
+%type   <rval>	tz_offset
 %type   <rval>	number
 
 /*
@@ -219,12 +240,23 @@ static int isTime(
 
 %%
 
+		/*
+		 * LALR(1) reads one lookahead token before it can reduce to
+		 * unit_spec.  If that lookahead is a token the grammar cannot
+		 * shift in this state, YYACCEPT ends the parse with the token
+		 * still in yychar and it is silently discarded.  The scanner
+		 * has already advanced past it, so ut_parse's end-of-input
+		 * test would see the whole string as consumed.  Record the
+		 * outstanding lookahead so ut_parse can locate and report it.
+		 */
 unit_spec:      /* nothing */ {
 		    _finalUnit = ut_get_dimensionless_unit_one(_unitSystem);
+		    _trailingToken = (yychar != YYEMPTY && yychar != YYEOF);
 		    YYACCEPT;
 		} |
 		shift_exp {
 		    _finalUnit = $1;
+		    _trailingToken = (yychar != YYEMPTY && yychar != YYEOF);
 		    YYACCEPT;
 		} |
 		error {
@@ -237,19 +269,19 @@ shift_exp:	product_exp {
 		} |
 		product_exp SHIFT REAL {
 		    $$ = ut_offset($1, $3);
-		    ut_free($1);
+		    free_keep_status($1);
 		    if ($$ == NULL)
 			YYERROR;
 		} |
 		product_exp SHIFT INT {
 		    $$ = ut_offset($1, $3);
-		    ut_free($1);
+		    free_keep_status($1);
 		    if ($$ == NULL)
 			YYERROR;
 		} |
 		product_exp SHIFT timestamp {
 		    $$ = ut_offset_by_time($1, $3);
-		    ut_free($1);
+		    free_keep_status($1);
 		    if ($$ == NULL)
 			YYERROR;
 		} |
@@ -268,8 +300,8 @@ product_exp:	power_exp {
 		product_exp power_exp	{
 		    $$ = ut_multiply($1, $2);
                     _isTime = isTime($$);
-		    ut_free($1);
-		    ut_free($2);
+		    free_keep_status($1);
+		    free_keep_status($2);
 		    if ($$ == NULL)
 			YYERROR;
 		} |
@@ -282,8 +314,8 @@ product_exp:	power_exp {
 		product_exp MULTIPLY power_exp	{
 		    $$ = ut_multiply($1, $3);
                     _isTime = isTime($$);
-		    ut_free($1);
-		    ut_free($3);
+		    free_keep_status($1);
+		    free_keep_status($3);
 		    if ($$ == NULL)
 			YYERROR;
 		} |
@@ -296,8 +328,8 @@ product_exp:	power_exp {
 		product_exp DIVIDE power_exp	{
 		    $$ = ut_divide($1, $3);
                     _isTime = isTime($$);
-		    ut_free($1);
-		    ut_free($3);
+		    free_keep_status($1);
+		    free_keep_status($3);
 		    if ($$ == NULL)
 			YYERROR;
 		} |
@@ -314,13 +346,13 @@ power_exp:	basic_exp {
 		} |
 		basic_exp INT {
 		    $$ = ut_raise($1, $2);
-		    ut_free($1);
+		    free_keep_status($1);
 		    if ($$ == NULL)
 			YYERROR;
 		} |
 		basic_exp EXPONENT {
 		    $$ = ut_raise($1, $2);
-		    ut_free($1);
+		    free_keep_status($1);
 		    if ($$ == NULL)
 			YYERROR;
 		} |
@@ -380,7 +412,7 @@ basic_exp:	ID {
 
 		    $$ = ut_scale(prefix, unit);
 
-		    ut_free(unit);
+		    free_keep_status(unit);
 
 		    if ($$ == NULL)
 			YYERROR;
@@ -396,7 +428,7 @@ basic_exp:	ID {
 		} |
 		LOGREF product_exp ')' {
 		    $$ = ut_log($1, $2);
-		    ut_free($2);
+		    free_keep_status($2);
 		    if ($$ == NULL)
 			YYERROR;
 		} |
@@ -423,23 +455,17 @@ number:		INT {
 timestamp:      DATE {
                     $$ = $1;
                 } |
-                DATE CLOCK {
-                    $$ = $1 + $2;
-                } |
-                DATE CLOCK TZ_CLOCK {
-                    $$ = $1 + ($2 - $3);
-                } |
-                DATE CLOCK Z_TOK {
-                    $$ = $1 + $2;
-                } |
-                DATE CLOCK GMT_TOK {
-                    $$ = $1 + $2;
-                } |
-                DATE CLOCK UTC_TOK {
-                    $$ = $1 + $2;
-                } |
-                DATE Z_TOK {
+                DATE utc_designator {
                     $$ = $1;
+                } |
+                DATE date_time_sep CLOCK {
+                    $$ = $1 + $3;
+                } |
+                DATE date_time_sep CLOCK zone {
+                    $$ = $1 + $3;
+                } |
+                DATE date_time_sep CLOCK tz_offset {
+                    $$ = $1 + ($3 - $4);
                 } |
                 ERR {
                     /* Date parsing error. Some lexer paths emit the
@@ -449,13 +475,21 @@ timestamp:      DATE {
                     YYERROR;
                 } |
                 DATE ERR {
-                    /* Clock parsing error (see ERR rule above). */
+                    /* Clock-shaped error with no separator before it, e.g.
+                       "2024-01-01" followed directly by "12:345". The input
+                       is invalid either way, but this keeps the scanner's
+                       specific diagnostic instead of "syntax error". */
                     if ($2[0] != '\0') ut_handle_error_message("%s", $2);
                     YYERROR;
                 } |
-                DATE CLOCK ERR {
-                    /* Timezone offset parsing error (see ERR rule above). */
+                DATE date_time_sep ERR {
+                    /* Clock parsing error (see ERR rule above). */
                     if ($3[0] != '\0') ut_handle_error_message("%s", $3);
+                    YYERROR;
+                } |
+                DATE date_time_sep CLOCK ERR {
+                    /* Timezone offset parsing error (see ERR rule above). */
+                    if ($4[0] != '\0') ut_handle_error_message("%s", $4);
                     YYERROR;
                 }
                 /*
@@ -468,6 +502,43 @@ timestamp:      DATE {
                  * through to the outer `product_exp SHIFT error` catcher,
                  * which produces the same "syntax error" message.
                  */
+                ;
+
+                /*
+                 * The separator between a date and a time: whitespace, or a
+                 * "T" with nothing on either side of it. The grammar admits
+                 * T_SEP only here, immediately before a CLOCK, so a dangling
+                 * "T" has no derivation. The scanner has a separate rule that
+                 * returns ERR with a specific diagnostic for a "T" that cannot
+                 * introduce a clock; that rule supplies the message and does
+                 * not enlarge the accepted language.
+                 */
+date_time_sep:  SPACE_SEP |
+                T_SEP
+                ;
+
+                /*
+                 * A bare date takes only "Z"; GMT and UTC are rejected in the
+                 * scanner with a message saying that a time is required.
+                 */
+utc_designator: Z_TOK |
+                SPACE_SEP Z_TOK
+                ;
+
+zone:           Z_TOK |
+                GMT_TOK |
+                UTC_TOK |
+                SPACE_SEP Z_TOK |
+                SPACE_SEP GMT_TOK |
+                SPACE_SEP UTC_TOK
+                ;
+
+tz_offset:      TZ_CLOCK {
+                    $$ = $1;
+                } |
+                SPACE_SEP TZ_CLOCK {
+                    $$ = $2;
+                }
                 ;
 
 %%
@@ -647,10 +718,12 @@ ut_parse(
 
         if (utf8String != NULL) {
             YY_BUFFER_STATE	buf = ut_scan_string(utf8String);
+            int		parseStatus;
 
             _unitSystem = (ut_system*)system;
             _encoding = encoding;
             _restartScanner = 1;
+            _trailingToken = 0;
 
 #if YYDEBUG
             utdebug = 0;
@@ -659,11 +732,31 @@ ut_parse(
 
             _finalUnit = NULL;
 
-            if (utparse() == 0) {
-                int       status;
-                ptrdiff_t n = yy_c_buf_p  - buf->yy_ch_buf;
+            /*
+             * Give this call a definite starting status.  A pure syntax error
+             * sets none of its own (uterror() only reports a message), while
+             * the unknown-identifier rule sets UT_UNKNOWN itself; the baseline
+             * distinguishes the two below.
+             */
+            ut_set_status(UT_SUCCESS);
 
-                if (n >= strlen(utf8String)) {
+            parseStatus = utparse();
+
+            if (parseStatus == 0) {
+                int       status;
+                /*
+                 * yy_c_buf_p is where the scanner stopped, which is past any
+                 * lookahead token the parser accepted without shifting (see
+                 * unit_spec).  When such a token is outstanding, the honest
+                 * end of the parse is where that token starts, not where the
+                 * scanner stopped; uttext still points at it because no
+                 * further token has been scanned.
+                 */
+                ptrdiff_t n = _trailingToken
+                                ? uttext - buf->yy_ch_buf
+                                : yy_c_buf_p - buf->yy_ch_buf;
+
+                if (n >= (ptrdiff_t)strlen(utf8String)) {
                     unit = _finalUnit;	/* success */
                     status = UT_SUCCESS;
                 }
@@ -705,6 +798,18 @@ ut_parse(
                 }
 
                 ut_set_status(status);
+            }
+            else if (ut_get_status() == UT_SUCCESS) {
+                /*
+                 * A hard parse failure that recorded no status of its own:
+                 * a syntax error (bison returns 1) or memory exhaustion
+                 * (2).  ut_parse previously returned NULL here while leaving
+                 * whatever status the preceding call had set.  Paths that do
+                 * record a status -- the unknown-identifier rule's
+                 * UT_UNKNOWN, reached via YYERROR rather than uterror() --
+                 * are left alone.
+                 */
+                ut_set_status(parseStatus == 2 ? UT_OS : UT_SYNTAX);
             }
 
             ut_delete_buffer(buf);

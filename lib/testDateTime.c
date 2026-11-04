@@ -634,6 +634,22 @@ static void test_broken_clock_fractional_seconds(void)
                             2024,  1, 15, 12, 30, 45.000001);
 }
 
+static void test_clock_empty_fraction(void)
+{
+    /* <second> is [0-9]{1,2} (\. <digit>*)? in GRAMMAR.md, so a bare "."
+       after the seconds is an empty fraction, as accepted by UDUNITS 2.2.28. */
+    assert_timestamp_origin("2024-01-15 12:30:45.",
+                            2024,  1, 15, 12, 30, 45.0);
+    assert_timestamp_origin("2024-01-15T12:30:45.",
+                            2024,  1, 15, 12, 30, 45.0);
+    assert_timestamp_origin("2024-01-15 123045.",
+                            2024,  1, 15, 12, 30, 45.0);
+    assert_timestamp_origin("2024-01-15 12345.",
+                            2024,  1, 15, 12, 34,  5.0);
+    assert_timestamps_equivalent("2024-01-15 12:30:45. UTC",
+                                 "2024-01-15 12:30:45 UTC");
+}
+
 static void test_fractional_second_precision(void)
 {
     /*
@@ -729,40 +745,47 @@ static void test_packed_clock_full(void)
 
 static void test_packed_clock_truncated(void)
 {
-    /* GRAMMAR.md packed-clock length interpretation (right-align):
+    /* GRAMMAR.md packed-clock length interpretation: fields are taken
+       from the left, two digits each, and the last field gets whatever
+       digits remain (the UDUNITS 2.2.28 reading):
          len 1  -> H        (-> 0H:00:00)
          len 2  -> HH       (-> HH:00:00)
-         len 3  -> H MM     (-> 0H:MM:00)
+         len 3  -> HH M     (-> HH:0M:00)
          len 4  -> HH MM    (-> HH:MM:00)
-         len 5  -> H MM SS  (-> 0H:MM:SS)
+         len 5  -> HH MM S  (-> HH:MM:0S)
          len 6  -> HH MM SS
-
-       Right-align means minutes are always positions -3,-4 from the
-       end of the digit sequence; seconds (when present) are -1,-2;
-       the hour takes whatever remains. So "123" reads as 1:23, not
-       12:3; "12345" reads as 1:23:45, not 12:34:5.
     */
     assert_timestamp_origin("2024-01-15 1",
                             2024,  1, 15,  1,  0,  0.0); /* len 1: H */
     assert_timestamp_origin("2024-01-15 12",
                             2024,  1, 15, 12,  0,  0.0); /* len 2: HH */
     assert_timestamp_origin("2024-01-15 123",
-                            2024,  1, 15,  1, 23,  0.0); /* len 3: H MM */
+                            2024,  1, 15, 12,  3,  0.0); /* len 3: HH M */
     assert_timestamp_origin("2024-01-15 1234",
                             2024,  1, 15, 12, 34,  0.0); /* len 4: HH MM */
     assert_timestamp_origin("2024-01-15 12345",
-                            2024,  1, 15,  1, 23, 45.0); /* len 5: H MM SS */
+                            2024,  1, 15, 12, 34,  5.0); /* len 5: HH MM S */
+}
+
+static void test_packed_clock_odd_length_out_of_range(void)
+{
+    /* UDUNITS 2.2.28 encoded an out-of-range packed clock as midnight,
+       without an error. The field split is unchanged, so these are now
+       rejected and the message names the offending field. */
+    assert_timestamp_reject_msg("2024-01-15 930",   "Invalid hour 93");
+    assert_timestamp_reject_msg("2024-01-15 93045", "Invalid hour 93");
+    assert_timestamp_reject_msg("2024-01-15 245",   "Invalid hour 24");
+    assert_timestamp_reject_msg("2024-01-15 1275",  "Invalid minute 75");
 }
 
 static void test_packed_clock_fractional_seconds(void)
 {
-    /* Per GRAMMAR.md: decimals only accepted for len 5+. Right-align
-       puts SS at the end, so the fraction attaches to the second
-       field as usual. */
+    /* Per GRAMMAR.md: decimals only accepted for len 5+, where a seconds
+       field exists; the fraction attaches to it. */
     assert_timestamp_origin("2024-01-15 123045.5",
                             2024,  1, 15, 12, 30, 45.5);
     assert_timestamp_origin("2024-01-15 12345.5",
-                            2024,  1, 15,  1, 23, 45.5);
+                            2024,  1, 15, 12, 34,  5.5);
 }
 
 static void test_packed_clock_reject_fraction_too_short(void)
@@ -772,6 +795,10 @@ static void test_packed_clock_reject_fraction_too_short(void)
     assert_timestamp_reject("2024-01-15 12.5");
     assert_timestamp_reject("2024-01-15 123.5");
     assert_timestamp_reject("2024-01-15 1234.5");
+    /* The decimal point decides, not the fraction's value. */
+    assert_timestamp_reject_msg("2024-01-15 123.0",  "no seconds field");
+    assert_timestamp_reject_msg("2024-01-15 1234.0", "no seconds field");
+    assert_timestamp_reject_msg("2024-01-15 1234.",  "no seconds field");
 }
 
 static void test_packed_clock_reject_bad_range(void)
@@ -781,9 +808,8 @@ static void test_packed_clock_reject_bad_range(void)
        outside the same ranges enforced for the broken form: hour 0-23,
        minute 0-59, second 0-60.
 
-       Test cases use lengths whose right-align interpretation puts the
-       bad field at HH or MM unambiguously, so the failure cannot be
-       misattributed. */
+       Test cases use even lengths, whose field split is unambiguous,
+       so the failure cannot be misattributed. */
     assert_timestamp_reject("2024-01-15 24");      /* len 2: HH=24 */
     assert_timestamp_reject("2024-01-15 2460");    /* len 4: HH=24, MM=60 */
     assert_timestamp_reject("2024-01-15 245959");  /* len 6: HH=24 */
@@ -1031,10 +1057,8 @@ static void test_tz_after_packed_clock(void)
     /* The TZ_CLOCK lexer state is entered after either broken_clock or
        packed_clock. Existing TZ tests all use the broken form before
        TZ; this exercises the packed-clock -> TZ transition. Lengths
-       1/2/4/6 are used (their right-align interpretation matches their
-       intuitive reading; lengths 3 and 5 are deliberately avoided here
-       since they're already extensively exercised by the packed-clock
-       tests themselves). */
+       1/2/4/6 are used (their field split is unambiguous; lengths 3 and
+       5 are exercised by the packed-clock tests themselves). */
     assert_timestamps_equivalent("2024-01-15 12+05:30",
                                  "2024-01-15 06:30:00 UTC");
     assert_timestamps_equivalent("2024-01-15 1234+05:30",
@@ -1688,12 +1712,183 @@ static void test_clock_diagnostics_are_specific(void)
     assert_timestamp_reject_msg("2024-01-01 1234567",   "at most 6");
 }
 
+/*
+ * The DATE_SEEN start condition has no catch-all rule, so every character the
+ * scanner cannot fit into a clock or timezone reaches the parser as a token it
+ * cannot shift.  Such a token used to be discarded silently, leaving
+ * "seconds since 2024-01-01x" indistinguishable from a clean timestamp.  The
+ * second case pins the leftover extent: it formerly reported "Q", the first
+ * "Q" having been consumed as the parser's lookahead.
+ */
+static void test_trailing_text_after_timestamp(void)
+{
+    assert_timestamp_reject_msg("2024-01-01x",  "\"x\"");
+    assert_timestamp_reject_msg("2024-01-01QQ", "\"QQ\"");
+}
+
+/*
+ * The separator between a date and a time. The composite DATE and CLOCK tokens
+ * admitted two classes of malformed input: a "T" or whitespace swallowed into
+ * the token and then discarded, so a dangling separator was invisible; and a
+ * missing separator, indistinguishable from an empty one. The cases below
+ * exercise both, together with the boundary cases around them. Some of the
+ * latter are rejected on the parent branch already, by its trailing-token
+ * check ("2024-01-01 T12:00" reports the text "T12:00"); what changes for
+ * those is which component is named, not whether they parse.
+ */
+static void test_date_time_separator(void)
+{
+    /*
+     * A "T" is only meaningful when a time follows it immediately, and each
+     * way of getting that wrong names the separator rather than falling back
+     * to "syntax error": nothing after it, a doubled "T", a zone designator,
+     * whitespace between it and the time, and unrelated trailing text.
+     */
+    assert_timestamp_reject_msg("2024-01-01T",       "followed immediately");
+    assert_timestamp_reject_msg("2024-01-01TT",      "followed immediately");
+    assert_timestamp_reject_msg("2024-01-01TZ",      "followed immediately");
+    assert_timestamp_reject_msg("2024-01-01T ",      "followed immediately");
+    assert_timestamp_reject_msg("2024-01-01T 12:00", "followed immediately");
+    assert_timestamp_reject_msg("2024-01-01T Z",     "followed immediately");
+    assert_timestamp_reject_msg("2024-01-01Tx",      "followed immediately");
+    assert_timestamp_reject_msg("20240101T",         "followed immediately");
+    assert_timestamp_reject_msg("2024-01T",          "followed immediately");
+
+    /* A space before the "T" is likewise rejected, though the separator is
+       never reached, so the message names the text instead. */
+    CU_ASSERT_PTR_NULL(parse_seconds_since("2024-01-01 T12:00"));
+
+    /* A separator is required: a date and a time cannot simply be run
+       together. */
+    CU_ASSERT_PTR_NULL(parse_seconds_since("2024-01-0112:00"));
+    CU_ASSERT_PTR_NULL(parse_seconds_since("2024-01-011200"));
+    CU_ASSERT_PTR_NULL(parse_seconds_since("2024-01-0112"));
+    CU_ASSERT_PTR_NULL(parse_seconds_since("2024-01-0112:00Z"));
+
+    /* The scanner's specific clock diagnostics survive the rejection, in
+       each of the three separator positions. */
+    assert_timestamp_reject_msg("2024-01-0112:345",   "minute field");
+    assert_timestamp_reject_msg("2024-01-01 12:345",  "minute field");
+    assert_timestamp_reject_msg("2024-01-01T12:345",  "minute field");
+    assert_timestamp_reject_msg("2024-01-0125:00",    "Invalid hour 25");
+
+    /* Both separators work, in every date form, and agree. */
+    assert_timestamps_equivalent("2024-01-01T12:00",  "2024-01-01 12:00");
+    assert_timestamps_equivalent("20240101T1200",     "2024-01-01 12:00");
+    assert_timestamps_equivalent("2024-01T12",        "2024-01-01 12:00");
+    assert_timestamps_equivalent("2024-01-01  12:00", "2024-01-01 12:00");
+    assert_timestamps_equivalent("2024-01-01T12:00Z", "2024-01-01 12:00Z");
+
+    /*
+     * SPACE_SEP is {space}+, so every character of the scanner's whitespace
+     * class separates a date from a time, not the space alone. Pinned
+     * deliberately: the set is inherited from the scanner's {space}, and
+     * narrowing it to space and tab would be a separate decision.
+     */
+    assert_timestamps_equivalent("2024-01-01\t12:00",  "2024-01-01 12:00");
+    assert_timestamps_equivalent("2024-01-01\r12:00",  "2024-01-01 12:00");
+    assert_timestamps_equivalent("2024-01-01\f12:00",  "2024-01-01 12:00");
+    assert_timestamps_equivalent("2024-01-01\v12:00",  "2024-01-01 12:00");
+    assert_timestamps_equivalent("20240101\t1200",     "2024-01-01 12:00");
+    assert_timestamps_equivalent("2024-01-01\t12:00 UTC", "2024-01-01 12:00Z");
+
+    /*
+     * A bare date with a zone designator and no time is a different
+     * production and stays valid, with or without whitespace.
+     */
+    assert_timestamps_equivalent("2024-01-01Z",  "2024-01-01");
+    assert_timestamps_equivalent("2024-01-01 Z", "2024-01-01");
+
+    /*
+     * No component of a timestamp may be followed by whitespace, as for any
+     * other unit specification: ut_parse() expects none (see ut_trim()).
+     * Every character of the scanner's {space} class is rejected alike, and
+     * the leftover is reported as trailing text.
+     */
+    assert_timestamp_reject_msg("2024-01-01 ",           "Unexpected text");
+    assert_timestamp_reject_msg("2024-01 ",              "Unexpected text");
+    assert_timestamp_reject_msg("20240101 ",             "Unexpected text");
+    assert_timestamp_reject_msg("2024-01-01 12:00 ",     "Unexpected text");
+    assert_timestamp_reject_msg("2024-01-01T12:00 ",     "Unexpected text");
+    assert_timestamp_reject_msg("2024-01-01Z ",          "Unexpected text");
+    assert_timestamp_reject_msg("2024-01-01 12:00Z ",    "Unexpected text");
+    assert_timestamp_reject_msg("2024-01-01 12:00 UTC ", "Unexpected text");
+    assert_timestamp_reject_msg("2024-01-01 12:00 +01 ", "Unexpected text");
+    assert_timestamp_reject_msg("2024-01-01 12:00+0100 ", "Unexpected text");
+    assert_timestamp_reject_msg("20240101\t",            "Unexpected text");
+    assert_timestamp_reject_msg("20240101\r",            "Unexpected text");
+    assert_timestamp_reject_msg("20240101\f",            "Unexpected text");
+    assert_timestamp_reject_msg("20240101\v",            "Unexpected text");
+    assert_timestamp_reject_msg("2024-01-01 12:00\r",    "Unexpected text");
+
+    /* Text after whitespace that cannot continue the timestamp is likewise
+       trailing text. */
+    assert_timestamp_reject_msg("2024-01-01 x", "\" x\"");
+    assert_timestamp_reject_msg("20240101 x",   "\" x\"");
+
+    /* Optional whitespace before a zone or an offset is unchanged. */
+    assert_timestamps_equivalent("2024-01-01 12:00 Z",   "2024-01-01 12:00Z");
+    assert_timestamps_equivalent("2024-01-01 12:00 +01", "2024-01-01 12:00+01");
+    assert_timestamps_equivalent("2024-01-01 12:00 GMT", "2024-01-01 12:00GMT");
+}
+
+/*
+ * An integer origin on a non-time unit matched the packed-date rule, whose
+ * whitespace suffix was discarded by decodeReal(), so "K @ 273 " parsed while
+ * "K @ 273.15 " did not. Both are now rejected.
+ */
+static void test_trailing_whitespace_after_numeric_origin(void)
+{
+    static const char* reject[] = { "K @ 273 ", "K @ 273.15 ", "m since 5 " };
+    size_t i;
+
+    for (i = 0; i < sizeof(reject) / sizeof(reject[0]); i++) {
+        ut_unit* u;
+        ut_set_status(UT_SUCCESS);
+        u = ut_parse(unitSystem, reject[i], UT_UTF8);
+        CU_ASSERT_PTR_NULL(u);
+        CU_ASSERT_EQUAL(ut_get_status(), UT_SYNTAX);
+        ut_free(u);
+    }
+    {
+        ut_unit* u = ut_parse(unitSystem, "K @ 273", UT_UTF8);
+        CU_ASSERT_PTR_NOT_NULL(u);
+        ut_free(u);
+    }
+}
+
 static void test_timezone_diagnostics_are_specific(void)
 {
     assert_timestamp_reject_msg("2024-01-01 00:00 +053",    "lose its sign");
     assert_timestamp_reject_msg("2024-01-01 00:00 +12345",  "at most 4");
     assert_timestamp_reject_msg("2024-01-01 00:00 +12:345", "minute field");
     assert_timestamp_reject_msg("2024-01-01 00:00 +123:45", "hour field");
+
+    /*
+     * A fractional minute reached the generic leftover check, because the
+     * fractional part falls past the valid {broken_tz_clock} prefix; the
+     * user was told about ".5" rather than about the offset.  Contrast
+     * "+1.5", which the wrong-separator rule already caught.
+     */
+    assert_timestamp_reject_msg("2024-01-01 00:00 +01:30.5",  "fractional part");
+    assert_timestamp_reject_msg("2024-01-01 00:00 +1:2.5",    "fractional part");
+    assert_timestamp_reject_msg("2024-01-01 00:00 -05:45.25", "fractional part");
+    assert_timestamp_reject_msg("2024-01-01 00:00 +1.5",      "use ':' not '.'");
+
+    /* Neighbouring rules are unshadowed: these still parse. */
+    {
+        static const char* const valid[] = {
+            "2024-01-01 00:00 +01:30",
+            "2024-01-01 00:00 +1:2",
+            "2024-01-01 00:00 -05:45"
+        };
+        size_t i;
+        for (i = 0; i < sizeof(valid)/sizeof(valid[0]); ++i) {
+            ut_unit* u = parse_seconds_since(valid[i]);
+            CU_ASSERT_PTR_NOT_NULL(u);
+            ut_free(u);
+        }
+    }
 }
 
 static void test_ut_check_time_valid(void)
@@ -1904,6 +2099,7 @@ int main(const int argc, const char* const* argv)
     CU_ADD_TEST(s, test_broken_clock_full);
     CU_ADD_TEST(s, test_broken_clock_no_seconds);
     CU_ADD_TEST(s, test_broken_clock_fractional_seconds);
+    CU_ADD_TEST(s, test_clock_empty_fraction);
     CU_ADD_TEST(s, test_fractional_second_precision);
     CU_ADD_TEST(s, test_broken_clock_single_digit_components);
     CU_ADD_TEST(s, test_broken_clock_reject_bad_hour);
@@ -1915,6 +2111,7 @@ int main(const int argc, const char* const* argv)
     /* 4. packed CLOCK */
     CU_ADD_TEST(s, test_packed_clock_full);
     CU_ADD_TEST(s, test_packed_clock_truncated);
+    CU_ADD_TEST(s, test_packed_clock_odd_length_out_of_range);
     CU_ADD_TEST(s, test_packed_clock_fractional_seconds);
     CU_ADD_TEST(s, test_packed_clock_reject_fraction_too_short);
     CU_ADD_TEST(s, test_packed_clock_reject_bad_range);
@@ -1986,6 +2183,9 @@ int main(const int argc, const char* const* argv)
     CU_ADD_TEST(s, test_encode_date_channels_agree);
     CU_ADD_TEST(s, test_encode_time_channels_agree);
     CU_ADD_TEST(s, test_clock_diagnostics_are_specific);
+    CU_ADD_TEST(s, test_trailing_text_after_timestamp);
+    CU_ADD_TEST(s, test_date_time_separator);
+    CU_ADD_TEST(s, test_trailing_whitespace_after_numeric_origin);
     CU_ADD_TEST(s, test_timezone_diagnostics_are_specific);
     CU_ADD_TEST(s, test_ut_check_time_valid);
     CU_ADD_TEST(s, test_ut_check_time_leap_second);
