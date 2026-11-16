@@ -1,0 +1,92 @@
+/* Custom description lists for troublshooting sections */
+dl.symptom {
+    margin-bottom: 3rem;
+}
+
+dl.symptom dt {
+    font-weight: 400;
+    line-height: 1.4;
+    margin-bottom: 0.5rem;
+    margin-top: 0;
+    letter-spacing: -2%;
+    font-size: 1.1em;
+}
+
+dl.symptom dt::before {
+    content: "\26A0 \00A0";
+    color: var(--bs-warning);
+}
+
+dl.symptom dd {
+    padding-left: 10px;
+    font-size: 0.95em;
+}
+
+dl.symptom strong {
+    text-transform: uppercase;
+    color: var(--bs-secondary);
+    padding-right: 5px;
+}
+
+/*                       */
+/* Left nav menu changes */
+/*************************/
+
+/* Sidebar title */
+#content .nav li.sidebarTitle a:hover {
+    background-color: var(--uu-sidebar-background-color);
+}
+
+/* Active 1st level menu title */
+#content .nav li a:hover {
+    background-color: var(--uu-header-background-color);
+}
+
+/* Hover (General) */
+#content .nav li.active a:hover {
+    background-color: #AFC8E9;
+    color: #000000;
+}
+
+#content .nav li.active ul li a {
+    font-size: 11px;
+    /* padding-left: 15px;*/
+}
+
+
+
+/* Active 2nd level subfolder title */
+#content .nav li.active ul li.subfolders.active>a {
+    background-color: var(--bs-secondary);
+    color: #FFFFFF;
+    text-decoration: none;
+}
+
+/* 2nd level subfolder menu items */
+#content .nav li.active ul li.subfolders.active ul li a {
+    font-size: 11px;
+    padding-left: 25px;
+}
+
+#content .nav li.active ul li a::before,
+#content .nav li.active ul li.subfolders.active>a::before,
+#content .nav li.active ul li.subfolders.active ul li a::before {
+    content: "\00A0 \00A0 \00A0 \00A0";
+    font-size: 1.2em;
+}
+
+
+/* Active content (General) */
+#content .nav li.active ul li.active>a {
+    background-color: var(--uu-sidenav-background-color);
+    color: #ec8e00;
+    font-weight: bold;
+}
+
+/* Active content (General & 2nd level subfolder menu items) */
+#content .nav li.active ul li.active>a::before,
+#content .nav li.active ul li.subfolders.active ul li.active a::before {
+    content: "\2192 \00A0 \00A0";
+    font-size: 0.9em;
+    color: #ec8e00;
+}

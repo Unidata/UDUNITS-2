@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="">
+<meta name="keywords" content=" ">
+<meta name="doc_version" content="2.2.28">
+<title>utCopy() | UDUNITS-2 Documentation</title>
+<link rel="stylesheet" href="assets/css/syntax.css">
+
+
+<link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
+<!--<link rel="stylesheet" type="text/css" href="assets/css/bootstrap.min.css">-->
+<link rel="stylesheet" href="assets/css/modern-business.css">
+<link rel="stylesheet" href="assets/css/lavish-bootstrap.css">
+<link rel="stylesheet" href="assets/css/theme-unidata.css">
+<link rel="stylesheet" href="assets/css/customstyles.css">
+
+<script
+    src="https://code.jquery.com/jquery-3.7.1.min.js"
+    integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
+    crossorigin="anonymous"></script>
+<script
+    src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"
+    integrity="sha512-3j3VU6WC5rPQB4Ld1jnLV7Kd5xr+cq9avvhwqzbH/taCRNURoeEpoPBK9pDyeukwSxwRPJ8fDgvYXd6SkaZ2TA=="
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"></script>
+<script src="assets/js/jquery.navgoco.min.js"></script>
+
+
+<script
+    src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
+    integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
+    crossorigin="anonymous"></script>
+<script
+    src="https://cdnjs.cloudflare.com/ajax/libs/anchor-js/4.3.1/anchor.min.js"
+    integrity="sha512-zPB79j2C+3sFS9zcA3vg/z6bVKzJVEyu9pY5w89akQRys76zpAT2t6S3wZKla3QQ14O5l/Yt0RUQ/DHXx82Y5g=="
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"></script>
+<script src="assets/js/toc.js"></script>
+<script src="assets/js/customscripts.js"></script>
+
+<link rel="shortcut icon" href="assets/images/favicon.ico">
+
+  <script>
+    $(document).ready(function () {
+      // Initialize navgoco with default options
+      $("#mysidebar").navgoco({
+        caretHtml: '',
+        accordion: true,
+        openClass: 'active', // open
+        save: false, // leave false or nav highlighting doesn't work right
+        cookie: {
+          name: 'navgoco',
+          expires: false,
+          path: '/'
+        },
+        slide: {
+          duration: 400,
+          easing: 'swing'
+        }
+      });
+
+      $("#collapseAll").click(function (e) {
+        e.preventDefault();
+        $("#mysidebar").navgoco('toggle', false);
+      });
+
+      $("#expandAll").click(function (e) {
+        e.preventDefault();
+        $("#mysidebar").navgoco('toggle', true);
+      });
+
+    });
+
+  </script>
+  <script>
+    $(function () {
+      $('[data-toggle="tooltip"]').tooltip()
+    })
+  </script>
+  <script>
+    $(document).ready(function () {
+      $("#tg-sb-link").click(function () {
+        $("#tg-sb-sidebar").toggle();
+        $("#tg-sb-content").toggleClass('col-md-9');
+        $("#tg-sb-content").toggleClass('col-md-12');
+        $("#tg-sb-icon").toggleClass('fa-toggle-on');
+        $("#tg-sb-icon").toggleClass('fa-toggle-off');
+      });
+    });
+  </script>
+  
+
+</head>
+
+<body>
+  <!-- Navigation -->
+<nav class="navbar navbar-inverse navbar-static-top">
+    <div class="container topnavlinks">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="fa fa-home fa-lg navbar-brand" href="index.html" style="padding-right:0px;">&nbsp;<span class="projectTitle">
+          UDUNITS-2 Documentation</span></a>
+        </div>
+        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+            <ul class="nav navbar-nav navbar-left">
+              
+              <li class="dropdown" id="vermenu">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">Version 2.2.28<b class="caret"></b></a>
+                <ul class="dropdown-menu" id="docmenu">
+                  
+                  
+                  <li id="remove"><a href="">Menu Loading...</a></li>
+                  
+                  
+                </ul>
+              </li>
+              
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <!-- toggle sidebar button -->
+                <li><a id="tg-sb-link" href="#"><i id="tg-sb-icon" class="fa fa-toggle-on"></i> Nav</a></li>
+                <!-- entries without drop-downs appear here -->
+
+
+
+
+                
+                
+                
+                <li><a href="https://www.unidata.ucar.edu/software/udunits" target="_blank">UDUNITS-2 Home Page</a></li>
+                
+                
+                
+                <li><a href="https://github.com/Unidata/UDUNITS-2" target="_blank">GitHub</a></li>
+                
+                
+                
+                <!-- entries with drop-downs appear here -->
+                <!-- conditional logic to control which topnav appears for the audience defined in the configuration file.-->
+                
+                
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">Jekyll Help<b class="caret"></b></a>
+                    <ul class="dropdown-menu" id="">
+                        
+                        
+                        <li id=""><a href="https://talk.jekyllrb.com" target="_blank">Jekyll Talk</a></li>
+                        
+                        
+                        
+                        <li id=""><a href="http://jekyllrb.com/docs/home/" target="_blank">Jekyll documentation</a></li>
+                        
+                        
+                        
+                        <li id=""><a href="http://stackoverflow.com/questions/tagged/jekyll" target="_blank">Jekyll on Stack Overflow</a></li>
+                        
+                        
+                        
+                        <li id=""><a href="http://idratherbewriting.com/category-jekyll/" target="_blank">Jekyll on my blog</a></li>
+                        
+                        
+                    </ul>
+                </li>
+                
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">Products<b class="caret"></b></a>
+                    <ul class="dropdown-menu" id="">
+                        
+                        
+                        <li id=""><a href="mydoc_introduction.html">Upstream Jekyll Documentation Theme Info</a></li>
+                        
+                        
+                        
+                        <li id=""><a href="p1_landing_page.html">Product 1</a></li>
+                        
+                        
+                        
+                        <li id=""><a href="p2_landing_page.html">Product 2</a></li>
+                        
+                        
+                    </ul>
+                </li>
+                
+                
+                
+			<li>
+
+
+
+  <a class="email" title="Submit feedback" href="https://github.com/Unidata/UDUNITS-2/issues/new?title=Documentation%20feedback">Feedback</a>
+
+</li>
+
+		
+                <!--comment out this block if you want to hide search-->
+                <li>
+                    <!--start search-->
+                    <div id="search-demo-container">
+                        <input type="text" id="search-input" placeholder="search...">
+                        <ul id="results-container"></ul>
+                    </div>
+                    <script src="assets/js/jekyll-search.js" type="text/javascript"></script>
+                    <script type="text/javascript">
+                            var pageLocation = window.location.href;
+                            var searchJson = pageLocation.substring(0, pageLocation.lastIndexOf('/') + 1) + "assets/search/search.json";
+                            SimpleJekyllSearch.init({
+                                searchInput: document.getElementById('search-input'),
+                                resultsContainer: document.getElementById('results-container'),
+                                dataSource: searchJson,
+                                searchResultTemplate: '<li><a href="{url}" title="utCopy()">{title}</a></li>',
+                    noResultsText: 'No results found.',
+                            limit: 10,
+                            fuzzy: true,
+                    })
+                    </script>
+                    <!--end search-->
+                </li>
+            </ul>
+        </div>
+        </div>
+        <!-- /.container -->
+</nav>
+
+  <!-- Page Content -->
+  <div class="container">
+    <div id="main">
+      <!-- Content Row -->
+      <div class="row" id="content">
+        
+        
+        <!-- Sidebar Column -->
+        <div class="col-md-3" id="tg-sb-sidebar">
+          
+
+<ul id="mysidebar" class="nav">
+  <!-- figure out title for sidebar
+     sidebar[0].product -> sidebar[0].title -> site.site_title -> empty
+       (sidebar yaml)       (sidebar yaml)     (_config.yaml)
+    -->
+  
+
+  <!-- figure out title for sidebar
+   sidebar[0].version -> site.docset_version -> empty
+     (sidebar yaml)        (_config.yaml)
+    -->
+  
+
+  
+
+  <!-- Both sidebar_title and sidebar_version defined -->
+  
+  <li class="sidebarTitle"><a href="index.html">UDUNITS-2 Documentation 2.2.28</a></li>
+  <!-- Only sidebar_title defined -->
+  
+
+  
+  
+  
+      
+  
+  <li>
+      <a title="Getting Started" href="#">Getting Started</a>
+      <ul>
+          
+          
+          
+          <li><a title="Overview" href="index.html">Overview</a></li>
+          
+          
+          
+          <li class="subfolders">
+              <a title="Installation" href="#">Installation</a>
+              <ul>
+                  
+                  
+                  
+                  <li><a title="Building from Source" href="building-from-source.html">Building from Source</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Package Manager Installation" href="package-manager-installation.html">Package Manager Installation</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Installation Via Conda" href="conda-installation.html">Installation Via Conda</a></li>
+                  
+                  
+                  
+              </ul>
+          </li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Quick Start Guide" href="quick-start-guide.html">Quick Start Guide</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Basic Examples" href="basic-examples.html">Basic Examples</a></li>
+          
+          
+          
+          
+      </ul>
+   </li>
+     
+      
+  
+  <li>
+      <a title="Concepts" href="#">Concepts</a>
+      <ul>
+          
+          
+          
+          <li><a title="Overview" href="concepts-overview.html">Overview</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Units" href="concepts-units.html">Units</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Dimensions" href="concepts-dimensions.html">Dimensions</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Unit Systems" href="concepts-unit-systems.html">Unit Systems</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Unit Expressions" href="concepts-unit-expressions.html">Unit Expressions</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Converters" href="concepts-converters.html">Converters</a></li>
+          
+          
+          
+          
+      </ul>
+   </li>
+     
+      
+  
+  <li>
+      <a title="User Guide" href="#">User Guide</a>
+      <ul>
+          
+          
+          
+          <li><a title="Unit Expression Language" href="unit-expression-language.html">Unit Expression Language</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Units Database" href="units-database.html">Units Database</a></li>
+          
+          
+          
+          
+      </ul>
+   </li>
+     
+      
+  
+  <li>
+      <a title="Developer Guide" href="#">Developer Guide</a>
+      <ul>
+          
+          
+          
+          <li><a title="Building Applications" href="building-applications.html">Building Applications</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Developing UDUNITS-2" href="developing-udunits.html">Developing UDUNITS-2</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Using the C API" href="using-the-c-api.html">Using the C API</a></li>
+          
+          
+          
+          
+      </ul>
+   </li>
+     
+      
+  
+  <li>
+      <a title="Tools" href="#">Tools</a>
+      <ul>
+          
+          
+          
+          <li><a title="udunits2 CLI Utility" href="udunits2-cli-utility.html">udunits2 CLI Utility</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Validation and Testing" href="validation-and-testing.html">Validation and Testing</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Man Pages" href="man-pages.html">Man Pages</a></li>
+          
+          
+          
+          
+      </ul>
+   </li>
+     
+      
+  
+  <li>
+      <a title="Reference" href="#">Reference</a>
+      <ul>
+          
+          
+          
+          <li><a title="Configure Script Options" href="configure-options.html">Configure Script Options</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Compiler & Linker Flags" href="compiler-linker-flags.html">Compiler & Linker Flags</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Environment Variables" href="environment-variables.html">Environment Variables</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Installation Layout" href="installation-layout.html">Installation Layout</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Unit Expression Language Spec" href="unit-expression-language-specification.html">Unit Expression Language Spec</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="XML Units Database Reference" href="xml-units-database-reference.html">XML Units Database Reference</a></li>
+          
+          
+          
+          <li class="subfolders">
+              <a title="C API" href="#">C API</a>
+              <ul>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="API Overview" href="c-api-overview.html">API Overview</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Data Structures" href="data-structures.html">Data Structures</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Unit Systems API" href="unit-systems-api.html">Unit Systems API</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Unit Creation & Destruction API" href="unit-creation-destruction-api.html">Unit Creation & Destruction API</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Unit Parsing & Formatting API" href="unit-parsing-formatting-api.html">Unit Parsing & Formatting API</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Unit Arithmetic API" href="unit-arithmetic-api.html">Unit Arithmetic API</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Unit Conversion API" href="unit-conversion-api.html">Unit Conversion API</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Unit Query & Introspection API" href="unit-query-introspection-api.html">Unit Query & Introspection API</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Unit Name & Symbols Mapping API" href="unit-name-symbols-mapping-api.html">Unit Name & Symbols Mapping API</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Unit Time Utilities API" href="unit-time-utilities-api.html">Unit Time Utilities API</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Extended Unit API" href="extended-unit-api.html">Extended Unit API</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Error Handling API" href="error-handling-api.html">Error Handling API</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Troubleshooting API Issues" href="troubleshooting-api-issues.html">Troubleshooting API Issues</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="UDUNITS-1 Legacy API" href="udunits-1-legacy-api.html">UDUNITS-1 Legacy API</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="C API Function Index" href="c-api-function-index.html">C API Function Index</a></li>
+                  
+                  
+                  
+              </ul>
+          </li>
+          
+          
+          
+          
+      </ul>
+   </li>
+     
+      
+      
+      <!-- if you aren't using the accordion, uncomment this block:
+         <p class="external">
+             <a href="#" id="collapseAll">Collapse All</a> | <a href="#" id="expandAll">Expand All</a>
+         </p>
+         -->
+</ul>
+
+<!-- this highlights the active parent class in the navgoco sidebar. this is critical so that the parent expands when you're viewing a page. This must appear below the sidebar code above. Otherwise, if placed inside customscripts.js, the script runs before the sidebar code runs and the class never gets inserted.-->
+<script>$("li.active").parents('li').toggleClass("active");</script>
+
+        </div>
+
+        
+        
+
+        <!-- Content Column -->
+        <div class="col-md-6" id="tg-sb-content">
+          <div class="post-header">
+   <h1 class="post-title-main">utCopy()</h1>
+</div>
+
+
+
+<div class="post-content">
+
+   
+
+    
+   <!--
+  If breadcrumbs explicitly set in the front matter of the markdown source, use it.
+  -->
+
+
+
+
+
+
+<div id="breadcrumbs">
+  
+  <a href="index.html" class="bcStart">UDUNITS-2 Documentation</a>
+  
+  
+  <span class="bcEnd">utCopy()</span>
+  
+  
+</div>
+
+   <p>Copies the contents of one UDUNITS-1 unit definition into another <code class="language-plaintext highlighter-rouge">utUnit</code> structure.</p>
+
+<div class="alert alert-danger" role="alert"><i class="fa fa-exclamation-circle"></i> <b>Warning:</b> 
+<strong><code class="language-plaintext highlighter-rouge">utCopy()</code> is part of the UDUNITS-1 legacy compatibility interface.</strong><br />
+
+New applications should use the UDUNITS-2 object model and functions such as
+<a href="ut-clone.html"><code class="language-plaintext highlighter-rouge">ut_clone()</code></a>, which provide improved memory management,
+clearer ownership semantics, and better integration with the UDUNITS-2 API.
+</div>
+
+<h2 id="prototype">Prototype</h2>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">int</span> <span class="nf">utCopy</span><span class="p">(</span>
+    <span class="k">const</span> <span class="n">utUnit</span><span class="o">*</span> <span class="n">from</span><span class="p">,</span>
+    <span class="n">utUnit</span><span class="o">*</span> <span class="n">to</span>
+<span class="p">);</span>
+</code></pre></div></div>
+
+<h2 id="header">Header</h2>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cp">#include</span> <span class="cpf">&lt;udunits.h&gt;</span><span class="cp">
+</span></code></pre></div></div>
+
+<h2 id="description">Description</h2>
+
+<p><code class="language-plaintext highlighter-rouge">utCopy()</code> copies the contents of one UDUNITS-1 <code class="language-plaintext highlighter-rouge">utUnit</code> structure into another.</p>
+
+<p>The destination structure receives an equivalent unit definition, including
+dimensional composition and scaling relationships.</p>
+
+<p>Both pointers must reference valid initialized <code class="language-plaintext highlighter-rouge">utUnit</code> structures.</p>
+
+<p>This function does not allocate memory for the destination structure; the caller
+must provide storage for the target <code class="language-plaintext highlighter-rouge">utUnit</code>.</p>
+
+<p>Any shared internal references associated with the unit system remain shared.</p>
+
+<h2 id="parameters">Parameters</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Parameter</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">from</code></td>
+      <td>Pointer to the source <code class="language-plaintext highlighter-rouge">utUnit</code> to be copied</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">to</code></td>
+      <td>Pointer to the destination <code class="language-plaintext highlighter-rouge">utUnit</code> that receives the copied unit definition</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="returns">Returns</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Return Value</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">0</code></td>
+      <td>Unit successfully copied</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">-1</code></td>
+      <td>An error occurred</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="error-handling">Error Handling</h2>
+
+<p><code class="language-plaintext highlighter-rouge">utCopy()</code> returns <code class="language-plaintext highlighter-rouge">-1</code> if an error occurs.</p>
+
+<p>Typical error conditions include:</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">from</code> is not a valid initialized <code class="language-plaintext highlighter-rouge">utUnit</code></li>
+  <li><code class="language-plaintext highlighter-rouge">to</code> is a null or invalid pointer</li>
+</ul>
+
+<p>The UDUNITS-1 compatibility interface provides limited diagnostic detail.</p>
+
+<p>Applications requiring detailed error reporting should use the UDUNITS-2 API.</p>
+
+<h2 id="object-ownership">Object Ownership</h2>
+
+<p><code class="language-plaintext highlighter-rouge">utCopy()</code> does not allocate new <code class="language-plaintext highlighter-rouge">utUnit</code> structures. The caller is responsible
+for providing storage for both the source and destination structures.</p>
+
+<p>After copying, both structures contain equivalent unit definitions.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Memory Allocation</th>
+      <th>Caller Responsibility</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>None</td>
+      <td>Caller allocates storage for <code class="language-plaintext highlighter-rouge">utUnit</code> structures</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="thread-saftey">Thread Saftey</h2>
+
+<p><code class="language-plaintext highlighter-rouge">utCopy()</code> does not modify the provided <code class="language-plaintext highlighter-rouge">utUnit</code> structures. However, UDUNITS-1
+uses shared global state and is not guaranteed to be thread-safe without
+external synchronization.</p>
+
+<p>Applications requiring reliable thread safety should use the UDUNITS-2 API.</p>
+
+<h2 id="example">Example</h2>
+
+<p>The following example demonstrates how <code class="language-plaintext highlighter-rouge">utCopy()</code> duplicates a previously
+parsed unit definition by copying one <code class="language-plaintext highlighter-rouge">utUnit</code> object into another.</p>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cp">#include</span> <span class="cpf">&lt;stdio.h&gt;</span><span class="cp">
+#include</span> <span class="cpf">&lt;udunits.h&gt;</span><span class="cp">
+</span>
+<span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="n">utUnit</span> <span class="n">meters</span><span class="p">;</span>
+    <span class="n">utUnit</span> <span class="n">copy</span><span class="p">;</span>
+
+    <span class="n">utScan</span><span class="p">(</span><span class="s">"m"</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">meters</span><span class="p">);</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">utCopy</span><span class="p">(</span><span class="o">&amp;</span><span class="n">meters</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">copy</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+        <span class="kt">char</span> <span class="n">buffer</span><span class="p">[</span><span class="mi">64</span><span class="p">];</span>
+        <span class="n">utPrint</span><span class="p">(</span><span class="o">&amp;</span><span class="n">copy</span><span class="p">,</span> <span class="n">buffer</span><span class="p">);</span>
+
+        <span class="n">printf</span><span class="p">(</span><span class="s">"Copied unit: %s</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">buffer</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="k">else</span> <span class="p">{</span>
+        <span class="n">printf</span><span class="p">(</span><span class="s">"Copy failed</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h2 id="see-also">See Also</h2>
+
+<ul>
+  <li><a href="utScan.html"><code class="language-plaintext highlighter-rouge">utScan()</code></a></li>
+  <li><a href="utPrint.html"><code class="language-plaintext highlighter-rouge">utPrint()</code></a></li>
+  <li><a href="utcompare.html"><code class="language-plaintext highlighter-rouge">utCompare()</code></a></li>
+  <li><a href="ut-clone.html"><code class="language-plaintext highlighter-rouge">utClone()</code></a></li>
+  <li><a href="utFree.html"><code class="language-plaintext highlighter-rouge">utFree()</code></a></li>
+  <li><a href="unit-parsing-formatting-api.html">UDUNITS-2 Unit Parsing &amp; Formatting API</a></li>
+  <li><a href="unit-systems-api.html">UDUNITS-2 Unit Systems API</a></li>
+</ul>
+
+
+    <div class="tags">
+        
+    </div>
+
+
+
+
+</div>
+
+
+        </div>
+        
+        <div class="col-md-3" id="tg-sb-sidebar-toc">
+          
+<!-- this handles the automatic toc. use ## for subheads to auto-generate the on-page minitoc. if you use html tags, you must supply an ID for the heading element in order for it to appear in the minitoc. -->
+<script>
+$( document ).ready(function() {
+  // Handler for .ready() called.
+
+$('#toc').toc({ minimumHeaders: 0, listType: 'ul', showSpeed: 0, headers: '.container h2, .container h3, .container h4' });
+
+/* this offset helps account for the space taken up by the floating toolbar. */
+$('#toc').on('click', 'a', function() {
+  var target = $(this.getAttribute('href'))
+    , scroll_target = target.offset().top
+
+  $(window).scrollTop(scroll_target - 10);
+  return false
+})
+  
+});
+</script>
+
+<div id="toc" class="fa fa-list-ul"></div>
+
+        </div>
+        
+        <!-- /.row -->
+      </div>
+      <!-- /.container -->
+    </div>
+    <!-- /#main -->
+  </div>
+  <div id="footer">
+       <footer class="unidata">
+
+    <div id="content-footer">
+     <h2>NSF Unidata Support</h2>
+     <ul>
+      <li>NSF Unidata provides free technical support to our community members. For more information, please see our <a href="https://support.unidata.ucar.edu/conditions-of-support/">Conditions Of Support</a>.</li>
+      <li>Visit: <a href="https://support.unidata.ucar.edu/">NSF Unidata Support </a></li>
+      <li>Email: <a href="mailto:support@unidata.ucar.edu">support@unidata.ucar.edu</a></li>
+      <li>Report a security issue/vulnerability: <a href="mailto:security@unidata.ucar.edu">security@unidata.ucar.edu</a></li>
+     </ul>
+    </div> <!-- /#content-footer -->
+
+    <div id="legal-footer">
+     <ul>
+      <li>&#169; NSF Unidata</li>
+      <li><a href="https://support.unidata.ucar.edu/conditions-of-support">Conditions of Support</a></li>
+      <li><a href="https://www.unidata.ucar.edu/legal/participation.html">Participation Policy</a></li>
+      <li><a href="https://www.ucar.edu/privacy-policy">Privacy Policy</a></li>
+      <li><a href="https://www.ucar.edu/terms-of-use">Terms of Use</a></li>
+      <li><a href="https://www.ucar.edu/accessibility">Accessibility</a></li>
+     </ul>
+    </div> <!-- /#legal-footer -->
+
+    <div id="nsf-footer">
+     <a href="https://www.nsf.gov" class="logo">
+      <img src="assets/images/nsf_logo_transparent.png" alt="U.S. National Science Foundation"/>
+     </a>
+     <div>
+      NSF Unidata is a member of the
+      <a href="https://www.ucp.ucar.edu/">UCAR Community Programs</a>,
+      managed by the
+      <a href="https://www.ucar.edu">University Corporation for Atmospheric Research</a>,
+      and funded by the
+      <a href="https://www.nsf.gov">U.S. National Science Foundation</a>.
+     </div>
+    </div> <!-- /#nsf-footer -->
+
+   </footer>
+  </div>
+
+</body>
+
+<!-- the google_analytics_id gets auto inserted from the config file -->
+
+
+
+<script>(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)})(window,document,'script','//www.google-analytics.com/analytics.js','ga');ga('create','UA-92978945-1','auto');ga('require','displayfeatures');ga('send','pageview');</script>
+
+
+
+</html>

@@ -1,0 +1,1150 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="">
+<meta name="keywords" content=" ">
+<meta name="doc_version" content="2.2.28">
+<title>udunits2 CLI Utility | UDUNITS-2 Documentation</title>
+<link rel="stylesheet" href="assets/css/syntax.css">
+
+
+<link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
+<!--<link rel="stylesheet" type="text/css" href="assets/css/bootstrap.min.css">-->
+<link rel="stylesheet" href="assets/css/modern-business.css">
+<link rel="stylesheet" href="assets/css/lavish-bootstrap.css">
+<link rel="stylesheet" href="assets/css/theme-unidata.css">
+<link rel="stylesheet" href="assets/css/customstyles.css">
+
+<script
+    src="https://code.jquery.com/jquery-3.7.1.min.js"
+    integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
+    crossorigin="anonymous"></script>
+<script
+    src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"
+    integrity="sha512-3j3VU6WC5rPQB4Ld1jnLV7Kd5xr+cq9avvhwqzbH/taCRNURoeEpoPBK9pDyeukwSxwRPJ8fDgvYXd6SkaZ2TA=="
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"></script>
+<script src="assets/js/jquery.navgoco.min.js"></script>
+
+
+<script
+    src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
+    integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
+    crossorigin="anonymous"></script>
+<script
+    src="https://cdnjs.cloudflare.com/ajax/libs/anchor-js/4.3.1/anchor.min.js"
+    integrity="sha512-zPB79j2C+3sFS9zcA3vg/z6bVKzJVEyu9pY5w89akQRys76zpAT2t6S3wZKla3QQ14O5l/Yt0RUQ/DHXx82Y5g=="
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"></script>
+<script src="assets/js/toc.js"></script>
+<script src="assets/js/customscripts.js"></script>
+
+<link rel="shortcut icon" href="assets/images/favicon.ico">
+
+  <script>
+    $(document).ready(function () {
+      // Initialize navgoco with default options
+      $("#mysidebar").navgoco({
+        caretHtml: '',
+        accordion: true,
+        openClass: 'active', // open
+        save: false, // leave false or nav highlighting doesn't work right
+        cookie: {
+          name: 'navgoco',
+          expires: false,
+          path: '/'
+        },
+        slide: {
+          duration: 400,
+          easing: 'swing'
+        }
+      });
+
+      $("#collapseAll").click(function (e) {
+        e.preventDefault();
+        $("#mysidebar").navgoco('toggle', false);
+      });
+
+      $("#expandAll").click(function (e) {
+        e.preventDefault();
+        $("#mysidebar").navgoco('toggle', true);
+      });
+
+    });
+
+  </script>
+  <script>
+    $(function () {
+      $('[data-toggle="tooltip"]').tooltip()
+    })
+  </script>
+  <script>
+    $(document).ready(function () {
+      $("#tg-sb-link").click(function () {
+        $("#tg-sb-sidebar").toggle();
+        $("#tg-sb-content").toggleClass('col-md-9');
+        $("#tg-sb-content").toggleClass('col-md-12');
+        $("#tg-sb-icon").toggleClass('fa-toggle-on');
+        $("#tg-sb-icon").toggleClass('fa-toggle-off');
+      });
+    });
+  </script>
+  
+
+</head>
+
+<body>
+  <!-- Navigation -->
+<nav class="navbar navbar-inverse navbar-static-top">
+    <div class="container topnavlinks">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="fa fa-home fa-lg navbar-brand" href="index.html" style="padding-right:0px;">&nbsp;<span class="projectTitle">
+          UDUNITS-2 Documentation</span></a>
+        </div>
+        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+            <ul class="nav navbar-nav navbar-left">
+              
+              <li class="dropdown" id="vermenu">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">Version 2.2.28<b class="caret"></b></a>
+                <ul class="dropdown-menu" id="docmenu">
+                  
+                  
+                  <li id="remove"><a href="">Menu Loading...</a></li>
+                  
+                  
+                </ul>
+              </li>
+              
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <!-- toggle sidebar button -->
+                <li><a id="tg-sb-link" href="#"><i id="tg-sb-icon" class="fa fa-toggle-on"></i> Nav</a></li>
+                <!-- entries without drop-downs appear here -->
+
+
+
+
+                
+                
+                
+                <li><a href="https://www.unidata.ucar.edu/software/udunits" target="_blank">UDUNITS-2 Home Page</a></li>
+                
+                
+                
+                <li><a href="https://github.com/Unidata/UDUNITS-2" target="_blank">GitHub</a></li>
+                
+                
+                
+                <!-- entries with drop-downs appear here -->
+                <!-- conditional logic to control which topnav appears for the audience defined in the configuration file.-->
+                
+                
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">Jekyll Help<b class="caret"></b></a>
+                    <ul class="dropdown-menu" id="">
+                        
+                        
+                        <li id=""><a href="https://talk.jekyllrb.com" target="_blank">Jekyll Talk</a></li>
+                        
+                        
+                        
+                        <li id=""><a href="http://jekyllrb.com/docs/home/" target="_blank">Jekyll documentation</a></li>
+                        
+                        
+                        
+                        <li id=""><a href="http://stackoverflow.com/questions/tagged/jekyll" target="_blank">Jekyll on Stack Overflow</a></li>
+                        
+                        
+                        
+                        <li id=""><a href="http://idratherbewriting.com/category-jekyll/" target="_blank">Jekyll on my blog</a></li>
+                        
+                        
+                    </ul>
+                </li>
+                
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">Products<b class="caret"></b></a>
+                    <ul class="dropdown-menu" id="">
+                        
+                        
+                        <li id=""><a href="mydoc_introduction.html">Upstream Jekyll Documentation Theme Info</a></li>
+                        
+                        
+                        
+                        <li id=""><a href="p1_landing_page.html">Product 1</a></li>
+                        
+                        
+                        
+                        <li id=""><a href="p2_landing_page.html">Product 2</a></li>
+                        
+                        
+                    </ul>
+                </li>
+                
+                
+                
+			<li>
+
+
+
+  <a class="email" title="Submit feedback" href="https://github.com/Unidata/UDUNITS-2/issues/new?title=Documentation%20feedback">Feedback</a>
+
+</li>
+
+		
+                <!--comment out this block if you want to hide search-->
+                <li>
+                    <!--start search-->
+                    <div id="search-demo-container">
+                        <input type="text" id="search-input" placeholder="search...">
+                        <ul id="results-container"></ul>
+                    </div>
+                    <script src="assets/js/jekyll-search.js" type="text/javascript"></script>
+                    <script type="text/javascript">
+                            var pageLocation = window.location.href;
+                            var searchJson = pageLocation.substring(0, pageLocation.lastIndexOf('/') + 1) + "assets/search/search.json";
+                            SimpleJekyllSearch.init({
+                                searchInput: document.getElementById('search-input'),
+                                resultsContainer: document.getElementById('results-container'),
+                                dataSource: searchJson,
+                                searchResultTemplate: '<li><a href="{url}" title="udunits2 CLI Utility">{title}</a></li>',
+                    noResultsText: 'No results found.',
+                            limit: 10,
+                            fuzzy: true,
+                    })
+                    </script>
+                    <!--end search-->
+                </li>
+            </ul>
+        </div>
+        </div>
+        <!-- /.container -->
+</nav>
+
+  <!-- Page Content -->
+  <div class="container">
+    <div id="main">
+      <!-- Content Row -->
+      <div class="row" id="content">
+        
+        
+        <!-- Sidebar Column -->
+        <div class="col-md-3" id="tg-sb-sidebar">
+          
+
+<ul id="mysidebar" class="nav">
+  <!-- figure out title for sidebar
+     sidebar[0].product -> sidebar[0].title -> site.site_title -> empty
+       (sidebar yaml)       (sidebar yaml)     (_config.yaml)
+    -->
+  
+
+  <!-- figure out title for sidebar
+   sidebar[0].version -> site.docset_version -> empty
+     (sidebar yaml)        (_config.yaml)
+    -->
+  
+
+  
+
+  <!-- Both sidebar_title and sidebar_version defined -->
+  
+  <li class="sidebarTitle"><a href="index.html">UDUNITS-2 Documentation 2.2.28</a></li>
+  <!-- Only sidebar_title defined -->
+  
+
+  
+  
+  
+      
+  
+  <li>
+      <a title="Getting Started" href="#">Getting Started</a>
+      <ul>
+          
+          
+          
+          <li><a title="Overview" href="index.html">Overview</a></li>
+          
+          
+          
+          <li class="subfolders">
+              <a title="Installation" href="#">Installation</a>
+              <ul>
+                  
+                  
+                  
+                  <li><a title="Building from Source" href="building-from-source.html">Building from Source</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Package Manager Installation" href="package-manager-installation.html">Package Manager Installation</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Installation Via Conda" href="conda-installation.html">Installation Via Conda</a></li>
+                  
+                  
+                  
+              </ul>
+          </li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Quick Start Guide" href="quick-start-guide.html">Quick Start Guide</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Basic Examples" href="basic-examples.html">Basic Examples</a></li>
+          
+          
+          
+          
+      </ul>
+   </li>
+     
+      
+  
+  <li>
+      <a title="Concepts" href="#">Concepts</a>
+      <ul>
+          
+          
+          
+          <li><a title="Overview" href="concepts-overview.html">Overview</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Units" href="concepts-units.html">Units</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Dimensions" href="concepts-dimensions.html">Dimensions</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Unit Systems" href="concepts-unit-systems.html">Unit Systems</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Unit Expressions" href="concepts-unit-expressions.html">Unit Expressions</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Converters" href="concepts-converters.html">Converters</a></li>
+          
+          
+          
+          
+      </ul>
+   </li>
+     
+      
+  
+  <li>
+      <a title="User Guide" href="#">User Guide</a>
+      <ul>
+          
+          
+          
+          <li><a title="Unit Expression Language" href="unit-expression-language.html">Unit Expression Language</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Units Database" href="units-database.html">Units Database</a></li>
+          
+          
+          
+          
+      </ul>
+   </li>
+     
+      
+  
+  <li>
+      <a title="Developer Guide" href="#">Developer Guide</a>
+      <ul>
+          
+          
+          
+          <li><a title="Building Applications" href="building-applications.html">Building Applications</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Developing UDUNITS-2" href="developing-udunits.html">Developing UDUNITS-2</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Using the C API" href="using-the-c-api.html">Using the C API</a></li>
+          
+          
+          
+          
+      </ul>
+   </li>
+     
+      
+  
+  <li>
+      <a title="Tools" href="#">Tools</a>
+      <ul>
+          
+          
+          
+          <li class="active"><a title="udunits2 CLI Utility" href="udunits2-cli-utility.html">udunits2 CLI Utility</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Validation and Testing" href="validation-and-testing.html">Validation and Testing</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Man Pages" href="man-pages.html">Man Pages</a></li>
+          
+          
+          
+          
+      </ul>
+   </li>
+     
+      
+  
+  <li>
+      <a title="Reference" href="#">Reference</a>
+      <ul>
+          
+          
+          
+          <li><a title="Configure Script Options" href="configure-options.html">Configure Script Options</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Compiler & Linker Flags" href="compiler-linker-flags.html">Compiler & Linker Flags</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Environment Variables" href="environment-variables.html">Environment Variables</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Installation Layout" href="installation-layout.html">Installation Layout</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Unit Expression Language Spec" href="unit-expression-language-specification.html">Unit Expression Language Spec</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="XML Units Database Reference" href="xml-units-database-reference.html">XML Units Database Reference</a></li>
+          
+          
+          
+          <li class="subfolders">
+              <a title="C API" href="#">C API</a>
+              <ul>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="API Overview" href="c-api-overview.html">API Overview</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Data Structures" href="data-structures.html">Data Structures</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Unit Systems API" href="unit-systems-api.html">Unit Systems API</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Unit Creation & Destruction API" href="unit-creation-destruction-api.html">Unit Creation & Destruction API</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Unit Parsing & Formatting API" href="unit-parsing-formatting-api.html">Unit Parsing & Formatting API</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Unit Arithmetic API" href="unit-arithmetic-api.html">Unit Arithmetic API</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Unit Conversion API" href="unit-conversion-api.html">Unit Conversion API</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Unit Query & Introspection API" href="unit-query-introspection-api.html">Unit Query & Introspection API</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Unit Name & Symbols Mapping API" href="unit-name-symbols-mapping-api.html">Unit Name & Symbols Mapping API</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Unit Time Utilities API" href="unit-time-utilities-api.html">Unit Time Utilities API</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Extended Unit API" href="extended-unit-api.html">Extended Unit API</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Error Handling API" href="error-handling-api.html">Error Handling API</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Troubleshooting API Issues" href="troubleshooting-api-issues.html">Troubleshooting API Issues</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="UDUNITS-1 Legacy API" href="udunits-1-legacy-api.html">UDUNITS-1 Legacy API</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="C API Function Index" href="c-api-function-index.html">C API Function Index</a></li>
+                  
+                  
+                  
+              </ul>
+          </li>
+          
+          
+          
+          
+      </ul>
+   </li>
+     
+      
+      
+      <!-- if you aren't using the accordion, uncomment this block:
+         <p class="external">
+             <a href="#" id="collapseAll">Collapse All</a> | <a href="#" id="expandAll">Expand All</a>
+         </p>
+         -->
+</ul>
+
+<!-- this highlights the active parent class in the navgoco sidebar. this is critical so that the parent expands when you're viewing a page. This must appear below the sidebar code above. Otherwise, if placed inside customscripts.js, the script runs before the sidebar code runs and the class never gets inserted.-->
+<script>$("li.active").parents('li').toggleClass("active");</script>
+
+        </div>
+
+        
+        
+
+        <!-- Content Column -->
+        <div class="col-md-6" id="tg-sb-content">
+          <div class="post-header">
+   <h1 class="post-title-main">udunits2 CLI Utility</h1>
+</div>
+
+
+
+<div class="post-content">
+
+   
+
+    
+   <!--
+  If breadcrumbs explicitly set in the front matter of the markdown source, use it.
+  -->
+
+
+
+
+
+
+<div id="breadcrumbs">
+  
+  <a href="index.html" class="bcStart">UDUNITS-2 Documentation</a>
+  
+  
+  <span class="bcEnd">udunits2 CLI Utility</span>
+  
+  
+</div>
+
+   <p>The <strong><code class="language-plaintext highlighter-rouge">udunits2</code> command-line utility</strong> provides an interactive and non-interactive interface to the UDUNITS-2 library.</p>
+
+<p>It can:</p>
+
+<ul>
+  <li>Parse and validate unit expressions.</li>
+  <li>Convert numeric values between compatible units.</li>
+  <li>Display the definition of a unit expression.</li>
+  <li>Use a specified XML units database.</li>
+  <li>Report problems in the units database.</li>
+</ul>
+
+<p>The utility is useful for testing unit expressions, checking conversions, inspecting unit definitions, and verifying a UDUNITS-2 installation.</p>
+
+<p>For a complete description of command-line options, see the <strong><a href="cli-reference.html">CLI Reference</a></strong>.</p>
+
+<h2 id="basic-usage">Basic Usage</h2>
+
+<p>Run <code class="language-plaintext highlighter-rouge">udunits2</code> without options to start interactive mode:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>udunits2
+</code></pre></div></div>
+
+<p>The utility prompts for the unit you have:</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>You have:
+</code></pre></div></div>
+
+<p>and then for the unit you want:</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>You want:
+</code></pre></div></div>
+
+<p>For example:</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>You have: 1 m
+You want: ft
+
+    1 m = 3.28084 ft
+    x/ft = 0.3048*x/m
+</code></pre></div></div>
+
+<p>The exact conversion expression displayed depends on the units being converted.</p>
+
+<p>If the installation is working correctly, starting <code class="language-plaintext highlighter-rouge">udunits2</code> displays the <code class="language-plaintext highlighter-rouge">You have:</code> prompt.</p>
+
+<h2 id="non-interactive-mode">Non-Interactive Mode</h2>
+
+<p>Use <code class="language-plaintext highlighter-rouge">-H</code> to specify the input value and unit on the command line:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>udunits2 <span class="nt">-H</span> <span class="s2">"1 m"</span>
+</code></pre></div></div>
+
+<p>Use <code class="language-plaintext highlighter-rouge">-W</code> to specify the desired output unit:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>udunits2 <span class="nt">-H</span> <span class="s2">"1 m"</span> <span class="nt">-W</span> <span class="s2">"ft"</span>
+</code></pre></div></div>
+
+<p>This performs the conversion without prompting for input:</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    1 m = 3.28084 ft
+    x/ft = 0.3048*x/m
+</code></pre></div></div>
+
+<p>This form is useful in shell scripts and automated validation workflows.</p>
+
+<h3 id="examples">Examples</h3>
+
+<p>Convert a length:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>udunits2 <span class="nt">-H</span> <span class="s2">"1 m"</span> <span class="nt">-W</span> <span class="s2">"ft"</span>
+</code></pre></div></div>
+
+<p>Convert a speed:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>udunits2 <span class="nt">-H</span> <span class="s2">"10 m/s"</span> <span class="nt">-W</span> <span class="s2">"km/h"</span>
+</code></pre></div></div>
+
+<p>Convert a temperature:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>udunits2 <span class="nt">-H</span> <span class="s2">"25 degC"</span> <span class="nt">-W</span> <span class="s2">"degF"</span>
+</code></pre></div></div>
+
+<p>Convert a pressure:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>udunits2 <span class="nt">-H</span> <span class="s2">"1013.25 hPa"</span> <span class="nt">-W</span> <span class="s2">"Pa"</span>
+</code></pre></div></div>
+
+<p>Convert a reference time:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>udunits2 <span class="nt">-H</span> <span class="s2">"1 hours since 2024-01-01 00:00:00"</span> <span class="se">\</span>
+         <span class="nt">-W</span> <span class="s2">"seconds since 2024-01-01 00:00:00"</span>
+</code></pre></div></div>
+
+<p>Because unit expressions can contain spaces, quote them when passing them as command-line arguments.</p>
+
+<h2 id="display-a-unit-definition">Display a Unit Definition</h2>
+
+<p>The <code class="language-plaintext highlighter-rouge">-W</code> option can also be used with an empty value to request the definition of the unit specified with <code class="language-plaintext highlighter-rouge">-H</code>.</p>
+
+<p>For example:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>udunits2 <span class="nt">-H</span> <span class="s2">"N"</span> <span class="nt">-W</span> <span class="s2">""</span>
+</code></pre></div></div>
+
+<p>The utility prints the definition of the unit rather than performing a conversion.</p>
+
+<p>This is useful for determining how a unit is represented in terms of other units.</p>
+
+<p>For example, a derived unit such as <code class="language-plaintext highlighter-rouge">N</code> can be displayed in terms of its underlying units.</p>
+
+<h2 id="interactive-mode">Interactive Mode</h2>
+
+<p>Interactive mode is useful when exploring unit expressions or performing multiple conversions.</p>
+
+<p>Start the utility:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>udunits2
+</code></pre></div></div>
+
+<p>Enter the quantity and unit at the first prompt:</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>You have: 10 m/s
+</code></pre></div></div>
+
+<p>Then enter the desired units:</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>You want: km/h
+</code></pre></div></div>
+
+<p>The utility reports the converted value and the conversion expression.</p>
+
+<p>A blank response at the <code class="language-plaintext highlighter-rouge">You want:</code> prompt requests the definition of the unit entered at the <code class="language-plaintext highlighter-rouge">You have:</code> prompt.</p>
+
+<h2 id="command-line-options">Command-Line Options</h2>
+
+<p>The most commonly used options are:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Option</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">-H &lt;have&gt;</code></td>
+      <td>Specify the input value and unit. If omitted, the utility prompts for them.</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">-W &lt;want&gt;</code></td>
+      <td>Specify the desired output unit. If omitted, the utility prompts for it. An empty value requests the definition of the input unit.</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">-A</code></td>
+      <td>Use ASCII character encoding.</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">-L</code></td>
+      <td>Use ISO-8859-1 (Latin-1) character encoding.</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">-U</code></td>
+      <td>Use UTF-8 character encoding.</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">-r</code></td>
+      <td>Reveal problems in the units database.</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">-h</code></td>
+      <td>Display command-line help.</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">&lt;XML_file&gt;</code></td>
+      <td>Use the specified XML units database instead of the default database.</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>For the complete option descriptions and usage details, see the <strong><a href="cli-reference.html">CLI Reference</a></strong>.</p>
+
+<h2 id="character-encoding">Character Encoding</h2>
+
+<p>The utility supports three character encodings:</p>
+
+<ul>
+  <li><strong>ASCII</strong> — selected with <code class="language-plaintext highlighter-rouge">-A</code></li>
+  <li><strong>ISO-8859-1 (Latin-1)</strong> — selected with <code class="language-plaintext highlighter-rouge">-L</code></li>
+  <li><strong>UTF-8</strong> — selected with <code class="language-plaintext highlighter-rouge">-U</code></li>
+</ul>
+
+<p>ASCII is the default when no encoding is explicitly selected.</p>
+
+<p>UTF-8 is useful when unit expressions contain Unicode characters supported by UDUNITS-2, such as:</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>µm
+°C
+m²
+</code></pre></div></div>
+
+<p>For example:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>udunits2 <span class="nt">-U</span> <span class="nt">-H</span> <span class="s2">"1 µm"</span> <span class="nt">-W</span> <span class="s2">"m"</span>
+</code></pre></div></div>
+
+<p>The selected encoding also affects how the XML units database and unit expressions are interpreted.</p>
+
+<h2 id="using-a-specific-xml-database">Using a Specific XML Database</h2>
+
+<p>By default, <code class="language-plaintext highlighter-rouge">udunits2</code> uses the standard XML units database installed with UDUNITS-2.</p>
+
+<p>A different database can be supplied as the final command-line argument:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>udunits2 <span class="nt">-H</span> <span class="s2">"1 foo"</span> <span class="nt">-W</span> <span class="s2">"bar"</span> /path/to/custom.xml
+</code></pre></div></div>
+
+<p>This is useful when testing a custom units database or verifying definitions that are not included in the standard database.</p>
+
+<p>For information about the structure and contents of the XML database, see:</p>
+
+<ul>
+  <li><strong><a href="units-database.html">User Guide: Units Database</a></strong></li>
+  <li><strong><a href="xml-database-reference.html">Reference: XML Database Reference</a></strong></li>
+</ul>
+
+<p>For information about the standard database installation location, see <strong><a href="installation-layout.html">Reference: Installation Layout</a></strong>.</p>
+
+<h2 id="checking-the-units-database">Checking the Units Database</h2>
+
+<p>The <code class="language-plaintext highlighter-rouge">-r</code> option causes the utility to reveal problems encountered while reading the units database:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>udunits2 <span class="nt">-r</span>
+</code></pre></div></div>
+
+<p>This can be useful when diagnosing a malformed or customized XML database.</p>
+
+<p>For normal use, <code class="language-plaintext highlighter-rouge">-r</code> is not required.</p>
+
+<h2 id="unit-expressions">Unit Expressions</h2>
+
+<p>The <code class="language-plaintext highlighter-rouge">udunits2</code> utility accepts the same unit expression language provided by the UDUNITS-2 library.</p>
+
+<p>Examples include:</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>m
+m/s
+kg m2 s-2
+W/m2
+km/h
+hours since 1970-01-01
+</code></pre></div></div>
+
+<p>Unit expressions can use unit names, symbols, prefixes, multiplication, division, exponents, parentheses, and reference-time expressions.</p>
+
+<p>See the <strong><a href="unit-expression-language.html">User Guide: Unit Expression Language</a></strong> for a user-oriented description of the syntax.</p>
+
+<p>For the complete lexical and syntactic specification, see the <strong><a href="unit-expression-language-specification.html">Reference: Unit Expression Language Specification</a></strong>.</p>
+
+<h2 id="troubleshooting">Troubleshooting</h2>
+
+<p>These common errors can occur when using the <code class="language-plaintext highlighter-rouge">udunits2</code> command-line utility.</p>
+
+<dl class="symptom">
+  <dt><strong>Error Message:</strong> <code class="language-plaintext highlighter-rouge">Unknown unit</code></dt>
+  <dd><strong>Cause:</strong> The specified unit name or symbol is not defined in the loaded units database, or the unit expression contains an unrecognized name or symbol.</dd>
+  <dd><strong>Solution:</strong> Verify the spelling and capitalization of the unit expression and check the <strong><a href="units-database.html">Units Database</a></strong> for the available units.
+For example, <code class="language-plaintext highlighter-rouge">foobar</code> cannot be parsed unless <code class="language-plaintext highlighter-rouge">foobar</code> is defined in the loaded units database.</dd>
+</dl>
+
+<dl class="symptom">
+  <dt><strong>Error Message:</strong> <code class="language-plaintext highlighter-rouge">Invalid unit expression syntax</code></dt>
+  <dd><strong>Cause:</strong> The unit expression contains malformed syntax, such as an invalid operator, incomplete exponent, missing operand, or incorrect grouping.</dd>
+  <dd><strong>Solution:</strong> Check the expression against the syntax described in the <strong><a href="unit-expression-language.html">Unit Expression Language</a></strong> guide.
+For the complete lexical and syntactic rules, see the <strong><a href="unit-expression-language-specification.html">Unit Expression Language Specification</a></strong>.</dd>
+</dl>
+
+<dl class="symptom">
+  <dt><strong>Error Message:</strong> <code class="language-plaintext highlighter-rouge">Units are not convertible</code></dt>
+  <dd><strong>Cause:</strong> The input and output units represent different dimensions and therefore cannot be converted directly.</dd>
+  <dd><strong>Solution:</strong> Verify that the source and destination units are dimensionally compatible.
+For example, <code class="language-plaintext highlighter-rouge">m</code> and <code class="language-plaintext highlighter-rouge">ft</code> are compatible length units, while <code class="language-plaintext highlighter-rouge">m</code> and <code class="language-plaintext highlighter-rouge">s</code> represent different dimensions and cannot be converted directly.</dd>
+</dl>
+
+<dl class="symptom">
+  <dt><strong>Error Message:</strong> <code class="language-plaintext highlighter-rouge">Couldn't open units database</code></dt>
+  <dd><strong>Cause:</strong> The XML units database cannot be located or opened.</dd>
+  <dd><strong>Solution:</strong> Verify that the units database is installed and accessible.
+See <strong><a href="installation-layout.html">Reference: Installation Layout</a></strong> for the expected database location and <strong><a href="environment-variables.html">Reference: Environment Variables</a></strong> for information about <code class="language-plaintext highlighter-rouge">UDUNITS2_XML_PATH</code>.</dd>
+</dl>
+
+<dl class="symptom">
+  <dt><strong>Error Message:</strong> <code class="language-plaintext highlighter-rouge">Unknown option</code></dt>
+  <dd><strong>Cause:</strong> The command contains an option that is not supported by the installed version of <code class="language-plaintext highlighter-rouge">udunits2</code>, or the option was entered incorrectly.</dd>
+  <dd><strong>Solution:</strong> Run <code class="language-plaintext highlighter-rouge">udunits2 -h</code> to display the options supported by the installed version.
+See the <strong><a href="cli-reference.html">CLI Reference</a></strong> for command syntax and option descriptions.</dd>
+</dl>
+
+<dl class="symptom">
+  <dt><strong>Error Message:</strong> <code class="language-plaintext highlighter-rouge">Usage: udunits2 ...</code></dt>
+  <dd><strong>Cause:</strong> The command-line arguments are incomplete, invalid, or in an unsupported combination.</dd>
+  <dd><strong>Solution:</strong> Run <code class="language-plaintext highlighter-rouge">udunits2 -h</code> to display the command syntax and required arguments.
+When unit expressions contain spaces, enclose them in quotation marks. For example:
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  udunits2 <span class="nt">-H</span> <span class="s2">"10 m/s"</span> <span class="nt">-W</span> <span class="s2">"km/h"</span>
+</code></pre></div>    </div>
+  </dd>
+  <dt><strong>Error Message:</strong> Unit expression contains unexpected characters</dt>
+  <dd><strong>Cause:</strong> The expression contains characters that are not recognized under the selected character encoding, or the shell has interpreted special characters before passing the expression to <code class="language-plaintext highlighter-rouge">udunits2</code>.</dd>
+  <dd><strong>Solution:</strong> Use the appropriate character-encoding option (<code class="language-plaintext highlighter-rouge">-A</code>, <code class="language-plaintext highlighter-rouge">-L</code>, or <code class="language-plaintext highlighter-rouge">-U</code>) and quote expressions containing spaces or shell-special characters.
+For example, use <code class="language-plaintext highlighter-rouge">-U</code> when working with UTF-8 characters such as <code class="language-plaintext highlighter-rouge">µ</code>, <code class="language-plaintext highlighter-rouge">°</code>, or Unicode superscripts.</dd>
+</dl>
+
+<dl class="symptom">
+  <dt><strong>Error Message:</strong> Conversion produces an unexpected result</dt>
+  <dd><strong>Cause:</strong> The input or output unit expression does not represent the intended unit, or a unit alias, prefix, offset, or database definition has been interpreted differently than expected.</dd>
+  <dd><strong>Solution:</strong> Check the unit definitions in the <strong><a href="units-database.html">Units Database</a></strong> and verify the unit expressions being supplied to <code class="language-plaintext highlighter-rouge">-H</code> and <code class="language-plaintext highlighter-rouge">-W</code>.
+If necessary, specify the XML database explicitly to ensure that the intended database is being used.</dd>
+</dl>
+
+<dl class="symptom">
+  <dt><strong>Error Message:</strong> A custom unit is not recognized</dt>
+  <dd><strong>Cause:</strong> The custom XML units database is not being loaded, or the unit definition is invalid.</dd>
+  <dd><strong>Solution:</strong> Verify the custom database and specify its path explicitly when testing it.
+For example:
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  udunits2 <span class="nt">-H</span> <span class="s2">"1 foo"</span> <span class="nt">-W</span> <span class="s2">"bar"</span> /path/to/custom.xml
+</code></pre></div>    </div>
+    <p>Use the <code class="language-plaintext highlighter-rouge">-r</code> option to reveal problems encountered while reading the database.
+See the <strong><a href="units-database.html">Units Database</a></strong> documentation for information about custom databases.</p>
+  </dd>
+</dl>
+
+<h2 id="using-udunits2-in-scripts">Using <code class="language-plaintext highlighter-rouge">udunits2</code> in Scripts</h2>
+
+<p>The non-interactive form is suitable for shell scripts and validation workflows:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>udunits2 <span class="nt">-H</span> <span class="s2">"1 m"</span> <span class="nt">-W</span> <span class="s2">"ft"</span>
+</code></pre></div></div>
+
+<p>For example, a script can use the command to verify that a unit expression is recognized and that two units are convertible.</p>
+
+<p>When automating conversions:</p>
+
+<ul>
+  <li>Quote unit expressions containing spaces.</li>
+  <li>Use an explicit XML database when a particular database must be tested.</li>
+  <li>Select the required character encoding when expressions contain non-ASCII characters.</li>
+  <li>Check the command’s exit status when using it as part of an automated workflow.</li>
+</ul>
+
+<p>See <strong><a href="validation-workflows.html">Validation Workflows</a></strong> for examples of incorporating UDUNITS-2 checks into automated validation.</p>
+
+<h2 id="verification">Verification</h2>
+
+<p>The <code class="language-plaintext highlighter-rouge">udunits2</code> utility provides a convenient way to verify a successful installation.</p>
+
+<p>Display the help message:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>udunits2 <span class="nt">-h</span>
+</code></pre></div></div>
+
+<p>Start interactive mode:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>udunits2
+</code></pre></div></div>
+
+<p>Then test a simple conversion:</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>You have: 1 m
+You want: ft
+</code></pre></div></div>
+
+<p>You can also perform the same test non-interactively:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>udunits2 <span class="nt">-H</span> <span class="s2">"1 m"</span> <span class="nt">-W</span> <span class="s2">"ft"</span>
+</code></pre></div></div>
+
+<p>If these commands work, the executable can locate and load the XML units database and successfully use the UDUNITS-2 library.</p>
+
+<p>See the appropriate <strong><a href="installation.html">installation guide</a></strong> for platform-specific installation and troubleshooting information.</p>
+
+<h2 id="related-topics">Related Topics</h2>
+
+<ul>
+  <li><strong><a href="quick-start-guide.html">Getting Started: Quick Start</a></strong></li>
+  <li><strong><a href="basic-examples.html">Getting Started: Basic Examples</a></strong></li>
+  <li><strong><a href="unit-expression-language.html">User Guide: Unit Expression Language</a></strong></li>
+  <li><strong><a href="units-database.html">User Guide: Units Database</a></strong></li>
+  <li><strong><a href="validation-and-testing.html">Tools: Validation &amp; Testing</a></strong></li>
+  <li><strong><a href="cli-reference.html">Reference: CLI Reference</a></strong></li>
+  <li><strong><a href="installation-layout.html">Reference: Installation Layout</a></strong></li>
+  <li><strong><a href="environment-variables.html">Reference: Environment Variables</a></strong></li>
+</ul>
+
+
+    <div class="tags">
+        
+    </div>
+
+
+
+
+</div>
+
+
+        </div>
+        
+        <div class="col-md-3" id="tg-sb-sidebar-toc">
+          
+<!-- this handles the automatic toc. use ## for subheads to auto-generate the on-page minitoc. if you use html tags, you must supply an ID for the heading element in order for it to appear in the minitoc. -->
+<script>
+$( document ).ready(function() {
+  // Handler for .ready() called.
+
+$('#toc').toc({ minimumHeaders: 0, listType: 'ul', showSpeed: 0, headers: '.container h2, .container h3, .container h4' });
+
+/* this offset helps account for the space taken up by the floating toolbar. */
+$('#toc').on('click', 'a', function() {
+  var target = $(this.getAttribute('href'))
+    , scroll_target = target.offset().top
+
+  $(window).scrollTop(scroll_target - 10);
+  return false
+})
+  
+});
+</script>
+
+<div id="toc" class="fa fa-list-ul"></div>
+
+        </div>
+        
+        <!-- /.row -->
+      </div>
+      <!-- /.container -->
+    </div>
+    <!-- /#main -->
+  </div>
+  <div id="footer">
+       <footer class="unidata">
+
+    <div id="content-footer">
+     <h2>NSF Unidata Support</h2>
+     <ul>
+      <li>NSF Unidata provides free technical support to our community members. For more information, please see our <a href="https://support.unidata.ucar.edu/conditions-of-support/">Conditions Of Support</a>.</li>
+      <li>Visit: <a href="https://support.unidata.ucar.edu/">NSF Unidata Support </a></li>
+      <li>Email: <a href="mailto:support@unidata.ucar.edu">support@unidata.ucar.edu</a></li>
+      <li>Report a security issue/vulnerability: <a href="mailto:security@unidata.ucar.edu">security@unidata.ucar.edu</a></li>
+     </ul>
+    </div> <!-- /#content-footer -->
+
+    <div id="legal-footer">
+     <ul>
+      <li>&#169; NSF Unidata</li>
+      <li><a href="https://support.unidata.ucar.edu/conditions-of-support">Conditions of Support</a></li>
+      <li><a href="https://www.unidata.ucar.edu/legal/participation.html">Participation Policy</a></li>
+      <li><a href="https://www.ucar.edu/privacy-policy">Privacy Policy</a></li>
+      <li><a href="https://www.ucar.edu/terms-of-use">Terms of Use</a></li>
+      <li><a href="https://www.ucar.edu/accessibility">Accessibility</a></li>
+     </ul>
+    </div> <!-- /#legal-footer -->
+
+    <div id="nsf-footer">
+     <a href="https://www.nsf.gov" class="logo">
+      <img src="assets/images/nsf_logo_transparent.png" alt="U.S. National Science Foundation"/>
+     </a>
+     <div>
+      NSF Unidata is a member of the
+      <a href="https://www.ucp.ucar.edu/">UCAR Community Programs</a>,
+      managed by the
+      <a href="https://www.ucar.edu">University Corporation for Atmospheric Research</a>,
+      and funded by the
+      <a href="https://www.nsf.gov">U.S. National Science Foundation</a>.
+     </div>
+    </div> <!-- /#nsf-footer -->
+
+   </footer>
+  </div>
+
+</body>
+
+<!-- the google_analytics_id gets auto inserted from the config file -->
+
+
+
+<script>(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)})(window,document,'script','//www.google-analytics.com/analytics.js','ga');ga('create','UA-92978945-1','auto');ga('require','displayfeatures');ga('send','pageview');</script>
+
+
+
+</html>

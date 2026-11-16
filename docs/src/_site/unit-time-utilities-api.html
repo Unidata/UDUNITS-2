@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="">
+<meta name="keywords" content=" ">
+<meta name="doc_version" content="2.2.28">
+<title>Unit Time Utilities API | UDUNITS-2 Documentation</title>
+<link rel="stylesheet" href="assets/css/syntax.css">
+
+
+<link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
+<!--<link rel="stylesheet" type="text/css" href="assets/css/bootstrap.min.css">-->
+<link rel="stylesheet" href="assets/css/modern-business.css">
+<link rel="stylesheet" href="assets/css/lavish-bootstrap.css">
+<link rel="stylesheet" href="assets/css/theme-unidata.css">
+<link rel="stylesheet" href="assets/css/customstyles.css">
+
+<script
+    src="https://code.jquery.com/jquery-3.7.1.min.js"
+    integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
+    crossorigin="anonymous"></script>
+<script
+    src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"
+    integrity="sha512-3j3VU6WC5rPQB4Ld1jnLV7Kd5xr+cq9avvhwqzbH/taCRNURoeEpoPBK9pDyeukwSxwRPJ8fDgvYXd6SkaZ2TA=="
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"></script>
+<script src="assets/js/jquery.navgoco.min.js"></script>
+
+
+<script
+    src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
+    integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
+    crossorigin="anonymous"></script>
+<script
+    src="https://cdnjs.cloudflare.com/ajax/libs/anchor-js/4.3.1/anchor.min.js"
+    integrity="sha512-zPB79j2C+3sFS9zcA3vg/z6bVKzJVEyu9pY5w89akQRys76zpAT2t6S3wZKla3QQ14O5l/Yt0RUQ/DHXx82Y5g=="
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"></script>
+<script src="assets/js/toc.js"></script>
+<script src="assets/js/customscripts.js"></script>
+
+<link rel="shortcut icon" href="assets/images/favicon.ico">
+
+  <script>
+    $(document).ready(function () {
+      // Initialize navgoco with default options
+      $("#mysidebar").navgoco({
+        caretHtml: '',
+        accordion: true,
+        openClass: 'active', // open
+        save: false, // leave false or nav highlighting doesn't work right
+        cookie: {
+          name: 'navgoco',
+          expires: false,
+          path: '/'
+        },
+        slide: {
+          duration: 400,
+          easing: 'swing'
+        }
+      });
+
+      $("#collapseAll").click(function (e) {
+        e.preventDefault();
+        $("#mysidebar").navgoco('toggle', false);
+      });
+
+      $("#expandAll").click(function (e) {
+        e.preventDefault();
+        $("#mysidebar").navgoco('toggle', true);
+      });
+
+    });
+
+  </script>
+  <script>
+    $(function () {
+      $('[data-toggle="tooltip"]').tooltip()
+    })
+  </script>
+  <script>
+    $(document).ready(function () {
+      $("#tg-sb-link").click(function () {
+        $("#tg-sb-sidebar").toggle();
+        $("#tg-sb-content").toggleClass('col-md-9');
+        $("#tg-sb-content").toggleClass('col-md-12');
+        $("#tg-sb-icon").toggleClass('fa-toggle-on');
+        $("#tg-sb-icon").toggleClass('fa-toggle-off');
+      });
+    });
+  </script>
+  
+
+</head>
+
+<body>
+  <!-- Navigation -->
+<nav class="navbar navbar-inverse navbar-static-top">
+    <div class="container topnavlinks">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="fa fa-home fa-lg navbar-brand" href="index.html" style="padding-right:0px;">&nbsp;<span class="projectTitle">
+          UDUNITS-2 Documentation</span></a>
+        </div>
+        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+            <ul class="nav navbar-nav navbar-left">
+              
+              <li class="dropdown" id="vermenu">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">Version 2.2.28<b class="caret"></b></a>
+                <ul class="dropdown-menu" id="docmenu">
+                  
+                  
+                  <li id="remove"><a href="">Menu Loading...</a></li>
+                  
+                  
+                </ul>
+              </li>
+              
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <!-- toggle sidebar button -->
+                <li><a id="tg-sb-link" href="#"><i id="tg-sb-icon" class="fa fa-toggle-on"></i> Nav</a></li>
+                <!-- entries without drop-downs appear here -->
+
+
+
+
+                
+                
+                
+                <li><a href="https://www.unidata.ucar.edu/software/udunits" target="_blank">UDUNITS-2 Home Page</a></li>
+                
+                
+                
+                <li><a href="https://github.com/Unidata/UDUNITS-2" target="_blank">GitHub</a></li>
+                
+                
+                
+                <!-- entries with drop-downs appear here -->
+                <!-- conditional logic to control which topnav appears for the audience defined in the configuration file.-->
+                
+                
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">Jekyll Help<b class="caret"></b></a>
+                    <ul class="dropdown-menu" id="">
+                        
+                        
+                        <li id=""><a href="https://talk.jekyllrb.com" target="_blank">Jekyll Talk</a></li>
+                        
+                        
+                        
+                        <li id=""><a href="http://jekyllrb.com/docs/home/" target="_blank">Jekyll documentation</a></li>
+                        
+                        
+                        
+                        <li id=""><a href="http://stackoverflow.com/questions/tagged/jekyll" target="_blank">Jekyll on Stack Overflow</a></li>
+                        
+                        
+                        
+                        <li id=""><a href="http://idratherbewriting.com/category-jekyll/" target="_blank">Jekyll on my blog</a></li>
+                        
+                        
+                    </ul>
+                </li>
+                
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">Products<b class="caret"></b></a>
+                    <ul class="dropdown-menu" id="">
+                        
+                        
+                        <li id=""><a href="mydoc_introduction.html">Upstream Jekyll Documentation Theme Info</a></li>
+                        
+                        
+                        
+                        <li id=""><a href="p1_landing_page.html">Product 1</a></li>
+                        
+                        
+                        
+                        <li id=""><a href="p2_landing_page.html">Product 2</a></li>
+                        
+                        
+                    </ul>
+                </li>
+                
+                
+                
+			<li>
+
+
+
+  <a class="email" title="Submit feedback" href="https://github.com/Unidata/UDUNITS-2/issues/new?title=Documentation%20feedback">Feedback</a>
+
+</li>
+
+		
+                <!--comment out this block if you want to hide search-->
+                <li>
+                    <!--start search-->
+                    <div id="search-demo-container">
+                        <input type="text" id="search-input" placeholder="search...">
+                        <ul id="results-container"></ul>
+                    </div>
+                    <script src="assets/js/jekyll-search.js" type="text/javascript"></script>
+                    <script type="text/javascript">
+                            var pageLocation = window.location.href;
+                            var searchJson = pageLocation.substring(0, pageLocation.lastIndexOf('/') + 1) + "assets/search/search.json";
+                            SimpleJekyllSearch.init({
+                                searchInput: document.getElementById('search-input'),
+                                resultsContainer: document.getElementById('results-container'),
+                                dataSource: searchJson,
+                                searchResultTemplate: '<li><a href="{url}" title="Unit Time Utilities API">{title}</a></li>',
+                    noResultsText: 'No results found.',
+                            limit: 10,
+                            fuzzy: true,
+                    })
+                    </script>
+                    <!--end search-->
+                </li>
+            </ul>
+        </div>
+        </div>
+        <!-- /.container -->
+</nav>
+
+  <!-- Page Content -->
+  <div class="container">
+    <div id="main">
+      <!-- Content Row -->
+      <div class="row" id="content">
+        
+        
+        <!-- Sidebar Column -->
+        <div class="col-md-3" id="tg-sb-sidebar">
+          
+
+<ul id="mysidebar" class="nav">
+  <!-- figure out title for sidebar
+     sidebar[0].product -> sidebar[0].title -> site.site_title -> empty
+       (sidebar yaml)       (sidebar yaml)     (_config.yaml)
+    -->
+  
+
+  <!-- figure out title for sidebar
+   sidebar[0].version -> site.docset_version -> empty
+     (sidebar yaml)        (_config.yaml)
+    -->
+  
+
+  
+
+  <!-- Both sidebar_title and sidebar_version defined -->
+  
+  <li class="sidebarTitle"><a href="index.html">UDUNITS-2 Documentation 2.2.28</a></li>
+  <!-- Only sidebar_title defined -->
+  
+
+  
+  
+  
+      
+  
+  <li>
+      <a title="Getting Started" href="#">Getting Started</a>
+      <ul>
+          
+          
+          
+          <li><a title="Overview" href="index.html">Overview</a></li>
+          
+          
+          
+          <li class="subfolders">
+              <a title="Installation" href="#">Installation</a>
+              <ul>
+                  
+                  
+                  
+                  <li><a title="Building from Source" href="building-from-source.html">Building from Source</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Package Manager Installation" href="package-manager-installation.html">Package Manager Installation</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Installation Via Conda" href="conda-installation.html">Installation Via Conda</a></li>
+                  
+                  
+                  
+              </ul>
+          </li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Quick Start Guide" href="quick-start-guide.html">Quick Start Guide</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Basic Examples" href="basic-examples.html">Basic Examples</a></li>
+          
+          
+          
+          
+      </ul>
+   </li>
+     
+      
+  
+  <li>
+      <a title="Concepts" href="#">Concepts</a>
+      <ul>
+          
+          
+          
+          <li><a title="Overview" href="concepts-overview.html">Overview</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Units" href="concepts-units.html">Units</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Dimensions" href="concepts-dimensions.html">Dimensions</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Unit Systems" href="concepts-unit-systems.html">Unit Systems</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Unit Expressions" href="concepts-unit-expressions.html">Unit Expressions</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Converters" href="concepts-converters.html">Converters</a></li>
+          
+          
+          
+          
+      </ul>
+   </li>
+     
+      
+  
+  <li>
+      <a title="User Guide" href="#">User Guide</a>
+      <ul>
+          
+          
+          
+          <li><a title="Unit Expression Language" href="unit-expression-language.html">Unit Expression Language</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Units Database" href="units-database.html">Units Database</a></li>
+          
+          
+          
+          
+      </ul>
+   </li>
+     
+      
+  
+  <li>
+      <a title="Developer Guide" href="#">Developer Guide</a>
+      <ul>
+          
+          
+          
+          <li><a title="Building Applications" href="building-applications.html">Building Applications</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Developing UDUNITS-2" href="developing-udunits.html">Developing UDUNITS-2</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Using the C API" href="using-the-c-api.html">Using the C API</a></li>
+          
+          
+          
+          
+      </ul>
+   </li>
+     
+      
+  
+  <li>
+      <a title="Tools" href="#">Tools</a>
+      <ul>
+          
+          
+          
+          <li><a title="udunits2 CLI Utility" href="udunits2-cli-utility.html">udunits2 CLI Utility</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Validation and Testing" href="validation-and-testing.html">Validation and Testing</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Man Pages" href="man-pages.html">Man Pages</a></li>
+          
+          
+          
+          
+      </ul>
+   </li>
+     
+      
+  
+  <li>
+      <a title="Reference" href="#">Reference</a>
+      <ul>
+          
+          
+          
+          <li><a title="Configure Script Options" href="configure-options.html">Configure Script Options</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Compiler & Linker Flags" href="compiler-linker-flags.html">Compiler & Linker Flags</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Environment Variables" href="environment-variables.html">Environment Variables</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Installation Layout" href="installation-layout.html">Installation Layout</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="Unit Expression Language Spec" href="unit-expression-language-specification.html">Unit Expression Language Spec</a></li>
+          
+          
+          
+          
+          
+          
+          <li><a title="XML Units Database Reference" href="xml-units-database-reference.html">XML Units Database Reference</a></li>
+          
+          
+          
+          <li class="subfolders">
+              <a title="C API" href="#">C API</a>
+              <ul>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="API Overview" href="c-api-overview.html">API Overview</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Data Structures" href="data-structures.html">Data Structures</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Unit Systems API" href="unit-systems-api.html">Unit Systems API</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Unit Creation & Destruction API" href="unit-creation-destruction-api.html">Unit Creation & Destruction API</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Unit Parsing & Formatting API" href="unit-parsing-formatting-api.html">Unit Parsing & Formatting API</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Unit Arithmetic API" href="unit-arithmetic-api.html">Unit Arithmetic API</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Unit Conversion API" href="unit-conversion-api.html">Unit Conversion API</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Unit Query & Introspection API" href="unit-query-introspection-api.html">Unit Query & Introspection API</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Unit Name & Symbols Mapping API" href="unit-name-symbols-mapping-api.html">Unit Name & Symbols Mapping API</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li class="active"><a title="Unit Time Utilities API" href="unit-time-utilities-api.html">Unit Time Utilities API</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Extended Unit API" href="extended-unit-api.html">Extended Unit API</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Error Handling API" href="error-handling-api.html">Error Handling API</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="Troubleshooting API Issues" href="troubleshooting-api-issues.html">Troubleshooting API Issues</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="UDUNITS-1 Legacy API" href="udunits-1-legacy-api.html">UDUNITS-1 Legacy API</a></li>
+                  
+                  
+                  
+                  
+                  
+                  <li><a title="C API Function Index" href="c-api-function-index.html">C API Function Index</a></li>
+                  
+                  
+                  
+              </ul>
+          </li>
+          
+          
+          
+          
+      </ul>
+   </li>
+     
+      
+      
+      <!-- if you aren't using the accordion, uncomment this block:
+         <p class="external">
+             <a href="#" id="collapseAll">Collapse All</a> | <a href="#" id="expandAll">Expand All</a>
+         </p>
+         -->
+</ul>
+
+<!-- this highlights the active parent class in the navgoco sidebar. this is critical so that the parent expands when you're viewing a page. This must appear below the sidebar code above. Otherwise, if placed inside customscripts.js, the script runs before the sidebar code runs and the class never gets inserted.-->
+<script>$("li.active").parents('li').toggleClass("active");</script>
+
+        </div>
+
+        
+        
+
+        <!-- Content Column -->
+        <div class="col-md-6" id="tg-sb-content">
+          <div class="post-header">
+   <h1 class="post-title-main">Unit Time Utilities API</h1>
+</div>
+
+
+
+<div class="post-content">
+
+   
+
+    
+   <!--
+  If breadcrumbs explicitly set in the front matter of the markdown source, use it.
+  -->
+
+
+
+
+
+
+<div id="breadcrumbs">
+  
+  <a href="index.html" class="bcStart">UDUNITS-2 Documentation</a>
+  
+  
+  <span class="bcEnd">Unit Time Utilities API</span>
+  
+  
+</div>
+
+   <p>Functions for encoding and decoding time values in UDUNITS-2 format.</p>
+
+<p>These utilities are commonly used when working with time-based unit offsets
+(e.g., “<code class="language-plaintext highlighter-rouge">seconds since 1970-01-01</code>”), enabling conversion between structured
+date/time components and UDUNITS-compatible numeric representations.</p>
+
+<h2 id="functions">Functions</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Function</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><a href="ut-decode-time.html"><code class="language-plaintext highlighter-rouge">ut_decode_time()</code></a></td>
+      <td>Decodes a UDUNITS-2 numeric time value into calendar date and clock time components</td>
+    </tr>
+    <tr>
+      <td><a href="ut-encode-clock.html"><code class="language-plaintext highlighter-rouge">ut_encode_clock()</code></a></td>
+      <td>Encodes clock time components (hour, minute, second) into a UDUNITS-2 numeric time value</td>
+    </tr>
+    <tr>
+      <td><a href="ut-encode-date.html"><code class="language-plaintext highlighter-rouge">ut_encode_date()</code></a></td>
+      <td>Encodes calendar date components (year, month, day) into a UDUNITS-2 numeric time value</td>
+    </tr>
+    <tr>
+      <td><a href="ut-encode-time.html"><code class="language-plaintext highlighter-rouge">ut_encode_time()</code></a></td>
+      <td>Encodes complete date and time components into a UDUNITS-2 numeric time value</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="usage-patterns">Usage Patterns</h2>
+
+<p>The <strong>Unit Time Utilities API</strong> operates as a progression from<br />
+<strong>structured date/time components → encoded UDUNITS-2 time values → <code class="language-plaintext highlighter-rouge">ut_unit</code>
+objects with temporal offsets → optional arithmetic or origin adjustments →
+<code class="language-plaintext highlighter-rouge">cv_converter</code>-mediated transformations → parsed or formatted unit strings
+within a <a href="ut-system.html"><code class="language-plaintext highlighter-rouge">ut_system</code></a> → decoded calendar components</strong>, enabling transformation
+between calendar-based representations and numeric time values that integrate
+with UDUNITS-2 conversion workflows.</p>
+
+<p>For example:</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>(1) Input date/time components
+    year, month, day, hour, minute, second
+                │
+                ▼
+(2) ╔════════════════════════════════╗
+    ║ Encode structured time values  ║
+    ║ • ut_encode_date()             ║
+    ║ • ut_encode_clock()            ║
+    ║ • ut_encode_time()             ║
+    ╚════════════════════════════════╝
+                │
+                ▼
+(3) Encoded UDUNITS-2 numeric time value
+                │
+                ▼
+(4) Apply arithmetic or offsets
+    • ut_add()
+    • ut_offset()
+                │
+                ▼
+(5) Parse or format time-based unit expressions
+    • ut_parse()
+    • ut_format()
+                │
+                ▼
+(6) ╔════════════════════════════════╗
+    ║ Decode UDUNITS-2 time value    ║
+    ║ into calendar components       ║
+    ║ • ut_decode_time()             ║
+    ╚════════════════════════════════╝
+                │
+                ▼
+(7) Output date/time components
+    year, month, day, hour, minute, second
+</code></pre></div></div>
+
+<ol>
+  <li>
+    <p><strong>Input date/time components</strong></p>
+
+    <p>Operations begin with structured calendar values representing a specific
+moment in time. Typical components include:</p>
+
+    <ul>
+      <li>year</li>
+      <li>month</li>
+      <li>day</li>
+      <li>hour</li>
+      <li>minute</li>
+      <li>second</li>
+    </ul>
+
+    <p>These values typically originate from application data, timestamps,
+or external data sources.</p>
+  </li>
+  <li>
+    <p><strong>Encode structured time values</strong></p>
+
+    <p>Calendar components are converted into UDUNITS-2 numeric time values
+representing elapsed time relative to a reference epoch.</p>
+
+    <ul>
+      <li><a href="ut-encode-date.html"><code class="language-plaintext highlighter-rouge">ut_encode_date()</code></a> encodes year, month, and day</li>
+      <li><a href="ut-encode-clock.html"><code class="language-plaintext highlighter-rouge">ut_encode_clock()</code></a> encodes hour, minute, and second</li>
+      <li><a href="ut-encode-time.html"><code class="language-plaintext highlighter-rouge">ut_encode_time()</code></a> encodes complete date and time values</li>
+    </ul>
+
+    <p>These values may later be associated with a <a href="ut-unit.html"><code class="language-plaintext highlighter-rouge">ut_unit</code></a> representing a
+time-offset unit.</p>
+  </li>
+  <li>
+    <p><strong>Encoded UDUNITS-2 numeric time value available</strong></p>
+
+    <p>The result of encoding is a numeric value (typically <code class="language-plaintext highlighter-rouge">double</code>)
+representing a time offset.</p>
+
+    <p>This value can be combined with a parsed time reference unit within a
+<a href="ut-system.html"><code class="language-plaintext highlighter-rouge">ut_system</code></a>, for example:</p>
+
+    <ul>
+      <li><code class="language-plaintext highlighter-rouge">"seconds since 1970-01-01"</code></li>
+      <li><code class="language-plaintext highlighter-rouge">"days since 1850-01-01"</code></li>
+    </ul>
+
+    <p>The resulting representation links a numeric value with a corresponding
+<a href="ut-unit.html"><code class="language-plaintext highlighter-rouge">ut_unit</code></a> describing the temporal reference frame.</p>
+  </li>
+  <li>
+    <p><strong>Apply arithmetic or offsets</strong></p>
+
+    <p>Time-offset <a href="ut-unit.html"><code class="language-plaintext highlighter-rouge">ut_unit</code></a> objects can be constructed or modified relative to
+reference origins.</p>
+
+    <ul>
+      <li><a href="ut-offset.html"><code class="language-plaintext highlighter-rouge">ut_offset()</code></a> creates a <a href="ut-unit.html"><code class="language-plaintext highlighter-rouge">ut_unit</code></a> with a shifted origin</li>
+      <li><a href="ut-add.html"><code class="language-plaintext highlighter-rouge">ut_add()</code></a> combines compatible units to produce derived
+<a href="ut-unit.html"><code class="language-plaintext highlighter-rouge">ut_unit</code></a> objects</li>
+    </ul>
+
+    <p>These operations support construction of units describing elapsed time
+relative to defined epochs.</p>
+  </li>
+  <li>
+    <p><strong>Parse or format time-based unit expressions</strong></p>
+
+    <p>Unit expressions defining temporal reference frames are interpreted or
+generated within a <a href="ut-system.html"><code class="language-plaintext highlighter-rouge">ut_system</code></a>.</p>
+
+    <ul>
+      <li><a href="ut-parse.html"><code class="language-plaintext highlighter-rouge">ut_parse()</code></a> converts a unit expression string into a <a href="ut-unit.html"><code class="language-plaintext highlighter-rouge">ut_unit</code></a></li>
+      <li><a href="ut-format.html"><code class="language-plaintext highlighter-rouge">ut_format()</code></a> generates a string representation of a <a href="ut-unit.html"><code class="language-plaintext highlighter-rouge">ut_unit</code></a></li>
+    </ul>
+
+    <p>Parsed units may subsequently be used to create a <a href="cv-converter.html"><code class="language-plaintext highlighter-rouge">cv_converter</code></a> for
+transformations between compatible time representations.</p>
+  </li>
+  <li>
+    <p><strong>Convert or interpret temporal values</strong></p>
+
+    <p>Compatible time-offset units can be related using a <a href="cv-converter.html"><code class="language-plaintext highlighter-rouge">cv_converter</code></a>.</p>
+
+    <ul>
+      <li><a href="ut-get-converter.html"><code class="language-plaintext highlighter-rouge">ut_get_converter()</code></a> obtains a <a href="cv-converter.html"><code class="language-plaintext highlighter-rouge">cv_converter</code></a>
+relating two compatible <a href="ut-unit.html"><code class="language-plaintext highlighter-rouge">ut_unit</code></a> objects</li>
+    </ul>
+
+    <p>This enables transformation between time representations expressed
+relative to different reference epochs or units.</p>
+  </li>
+  <li>
+    <p><strong>Decode UDUNITS-2 time value into calendar components</strong></p>
+
+    <p>Numeric UDUNITS-2 time values can be converted back into structured date
+and time components.</p>
+
+    <ul>
+      <li><a href="ut-decode-time.html"><code class="language-plaintext highlighter-rouge">ut_decode_time()</code></a> extracts year, month, day,
+hour, minute, and second values</li>
+    </ul>
+
+    <p>This enables presentation, reporting, or further calendar-based
+processing.</p>
+  </li>
+  <li>
+    <p><strong>Output date/time components</strong></p>
+
+    <p>The application receives structured calendar values derived from the
+UDUNITS-2 numeric representation.</p>
+
+    <p>Typical outputs include:</p>
+
+    <ul>
+      <li>year</li>
+      <li>month</li>
+      <li>day</li>
+      <li>hour</li>
+      <li>minute</li>
+      <li>second</li>
+    </ul>
+
+    <p>These values can be displayed, stored, or used in subsequent
+application logic.</p>
+  </li>
+</ol>
+
+<h2 id="see-also">See Also</h2>
+
+<ul>
+  <li><a href="unit-arithmetic-api.html">Unit Arithmetic API</a></li>
+</ul>
+
+
+    <div class="tags">
+        
+    </div>
+
+
+
+
+</div>
+
+
+        </div>
+        
+        <div class="col-md-3" id="tg-sb-sidebar-toc">
+          
+<!-- this handles the automatic toc. use ## for subheads to auto-generate the on-page minitoc. if you use html tags, you must supply an ID for the heading element in order for it to appear in the minitoc. -->
+<script>
+$( document ).ready(function() {
+  // Handler for .ready() called.
+
+$('#toc').toc({ minimumHeaders: 0, listType: 'ul', showSpeed: 0, headers: '.container h2, .container h3, .container h4' });
+
+/* this offset helps account for the space taken up by the floating toolbar. */
+$('#toc').on('click', 'a', function() {
+  var target = $(this.getAttribute('href'))
+    , scroll_target = target.offset().top
+
+  $(window).scrollTop(scroll_target - 10);
+  return false
+})
+  
+});
+</script>
+
+<div id="toc" class="fa fa-list-ul"></div>
+
+        </div>
+        
+        <!-- /.row -->
+      </div>
+      <!-- /.container -->
+    </div>
+    <!-- /#main -->
+  </div>
+  <div id="footer">
+       <footer class="unidata">
+
+    <div id="content-footer">
+     <h2>NSF Unidata Support</h2>
+     <ul>
+      <li>NSF Unidata provides free technical support to our community members. For more information, please see our <a href="https://support.unidata.ucar.edu/conditions-of-support/">Conditions Of Support</a>.</li>
+      <li>Visit: <a href="https://support.unidata.ucar.edu/">NSF Unidata Support </a></li>
+      <li>Email: <a href="mailto:support@unidata.ucar.edu">support@unidata.ucar.edu</a></li>
+      <li>Report a security issue/vulnerability: <a href="mailto:security@unidata.ucar.edu">security@unidata.ucar.edu</a></li>
+     </ul>
+    </div> <!-- /#content-footer -->
+
+    <div id="legal-footer">
+     <ul>
+      <li>&#169; NSF Unidata</li>
+      <li><a href="https://support.unidata.ucar.edu/conditions-of-support">Conditions of Support</a></li>
+      <li><a href="https://www.unidata.ucar.edu/legal/participation.html">Participation Policy</a></li>
+      <li><a href="https://www.ucar.edu/privacy-policy">Privacy Policy</a></li>
+      <li><a href="https://www.ucar.edu/terms-of-use">Terms of Use</a></li>
+      <li><a href="https://www.ucar.edu/accessibility">Accessibility</a></li>
+     </ul>
+    </div> <!-- /#legal-footer -->
+
+    <div id="nsf-footer">
+     <a href="https://www.nsf.gov" class="logo">
+      <img src="assets/images/nsf_logo_transparent.png" alt="U.S. National Science Foundation"/>
+     </a>
+     <div>
+      NSF Unidata is a member of the
+      <a href="https://www.ucp.ucar.edu/">UCAR Community Programs</a>,
+      managed by the
+      <a href="https://www.ucar.edu">University Corporation for Atmospheric Research</a>,
+      and funded by the
+      <a href="https://www.nsf.gov">U.S. National Science Foundation</a>.
+     </div>
+    </div> <!-- /#nsf-footer -->
+
+   </footer>
+  </div>
+
+</body>
+
+<!-- the google_analytics_id gets auto inserted from the config file -->
+
+
+
+<script>(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)})(window,document,'script','//www.google-analytics.com/analytics.js','ga');ga('create','UA-92978945-1','auto');ga('require','displayfeatures');ga('send','pageview');</script>
+
+
+
+</html>

@@ -1,0 +1,176 @@
+entries:
+  - title:
+    folders:
+      - title:
+        output: pdf
+        type: frontmatter
+        folderitems:
+          - title:
+            url: /titlepage
+            output: pdf
+            type: frontmatter
+          - title:
+            url: /tocpage
+            output: pdf
+            type: frontmatter
+
+      - title: Getting Started
+        output: web, pdf
+        folderitems:       
+          - title: Overview
+            url: /index.html
+            output: web, pdf
+            subfolders:
+              - title: Installation
+                output: web, pdf
+                subfolderitems:
+                - title: Building from Source
+                  url: /building-from-source.html
+                  output: web, pdf
+                - title: Package Manager Installation
+                  url: /package-manager-installation.html
+                  output: web, pdf
+                - title: Installation Via Conda
+                  url: /conda-installation.html
+                  output: web, pdf  
+          - title: Quick Start Guide
+            url: /quick-start-guide.html
+            output: web, pdf
+          - title: Basic Examples
+            url: /basic-examples.html
+            output: web, pdf
+
+      - title: Concepts
+        output: web, pdf
+        folderitems:
+          - title: Overview
+            url: /concepts-overview.html
+            output: web, pdf
+          - title: Units
+            url: /concepts-units.html
+            output: web, pdf
+          - title: Dimensions
+            url: /concepts-dimensions.html
+            output: web, pdf
+          - title: Unit Systems
+            url: /concepts-unit-systems.html
+            output: web, pdf
+          - title: Unit Expressions
+            url: /concepts-unit-expressions.html
+            output: web, pdf
+          - title: Converters
+            url: /concepts-converters.html
+            output: web, pdf
+           
+      - title: User Guide
+        output: web, pdf
+        folderitems:
+          - title: Unit Expression Language
+            url: /unit-expression-language.html
+            output: web, pdf
+          - title: Units Database
+            url: /units-database.html
+            output: web, pdf
+
+
+      - title: Developer Guide
+        output: web, pdf
+        folderitems:
+          - title: Building Applications
+            url: /building-applications.html
+            output: web, pdf
+          - title: Developing UDUNITS-2
+            url: /developing-udunits.html
+            output: web, pdf  
+          - title: Using the C API
+            url: /using-the-c-api.html
+            output: web, pdf  
+
+      - title: Tools
+        output: web, pdf
+        folderitems:
+          - title: udunits2 CLI Utility
+            url: /udunits2-cli-utility.html
+            output: web, pdf
+          - title: Validation and Testing
+            url: /validation-and-testing.html
+            output: web, pdf  
+          - title: Man Pages
+            url: /man-pages.html
+            output: web, pdf  
+
+
+
+      - title: Reference
+        output: web, pdf
+        folderitems:
+          - title: Configure Script Options
+            url: /configure-options.html
+            output: web, pdf
+          - title: Compiler & Linker Flags
+            url: /compiler-linker-flags.html
+            output: web, pdf
+          - title: Environment Variables
+            url: /environment-variables.html
+            output: web, pdf
+          - title: Installation Layout
+            url: /installation-layout.html
+            output: web, pdf
+          - title: Unit Expression Language Spec
+            url: /unit-expression-language-specification.html
+            output: web, pdf  
+          - title: XML Units Database Reference
+            url: /xml-units-database-reference.html
+            output: web, pdf 
+            subfolders:
+              - title: C API
+                output: web, pdf
+                subfolderitems:
+                - title: Building from Source
+                - title: API Overview
+                  url: /c-api-overview.html
+                  output: web, pdf
+                - title: Data Structures
+                  url: /data-structures.html
+                  output: web, pdf  
+                - title: Unit Systems API
+                  url: /unit-systems-api.html
+                  output: web, pdf     
+                - title: Unit Creation & Destruction API
+                  url: /unit-creation-destruction-api.html
+                  output: web, pdf                   
+                - title: Unit Parsing & Formatting API
+                  url: /unit-parsing-formatting-api.html
+                  output: web, pdf  
+                - title: Unit Arithmetic API
+                  url: /unit-arithmetic-api.html
+                  output: web, pdf   
+                - title: Unit Conversion API
+                  url: /unit-conversion-api.html
+                  output: web, pdf  
+                - title: Unit Query & Introspection API
+                  url: /unit-query-introspection-api.html
+                  output: web, pdf  
+                - title: Unit Name & Symbols Mapping API
+                  url: /unit-name-symbols-mapping-api.html
+                  output: web, pdf  
+                - title: Unit Time Utilities API
+                  url: /unit-time-utilities-api.html
+                  output: web, pdf  
+                - title: Extended Unit API
+                  url: /extended-unit-api.html
+                  output: web, pdf
+                - title: Error Handling API
+                  url: /error-handling-api.html
+                  output: web, pdf  
+                - title: Troubleshooting API Issues
+                  url: /troubleshooting-api-issues.html
+                  output: web, pdf
+                - title: UDUNITS-1 Legacy API
+                  url: /udunits-1-legacy-api.html
+                  output: web, pdf  
+                - title: C API Function Index
+                  url: /c-api-function-index.html  
+                  output: web, pdf
+
+
